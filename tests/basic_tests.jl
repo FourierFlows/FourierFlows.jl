@@ -5,7 +5,7 @@ using Domain
 
 
 # # test on square grids
-nx = 8;
+nx = 32;
 Lx = 2.0;
 g = Grid(nx, Lx);
 
@@ -84,8 +84,13 @@ if nx/2>=4
 
   f1   = cos.(m*real(g.k[2])*g.X).*cos.(n*real(g.l[2])*g.Y);
   f2   = sin.(m*real(g.k[2])*g.X + n*real(g.l[2])*g.Y);
-  f1h  = fft(f1);   f2h  = fft(f2);
-  f1hr = rfft(f1);  f2hr = rfft(f2);
+  f1h  = fft(f1);
+  f2h  = fft(f2);
+  f1hr = rfft(f1);
+  f2hr = rfft(f2);
+
+  f2hr_mul = Array{Complex128}(g.nkr, g.nl)
+  A_mul_B!( f2hr_mul, g.rfftplan, f2 )
 
   f1h_th   = zeros(size(f1h));  f2h_th   = zeros(size(f2h));
   f1hr_th  = zeros(size(f1hr)); f2hr_th  = zeros(size(f2hr));
@@ -139,6 +144,12 @@ if nx/2>=4
     println(" rfft for sin(mx+ny) seems OK.")
   end
 
+  if norm(f2hr_mul-f2hr_th)>1e-12
+    info(" rfft with A_mul_B for sin(mx+ny) is not correcty calculated!")
+  else
+    println(" rfft with A_mul_B for sin(mx+ny) seems OK.")
+  end
+
 end
 
 println(" ")
@@ -176,4 +187,13 @@ if sqrt(mean((f2-f2b).^2)) > 1e-12
   info("irfft for sin(mx+ny) is not correcty calculated!")
 else
   println("irfft for sin(mx+ny) seems OK.")
+end
+
+# f2b = Array{Float64}(g.nx, g.ny)
+A_mul_B!( f2b, g.irfftplan, f2hr )
+
+if sqrt(mean((f2-f2b).^2)) > 1e-12
+  info("irfft with A_mul_B for sin(mx+ny) is not correcty calculated!")
+else
+  println("irfft with A_mul_B for sin(mx+ny) seems OK.")
 end

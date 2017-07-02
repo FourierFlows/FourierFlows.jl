@@ -1,6 +1,6 @@
-# ----------------------------------------------------------------------------- 
-# Turb only solver ------------------------------------------------------------- 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
+# Turb only solver -------------------------------------------------------------
+# -----------------------------------------------------------------------------
 module TurbOnlySolver
 
 using Domain, Framework, TimeSteppers
@@ -12,10 +12,10 @@ export updatevars!, stepforward!, set_q!
 
 
 
-# ----------------------------------------------------------------------------- 
-# Solver ---------------------------------------------------------------------- 
-# ----------------------------------------------------------------------------- 
-function calc_nl!(NLqh::Array{Complex128, 2}, qh::Array{Complex128, 2}, 
+# -----------------------------------------------------------------------------
+# Solver ----------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+function calc_nl!(NLqh::Array{Complex128, 2}, qh::Array{Complex128, 2},
   t::Float64, v::Vars, p::Params, g::Grid)
 
   for j in 1:g.nl
@@ -39,7 +39,7 @@ function calc_nl!(NLqh::Array{Complex128, 2}, qh::Array{Complex128, 2},
 
   A_mul_B!(v.Uqh, g.rfftplan, v.Uq)
   A_mul_B!(v.Vqh, g.rfftplan, v.Vq)
-  
+
   for j in 1:g.nl
     @simd for i in 1:g.nkr
       @inbounds NLqh[i, j] = -im*g.Kr[i, j]*v.Uqh[i, j] - im*g.Lr[i, j]*v.Vqh[i, j]
@@ -86,7 +86,7 @@ function stepforward!(nsteps::Int, qts::ETDRK4TimeStepper,
     qts.ti = v.t + 0.5*qts.dt
     for j in 1:g.nl
       @simd for i in 1:g.nkr
-        @inbounds qts.sol1[i, j] = (qts.expLCdt2[i, j]*v.qh[i, j] 
+        @inbounds qts.sol1[i, j] = (qts.expLCdt2[i, j]*v.qh[i, j]
           + qts.zeta[i, j]*qts.NL1[i, j])
       end
     end
@@ -96,7 +96,7 @@ function stepforward!(nsteps::Int, qts::ETDRK4TimeStepper,
     # Substep 2
     for j in 1:g.nl
       @simd for i in 1:g.nkr
-        @inbounds qts.sol2[i, j] = (qts.expLCdt2[i, j]*v.qh[i, j] 
+        @inbounds qts.sol2[i, j] = (qts.expLCdt2[i, j]*v.qh[i, j]
           + qts.zeta[i, j]*qts.NL2[i, j])
       end
     end
@@ -107,7 +107,7 @@ function stepforward!(nsteps::Int, qts::ETDRK4TimeStepper,
     qts.ti = v.t + qts.dt
     for j in 1:g.nl
       @simd for i in 1:g.nkr
-        @inbounds qts.sol2[i, j] = (qts.expLCdt2[i, j]*qts.sol1[i, j] 
+        @inbounds qts.sol2[i, j] = (qts.expLCdt2[i, j]*qts.sol1[i, j]
           + qts.zeta[i, j]*(2.0*qts.NL3[i, j] - qts.NL1[i, j]))
       end
     end
@@ -119,8 +119,8 @@ function stepforward!(nsteps::Int, qts::ETDRK4TimeStepper,
     for j in 1:g.nl
       @simd for i in 1:g.nkr
         @inbounds v.qh[i, j] = (qts.expLCdt[i, j]*v.qh[i, j]
-          +     qts.alph[i, j] * qts.NL1[i, j] 
-          + 2.0*qts.beta[i, j] * (qts.NL2[i, j] + qts.NL3[i, j]) 
+          +     qts.alph[i, j] * qts.NL1[i, j]
+          + 2.0*qts.beta[i, j] * (qts.NL2[i, j] + qts.NL3[i, j])
           +     qts.gamm[i, j] * qts.NL4[i, j] )
       end
     end
@@ -132,16 +132,16 @@ function stepforward!(nsteps::Int, qts::ETDRK4TimeStepper,
 end
 
 
-# ----------------------------------------------------------------------------- 
-# Helper functions ------------------------------------------------------------ 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
+# Helper functions ------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 function updatevars!(v::Vars, p::Params, g::Grid)
 
   v.q = irfft(v.qh, g.nx)
   v.psih = -v.qh .* g.invKKrsq
   v.U = -irfft(im*g.Lr.*v.psih, g.nx)
-  v.V =  irfft(im*g.Kr.*v.psih, g.nx) 
+  v.V =  irfft(im*g.Kr.*v.psih, g.nx)
 
 end
 
