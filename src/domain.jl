@@ -86,10 +86,12 @@ end
 
 # Initializer for square grids
 function Grid(nx::Int, Lx::Float64)
-
+  println("using square")
   # Size attributes
+
   ny = nx
   Ly = Lx
+
   dx = Lx/nx
   dy = Ly/ny
 
@@ -110,8 +112,8 @@ function Grid(nx::Int, Lx::Float64)
   krderange = (kcL+1):nkr
 
   # Dealiasing filters
-  defilt  = Array{Complex128}(nk, nl)
-  derfilt = Array{Complex128}(nkr, nl)
+  defilt  = Array{Complex128,2}(nk, nl)
+  derfilt = Array{Complex128,2}(nkr, nl)
 
   # Physical grid allocatio
   x = Array{Float64}(nx)
@@ -129,25 +131,25 @@ function Grid(nx::Int, Lx::Float64)
   lsq  = Array{Complex128}(nl)
   krsq = Array{Complex128}(nkr)
 
-  K  = Array{Complex128}(nk, nl)
-  L  = Array{Complex128}(nk, nl)
-  Lr = Array{Complex128}(nkr, nl)
-  Kr = Array{Complex128}(nkr, nl)
+  K  = Array{Complex128,2}(nk, nl)
+  L  = Array{Complex128,2}(nk, nl)
+  Lr = Array{Complex128,2}(nkr, nl)
+  Kr = Array{Complex128,2}(nkr, nl)
 
-  K2 = Array{Complex128}(nk, nl)
-  L2 = Array{Complex128}(nk, nl)
+  K2 = Array{Complex128,2}(nk, nl)
+  L2 = Array{Complex128,2}(nk, nl)
 
-  KKsq    = Array{Complex128}(nk, nl)
-  invKKsq = Array{Complex128}(nk, nl)
-  KL      = Array{Complex128}(nk, nl)
-  E       = Array{Complex128}(nk, nl)
+  KKsq    = Array{Complex128,2}(nk, nl)
+  invKKsq = Array{Complex128,2}(nk, nl)
+  KL      = Array{Complex128,2}(nk, nl)
+  E       = Array{Complex128,2}(nk, nl)
 
-  KKrsq    = Array{Complex128}(nkr, nl)
-  invKKrsq = Array{Complex128}(nkr, nl)
+  KKrsq    = Array{Complex128,2}(nkr, nl)
+  invKKrsq = Array{Complex128,2}(nkr, nl)
 
-  ik  = Array{Complex128}(nk, nl)
-  il  = Array{Complex128}(nk, nl)
-  ikr = Array{Complex128}(nkr, nl)
+  ik  = Array{Complex128,2}(nk, nl)
+  il  = Array{Complex128,2}(nk, nl)
+  ikr = Array{Complex128,2}(nkr, nl)
 
   # 1D pre-constructors
   x = linspace(-Lx/2.0, Lx/2.0-dx, nx)
@@ -227,11 +229,11 @@ function Grid(nx::Int, Lx::Float64)
   # FFT plans; use grid vars.
   effort = FFTW.MEASURE
 
-  fftplan   =   plan_fft(K; flags=effort)
-  ifftplan  =  plan_ifft(K; flags=effort)
+  fftplan   =   plan_fft(Array{Float64,2}(nx, ny); flags=effort)
+  ifftplan  =  plan_ifft(Array{Complex128,2}(nk, nl); flags=effort)
 
-  rfftplan  =  plan_rfft(X; flags=effort)
-  irfftplan = plan_irfft(Kr, nx; flags=effort)
+  rfftplan  =  plan_rfft(Array{Float64,2}(nx, ny); flags=effort)
+  irfftplan = plan_irfft(Array{Complex128,2}(nkr, nl), nx; flags=effort)
 
 
   return Grid(nx, ny, Lx, Ly, nk, nl, nkr, krange, lrange, krrange,
@@ -252,6 +254,7 @@ end
 # Initializer for rectangular grids
 function Grid(nx::Int, ny::Int, Lx::Float64, Ly::Float64)
 
+  println("using rectangular")
   # Size attributes
   dx = Lx/nx
   dy = Ly/ny
@@ -390,11 +393,11 @@ function Grid(nx::Int, ny::Int, Lx::Float64, Ly::Float64)
   # FFT plans; use grid vars.
   effort = FFTW.MEASURE
 
-  fftplan   =   plan_fft(K; flags=effort)
-  ifftplan  =  plan_ifft(K; flags=effort)
+  fftplan   =   plan_fft(Array{Float64,2}(nx, ny); flags=effort)
+  ifftplan  =  plan_ifft(Array{Complex128,2}(nk, nl); flags=effort)
 
-  rfftplan  =  plan_rfft(X; flags=effort)
-  irfftplan = plan_irfft(Kr, nx; flags=effort)
+  rfftplan  =  plan_rfft(Array{Float64,2}(nx, ny); flags=effort)
+  irfftplan = plan_irfft(Array{Complex128,2}(nkr, nl), nx; flags=effort)
 
 
   return Grid(nx, ny, Lx, Ly, nk, nl, nkr, krange, lrange, krrange,

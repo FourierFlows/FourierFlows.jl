@@ -4,7 +4,7 @@ using Domain
 # using PyPlot
 
 
-# test on square grids
+# # test on square grids
 # nx = 8;
 # Lx = 2.0;
 # g = Grid(nx, Lx);
@@ -86,20 +86,16 @@ if nx/2>=4
   fhr = rfft(f);
 
   fh_th  = zeros(size(fh));
-  for i in g.krange
-    for j in g.lrange
-      if ( abs(g.K[i,j])==m*real(g.k[2]) && abs(g.L[i,j])==n*real(g.l[2]) )
-        fh_th[i,j] = - g.nx*g.ny/4;
-      end
+  for i in g.krange, j in g.lrange
+    if ( abs(g.K[i,j])==m*real(g.k[2]) && abs(g.L[i,j])==n*real(g.l[2]) )
+      fh_th[i,j] = - g.nx*g.ny/4;
     end
   end
 
   fhr_th  = zeros(size(fhr));
-  for i in g.krrange
-    for j in g.lrange
-      if ( abs(g.Kr[i,j])==m*real(g.k[2]) && abs(g.L[i,j])==n*real(g.l[2]) )
-        fhr_th[i,j] = - g.nx*g.ny/4;
-      end
+  for i in g.krrange, j in g.lrange
+    if ( abs(g.Kr[i,j])==m*real(g.k[2]) && abs(g.L[i,j])==n*real(g.l[2]) )
+      fhr_th[i,j] = - g.nx*g.ny/4;
     end
   end
 
