@@ -3,9 +3,9 @@ module Domain
 export Grid
 export dealias!
 
-# ----------------------------------------------------------------------------- 
-# Grid ------------------------------------------------------------------------ 
-# ----------------------------------------------------------------------------- 
+# -----------------------------------------------------------------------------
+# Grid ------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 struct Grid
   nx::Int
   ny::Int
@@ -56,7 +56,7 @@ struct Grid
   Lr::Array{Complex128, 2}
   Kr::Array{Complex128, 2}
 
-  # Convenience arrays 
+  # Convenience arrays
   K2::Array{Complex128, 2}
   L2::Array{Complex128, 2}
 
@@ -155,7 +155,7 @@ function Grid(nx::Int, Lx::Float64)
 
   j1 = 0:1:Int(ny/2)
   j2 = Int(-ny/2+1):1:-1
-  
+
   k  = 2.0*pi/Lx * cat(1, i1, i2)
   l  = 2.0*pi/Ly * cat(1, j1, j2)
   kr = 2.0*pi/Lx * i1
@@ -168,8 +168,8 @@ function Grid(nx::Int, Lx::Float64)
   il  = im*l
   ikr = im*kr
 
-  # Build 2D physical arrays 
-  for j = 1:ny, i = 1:nx   
+  # Build 2D physical arrays
+  for j = 1:ny, i = 1:nx
     X[i, j] = x[i]
     Y[i, j] = y[j]
   end
@@ -242,7 +242,7 @@ end
 function dealias!(a::Array{Complex128, 2}, g::Grid)
 
   if size(a)[1] == g.nk       # Complex
-    
+
     for j in g.lderange
       for i in g.kderange
         @inbounds a[i, j] = 0.0 + 0.0*im
