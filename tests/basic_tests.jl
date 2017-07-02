@@ -7,7 +7,16 @@ using Domain
 nx = 8;
 Lx = 2.0;
 
-g = Grid(nx, Lx);
+
+nx = 8;
+ny = 20;
+Lx = 2.0;
+Ly = 3.4;
+
+
+
+# g = Grid(nx, Lx);
+g = Grid(nx, ny, Lx, Ly);
 
 ################################################################################
 # Test that the X & Y grids are actually created
@@ -78,7 +87,7 @@ if nx/2>=4
   for i in g.krange
     for j in g.lrange
       if ( abs(g.K[i,j])==m*real(g.k[2]) && abs(g.L[i,j])==n*real(g.l[2]) )
-        fh_th[i,j] = - nx^2/4;
+        fh_th[i,j] = - g.nx*g.ny/4;
       end
     end
   end
@@ -87,18 +96,18 @@ if nx/2>=4
   for i in g.krrange
     for j in g.lrange
       if ( abs(g.Kr[i,j])==m*real(g.k[2]) && abs(g.L[i,j])==n*real(g.l[2]) )
-        fhr_th[i,j] = - nx^2/4;
+        fhr_th[i,j] = - g.nx*g.ny/4;
       end
     end
   end
 
-  if norm(fh-fh_th)>1e-14
+  if norm(fh-fh_th)>1e-12
     info("fft  for sin(mx)sin(ny) is not correcty calculated!")
   else
     println("fft  for sin(mx)sin(ny) seems OK.")
   end
 
-  if norm(fhr-fhr_th)>1e-14
+  if norm(fhr-fhr_th)>1e-12
     info("rfft for sin(mx)sin(ny) is not correcty calculated!")
   else
     println("rfft for sin(mx)sin(ny) seems OK.")

@@ -102,7 +102,7 @@ function Grid(nx::Int, Lx::Float64)
 
   krange  = cat(1, 1:kcL, kcR:nk)
   lrange  = cat(1, 1:lcL, lcR:nl)
-  krrange = 1:kcL
+  krrange = cat(1, 1:kcL)
 
   kderange  = (kcL+1):(kcR-1)
   lderange  = (lcL+1):(lcR-1)
@@ -160,7 +160,7 @@ function Grid(nx::Int, Lx::Float64)
 
   k  = 2.0*pi/Lx * cat(1, i1, i2)
   l  = 2.0*pi/Ly * cat(1, j1, j2)
-  kr = 2.0*pi/Lx * i1
+  kr = 2.0*pi/Lx * cat(1, i1)
 
   ksq  = k.^2.0
   lsq  = l.^2.0
@@ -239,6 +239,9 @@ function Grid(nx::Int, Lx::Float64)
           K2, L2, KKsq, invKKsq,KL, KKrsq, invKKrsq,
           fftplan, ifftplan, rfftplan, irfftplan)
 end
+
+
+
 
 
 function dealias!(a::Array{Complex128, 2}, g::Grid)
