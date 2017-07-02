@@ -11,7 +11,7 @@ using Domain
 
 # test on rectangular grids
 nx = 8;
-ny = 8;
+ny = 12;
 Lx = 2.0;
 Ly = 3.4;
 g = Grid(nx, ny, Lx, Ly);
