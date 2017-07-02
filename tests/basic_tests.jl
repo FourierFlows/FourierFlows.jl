@@ -10,8 +10,8 @@ using Domain
 # g = Grid(nx, Lx);
 
 # test on rectangular grids
-nx = 32;
-ny = 64;
+nx = 8;
+ny = 8;
 Lx = 2.0;
 Ly = 3.4;
 g = Grid(nx, ny, Lx, Ly);
@@ -19,7 +19,7 @@ g = Grid(nx, ny, Lx, Ly);
 
 
 
-
+println(" ")
 ################################################################################
 # Test that the X & Y grids are actually created
 
@@ -73,6 +73,7 @@ else
   println("Kr grid seems OK.")
 end
 
+println(" ")
 ################################################################################
 # Test fft's are giving what you expect them to give
 
@@ -81,55 +82,98 @@ if nx/2>=4
   m = 2;
   n = 1;
 
-  f   = cos.(m*real(g.k[2])*g.X).*cos.(n*real(g.l[2])*g.Y);
-  fh  = fft(f);
-  fhr = rfft(f);
+  f1   = cos.(m*real(g.k[2])*g.X).*cos.(n*real(g.l[2])*g.Y);
+  f2   = sin.(m*real(g.k[2])*g.X + n*real(g.l[2])*g.Y);
+  f1h  = fft(f1);   f2h  = fft(f2);
+  f1hr = rfft(f1);  f2hr = rfft(f2);
 
-  fh_th  = zeros(size(fh));
+  f1h_th   = zeros(size(f1h));  f2h_th   = zeros(size(f2h));
+  f1hr_th  = zeros(size(f1hr)); f2hr_th  = zeros(size(f2hr));
+
   for i in g.krange, j in g.lrange
-    if ( abs(g.K[i,j])==m*real(g.k[2]) && abs(g.L[i,j])==n*real(g.l[2]) )
-      fh_th[i,j] = - g.nx*g.ny/4;
+    if ( abs(real(g.K[i,j])) == m*real(g.k[2]) && abs(real(g.L[i,j])) == n*real(g.l[2]) )
+      f1h_th[i,j] = - g.nx*g.ny/4;
+    end
+    if ( real(g.K[i,j]) == m*real(g.k[2]) && real(g.L[i,j]) == n*real(g.l[2]) )
+      f2h_th[i,j] = -g.nx*g.ny/2;
+    elseif ( real(g.K[i,j]) == -m*real(g.k[2]) && real(g.L[i,j]) == -n*real(g.l[2]) )
+      f2h_th[i,j] = g.nx*g.ny/2;
     end
   end
+  f2h_th = -im*f2h_th;
 
-  fhr_th  = zeros(size(fhr));
+
   for i in g.krrange, j in g.lrange
     if ( abs(g.Kr[i,j])==m*real(g.k[2]) && abs(g.L[i,j])==n*real(g.l[2]) )
-      fhr_th[i,j] = - g.nx*g.ny/4;
+      f1hr_th[i,j] = - g.nx*g.ny/4;
+    end
+    if ( real(g.Kr[i,j]) == m*real(g.k[2]) && real(g.L[i,j]) == n*real(g.l[2]) )
+      f2hr_th[i,j] = -g.nx*g.ny/2;
+    elseif ( real(g.Kr[i,j]) == -m*real(g.k[2]) && real(g.L[i,j]) == -n*real(g.l[2]) )
+      f2hr_th[i,j] = g.nx*g.ny/2;
     end
   end
+  f2hr_th = -im*f2hr_th;
 
-  if norm(fh-fh_th)>1e-12
-    info("  fft for sin(mx)sin(ny) is not correcty calculated!")
+  if norm(f1h-f1h_th)>1e-12
+    info("  fft for cos(mx)cos(ny) is not correcty calculated!")
   else
-    println("  fft for sin(mx)sin(ny) seems OK.")
+    println("  fft for cos(mx)cos(ny) seems OK.")
   end
 
-  if norm(fhr-fhr_th)>1e-12
-    info(" rfft for sin(mx)sin(ny) is not correcty calculated!")
+  if norm(f1hr-f1hr_th)>1e-12
+    info(" rfft for cos(mx)cos(ny) is not correcty calculated!")
   else
-    println(" rfft for sin(mx)sin(ny) seems OK.")
+    println(" rfft for cos(mx)cos(ny) seems OK.")
+  end
+
+  if norm(f2h-f2h_th)>1e-12
+    info("  fft for sin(mx+ny) is not correcty calculated!")
+  else
+    println("  fft for sin(mx+ny) seems OK.")
+  end
+
+  if norm(f2hr-f2hr_th)>1e-12
+    info(" rfft for sin(mx+ny) is not correcty calculated!")
+  else
+    println(" rfft for sin(mx+ny) seems OK.")
   end
 
 end
 
-
+println(" ")
 ################################################################################
 # Test ifft's taking you back where you started
 
-f2 = real(ifft(fh));
+f1b = real(ifft(f1h));
 
-if sqrt(mean((f-f2).^2)) > 1e-12
-  info(" ifft for sin(mx)sin(ny) is not correcty calculated!")
+if sqrt(mean((f1-f1b).^2)) > 1e-12
+  info(" ifft for cos(mx)cos(ny) is not correcty calculated!")
 else
-  println(" ifft for sin(mx)sin(ny) seems OK.")
+  println(" ifft for cos(mx)cos(ny) seems OK.")
 end
 
-f2 = irfft(fhr,nx);
+f1b = irfft(f1hr,nx);
 
-
-if sqrt(mean((f-f2).^2)) > 1e-12
-  info("irfft for sin(mx)sin(ny) is not correcty calculated!")
+if sqrt(mean((f1-f1b).^2)) > 1e-12
+  info("irfft for cos(mx)cos(ny) is not correcty calculated!")
 else
-  println("irfft for sin(mx)sin(ny) seems OK.")
+  println("irfft for cos(mx)cos(ny) seems OK.")
+end
+
+
+f2b = real(ifft(f2h));
+
+if sqrt(mean((f2-f2b).^2)) > 1e-12
+  info(" ifft for sin(mx+ny) is not correcty calculated!")
+else
+  println(" ifft for sin(mx+ny) seems OK.")
+end
+
+f2b = irfft(f2hr,nx);
+
+if sqrt(mean((f2-f2b).^2)) > 1e-12
+  info("irfft for sin(mx+ny) is not correcty calculated!")
+else
+  println("irfft for sin(mx+ny) seems OK.")
 end
