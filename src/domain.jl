@@ -89,7 +89,6 @@ end
 # Initializer for rectangular grids
 function Grid(nx::Int, ny::Int, Lx::Float64, Ly::Float64)
 
-  println("using rectangular")
   # Size attributes
   dx = Lx/nx
   dy = Ly/ny
@@ -243,8 +242,7 @@ function Grid(nx::Int, ny::Int, Lx::Float64, Ly::Float64)
 end
 
 
-
-function Grid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Ly)
+function Grid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx)
     g = Grid(nx, ny, Lx, Ly);
     return g
 end

@@ -5,16 +5,16 @@ using Domain
 
 
 # # test on square grids
-# nx = 8;
-# Lx = 2.0;
-# g = Grid(nx, Lx);
+nx = 8;
+Lx = 2.0;
+g = Grid(nx, Lx);
 
 # test on rectangular grids
-nx = 8;
-ny = 12;
-Lx = 2.0;
-Ly = 3.4;
-g = Grid(nx, ny, Lx, Ly);
+# nx = 8;
+# ny = 12;
+# Lx = 2.0;
+# Ly = 3.4;
+# g = Grid(nx, ny, Lx, Ly);
 
 
 
