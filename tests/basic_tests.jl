@@ -4,19 +4,21 @@ using Domain
 # using PyPlot
 
 
-nx = 8;
-Lx = 2.0;
+# test on square grids
+# nx = 8;
+# Lx = 2.0;
+# g = Grid(nx, Lx);
 
-
-nx = 8;
-ny = 20;
+# test on rectangular grids
+nx = 32;
+ny = 64;
 Lx = 2.0;
 Ly = 3.4;
-
-
-
-# g = Grid(nx, Lx);
 g = Grid(nx, ny, Lx, Ly);
+
+
+
+
 
 ################################################################################
 # Test that the X & Y grids are actually created
@@ -102,15 +104,36 @@ if nx/2>=4
   end
 
   if norm(fh-fh_th)>1e-12
-    info("fft  for sin(mx)sin(ny) is not correcty calculated!")
+    info("  fft for sin(mx)sin(ny) is not correcty calculated!")
   else
-    println("fft  for sin(mx)sin(ny) seems OK.")
+    println("  fft for sin(mx)sin(ny) seems OK.")
   end
 
   if norm(fhr-fhr_th)>1e-12
-    info("rfft for sin(mx)sin(ny) is not correcty calculated!")
+    info(" rfft for sin(mx)sin(ny) is not correcty calculated!")
   else
-    println("rfft for sin(mx)sin(ny) seems OK.")
+    println(" rfft for sin(mx)sin(ny) seems OK.")
   end
 
+end
+
+
+################################################################################
+# Test ifft's taking you back where you started
+
+f2 = real(ifft(fh));
+
+if sqrt(mean((f-f2).^2)) > 1e-12
+  info(" ifft for sin(mx)sin(ny) is not correcty calculated!")
+else
+  println(" ifft for sin(mx)sin(ny) seems OK.")
+end
+
+f2 = irfft(fhr,nx);
+
+
+if sqrt(mean((f-f2).^2)) > 1e-12
+  info("irfft for sin(mx)sin(ny) is not correcty calculated!")
+else
+  println("irfft for sin(mx)sin(ny) seems OK.")
 end

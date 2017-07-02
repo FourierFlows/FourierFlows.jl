@@ -1,4 +1,5 @@
 __precompile__()
+println("domain.jl uses precompile")
 
 module Domain
 
@@ -402,8 +403,6 @@ function Grid(nx::Int, ny::Int, Lx::Float64, Ly::Float64)
           K2, L2, KKsq, invKKsq,KL, KKrsq, invKKrsq,
           fftplan, ifftplan, rfftplan, irfftplan)
 end
-
-
 
 
 
