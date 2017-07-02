@@ -53,8 +53,8 @@ struct Grid
 
   K::Array{Complex128, 2}
   L::Array{Complex128, 2}
-  Lr::Array{Complex128, 2}
   Kr::Array{Complex128, 2}
+  Lr::Array{Complex128, 2}
 
   # Convenience arrays
   K2::Array{Complex128, 2}
