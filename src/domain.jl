@@ -114,8 +114,8 @@ function Grid(nx::Int, Lx::Float64)
   x = Array{Float64}(nx)
   y = Array{Float64}(ny)
 
-  X = Array{Float64}(nx, ny)
-  Y = Array{Float64}(nx, ny)
+  X = Array{Float64,2}(nx, ny)
+  Y = Array{Float64,2}(nx, ny)
 
   # Wavenumber grid
   k  = Array{Complex128}(nk)
