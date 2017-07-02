@@ -221,15 +221,14 @@ function Grid(nx::Int, Lx::Float64)
 
   end
 
-  # FFT plans. a, ar, and ahr are dummy arrays
-  a, ar, ahr = deepcopy(K), deepcopy(X), deepcopy(Kr)
+  # FFT plans; use grid vars.
   effort = FFTW.MEASURE
 
-  fftplan   =   plan_fft(a; flags=effort)
-  ifftplan  =  plan_ifft(a; flags=effort)
+  fftplan   =   plan_fft(K; flags=effort)
+  ifftplan  =  plan_ifft(K; flags=effort)
 
-  rfftplan  =  plan_rfft(ar; flags=effort)
-  irfftplan = plan_irfft(ahr, nx; flags=effort)
+  rfftplan  =  plan_rfft(X; flags=effort)
+  irfftplan = plan_irfft(Kr, nx; flags=effort)
 
 
   return Grid(nx, ny, Lx, Ly, nk, nl, nkr, krange, lrange, krrange,
