@@ -1,12 +1,23 @@
-include("../src/domain.jl")
+# include("../src/domain.jl")
+
+# include("../src/framework.jl")
+include("../src/framework.jl")
 
 using Domain
+using Framework
 # using PyPlot
 
 
 # # test on square grids
 nx = 32;
-Lx = 2.0;
+
+Lx    = 2.0*pi              # Domain width
+f0    = 1.0                 # Inertial frequency
+Ro    = 1.0                 # Rossby number
+nuq   = 1e-4                # Vorticity hyperviscosity
+nuqn  = 2                   # Vorticity hyperviscosity order
+
+
 g = Grid(nx, Lx);
 
 # test on rectangular grids
@@ -16,7 +27,7 @@ g = Grid(nx, Lx);
 # Ly = 3.4;
 # g = Grid(nx, ny, Lx, Ly);
 
-
+p = Params(f0, nuq, nuqn, g);
 
 
 println(" ")
@@ -189,7 +200,7 @@ else
   println("irfft for sin(mx+ny) seems OK.")
 end
 
-# f2b = Array{Float64}(g.nx, g.ny)
+f2b = Array{Float64}(g.nx, g.ny)
 A_mul_B!( f2b, g.irfftplan, f2hr )
 
 if sqrt(mean((f2-f2b).^2)) > 1e-12
