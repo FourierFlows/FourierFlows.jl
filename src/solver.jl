@@ -132,16 +132,33 @@ function calc_nl!(
 
 end
 
-function calc_nl1!(
-  NLqh::Array{Complex128, 2},
-  # NLah::Array{Complex128, 2},
-  qh::Array{Complex128, 2},
-  # Ah::Array{Complex128, 2},
-  t::Float64, v::Vars, p::Params, g::Grid)
+function calc_nl_2DQG(NLqh::Array{Complex{Float64},2},
+  v::Vars, p::Params, g::Grid)
 
-  NLqh = ones(NLqh)
-  # NLah = ones(NLah)
+  # ON NAVID'S LAPTOP A_mul_B! messes up!!
 
+  # A_mul_B!( v.q, g.irfftplan, v.qh )
+  v.q = irfft(v.qh, g.nx)
+
+  v.Uh = +im*real.(g.Lr).*v.qh.*real.(g.invKKrsq)
+  v.Vh = -im*real.(g.Kr).*v.qh.*real.(g.invKKrsq)
+
+  # A_mul_B!( v.U, g.irfftplan, v.Uh )
+  # A_mul_B!( v.V, g.irfftplan, v.Vh )
+  v.U = irfft(v.Uh, g.nx)
+  v.V = irfft(v.Vh, g.nx)
+
+  v.Uq = v.U .* v.q
+  v.Vq = v.V .* v.q
+
+  # A_mul_B!( v.Uqh, g.rfftplan, v.Uq )
+  # A_mul_B!( v.Vqh, g.rfftplan, v.Vq )
+  v.Uqh = rfft(v.Uq)
+  v.Vqh = rfft(v.Vq)
+
+  NLqh = -im.*g.Kr.*v.Uqh -im.*g.Lr.*v.Vqh
+
+  return NLqh
 end
 
 
@@ -150,35 +167,8 @@ function stepforward!(nsteps::Int,
   v::Vars, p::Params, g::Grid)
 
   for step = 1:nsteps
-
-    # ON NAVID'S LAPTOP A_mul_B! messes up!!
-
-    # q = Array{Float64}(g.nx, g.ny)
-    # A_mul_B!( v.q, g.irfftplan, v.qh )
-    v.q = irfft(v.qh, g.nx);
-
-    v.Uh = +im*real.(g.Lr).*v.qh.*real.(g.invKKrsq);
-    v.Vh = -im*real.(g.Kr).*v.qh.*real.(g.invKKrsq);
-
-    # A_mul_B!( v.U, g.irfftplan, v.Uh )
-    # A_mul_B!( v.V, g.irfftplan, v.Vh )
-    v.U = irfft(v.Uh, g.nx);
-    v.V = irfft(v.Vh, g.nx);
-
-
-    v.Uq = v.U .* v.q;
-    v.Vq = v.V .* v.q;
-
-    # A_mul_B!( v.Uqh, g.rfftplan, v.Uq )
-    # A_mul_B!( v.Vqh, g.rfftplan, v.Vq )
-    v.Uqh = rfft(v.Uq);
-    v.Vqh = rfft(v.Vq);
-
-
-    qts.NL = -im.*g.Kr.*v.Uqh -im.*g.Lr.*v.Vqh;
-
+    qts.NL = calc_nl_2DQG(qts.NL, v, p, g)
     v.qh = v.qh + qts.dt * (qts.NL + qts.LC.*v.qh);
-
 
   end
 end

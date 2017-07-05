@@ -36,9 +36,9 @@ println(Lz[4,5])
 # pcolor(g.X,g.Y,v.q)
 # colorbar();
 # axis(:equal);xlim(-pi,pi);ylim(-pi,pi);
-for n in 1:1000
+for n in 1:100
   # println("step ",n)
-  nsteps = 500;
+  nsteps = 2500;
   @time Solver.stepforward!(nsteps, qts, v, p, g)
   Solver.updatevars!(v,p,g);
   figure(1);clf()
