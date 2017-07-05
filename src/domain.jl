@@ -81,7 +81,6 @@ struct Grid
 
   irfftplan::Base.DFT.ScaledPlan{Complex{Float64},
     Base.DFT.FFTW.rFFTWPlan{Complex{Float64},1,false,2},Float64}
-
 end
 
 

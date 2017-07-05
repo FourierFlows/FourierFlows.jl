@@ -1,6 +1,6 @@
 include("../src/solver.jl")
 
-# using PyPlot
+using PyPlot
 using Solver
 
 f0   = 1e-4     # Inertial frequency
@@ -36,17 +36,17 @@ println(Lz[4,5])
 # pcolor(g.X,g.Y,v.q)
 # colorbar();
 # axis(:equal);xlim(-pi,pi);ylim(-pi,pi);
-for n in 1
-  println("step ",n)
-  nsteps = 100;
-  Solver.stepforward!(nsteps, qts, v, p, g)
+for n in 1:1000
+  # println("step ",n)
+  nsteps = 500;
+  @time Solver.stepforward!(nsteps, qts, v, p, g)
   Solver.updatevars!(v,p,g);
-  # figure(1);clf()
-  # pcolor(g.X,g.Y,v.q)
-  # axis(:equal);xlim(-pi,pi);ylim(-pi,pi);
-  # colorbar()
+  figure(1);clf()
+  pcolor(g.X,g.Y,v.q)
+  axis(:equal);xlim(-pi,pi);ylim(-pi,pi);
+  colorbar()
 end
 
-println(qts.NL[6,10])
-
-println(v.q[10,14])
+# println(qts.NL[6,10])
+#
+# println(v.q[10,14])

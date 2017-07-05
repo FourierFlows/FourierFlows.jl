@@ -151,33 +151,35 @@ function stepforward!(nsteps::Int,
 
   for step = 1:nsteps
 
-    qh = v.qh;
+    # ON NAVID'S LAPTOP A_mul_B! messes up!!
+
+    # q = Array{Float64}(g.nx, g.ny)
     # A_mul_B!( v.q, g.irfftplan, v.qh )
     v.q = irfft(v.qh, g.nx);
+
     v.Uh = +im*real.(g.Lr).*v.qh.*real.(g.invKKrsq);
     v.Vh = -im*real.(g.Kr).*v.qh.*real.(g.invKKrsq);
 
     # A_mul_B!( v.U, g.irfftplan, v.Uh )
     # A_mul_B!( v.V, g.irfftplan, v.Vh )
-
-
     v.U = irfft(v.Uh, g.nx);
     v.V = irfft(v.Vh, g.nx);
-    # v.U = irfft(-im*g.Lr.*qh.*g.invKKrsq, g.nx);
-    # v.V = irfft(+im*g.Kr.*qh.*g.invKKrsq, g.nx);
+
 
     v.Uq = v.U .* v.q;
     v.Vq = v.V .* v.q;
 
+    # A_mul_B!( v.Uqh, g.rfftplan, v.Uq )
+    # A_mul_B!( v.Vqh, g.rfftplan, v.Vq )
     v.Uqh = rfft(v.Uq);
     v.Vqh = rfft(v.Vq);
 
-    # A_mul_B!( v.Uqh, g.rfftplan, v.Uq )
-    # A_mul_B!( v.Vqh, g.rfftplan, v.Vq )
 
     qts.NL = -im.*g.Kr.*v.Uqh -im.*g.Lr.*v.Vqh;
 
-    v.qh += qts.dt * (qts.NL + qts.LC.*v.qh);
+    v.qh = v.qh + qts.dt * (qts.NL + qts.LC.*v.qh);
+
+
   end
 end
 

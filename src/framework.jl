@@ -86,7 +86,7 @@ function Vars(p::Params, g::Grid)
   qh = ampl*rfft( 200.0*exp.(-((g.X-1).^2-0.4*g.X.*g.Y)./.3^2-(g.Y-1).^2./.5^2)  - 100.0* exp.(-((g.X+1).^2-0.4*g.X.*g.Y)./.3^2-(g.Y+1).^2./.5^2) );
 
 
-  qh = rfft(sin.(3*g.X+4*g.Y) + sin.(2*g.X+5*g.Y));
+  # qh = rfft(sin.(3*g.X+4*g.Y) + sin.(2*g.X+5*g.Y));
   # qh = rfft(sin(3*g.X+4*g.Y))
   qh[1,1]=0;
 
