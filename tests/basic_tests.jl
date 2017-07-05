@@ -9,7 +9,7 @@ using Framework
 
 
 # # test on square grids
-nx = 32;
+nx = 8;
 
 Lx    = 2.0*pi              # Domain width
 f0    = 1.0                 # Inertial frequency
@@ -90,8 +90,8 @@ println(" ")
 
 if nx/2>=4
 
-  m = 2;
-  n = 1;
+  m = 1;
+  n = 2;
 
   f1   = cos.(m*real(g.k[2])*g.X).*cos.(n*real(g.l[2])*g.Y);
   f2   = sin.(m*real(g.k[2])*g.X + n*real(g.l[2])*g.Y);
@@ -131,31 +131,31 @@ if nx/2>=4
   end
   f2hr_th = -im*f2hr_th;
 
-  if norm(f1h-f1h_th)>1e-12
+  if norm(f1h-f1h_th)/norm(f1h_th)>1e-12
     info("  fft for cos(mx)cos(ny) is not correcty calculated!")
   else
     println("  fft for cos(mx)cos(ny) seems OK.")
   end
 
-  if norm(f1hr-f1hr_th)>1e-12
+  if norm(f1hr-f1hr_th)/norm(f1hr_th)>1e-12
     info(" rfft for cos(mx)cos(ny) is not correcty calculated!")
   else
     println(" rfft for cos(mx)cos(ny) seems OK.")
   end
 
-  if norm(f2h-f2h_th)>1e-12
+  if norm(f2h-f2h_th)/norm(f2h_th)>1e-12
     info("  fft for sin(mx+ny) is not correcty calculated!")
   else
     println("  fft for sin(mx+ny) seems OK.")
   end
 
-  if norm(f2hr-f2hr_th)>1e-12
+  if norm(f2hr-f2hr_th)/norm(f2hr_th)>1e-12
     info(" rfft for sin(mx+ny) is not correcty calculated!")
   else
     println(" rfft for sin(mx+ny) seems OK.")
   end
 
-  if norm(f2hr_mul-f2hr_th)>1e-12
+  if norm(f2hr_mul-f2hr_th)/norm(f2hr_th)>1e-12
     info(" rfft with A_mul_B for sin(mx+ny) is not correcty calculated!")
   else
     println(" rfft with A_mul_B for sin(mx+ny) seems OK.")
@@ -169,42 +169,48 @@ println(" ")
 
 f1b = real(ifft(f1h));
 
-if sqrt(mean((f1-f1b).^2)) > 1e-12
+if norm(f1-f1b)/norm(f1) > 1e-12
   info(" ifft for cos(mx)cos(ny) is not correcty calculated!")
 else
   println(" ifft for cos(mx)cos(ny) seems OK.")
 end
 
-f1b = irfft(f1hr,nx);
+f1b = irfft(f1hr, nx);
 
-if sqrt(mean((f1-f1b).^2)) > 1e-12
+if norm(f1-f1b)/norm(f1) > 1e-12
   info("irfft for cos(mx)cos(ny) is not correcty calculated!")
 else
   println("irfft for cos(mx)cos(ny) seems OK.")
 end
 
+a = deepcopy(f2hr);
 
-f2b = real(ifft(f2h));
-
-if sqrt(mean((f2-f2b).^2)) > 1e-12
-  info(" ifft for sin(mx+ny) is not correcty calculated!")
+f2b = Array{Float64}(g.nx, g.ny)
+A_mul_B!( f2b, g.irfftplan, f2hr )
+if norm(f2-f2b)/norm(f2) > 1e-12
+  info("irfft with A_mul_B for sin(mx+ny) is not correcty calculated!")
 else
-  println(" ifft for sin(mx+ny) seems OK.")
+  println("irfft with A_mul_B for sin(mx+ny) seems OK.")
 end
 
-f2b = irfft(f2hr,nx);
+b = deepcopy(f2hr);
 
-if sqrt(mean((f2-f2b).^2)) > 1e-12
+f2b3 = irfft(f2hr, g.nx);
+if norm(f2-f2b3)/norm(f2) > 1e-12
   info("irfft for sin(mx+ny) is not correcty calculated!")
 else
   println("irfft for sin(mx+ny) seems OK.")
 end
 
-f2b = Array{Float64}(g.nx, g.ny)
-A_mul_B!( f2b, g.irfftplan, f2hr )
+c = deepcopy(f2hr);
 
-if sqrt(mean((f2-f2b).^2)) > 1e-12
-  info("irfft with A_mul_B for sin(mx+ny) is not correcty calculated!")
+println("why is a different from b?   norm(a-b)=", norm(a-b))
+
+
+f2b4 = real(ifft(f2h));
+
+if norm(f2-f2b4)/norm(f2) > 1e-12
+  info(" ifft for sin(mx+ny) is not correcty calculated!")
 else
-  println("irfft with A_mul_B for sin(mx+ny) seems OK.")
+  println(" ifft for sin(mx+ny) seems OK.")
 end
