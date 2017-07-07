@@ -1,3 +1,6 @@
+__precompile__()
+println("domain.jl uses precompile")
+
 module Domain
 
 export Grid
@@ -53,8 +56,8 @@ struct Grid
 
   K::Array{Complex128, 2}
   L::Array{Complex128, 2}
-  Lr::Array{Complex128, 2}
   Kr::Array{Complex128, 2}
+  Lr::Array{Complex128, 2}
 
   # Convenience arrays
   K2::Array{Complex128, 2}
@@ -78,15 +81,14 @@ struct Grid
 
   irfftplan::Base.DFT.ScaledPlan{Complex{Float64},
     Base.DFT.FFTW.rFFTWPlan{Complex{Float64},1,false,2},Float64}
-
 end
 
-# Initializer for square grids
-function Grid(nx::Int, Lx::Float64)
+
+
+# Initializer for rectangular grids
+function Grid(nx::Int, ny::Int, Lx::Float64, Ly::Float64)
 
   # Size attributes
-  ny = nx
-  Ly = Lx
   dx = Lx/nx
   dy = Ly/ny
 
@@ -100,7 +102,7 @@ function Grid(nx::Int, Lx::Float64)
 
   krange  = cat(1, 1:kcL, kcR:nk)
   lrange  = cat(1, 1:lcL, lcR:nl)
-  krrange = 1:kcL
+  krrange = cat(1, 1:kcL)
 
   kderange  = (kcL+1):(kcR-1)
   lderange  = (lcL+1):(lcR-1)
@@ -158,7 +160,7 @@ function Grid(nx::Int, Lx::Float64)
 
   k  = 2.0*pi/Lx * cat(1, i1, i2)
   l  = 2.0*pi/Ly * cat(1, j1, j2)
-  kr = 2.0*pi/Lx * i1
+  kr = 2.0*pi/Lx * cat(1, i1)
 
   ksq  = k.^2.0
   lsq  = l.^2.0
@@ -224,11 +226,11 @@ function Grid(nx::Int, Lx::Float64)
   # FFT plans; use grid vars.
   effort = FFTW.MEASURE
 
-  fftplan   =   plan_fft(K; flags=effort)
-  ifftplan  =  plan_ifft(K; flags=effort)
+  fftplan   =   plan_fft(Array{Float64,2}(nx, ny); flags=effort)
+  ifftplan  =  plan_ifft(Array{Complex128,2}(nk, nl); flags=effort)
 
-  rfftplan  =  plan_rfft(X; flags=effort)
-  irfftplan = plan_irfft(Kr, nx; flags=effort)
+  rfftplan  =  plan_rfft(Array{Float64,2}(nx, ny); flags=effort)
+  irfftplan = plan_irfft(Array{Complex128,2}(nkr, nl), nx; flags=effort)
 
 
   return Grid(nx, ny, Lx, Ly, nk, nl, nkr, krange, lrange, krrange,
@@ -236,6 +238,12 @@ function Grid(nx::Int, Lx::Float64)
           k, l, kr, ksq, lsq, krsq, ik, il, ikr, X, Y, K, L, Kr, Lr,
           K2, L2, KKsq, invKKsq,KL, KKrsq, invKKrsq,
           fftplan, ifftplan, rfftplan, irfftplan)
+end
+
+
+function Grid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx)
+    g = Grid(nx, ny, Lx, Ly);
+    return g
 end
 
 
