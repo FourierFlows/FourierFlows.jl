@@ -20,7 +20,7 @@ immutable Params
   nuqn::Int                             # Vorticity hyperviscous order
 
   # Linear left hand sides of the qh and ah equation
-  LCq::Array{Complex128, 2}
+  LC::Array{Complex128, 2}
 
 end
 
@@ -28,7 +28,7 @@ function Params(f0::Float64, nuq::Float64, nuqn::Int, g::Grid)
 
   # Linear coefficients:
   # Dissipation of mean vorticity
-  LCq = -nuq * g.KKrsq.^(0.5*nuqn)
+  LC = -nuq * g.KKrsq.^(0.5*nuqn)
 
   Params(f0, nuq, nuqn, LCq)
 end
@@ -46,7 +46,7 @@ type Vars
   # Solution
   qh::Array{Complex128, 2}
 
-  # Vorticity auxiliary vars
+  # Auxiliary vars
   q::Array{Float64, 2}
   U::Array{Float64, 2}
   V::Array{Float64, 2}

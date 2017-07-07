@@ -1,7 +1,4 @@
-# include("../src/domain.jl")
-
-# include("../src/framework.jl")
-include("../src/framework.jl")
+include("../src/domain.jl")
 
 using Domain
 using Framework
