@@ -1,30 +1,18 @@
 include("../src/domain.jl")
 
 using Domain
-using Framework
 # using PyPlot
 
 
 # # test on square grids
-nx = 8;
-
-Lx    = 2.0*pi              # Domain width
-f0    = 1.0                 # Inertial frequency
-Ro    = 1.0                 # Rossby number
-nuq   = 1e-4                # Vorticity hyperviscosity
-nuqn  = 2                   # Vorticity hyperviscosity order
-
-
-g = Grid(nx, Lx);
+nx = 8                  # number of points
+Lx = 2.0*pi             # Domain width
+g = Grid(nx, Lx)
 
 # test on rectangular grids
-# nx = 8;
-# ny = 12;
-# Lx = 2.0;
-# Ly = 3.4;
+# nx, ny = 8, 12                  # number of points
+# Lx, Ly = 2.0, 3.4             # Domain widths
 # g = Grid(nx, ny, Lx, Ly);
-
-p = Params(f0, nuq, nuqn, g);
 
 
 println(" ")
