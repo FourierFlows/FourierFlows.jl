@@ -5,7 +5,7 @@ module Solver
 using Domain, Framework, TimeSteppers
 
 export Grid, Vars, Params, ETDRK4TimeStepper, ForwardEulerTimeStepper
-export updatevars!, stepforward!
+export updatevars!, calc_nl_2DQG!, stepforward!
 
 
 
@@ -132,33 +132,35 @@ function calc_nl!(
 
 end
 
-function calc_nl_2DQG(NLqh::Array{Complex{Float64},2},
-  v::Vars, p::Params, g::Grid)
+
+
+function calc_nl_2DQG!(
+  NLqh::Array{Complex{Float64},2},
+  qh::Array{Complex128, 2},
+  t::Float64, v::Vars, p::Params, g::Grid)
 
   # ON NAVID'S LAPTOP A_mul_B! messes up!!
 
   # A_mul_B!( v.q, g.irfftplan, v.qh )
-  v.q = irfft(v.qh, g.nx)
+  v.q = irfft(qh, g.nx)
 
-  v.Uh = +im*real.(g.Lr).*v.qh.*real.(g.invKKrsq)
-  v.Vh = -im*real.(g.Kr).*v.qh.*real.(g.invKKrsq)
+  v.Uh = +im*real.(g.Lr).*qh.*real.(g.invKKrsq)
+  v.Vh = -im*real.(g.Kr).*qh.*real.(g.invKKrsq)
 
   # A_mul_B!( v.U, g.irfftplan, v.Uh )
   # A_mul_B!( v.V, g.irfftplan, v.Vh )
   v.U = irfft(v.Uh, g.nx)
   v.V = irfft(v.Vh, g.nx)
 
-  v.Uq = v.U .* v.q
-  v.Vq = v.V .* v.q
+  # v.Uq = v.U .* v.q
+  # v.Vq = v.V .* v.q
 
   # A_mul_B!( v.Uqh, g.rfftplan, v.Uq )
   # A_mul_B!( v.Vqh, g.rfftplan, v.Vq )
-  v.Uqh = rfft(v.Uq)
-  v.Vqh = rfft(v.Vq)
+  v.Uqh = rfft(v.U .* v.q)
+  v.Vqh = rfft(v.V .* v.q)
 
   NLqh = -im.*g.Kr.*v.Uqh -im.*g.Lr.*v.Vqh
-
-  return NLqh
 end
 
 
@@ -167,9 +169,12 @@ function stepforward!(nsteps::Int,
   v::Vars, p::Params, g::Grid)
 
   for step = 1:nsteps
-    qts.NL = calc_nl_2DQG(qts.NL, v, p, g)
-    v.qh = v.qh + qts.dt * (qts.NL + qts.LC.*v.qh);
+    println(v.qh[10,20])
+    calc_nl_2DQG!(qts.NL, v.qh, v.t, v, p, g)
+    println("why is qts.NL not updated?")
+    println(qts.NL[10,20])
 
+    v.qh = v.qh + qts.dt * (qts.NL + qts.LC.*v.qh)
   end
 end
 

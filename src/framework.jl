@@ -1,3 +1,6 @@
+__precompile__()
+println("framework.jl uses precompile")
+
 include("domain.jl")
 
 module Framework
@@ -15,7 +18,6 @@ immutable Params
   f0::Float64                           # Inertial period
   nuq::Float64                          # Vorticity viscosity
   nuqn::Int                             # Vorticity hyperviscous order
-
 
   # Linear left hand sides of the qh and ah equation
   LCq::Array{Complex128, 2}

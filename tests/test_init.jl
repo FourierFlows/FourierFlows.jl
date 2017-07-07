@@ -1,6 +1,6 @@
 include("../src/solver.jl")
 
-using PyPlot
+# using PyPlot
 using Solver
 
 f0   = 1e-4     # Inertial frequency
@@ -15,7 +15,7 @@ dt = 1e-4;
 
 
 FFTW.set_num_threads(Sys.CPU_CORES)
-FFTW.set_num_threads(1)
+FFTW.set_num_threads(4)
 
 println("Initialize grid, vars, params, time stepper:")
 @time g = Grid(nx, Lx);
@@ -23,7 +23,6 @@ println("Initialize grid, vars, params, time stepper:")
 @time v = Vars(p, g);
 # @time qts = ETDRK4TimeStepper(dt, p.LCq);
 @time qts = ForwardEulerTimeStepper(dt, p.LCq);
-
 
 
 Solver.updatevars!(v,p,g);
@@ -36,15 +35,16 @@ println(Lz[4,5])
 # pcolor(g.X,g.Y,v.q)
 # colorbar();
 # axis(:equal);xlim(-pi,pi);ylim(-pi,pi);
-for n in 1:100
-  # println("step ",n)
-  nsteps = 2500;
+for n in 1
+  println("step ",n)
+  nsteps = 5;
   @time Solver.stepforward!(nsteps, qts, v, p, g)
+  println(qts.NL[10,30])
   Solver.updatevars!(v,p,g);
-  figure(1);clf()
-  pcolor(g.X,g.Y,v.q)
-  axis(:equal);xlim(-pi,pi);ylim(-pi,pi);
-  colorbar()
+  # figure(1);clf()
+  # pcolor(g.X,g.Y,v.q)
+  # axis(:equal);xlim(-pi,pi);ylim(-pi,pi);
+  # colorbar()
 end
 
 # println(qts.NL[6,10])
