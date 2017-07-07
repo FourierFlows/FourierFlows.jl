@@ -1,4 +1,4 @@
-include("framework.jl")
+include("physics/2DQGturb.jl")
 include("timesteppers.jl")
 
 module Solver
@@ -6,9 +6,6 @@ using Domain, Framework, TimeSteppers
 
 export Grid, Vars, Params, ETDRK4TimeStepper, ForwardEulerTimeStepper
 export updatevars!, calc_nl_2DQG!, stepforward!
-
-
-
 
 
 
