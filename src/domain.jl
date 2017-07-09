@@ -7,7 +7,7 @@ export Grid
 export dealias!
 
 # -----------------------------------------------------------------------------
-# Grid ------------------------------------------------------------------------
+# Grid type and constructors --------------------------------------------------
 # -----------------------------------------------------------------------------
 struct Grid
   nx::Int
@@ -84,9 +84,12 @@ struct Grid
 end
 
 
-
 # Initializer for rectangular grids
-function Grid(nx::Int, ny::Int, Lx::Float64, Ly::Float64)
+function Grid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64})
+
+  # Un-tuple arguments
+  nx, ny = nxy
+  Lx, Ly = Lxy
 
   # Size attributes
   dx = Lx/nx
@@ -226,10 +229,10 @@ function Grid(nx::Int, ny::Int, Lx::Float64, Ly::Float64)
   # FFT plans; use grid vars.
   effort = FFTW.MEASURE
 
-  fftplan   =   plan_fft(Array{Float64,2}(nx, ny); flags=effort)
-  ifftplan  =  plan_ifft(Array{Complex128,2}(nk, nl); flags=effort)
+  fftplan   = plan_fft(  Array{Float64,2}(nx, ny);         flags=effort)
+  ifftplan  = plan_ifft( Array{Complex128,2}(nk, nl);      flags=effort)
 
-  rfftplan  =  plan_rfft(Array{Float64,2}(nx, ny); flags=effort)
+  rfftplan  = plan_rfft( Array{Float64,2}(nx, ny);         flags=effort)
   irfftplan = plan_irfft(Array{Complex128,2}(nkr, nl), nx; flags=effort)
 
 
@@ -240,33 +243,57 @@ function Grid(nx::Int, ny::Int, Lx::Float64, Ly::Float64)
           fftplan, ifftplan, rfftplan, irfftplan)
 end
 
-
+# Grid constructor with optional arguments to specify anisotropy
 function Grid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx)
-    g = Grid(nx, ny, Lx, Ly);
-    return g
+    Grid((nx, ny), (Lx, Ly))
+end
+
+# Grid constructor for backwards compatability/convenience; may depcreciate
+function Grid(nx::Int, ny::Int, Lx::Float64, Ly::Float64)
+    Grid((nx, ny), (Lx, Ly))
 end
 
 
+# ----------------------------------------------------------------------------- 
+# Global grid-related functions for all FourierFlows -------------------------- 
+# ----------------------------------------------------------------------------- 
+
+
+# Fast loop-based dealiasing method for complex, spectral-space vars
 function dealias!(a::Array{Complex128, 2}, g::Grid)
-
-  if size(a)[1] == g.nk       # Complex
-
+  if size(a)[1] == g.nk       # Transform of a complex var
     for j in g.lderange
-      for i in g.kderange
+      @simd for i in g.kderange
         @inbounds a[i, j] = 0.0 + 0.0*im
       end
     end
-
-  else                        # Real
-
+  else                        # Transform of a real var
     for j in g.lderange
-      for i in g.krderange
+      @simd for i in g.krderange
         @inbounds a[i, j] = 0.0 + 0.0*im
       end
     end
-
   end
 end
+
+# Dealiasing method for 3-arrays with broadcasting for third dimension.
+function dealias!(a::Array{Complex128, 3}, g::Grid)
+  if size(a)[1] == g.nk       # Transform of a complex var
+    for j in g.lderange
+      @simd for i in g.kderange
+        @inbounds a[i, j, :] .= 0.0 + 0.0*im
+      end
+    end
+  else                        # Transform of a real var
+    for j in g.lderange
+      @simd for i in g.krderange
+        @inbounds a[i, j, :] .= 0.0 + 0.0*im
+      end
+    end
+  end
+end
+
+
 
 
 end
