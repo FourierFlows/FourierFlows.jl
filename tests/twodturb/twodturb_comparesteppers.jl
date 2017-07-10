@@ -21,30 +21,30 @@ nsteps = 20000
 q0 = rand(nx, nx)
 
 
-
 # Prepare problems for four time-steppers, and run.
-g = Grid(nx, Lx)
-p = Params(nu, nun, g)
+g  = Grid(nx, Lx)
+p  = Params(nu, nun)
+eq = Equation(p, g)
 
-vFE     = Vars(p, g)
-vAB3    = Vars(p, g)
-vRK4    = Vars(p, g)
-vETDRK4 = Vars(p, g)
+vFE     = Vars(g)
+vAB3    = Vars(g)
+vRK4    = Vars(g)
+vETDRK4 = Vars(g)
 
-tsFE     = ForwardEulerTimeStepper(dt, p.LC)
-tsAB3    = AB3TimeStepper(dt, p.LC)
-tsRK4    = RK4TimeStepper(dt, p.LC)
-tsETDRK4 = ETDRK4TimeStepper(dt, p.LC)
+tsFE     = ForwardEulerTimeStepper(dt, eq.LC)
+tsAB3    = AB3TimeStepper(dt, eq.LC)
+tsRK4    = RK4TimeStepper(dt, eq.LC)
+tsETDRK4 = ETDRK4TimeStepper(dt, eq.LC)
 
 set_q!(vFE,     g, q0)
 set_q!(vAB3,    g, q0)
 set_q!(vRK4,    g, q0)
 set_q!(vETDRK4, g, q0)
 
-stepforward!(nsteps, tsFE, vFE, p, g)
-stepforward!(nsteps, tsAB3, vAB3, p, g)
-stepforward!(nsteps, tsRK4, vRK4, p, g)
-stepforward!(nsteps, tsETDRK4, vETDRK4, p, g)
+stepforward!(vFE,     nsteps, tsFE,     eq, p, g)
+stepforward!(vAB3,    nsteps, tsAB3,    eq, p, g)
+stepforward!(vRK4,    nsteps, tsRK4,    eq, p, g)
+stepforward!(vETDRK4, nsteps, tsETDRK4, eq, p, g)
 
 updatevars!(vFE,     g)
 updatevars!(vAB3,    g)
