@@ -1,17 +1,22 @@
-include("../src/physics/2DQGturb.jl")
+include("../src/physics/twodturb.jl")
 
 # using PyPlot
-using Solver
+using TwoDTurb
 
-f0   = 1e-4     # Inertial frequency
-nuq  = 1e-6    # Vorticity hyperviscosity
-nuqn = 4        # Vorticity hyperviscosity order
+nu  = 1e-6    # Vorticity hyperviscosity
+nun = 4       # Vorticity hyperviscosity order
+Lx  = 2.0*pi
+nx  = 128
+dt  = 1e-4;
 
-Lx = 2.0*pi
-nx = 128
-dt = 1e-4;
 
-FFTW.set_num_threads(Sys.CPU_CORES)
+# Initial condition with two ellipsoid vortices for comparison.
+ampl = 1.131562576275490e-04
+qh = ampl*rfft( 200.0*exp.(-((g.X-1).^2-0.4*g.X.*g.Y)./.3^2-(g.Y-1).^2./.5^2) 
+  - 100.0* exp.(-((g.X+1).^2-0.4*g.X.*g.Y)./.3^2-(g.Y+1).^2./.5^2) )
+
+qh[1, 1] = 0
+
 
 
 println("Initialize grid, vars, params, time stepper:")
