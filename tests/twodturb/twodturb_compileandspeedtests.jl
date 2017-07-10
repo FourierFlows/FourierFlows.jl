@@ -1,4 +1,4 @@
-include("../src/physics/twodturb.jl")
+include("../../src/physics/twodturb.jl")
 
 # twodturb_compileandspeedtests.jl
 #
@@ -51,7 +51,7 @@ println()
 
 
 
-# Evaluate var updating ------------------------------------------------------- 
+# Evaluate var updating -------------------------------------------------------
 
 function manyupdates!(nloops::Int)
   for i = 1:nloops; updatevars!(v, p, g); end
@@ -81,7 +81,7 @@ println()
 
 
 
-# Evaluate stepping forward --------------------------------------------------- 
+# Evaluate stepping forward ---------------------------------------------------
 
 stepforward!(3, tsFE, v, p, g)
 stepforward!(3, tsAB3, v, p, g)

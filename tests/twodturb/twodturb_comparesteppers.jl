@@ -1,4 +1,4 @@
-include("../src/physics/twodturb.jl")
+include("../../src/physics/twodturb.jl")
 
 # twodturb_compileandspeedtests.jl
 #
