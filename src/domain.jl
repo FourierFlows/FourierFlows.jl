@@ -142,7 +142,6 @@ function Grid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64};
   KKsq    = Array{Complex{Float64}}(nk, nl)
   invKKsq = Array{Complex{Float64}}(nk, nl)
   KL      = Array{Complex{Float64}}(nk, nl)
-  E       = Array{Complex{Float64}}(nk, nl)
 
   KKrsq    = Array{Complex{Float64}}(nkr, nl)
   invKKrsq = Array{Complex{Float64}}(nkr, nl)
