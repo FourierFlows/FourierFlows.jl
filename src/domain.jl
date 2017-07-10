@@ -1,5 +1,4 @@
 __precompile__()
-println("domain.jl uses precompile")
 
 module Domain
 
@@ -39,53 +38,54 @@ struct Grid
   x::Array{Float64, 1}
   y::Array{Float64, 1}
 
-  k::Array{Complex128, 1}
-  l::Array{Complex128, 1}
-  kr::Array{Complex128, 1}
+  k::Array{Complex{Float64}, 1}
+  l::Array{Complex{Float64}, 1}
+  kr::Array{Complex{Float64}, 1}
 
-  ksq::Array{Complex128, 1}
-  lsq::Array{Complex128, 1}
-  krsq::Array{Complex128, 1}
+  ksq::Array{Complex{Float64}, 1}
+  lsq::Array{Complex{Float64}, 1}
+  krsq::Array{Complex{Float64}, 1}
 
-  ik::Array{Complex128, 1}
-  il::Array{Complex128, 1}
-  ikr::Array{Complex128, 1}
+  ik::Array{Complex{Float64}, 1}
+  il::Array{Complex{Float64}, 1}
+  ikr::Array{Complex{Float64}, 1}
 
   X::Array{Float64, 2}
   Y::Array{Float64, 2}
 
-  K::Array{Complex128, 2}
-  L::Array{Complex128, 2}
-  Kr::Array{Complex128, 2}
-  Lr::Array{Complex128, 2}
+  K::Array{Complex{Float64}, 2}
+  L::Array{Complex{Float64}, 2}
+  Kr::Array{Complex{Float64}, 2}
+  Lr::Array{Complex{Float64}, 2}
 
   # Convenience arrays
-  K2::Array{Complex128, 2}
-  L2::Array{Complex128, 2}
+  K2::Array{Complex{Float64}, 2}
+  L2::Array{Complex{Float64}, 2}
 
   # k^2 + l^2 and 1/(k^2+l^2) with zero wavenumber omitted
-  KKsq::Array{Complex128, 2}
-  invKKsq::Array{Complex128, 2}
-  KL::Array{Complex128, 2}
+  KKsq::Array{Complex{Float64}, 2}
+  invKKsq::Array{Complex{Float64}, 2}
+  KL::Array{Complex{Float64}, 2}
 
-  KKrsq::Array{Complex128, 2}
-  invKKrsq::Array{Complex128, 2}
+  KKrsq::Array{Complex{Float64}, 2}
+  invKKrsq::Array{Complex{Float64}, 2}
 
   # FFT plans!
-  fftplan::Base.DFT.FFTW.cFFTWPlan{Complex{Float64},-1,false,2}
+  fftplan::Base.DFT.FFTW.cFFTWPlan{Complex{Float64}, -1, false, 2}
 
   ifftplan::Base.DFT.ScaledPlan{Complex{Float64},
-    Base.DFT.FFTW.cFFTWPlan{Complex{Float64},1,false,2},Float64}
+    Base.DFT.FFTW.cFFTWPlan{Complex{Float64}, 1, false, 2}, Float64}
 
-  rfftplan::Base.DFT.FFTW.rFFTWPlan{Float64,-1,false,2}
+  rfftplan::Base.DFT.FFTW.rFFTWPlan{Float64, -1, false, 2}
 
   irfftplan::Base.DFT.ScaledPlan{Complex{Float64},
-    Base.DFT.FFTW.rFFTWPlan{Complex{Float64},1,false,2},Float64}
+    Base.DFT.FFTW.rFFTWPlan{Complex{Float64}, 1, false, 2}, Float64}
 end
 
 
 # Initializer for rectangular grids
-function Grid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64})
+function Grid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64}; 
+  nthreads=Sys.CPU_CORES)
 
   # Un-tuple arguments
   nx, ny = nxy
@@ -112,8 +112,8 @@ function Grid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64})
   krderange = (kcL+1):nkr
 
   # Dealiasing filters
-  defilt  = Array{Complex128}(nk, nl)
-  derfilt = Array{Complex128}(nkr, nl)
+  defilt  = Array{Complex{Float64}}(nk, nl)
+  derfilt = Array{Complex{Float64}}(nkr, nl)
 
   # Physical grid allocatio
   x = Array{Float64}(nx)
@@ -123,33 +123,33 @@ function Grid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64})
   Y = Array{Float64,2}(nx, ny)
 
   # Wavenumber grid
-  k  = Array{Complex128}(nk)
-  l  = Array{Complex128}(nl)
-  kr = Array{Complex128}(nkr)
+  k  = Array{Complex{Float64}}(nk)
+  l  = Array{Complex{Float64}}(nl)
+  kr = Array{Complex{Float64}}(nkr)
 
-  ksq  = Array{Complex128}(nk)
-  lsq  = Array{Complex128}(nl)
-  krsq = Array{Complex128}(nkr)
+  ksq  = Array{Complex{Float64}}(nk)
+  lsq  = Array{Complex{Float64}}(nl)
+  krsq = Array{Complex{Float64}}(nkr)
 
-  K  = Array{Complex128}(nk, nl)
-  L  = Array{Complex128}(nk, nl)
-  Lr = Array{Complex128}(nkr, nl)
-  Kr = Array{Complex128}(nkr, nl)
+  K  = Array{Complex{Float64}}(nk, nl)
+  L  = Array{Complex{Float64}}(nk, nl)
+  Lr = Array{Complex{Float64}}(nkr, nl)
+  Kr = Array{Complex{Float64}}(nkr, nl)
 
-  K2 = Array{Complex128}(nk, nl)
-  L2 = Array{Complex128}(nk, nl)
+  K2 = Array{Complex{Float64}}(nk, nl)
+  L2 = Array{Complex{Float64}}(nk, nl)
 
-  KKsq    = Array{Complex128}(nk, nl)
-  invKKsq = Array{Complex128}(nk, nl)
-  KL      = Array{Complex128}(nk, nl)
-  E       = Array{Complex128}(nk, nl)
+  KKsq    = Array{Complex{Float64}}(nk, nl)
+  invKKsq = Array{Complex{Float64}}(nk, nl)
+  KL      = Array{Complex{Float64}}(nk, nl)
+  E       = Array{Complex{Float64}}(nk, nl)
 
-  KKrsq    = Array{Complex128}(nkr, nl)
-  invKKrsq = Array{Complex128}(nkr, nl)
+  KKrsq    = Array{Complex{Float64}}(nkr, nl)
+  invKKrsq = Array{Complex{Float64}}(nkr, nl)
 
-  ik  = Array{Complex128}(nk, nl)
-  il  = Array{Complex128}(nk, nl)
-  ikr = Array{Complex128}(nkr, nl)
+  ik  = Array{Complex{Float64}}(nk, nl)
+  il  = Array{Complex{Float64}}(nk, nl)
+  ikr = Array{Complex{Float64}}(nkr, nl)
 
   # 1D pre-constructors
   x = linspace(-Lx/2.0, Lx/2.0-dx, nx)
@@ -227,13 +227,14 @@ function Grid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64})
   end
 
   # FFT plans; use grid vars.
+  FFTW.set_num_threads(nthreads)
   effort = FFTW.MEASURE
 
   fftplan   = plan_fft(  Array{Float64,2}(nx, ny);         flags=effort)
-  ifftplan  = plan_ifft( Array{Complex128,2}(nk, nl);      flags=effort)
+  ifftplan  = plan_ifft( Array{Complex{Float64},2}(nk, nl);      flags=effort)
 
   rfftplan  = plan_rfft( Array{Float64,2}(nx, ny);         flags=effort)
-  irfftplan = plan_irfft(Array{Complex128,2}(nkr, nl), nx; flags=effort)
+  irfftplan = plan_irfft(Array{Complex{Float64},2}(nkr, nl), nx; flags=effort)
 
 
   return Grid(nx, ny, Lx, Ly, nk, nl, nkr, krange, lrange, krrange,
@@ -244,13 +245,15 @@ function Grid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64})
 end
 
 # Grid constructor with optional arguments to specify anisotropy
-function Grid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx)
-    Grid((nx, ny), (Lx, Ly))
+function Grid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
+  nthreads=Sys.CPU_CORES)
+  Grid((nx, ny), (Lx, Ly))
 end
 
 # Grid constructor for backwards compatability/convenience; may depcreciate
-function Grid(nx::Int, ny::Int, Lx::Float64, Ly::Float64)
-    Grid((nx, ny), (Lx, Ly))
+function Grid(nx::Int, ny::Int, Lx::Float64, Ly::Float64;
+  nthreads=Sys.CPU_CORES)
+  Grid((nx, ny), (Lx, Ly))
 end
 
 
@@ -260,7 +263,7 @@ end
 
 
 # Fast loop-based dealiasing method for complex, spectral-space vars
-function dealias!(a::Array{Complex128, 2}, g::Grid)
+function dealias!(a::Array{Complex{Float64}, 2}, g::Grid)
   if size(a)[1] == g.nk       # Transform of a complex var
     for j in g.lderange
       @simd for i in g.kderange
@@ -277,7 +280,7 @@ function dealias!(a::Array{Complex128, 2}, g::Grid)
 end
 
 # Dealiasing method for 3-arrays with broadcasting for third dimension.
-function dealias!(a::Array{Complex128, 3}, g::Grid)
+function dealias!(a::Array{Complex{Float64}, 3}, g::Grid)
   if size(a)[1] == g.nk       # Transform of a complex var
     for j in g.lderange
       @simd for i in g.kderange
