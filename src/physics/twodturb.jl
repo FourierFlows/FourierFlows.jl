@@ -1,40 +1,43 @@
-#__precompile__()
+__precompile__()
 
-include("../domain.jl")
-include("../timesteppers.jl")
-
+include("../fourierflows.jl")
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # B E G I N    M O D U L E    T W O D T U R B ----------------------------------
 
-
 module TwoDTurb
 
-using Domain, TimeSteppers
+using FourierFlowTypes, Domains, TimeSteppers
 
-export Grid, Vars, Params
-export ForwardEulerTimeStepper, ETDRK4TimeStepper, RK4TimeStepper
-export AB3TimeStepper
+export Grid, Vars, Params, Equation
+export ForwardEulerTimeStepper, ETDRK4TimeStepper
+export RK4TimeStepper, AB3TimeStepper
+
 export set_q!, updatevars!, calc_NL!, calc_NL, stepforward!
 
+Grid = TwoDGrid
 
-# Physical-problem-specific parameters
-type Params
+# Params type: this type defines physical parameters of the equation.
+type Params <: AbstractParams
   nu::Float64                     # Vorticity viscosity
   nun::Int                        # Vorticity hyperviscous order
-  LC::Array{Complex{Float64}, 2}  # Linear left hand side of the master eqn
 end
 
-function Params(nu::Float64, nun::Int, g::Grid)
-  # Linear coefficients ensures dissipation of mean vorticity
-  LC = -nu * g.KKrsq.^(0.5*nun)
-  Params(nu, nun, LC)
+# Equation type: this type defines the problems' linear and nonlinear parts
+type Equation <: AbstractEquation
+  LC::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's linear part
+  calcNL!::Function               # Function to calculate eqn's nonlinear part
 end
 
-# Phyiscal variables, including intermediate memory allocations used
-# to calc nonlinear terms
-type Vars
+function Equation(p::Params, g::Grid)
+  # Function calcNL! is defined below.
+  LC = -p.nu * g.KKrsq.^(0.5*p.nun)
+  Equation(LC, calcNL!)
+end
+
+# Vars type:
+type Vars <: AbstractVars
 
   t::Float64
   sol::Array{Complex128, 2}
@@ -57,8 +60,7 @@ type Vars
 
 end
 
-function Vars(p::Params, g::Grid)
-
+function Vars(g::Grid)
   # Initialize with t=0
   t = 0.0
   sol  = zeros(Complex128, g.nkr, g.nl)
@@ -82,6 +84,14 @@ function Vars(p::Params, g::Grid)
   sol = exp.( 2.0*pi*im*rand(g.nkr, g.nl) )
 
   return Vars(t, sol, q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih)
+end
+
+function build_problem(nx::Int, Lx::Float64, nu::Float64, nun::Int)
+  g  = Grid(nx, Lx)
+  p  = Params(nu, nun, g)
+  v  = Vars(g)
+  eq = Equation(p, g)
+  return eq, v, p, g
 end
 
 
@@ -272,7 +282,7 @@ end
 
 
 # Include solver-related functions from solvers.jl.
-include("../solvers.jl")
+#include("../solvers.jl")
 
 end
 
