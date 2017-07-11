@@ -9,16 +9,43 @@ for writing new, fast solvers for new phyiscal problems. Achieving this goal
 requires a simultaneous capacity for accepting 'slow' but high-level code, as well 
 as lower-level, optimized routines. The code is written in the [Julia][].
 
-## Code organization
+## Tests
+
+Coming soon...
+
+## Examples
+
+Coming soon...
+
+## Source code organization
 
 The code is divided along conceptual lines into problem-agnostic and 
-problem-specific components. The problem-agnostic parts of the code are 
-contained in ``/src``. Files in ``/src`` define the domain, master 'AbstractTypes'
-for the model, time-stepper types and time-stepping routines.
+problem-specific components. Files that contain problem-agnostic parts 
+of the code are stored in ``/src``. Files in ``/src`` define the domain, 
+'AbstractTypes' that supertype problem-specific types, and 
+time-stepper types and routines. Problem-specific modules are stores in 
+``/src/physics``.
 
-The problem-specific modules, which provide the problem-specific ``Vars`` and ``Params``
-types, as well as routines for calculating linear and nonlinear parts of the 
-specified equation, are in the directory ``/src/physics``.
+Here's an overview of the code structure:
+
+- ``/src/``
+    - ``fourierflows.jl`` 
+        - Module ``FourierFlowTypes``: *defines supertyping AbstractTypes.*
+        - Module ``TwoDGrid``: *defines a composite type for 2D physical and Fourier
+            spectral grids.*
+        - Modules contained in ``timesteppers.jl`` via inclusion at the end of the file.
+   - ``timesteppers.jl``: *defines modules and ``stepforward!`` routines for various
+        time-steppers. Current implemented time-steppers are:*
+        - Forward Euler
+        - 3rd-order Adams-Bashforth (AB3)
+        - 4th-order Runge-Kutta (RK4)
+        - 4th-order Runge-Kutta Exponential Time Differencing (ETDRK4)
+    - ``physics/``
+        - ``twodturb.jl`` *Defines a ``TwoDTurb`` module that provides a solver for the 
+                two-dimensional vorticity equation.*
+        - ``barotropicqg.jl`` *Defines a ``BarotropicQG`` module that provides several
+                solvers for the barotropic QG model that permit beta, topography, 
+                beta + topography, and forcing.*
 
 ## Future work 
 
