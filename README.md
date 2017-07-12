@@ -47,6 +47,14 @@ Here's an overview of the code structure:
                 solvers for the barotropic QG model that permit beta, topography, 
                 beta + topography, and forcing.*
 
+
+## Writing fast solvers
+
+The performance-intensive part of the code involves just two functions: the timestepping 
+scheme ``stepforward!``, and the function ``calcNL!`` that calculates the nonlinear part 
+of the given equation's right-hand side. Optimization of these two functions for a given
+problem will produce the fastest possible code.
+
 ## Future work 
 
 The code is an a very early stage of development. A main goal for the future
