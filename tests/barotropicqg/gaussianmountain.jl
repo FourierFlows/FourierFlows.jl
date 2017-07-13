@@ -1,20 +1,29 @@
 include("../../src/physics/barotropicqg.jl")
 
 using BarotropicQG, PyPlot
+using BarotropicQGProblems
 
-# Problem parameters
-nx       = 128
-betastar = 1.0 
-fdt      = 0.1 
+nx = 256
+dt = 1e-3
 
-g, p, v, eq = southern_gaussian_mountain(nx, betastar)
-ts = ETDRK4TimeStepper(fdt*2.0*pi/p.f0, eq.LC)
+g, p, v, eq = nondimensional_southern_ocean(nx, 0.1, 1.0, 0.0, 10.0)
+ts = AB3TimeStepper(dt, eq.LC)
 
-stepforward!(v, 10, ts, eq, p, g)
+function test_plot(v)
+  @printf("U = %f\n", v.U)
+  #clf; imshow(v.zet, cmap="RdBu_r")
+  clf; imshow(v.sp);
+  pause(0.01)
+end
 
-fig = figure()
-imshow(v.zet)
-#pcolormesh(g.X, g.Y, v.zet)
+nloops = 100
+nsteps = 10
 
+fig = figure(1)
+test_plot(v)
 
-
+for i = 1:nloops
+  stepforward!(v, nsteps, ts, eq, p, g)
+  updatevars!(v, g) 
+  test_plot(v)
+end
