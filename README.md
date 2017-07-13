@@ -5,7 +5,7 @@
 This software provides solvers for partial differential equations on
 doubly-periodic domains using Fourier-based pseudospectral methods.
 A central intent of the software's design is also to provide a framework
-for writing new, fast solvers for new phyiscal problems. Achieving this goal
+for writing new, fast solvers for new physical problems. Achieving this goal
 requires a simultaneous capacity for accepting 'slow' but high-level code, as well 
 as lower-level, optimized routines. The code is written in the [Julia][].
 
