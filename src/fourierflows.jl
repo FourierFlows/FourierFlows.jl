@@ -301,4 +301,47 @@ end
 
 end
 
+
 include("timesteppers.jl")
+
+
+
+
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# B E G I N    M O D U L E    F O U R I E R F L O W U T I L S ------------------
+module FourierFlowUtils
+
+export fftwavenums, peaked_isoropic_spectrum
+
+fftwavenums(n::Int; L=1.0) = 2.0*pi/L*cat(1, 0:n/2, -n/2+1:-1)
+
+function peaked_isotropic_spectrum(nkl::Tuple{Int, Int}, kpeak::Real; 
+  ord=4.0, rms=1.0)
+
+  # Non-dimensional wavenumbers
+  nk, nl = nkl
+  k, l   = fftwavenums(nl), fftwavenums(nl)
+
+  K = zeros(Float64, nk, nl)
+  for j = 1:nl, i = 1:nk
+    K[i, j] = sqrt(k[i]^2.0 + l[j]^2.0)
+  end
+  
+  # Generate random spectrum and then normalize 
+  phih = exp.(2.0*im*pi*rand(nk, nl)) ./ (1.0 .+ K./kpeak).^ord
+  phih .*= rms ./ sqrt.(sum(abs.(phih).^2.0)) 
+
+  return real.(ifft(phih))
+end
+
+function peaked_isotropic_spectrum(nx::Int, npeak::Real; ord=4.0, rms=1.0)
+  peaked_isotropic_spectrum((nx, nx), npeak; ord=ord, rms=rms)
+end
+
+
+
+end
+# E N D    M O D U L E    F O U R I E R F L O W U T I L S ----------------------
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
