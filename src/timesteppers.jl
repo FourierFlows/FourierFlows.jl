@@ -1,22 +1,19 @@
 __precompile__()
 
-module TimeSteppers
 
-# This module provides types and functions associated with time-stepping
-# routines for Fourier doubly-periodic partial differential equations.
+export ForwardEulerTimeStepper, 
+       AB3TimeStepper,
+       RK4TimeStepper,
+       ETDRK4TimeStepper
 
-using Domains, FourierFlowTypes
-
-export ForwardEulerTimeStepper, ETDRK4TimeStepper, RK4TimeStepper
-export AB3TimeStepper
 export stepforward!
 
-# ----------------------------------------------------------------------------- 
+
+
+
 # Forward Euler --------------------------------------------------------------- 
-# ----------------------------------------------------------------------------- 
 # The simplest time-stepping method in the books. Explicit and 1st-order
 # accurate.
-
 
 type ForwardEulerTimeStepper{dim} <: AbstractTimeStepper
   step::Int
@@ -35,8 +32,9 @@ function ForwardEulerTimeStepper(dt::Float64, LC::Array{Complex{Float64}, 2})
 end
 
 
-function stepforward!(v::AbstractVars, nsteps::Int, ts::ForwardEulerTimeStepper,
-  eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
+function stepforward!(v::AbstractVars, nsteps::Int, 
+  ts::ForwardEulerTimeStepper, eq::AbstractEquation, 
+  p::AbstractParams, g::AbstractGrid)
 
   for step = 1:nsteps
     eq.calcNL!(ts.NL, v.sol, v.t, v, p, g)
@@ -48,9 +46,8 @@ end
 
 
 
-# ----------------------------------------------------------------------------- 
+
 # ETDRK4 ---------------------------------------------------------------------- 
-# ----------------------------------------------------------------------------- 
 # The Rolls-Royce of time-stepping. Exact treatment of linear part of 
 # the equation, explicit and 4th-order accurate integration of nonlinear
 # parts of equation.
@@ -128,8 +125,9 @@ function get_etd_coeffs(dt::Float64, LC::Array{Complex{Float64}, 2})
 end
 
 
-function stepforward!(v::AbstractVars, nsteps::Int, ts::ETDRK4TimeStepper,
-  eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
+function stepforward!(v::AbstractVars, nsteps::Int, 
+  ts::ETDRK4TimeStepper, eq::AbstractEquation, 
+  p::AbstractParams, g::AbstractGrid)
 
   for step = 1:nsteps
 
@@ -163,9 +161,8 @@ end
 
 
 
-# ----------------------------------------------------------------------------- 
+
 # RK4 ------------------------------------------------------------------------- 
-# ----------------------------------------------------------------------------- 
 # RK4 is the classical explicit 4th-order Runge-Kutta time-stepping
 # method. It uses a series of substeps/estimators to achieve 4th-order
 # accuracy over each individual time-step, at the cost of requiring
@@ -208,8 +205,9 @@ end
 
 
 
-function stepforward!(v::AbstractVars, nsteps::Int, ts::RK4TimeStepper,
-  eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
+function stepforward!(v::AbstractVars, nsteps::Int, 
+  ts::RK4TimeStepper, eq::AbstractEquation, 
+  p::AbstractParams, g::AbstractGrid)
 
   for step = 1:nsteps
     
@@ -244,10 +242,7 @@ end
 
 
 
-
-# ----------------------------------------------------------------------------- 
 # AB3 ------------------------------------------------------------------------- 
-# ----------------------------------------------------------------------------- 
 # 3rd order Adams-Bashforth time stepping is an explicit scheme that uses
 # solutions from two previous time-steps to achieve 3rd order accuracy.
 
@@ -277,8 +272,9 @@ end
 
 
 
-function stepforward!(v::AbstractVars, nsteps::Int, ts::AB3TimeStepper,
-  eq::AbstractEquation, p::AbstractParams, g::AbstractGrid;
+function stepforward!(v::AbstractVars, nsteps::Int, 
+  ts::AB3TimeStepper, eq::AbstractEquation, 
+  p::AbstractParams, g::AbstractGrid;
   initstepper=false)
 
   # Determine initsteps value
@@ -315,13 +311,4 @@ function stepforward!(v::AbstractVars, nsteps::Int, ts::AB3TimeStepper,
     ts.step += 1
     v.t += ts.dt
   end
-end
-
-
-
-
-
-
-
-
 end

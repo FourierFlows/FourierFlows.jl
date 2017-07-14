@@ -1,42 +1,51 @@
 __precompile__()
 
-include("../fourierflows.jl")
 
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-# B E G I N    M O D U L E    T W O D T U R B ----------------------------------
-
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# T W O D T U R B >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 module TwoDTurb
 
-using FourierFlowTypes, Domains, TimeSteppers
+using FourierFlows
 
-export Grid, Vars, Params, Equation
-export ForwardEulerTimeStepper, ETDRK4TimeStepper
-export RK4TimeStepper, AB3TimeStepper
+export Grid,
+       Params,
+       Vars,
+       Equation
 
-export set_q!, updatevars!, calc_NL!, calc_NL, stepforward!
+export set_q!, updatevars!
 
+# 2D grids for Two-D turbulence.
 Grid = TwoDGrid
 
-# Params type: this type defines physical parameters of the equation.
+
+
+
+# P A R A M S ----------------------------------------------------------------- 
 type Params <: AbstractParams
   nu::Float64                     # Vorticity viscosity
   nun::Int                        # Vorticity hyperviscous order
 end
 
-# Equation type: this type defines the problems' linear and nonlinear parts
+
+
+
+# E Q U A T I O N S ----------------------------------------------------------- 
 type Equation <: AbstractEquation
   LC::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's linear part
   calcNL!::Function               # Function to calculate eqn's nonlinear part
 end
 
-function Equation(p::Params, g::Grid)
+function Equation(p::Params, g::TwoDGrid)
   # Function calcNL! is defined below.
   LC = -p.nu * g.KKrsq.^(0.5*p.nun)
   Equation(LC, calcNL!)
 end
 
-# Vars type:
+
+
+
+
+# V A R S --------------------------------------------------------------------- 
 type Vars <: AbstractVars
 
   t::Float64
@@ -60,7 +69,7 @@ type Vars <: AbstractVars
 
 end
 
-function Vars(g::Grid)
+function Vars(g::TwoDGrid)
   # Initialize with t=0
   t = 0.0
   sol  = zeros(Complex128, g.nkr, g.nl)
@@ -86,20 +95,13 @@ function Vars(g::Grid)
   return Vars(t, sol, q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih)
 end
 
-function build_problem(nx::Int, Lx::Float64, nu::Float64, nun::Int)
-  g  = Grid(nx, Lx)
-  p  = Params(nu, nun, g)
-  v  = Vars(g)
-  eq = Equation(p, g)
-  return eq, v, p, g
-end
 
 
-# -----------------------------------------------------------------------------
-# Solver ----------------------------------------------------------------------
-# -----------------------------------------------------------------------------
+
+# S O L V E R S ---------------------------------------------------------------
+
 function calcNL!(NL::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
-  t::Float64, v::Vars, p::Params, g::Grid)
+  t::Float64, v::Vars, p::Params, g::TwoDGrid)
 
   # ON NAVID'S LAPTOP A_mul_B! messes up!!
   #v.q = irfft(sol[:, :, 1], g.nx)
@@ -131,7 +133,7 @@ end
 
 
 function calcNL(NL::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
-  t::Float64, v::Vars, p::Params, g::Grid)
+  t::Float64, v::Vars, p::Params, g::TwoDGrid)
 
   # ON NAVID'S LAPTOP A_mul_B! messes up!!
   #v.q = irfft(sol[:, :, 1], g.nx)
@@ -164,7 +166,7 @@ end
 
 
 function calcNL!(NL::Array{Complex{Float64}, 3}, sol::Array{Complex128, 3},
-  t::Float64, v::Vars, p::Params, g::Grid)
+  t::Float64, v::Vars, p::Params, g::TwoDGrid)
 
   # ON NAVID'S LAPTOP A_mul_B! messes up!!
   #v.q = irfft(sol[:, :, 1], g.nx)
@@ -194,10 +196,11 @@ function calcNL!(NL::Array{Complex{Float64}, 3}, sol::Array{Complex128, 3},
 
 end
 
-# -----------------------------------------------------------------------------
-# Helper functions ------------------------------------------------------------
-# -----------------------------------------------------------------------------
-function updatevars!(v::Vars, g::Grid)
+
+
+
+# H E L P E R   F U N C T I O N S --------------------------------------------- 
+function updatevars!(v::Vars, g::TwoDGrid)
 
   v.qh .= v.sol
 
@@ -220,7 +223,7 @@ function updatevars!(v::Vars, g::Grid)
 end
 
 
-function updatevars!(v::Vars, p::Params, g::Grid)
+function updatevars!(v::Vars, p::Params, g::TwoDGrid)
 
   v.qh .= v.sol
 
@@ -243,7 +246,7 @@ function updatevars!(v::Vars, p::Params, g::Grid)
 end
 
 # This function exists only to test the speed of fused vs hand-coded loops.
-function updatevars!(v::Vars, p::Params, g::Grid, withloops::Bool)
+function updatevars!(v::Vars, p::Params, g::TwoDGrid, withloops::Bool)
 
   for j = 1:g.nl, i = 1:g.nkr 
     v.qh[i, j] = v.sol[i, j]
@@ -274,19 +277,45 @@ function updatevars!(v::Vars, p::Params, g::Grid, withloops::Bool)
 end
 
 
-function set_q!(v::Vars, g::Grid, q::Array{Float64, 2})
+function set_q!(v::Vars, g::TwoDGrid, q::Array{Float64, 2})
   # Set vorticity
   A_mul_B!( v.sol, g.rfftplan, q )
   updatevars!(v, g)
 end
 
 
-# Include solver-related functions from solvers.jl.
-#include("../solvers.jl")
 
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# S E T U P S >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+module Setups
+
+using FourierFlows.TwoDTurb
+
+export simplenondim
+
+function simplenondim(nx::Int; nu=1e-6, nun=4)
+  # Construct a barotropic QG problem that should reproduce results obtained
+  # from a bare 2D turbulence simulation when beta=0.
+
+  Lx     = 2.0*pi               # Domain size (meters)
+   
+  g  = Grid(nx, Lx)
+  p  = Params(nu, nun)
+  v  = Vars(g)
+  eq = Equation(p, g)
+
+  # Random initial condition
+  set_q!(v, g, rand(nx, nx))
+
+  return g, p, v, eq
 end
 
+end
+# E N D   S E T U P S >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
-# E N D    M O D U L E    T W O D T U R B --------------------------------------
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
+
+
+
+end
+# E N D   T W O D T U R B >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 
