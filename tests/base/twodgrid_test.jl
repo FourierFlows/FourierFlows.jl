@@ -1,6 +1,6 @@
 include("../../src/fourierflows.jl")
 
-using Domains
+using FourierFlows
 
 # Test square grid
 nx = 8                  # number of points

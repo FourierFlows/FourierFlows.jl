@@ -1,12 +1,43 @@
 __precompile__()
 
 
+
+
 export ForwardEulerTimeStepper, 
        AB3TimeStepper,
        RK4TimeStepper,
        ETDRK4TimeStepper
 
-export stepforward!
+export stepforward!, 
+       step_nsteps!
+
+
+
+
+# Looping stepforward functions ----------------------------------------------- 
+function stepforward!(v::AbstractVars, ts::AbstractTimeStepper, 
+  eq::AbstractEquation, p::AbstractParams, g::AbstractGrid, nsteps::Int)
+
+  for i = 1:nsteps
+    stepforward!(v, ts, eq, p, g)
+  end
+end
+
+function stepforward!(v::AbstractVars, ts::AbstractTimeStepper, 
+  eq::AbstractEquation, p::AbstractParams, g::AbstractGrid; nsteps=1)
+  for i = 1:nsteps
+    stepforward!(v, ts, eq, p, g)
+  end
+end
+
+# Let's depreciate this form!
+function stepforward!(v::AbstractVars, nsteps::Int, ts::AbstractTimeStepper,
+  eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
+
+  for i = 1:nsteps
+    stepforward!(v, ts, eq, p, g)
+  end
+end
 
 
 
@@ -32,17 +63,22 @@ function ForwardEulerTimeStepper(dt::Float64, LC::Array{Complex{Float64}, 2})
 end
 
 
-function stepforward!(v::AbstractVars, nsteps::Int, 
-  ts::ForwardEulerTimeStepper, eq::AbstractEquation, 
-  p::AbstractParams, g::AbstractGrid)
 
-  for step = 1:nsteps
-    eq.calcNL!(ts.NL, v.sol, v.t, v, p, g)
-    v.sol .+= ts.dt .* (ts.NL .+ eq.LC.*v.sol)
-    ts.step += 1
-    v.t += ts.dt
-  end
+
+function stepforward!(v::AbstractVars, ts::ForwardEulerTimeStepper, 
+  eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
+
+  eq.calcNL!(ts.NL, v.sol, v.t, v, p, g)
+
+  v.sol .+= ts.dt .* (ts.NL .+ eq.LC.*v.sol)
+  v.t    += ts.dt
+
+  ts.step += 1
 end
+
+
+
+
 
 
 
@@ -95,6 +131,7 @@ function ETDRK4TimeStepper(dt::Float64, LC::Array{Complex{Float64}, 2})
     ti, sol1, sol2, NL1, NL2, NL3, NL4)
 end
 
+
 function get_etd_coeffs(dt::Float64, LC::Array{Complex{Float64}, 2})
 
   # Calculate ETDRK4 coefficients by integrating over a small circle
@@ -125,39 +162,40 @@ function get_etd_coeffs(dt::Float64, LC::Array{Complex{Float64}, 2})
 end
 
 
-function stepforward!(v::AbstractVars, nsteps::Int, 
-  ts::ETDRK4TimeStepper, eq::AbstractEquation, 
-  p::AbstractParams, g::AbstractGrid)
 
-  for step = 1:nsteps
 
-    # Substep 1
-    eq.calcNL!(ts.NL1, v.sol, v.t, v, p, g)
-    ts.sol1 .= ts.expLCdt2.*v.sol .+ ts.zeta.*ts.NL1
+function stepforward!(v::AbstractVars, ts::ETDRK4TimeStepper, 
+  eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
 
-    # Substep 2
-    ts.ti = v.t + 0.5*ts.dt
-    eq.calcNL!(ts.NL2, ts.sol1, ts.ti, v, p, g)
-    ts.sol2 .= ts.expLCdt2.*v.sol .+ ts.zeta.*ts.NL2
+  # Substep 1
+  eq.calcNL!(ts.NL1, v.sol, v.t, v, p, g)
+  ts.sol1 .= ts.expLCdt2.*v.sol .+ ts.zeta.*ts.NL1
 
-    # Substep 3
-    eq.calcNL!(ts.NL3, ts.sol2, ts.ti, v, p, g)
-    ts.sol2 .= ts.expLCdt2.*ts.sol1 .+ ts.zeta.*(2.0.*ts.NL3 .- ts.NL1)
+  # Substep 2
+  ts.ti = v.t + 0.5*ts.dt
+  eq.calcNL!(ts.NL2, ts.sol1, ts.ti, v, p, g)
+  ts.sol2 .= ts.expLCdt2.*v.sol .+ ts.zeta.*ts.NL2
 
-    # Substep 4
-    ts.ti = v.t + ts.dt
-    eq.calcNL!(ts.NL4, ts.sol2, ts.ti, v, p, g)
+  # Substep 3
+  eq.calcNL!(ts.NL3, ts.sol2, ts.ti, v, p, g)
+  ts.sol2 .= ts.expLCdt2.*ts.sol1 .+ ts.zeta.*(2.0.*ts.NL3 .- ts.NL1)
 
-    # Update 
-    v.sol .= (ts.expLCdt.*v.sol .+      ts.alph .* ts.NL1 
-                                .+ 2.0.*ts.beta .* (ts.NL2 .+ ts.NL3)
-                                .+      ts.gamm .* ts.NL4 ) 
+  # Substep 4
+  ts.ti = v.t + ts.dt
+  eq.calcNL!(ts.NL4, ts.sol2, ts.ti, v, p, g)
 
-    ts.step += 1
-    v.t += ts.dt
+  # Update 
+  v.sol .= (ts.expLCdt.*v.sol .+      ts.alph .* ts.NL1 
+                              .+ 2.0.*ts.beta .* (ts.NL2 .+ ts.NL3)
+                              .+      ts.gamm .* ts.NL4 ) 
+  v.t   += ts.dt
+  ts.step += 1
 
-  end
 end
+
+
+
+
 
 
 
@@ -205,39 +243,42 @@ end
 
 
 
-function stepforward!(v::AbstractVars, nsteps::Int, 
-  ts::RK4TimeStepper, eq::AbstractEquation, 
-  p::AbstractParams, g::AbstractGrid)
 
-  for step = 1:nsteps
-    
-    eq.calcNL!(ts.RHS1, v.sol, v.t, v, p, g)
-    ts.RHS1 .+= eq.LC.*v.sol
+function stepforward!(v::AbstractVars, ts::RK4TimeStepper,
+  eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
 
-    # Substep 1
-    ts.ti = v.t + 0.5*ts.dt
-    ts.sol1 .= v.sol .+ (0.5*ts.dt).*ts.RHS1
-    eq.calcNL!(ts.RHS2, ts.sol1, v.t, v, p, g)
-    ts.RHS2 .+= eq.LC.*ts.sol1
+  eq.calcNL!(ts.RHS1, v.sol, v.t, v, p, g)
+  ts.RHS1 .+= eq.LC.*v.sol
 
-    # Substep 2
-    ts.sol1 .= v.sol .+ (0.5*ts.dt).*ts.RHS2
-    eq.calcNL!(ts.RHS3, ts.sol1, v.t, v, p, g)
-    ts.RHS3 .+= eq.LC.*ts.sol1
+  # Substep 1
+  ts.ti = v.t + 0.5*ts.dt
+  ts.sol1 .= v.sol .+ (0.5*ts.dt).*ts.RHS1
+  eq.calcNL!(ts.RHS2, ts.sol1, v.t, v, p, g)
+  ts.RHS2 .+= eq.LC.*ts.sol1
 
-    # Substep 3
-    ts.ti = v.t + ts.dt
-    ts.sol1 .= v.sol .+ ts.dt.*ts.RHS3
-    eq.calcNL!(ts.RHS4, ts.sol1, v.t, v, p, g)
-    ts.RHS4 .+= eq.LC.*ts.sol1
+  # Substep 2
+  ts.sol1 .= v.sol .+ (0.5*ts.dt).*ts.RHS2
+  eq.calcNL!(ts.RHS3, ts.sol1, v.t, v, p, g)
+  ts.RHS3 .+= eq.LC.*ts.sol1
 
-    # Substep 4 and final step
-    v.sol .+= ts.dt.*( 
-         (1.0/6.0).*ts.RHS1 .+ (1.0/3.0).*ts.RHS2
-      .+ (1.0/3.0).*ts.RHS3 .+ (1.0/6.0).*ts.RHS4 )
+  # Substep 3
+  ts.ti = v.t + ts.dt
+  ts.sol1 .= v.sol .+ ts.dt.*ts.RHS3
+  eq.calcNL!(ts.RHS4, ts.sol1, v.t, v, p, g)
+  ts.RHS4 .+= eq.LC.*ts.sol1
 
-  end
+  # Substep 4 and final step
+  v.sol .+= ts.dt.*( 
+       (1.0/6.0).*ts.RHS1 .+ (1.0/3.0).*ts.RHS2
+    .+ (1.0/3.0).*ts.RHS3 .+ (1.0/6.0).*ts.RHS4 )
+
+  v.t += ts.dt
+  ts.step += 1
 end
+
+
+
+
 
 
 
@@ -272,12 +313,33 @@ end
 
 
 
+
+function stepforward!(v::AbstractVars, ts::AB3TimeStepper,
+  eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
+
+  eq.calcNL!(ts.RHS, v.sol, v.t, v, p, g)
+  ts.RHS  .+= eq.LC.*v.sol
+
+  v.sol .+= ts.dt .* ( 
+    (23.0/12.0).*ts.RHS .- (16.0/12.0).*ts.RHSm1 .+ (5.0/12.0).*ts.RHSm2 )
+
+  v.t += ts.dt
+  ts.step += 1
+
+  ts.RHSm2 .= ts.RHSm1
+  ts.RHSm1 .= ts.RHS
+
+end
+
+
+
+
 function stepforward!(v::AbstractVars, nsteps::Int, 
   ts::AB3TimeStepper, eq::AbstractEquation, 
   p::AbstractParams, g::AbstractGrid;
   initstepper=false)
 
-  # Determine initsteps value
+  # AB3 initialization
   initstepper ? initsteps=0 : initsteps=ts.step
 
   while initsteps < 2
@@ -300,15 +362,7 @@ function stepforward!(v::AbstractVars, nsteps::Int,
 
   # Loop
   for step = 1:nsteps
-    eq.calcNL!(ts.RHS, v.sol, v.t, v, p, g)
-    ts.RHS .+= eq.LC.*v.sol
-    
-    v.sol .+= ts.dt .* ( 
-      (23.0/12.0).*ts.RHS .- (16.0/12.0).*ts.RHSm1 .+ (5.0/12.0).*ts.RHSm2 )
-
-    ts.RHSm2 .= ts.RHSm1
-    ts.RHSm1 .= ts.RHS
-    ts.step += 1
-    v.t += ts.dt
+    stepforward!(v, ts, eq, p, g)
   end
+
 end

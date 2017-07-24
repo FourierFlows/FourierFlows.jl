@@ -1,6 +1,7 @@
-include("../../src/physics/twodturb.jl")
+include("../../src/fourierflows.jl")
 
-using TwoDTurb
+using FourierFlows
+import FourierFlows.TwoDTurb
 
 # Problem parameters
 nx  = 256     # Numerical problem size
@@ -11,10 +12,10 @@ nun = 4       # Vorticity hyperviscosity order
 
 
 @printf "Generating grid, params, and vars..."
-g  = Grid(nx, Lx)
-p  = Params(nu, nun)
-v  = Vars(g)
-eq = Equation(p, g)
+g  = TwoDTurb.Grid(nx, Lx)
+p  = TwoDTurb.Params(nu, nun)
+v  = TwoDTurb.Vars(g)
+eq = TwoDTurb.Equation(p, g)
 @printf " well, that seemed to go well.\n"
 
 
@@ -35,5 +36,5 @@ stepforward!(v, 3, tsETDRK4, eq, p, g)
 
 
 @printf "Testing var updating..."
-updatevars!(v, p, g)
+TwoDTurb.updatevars!(v, p, g)
 @printf " well, that seemed to go well.\n"

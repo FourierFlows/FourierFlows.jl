@@ -1,4 +1,4 @@
-include("../../src/physics/twodturb.jl")
+include("../../src/fourierflows.jl")
 
 # twodturb_compileandspeedtests.jl
 #
@@ -6,7 +6,10 @@ include("../../src/physics/twodturb.jl")
 # tests the integrity and speed of functions used to compile and solve the
 # problem.
 
-using TwoDTurb, PyPlot
+using FourierFlows,
+      PyPlot
+
+import TwoDTurb
 
 # Problem parameters
 nx  = 128     # Numerical problem size
@@ -21,35 +24,45 @@ nsteps = 20000
 q0 = rand(nx, nx)
 
 
-# Prepare problems for four time-steppers, and run.
-g  = Grid(nx, Lx)
-p  = Params(nu, nun)
-eq = Equation(p, g)
+# Prepare problems for four time-steppers
+g  = TwoDTurb.Grid(nx, Lx)
+p  = TwoDTurb.Params(nu, nun)
+eq = TwoDTurb.Equation(p, g)
 
-vFE     = Vars(g)
-vAB3    = Vars(g)
-vRK4    = Vars(g)
-vETDRK4 = Vars(g)
+vFE     = TwoDTurb.Vars(g)
+vAB3    = TwoDTurb.Vars(g)
+vRK4    = TwoDTurb.Vars(g)
+vETDRK4 = TwoDTurb.Vars(g)
 
 tsFE     = ForwardEulerTimeStepper(dt, eq.LC)
 tsAB3    = AB3TimeStepper(dt, eq.LC)
 tsRK4    = RK4TimeStepper(dt, eq.LC)
 tsETDRK4 = ETDRK4TimeStepper(dt, eq.LC)
 
-set_q!(vFE,     g, q0)
-set_q!(vAB3,    g, q0)
-set_q!(vRK4,    g, q0)
-set_q!(vETDRK4, g, q0)
+TwoDTurb.set_q!(vFE,     g, q0)
+TwoDTurb.set_q!(vAB3,    g, q0)
+TwoDTurb.set_q!(vRK4,    g, q0)
+TwoDTurb.set_q!(vETDRK4, g, q0)
 
-stepforward!(vFE,     nsteps, tsFE,     eq, p, g)
-stepforward!(vAB3,    nsteps, tsAB3,    eq, p, g)
-stepforward!(vRK4,    nsteps, tsRK4,    eq, p, g)
-stepforward!(vETDRK4, nsteps, tsETDRK4, eq, p, g)
 
-updatevars!(vFE,     g)
-updatevars!(vAB3,    g)
-updatevars!(vRK4,    g)
-updatevars!(vETDRK4, g)
+# Run four problems
+@printf("Stepping forward with forward Euler... ")
+@time stepforward!(vFE,     nsteps, tsFE,     eq, p, g)
+
+@printf("Stepping forward with 3rd-order Adams-Bashforth... ")
+@time stepforward!(vAB3,    nsteps, tsAB3,    eq, p, g)
+
+@printf("Stepping forward with 4th-order Runge-Kutta... ")
+@time stepforward!(vRK4,    nsteps, tsRK4,    eq, p, g)
+
+@printf("Stepping forward with ETDRK4... ")
+@time stepforward!(vETDRK4, nsteps, tsETDRK4, eq, p, g)
+
+
+TwoDTurb.updatevars!(vFE,     g)
+TwoDTurb.updatevars!(vAB3,    g)
+TwoDTurb.updatevars!(vRK4,    g)
+TwoDTurb.updatevars!(vETDRK4, g)
 
 
 

@@ -44,7 +44,6 @@ end
 
 
 
-
 # V A R S --------------------------------------------------------------------- 
 type Vars <: AbstractVars
 
@@ -103,96 +102,25 @@ end
 function calcNL!(NL::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
   t::Float64, v::Vars, p::Params, g::TwoDGrid)
 
-  # ON NAVID'S LAPTOP A_mul_B! messes up!!
-  #v.q = irfft(sol[:, :, 1], g.nx)
-  #v.U = irfft(v.Uh, g.nx)
-  #v.V = irfft(v.Vh, g.nx)
-  #v.Uqh = rfft(v.Uq)
-  #v.Vqh = rfft(v.Vq)
+  # This copy is necessary because calling A_mul_B(v.q, g.irfftplan, sol) 
+  # a few lines below destroys sol when using Julia's FFTW.
+  v.qh .= sol
 
-  # Solution key:
-  # sol = qh
+  A_mul_B!(v.q, g.irfftplan, sol)
 
-  A_mul_B!( v.q, g.irfftplan, sol )
-
-  v.Uh .=    im .* g.Lr .* g.invKKrsq .* sol
-  v.Vh .= (-im) .* g.Kr .* g.invKKrsq .* sol
+  v.Uh .=    im .* g.Lr .* g.invKKrsq .* v.qh
+  v.Vh .= (-im) .* g.Kr .* g.invKKrsq .* v.qh
  
-  A_mul_B!( v.U, g.irfftplan, v.Uh )
-  A_mul_B!( v.V, g.irfftplan, v.Vh )
+  A_mul_B!(v.U, g.irfftplan, v.Uh)
+  A_mul_B!(v.V, g.irfftplan, v.Vh)
 
   v.Uq .= v.U.*v.q
   v.Vq .= v.V.*v.q
 
-  A_mul_B!( v.Uqh, g.rfftplan, v.Uq )
-  A_mul_B!( v.Vqh, g.rfftplan, v.Vq )
+  A_mul_B!(v.Uqh, g.rfftplan, v.Uq)
+  A_mul_B!(v.Vqh, g.rfftplan, v.Vq)
 
   NL .= (-im) .* g.Kr.*v.Uqh .- im .* g.Lr.*v.Vqh
-
-end
-
-
-function calcNL(NL::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
-  t::Float64, v::Vars, p::Params, g::TwoDGrid)
-
-  # ON NAVID'S LAPTOP A_mul_B! messes up!!
-  #v.q = irfft(sol[:, :, 1], g.nx)
-  #v.U = irfft(v.Uh, g.nx)
-  #v.V = irfft(v.Vh, g.nx)
-  #v.Uqh = rfft(v.Uq)
-  #v.Vqh = rfft(v.Vq)
-
-  # Solution key:
-  # sol = qh
-
-  A_mul_B!( v.q, g.irfftplan, sol )
-
-  v.Uh .=    im .* g.Lr .* g.invKKrsq .* sol
-  v.Vh .= (-im) .* g.Kr .* g.invKKrsq .* sol
- 
-  A_mul_B!( v.U, g.irfftplan, v.Uh )
-  A_mul_B!( v.V, g.irfftplan, v.Vh )
-
-  v.Uq .= v.U.*v.q
-  v.Vq .= v.V.*v.q
-
-  A_mul_B!( v.Uqh, g.rfftplan, v.Uq )
-  A_mul_B!( v.Vqh, g.rfftplan, v.Vq )
-
-  NL .= (-im) .* g.Kr.*v.Uqh .- im .* g.Lr.*v.Vqh
-end
-
-
-
-
-function calcNL!(NL::Array{Complex{Float64}, 3}, sol::Array{Complex128, 3},
-  t::Float64, v::Vars, p::Params, g::TwoDGrid)
-
-  # ON NAVID'S LAPTOP A_mul_B! messes up!!
-  #v.q = irfft(sol[:, :, 1], g.nx)
-  #v.U = irfft(v.Uh, g.nx)
-  #v.V = irfft(v.Vh, g.nx)
-  #v.Uqh = rfft(v.Uq)
-  #v.Vqh = rfft(v.Vq)
-
-  # Solution key:
-  # sol[:, ;, 1] : qh
-
-  A_mul_B!( v.q, g.irfftplan, sol[:, :, 1] )
-
-  v.Uh .=    im .* g.Lr .* g.invKKrsq .* sol[:, :, 1]
-  v.Vh .= (-im) .* g.Kr .* g.invKKrsq .* sol[:, :, 1]
- 
-  A_mul_B!( v.U, g.irfftplan, v.Uh )
-  A_mul_B!( v.V, g.irfftplan, v.Vh )
-
-  v.Uq .= v.U .* v.q
-  v.Vq .= v.V .* v.q
-
-  A_mul_B!( v.Uqh, g.rfftplan, v.Uq )
-  A_mul_B!( v.Vqh, g.rfftplan, v.Vq )
-
-  NL[:, :, 1] .= (-im) .* g.Kr.*v.Uqh  .-  im .* g.Lr.*v.Vqh
 
 end
 
@@ -204,46 +132,31 @@ function updatevars!(v::Vars, g::TwoDGrid)
 
   v.qh .= v.sol
 
-  A_mul_B!( v.q, g.irfftplan, v.qh )
+  # We don't use A_mul_B here because irfft destroys its input.
+  # A_mul_B!(v.q, g.irfftplan, v.qh)
+  v.q = irfft(v.qh, g.nx)
 
   v.psih .= .- v.qh .* g.invKKrsq
 
   v.Uh .=    im .* g.Lr .* g.invKKrsq .* v.qh
   v.Vh .= (-im) .* g.Kr .* g.invKKrsq .* v.qh
  
-  A_mul_B!( v.U, g.irfftplan, v.Uh )
-  A_mul_B!( v.V, g.irfftplan, v.Vh )
+  # We don't use A_mul_B here because irfft destroys its input.
+  #A_mul_B!(v.U, g.irfftplan, v.Uh)
+  #A_mul_B!(v.V, g.irfftplan, v.Vh)
+  v.U = irfft(v.Uh, g.nx)
+  v.V = irfft(v.Vh, g.nx)
 
   v.Uq .= v.U .* v.q
   v.Vq .= v.V .* v.q
 
-  A_mul_B!( v.Uqh, g.rfftplan, v.Uq )
-  A_mul_B!( v.Vqh, g.rfftplan, v.Vq )
+  A_mul_B!(v.Uqh, g.rfftplan, v.Uq)
+  A_mul_B!(v.Vqh, g.rfftplan, v.Vq)
 
 end
 
 
-function updatevars!(v::Vars, p::Params, g::TwoDGrid)
 
-  v.qh .= v.sol
-
-  A_mul_B!( v.q, g.irfftplan, v.qh )
-
-  v.psih .= .- v.qh .* g.invKKrsq
-
-  v.Uh .=    im .* g.Lr .* g.invKKrsq .* v.qh
-  v.Vh .= (-im) .* g.Kr .* g.invKKrsq .* v.qh
- 
-  A_mul_B!( v.U, g.irfftplan, v.Uh )
-  A_mul_B!( v.V, g.irfftplan, v.Vh )
-
-  v.Uq .= v.U .* v.q
-  v.Vq .= v.V .* v.q
-
-  A_mul_B!( v.Uqh, g.rfftplan, v.Uq )
-  A_mul_B!( v.Vqh, g.rfftplan, v.Vq )
-
-end
 
 # This function exists only to test the speed of fused vs hand-coded loops.
 function updatevars!(v::Vars, p::Params, g::TwoDGrid, withloops::Bool)
@@ -252,7 +165,9 @@ function updatevars!(v::Vars, p::Params, g::TwoDGrid, withloops::Bool)
     v.qh[i, j] = v.sol[i, j]
   end
 
-  A_mul_B!( v.q, g.irfftplan, v.qh )
+  # We don't use A_mul_B here because irfft destroys its input.
+  #A_mul_B!(v.q, g.irfftplan, v.qh)
+  v.q = irfft(v.qh)
 
   for j = 1:g.nl, i = 1:g.nkr 
     v.psih[i, j] = -v.qh[i, j] * g.invKKrsq[i, j]
@@ -263,23 +178,28 @@ function updatevars!(v::Vars, p::Params, g::TwoDGrid, withloops::Bool)
     v.Vh[i, j] = -im*g.Lr[i, j]*g.invKKrsq[i, j]*v.qh[i, j]
   end
  
-  A_mul_B!( v.U, g.irfftplan, v.Uh )
-  A_mul_B!( v.V, g.irfftplan, v.Vh )
+  # We don't use A_mul_B here because irfft destroys its input.
+  #A_mul_B!(v.U, g.irfftplan, v.Uh)
+  #A_mul_B!(v.V, g.irfftplan, v.Vh)
+  v.U = irfft(v.Uh)
+  v.V = irfft(v.Vh)
 
   for j = 1:g.ny, i = 1:g.nx
     v.Uq[i, j] = v.U[i, j]*v.q[i, j]
     v.Vq[i, j] = v.V[i, j]*v.q[i, j]
   end
 
-  A_mul_B!( v.Uqh, g.rfftplan, v.Uq )
-  A_mul_B!( v.Vqh, g.rfftplan, v.Vq )
+  A_mul_B!(v.Uqh, g.rfftplan, v.Uq)
+  A_mul_B!(v.Vqh, g.rfftplan, v.Vq)
 
 end
 
 
+
+
 function set_q!(v::Vars, g::TwoDGrid, q::Array{Float64, 2})
   # Set vorticity
-  A_mul_B!( v.sol, g.rfftplan, q )
+  A_mul_B!(v.sol, g.rfftplan, q)
   updatevars!(v, g)
 end
 
@@ -298,15 +218,14 @@ function simplenondim(nx::Int; nu=1e-6, nun=4)
   # Construct a barotropic QG problem that should reproduce results obtained
   # from a bare 2D turbulence simulation when beta=0.
 
-  Lx     = 2.0*pi               # Domain size (meters)
+  Lx     = 2.0*pi                   # Domain size (meters)
    
   g  = Grid(nx, Lx)
   p  = Params(nu, nun)
   v  = Vars(g)
   eq = Equation(p, g)
 
-  # Random initial condition
-  set_q!(v, g, rand(nx, nx))
+  set_q!(v, g, rand(nx, nx))        # Random initial condition
 
   return g, p, v, eq
 end

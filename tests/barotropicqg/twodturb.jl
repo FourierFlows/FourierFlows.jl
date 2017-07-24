@@ -1,31 +1,54 @@
 include("../../src/physics/barotropicqg.jl")
+include("../../src/physics/twodturb.jl")
 
-using BarotropicQG, PyPlot
-using BarotropicQGProblems
+using PyPlot
+
+import TimeSteppers
+import TwoDTurb, TwoDTurbProblems
+import BarotropicQG, BarotropicQGProblems
 
 nx  = 128
-dt  = 2e-2
-nu  = 1e-6
+dt  = 1e-2
+nu  = 1e-4
 nun = 4
 
-g, p, v, eq = twodturb(nx, nu, nun; beta=10.0)
-ts = RK4TimeStepper(dt, eq.LC)
+g, p1, v1, eq1 = TwoDTurbProblems.simplenondim(nx; nu=nu, nun=nun)
+g, p2, v2, eq2 = BarotropicQGProblems.twodturb(nx; nu=nu, nun=nun)
 
-function test_plot(v)
-  clf() 
-  pcolormesh(g.x, g.y, v.zet);
+ts1 = TimeSteppers.RK4TimeStepper(dt, eq1.LC)
+ts2 = TimeSteppers.RK4TimeStepper(dt, eq2.LC)
+
+function test_plot(axs, g, v1, v2)
+  # Make a plot that compared two-dimensional turbulence solved by
+  # the TwoDTurb and BarotropicQG modules.
+
+  #clf() 
+
+  axes(axs[1]); cla()
+  pcolormesh(g.x, g.y, v1.q);
+  axis("square")
+
+  axes(axs[2])
+  pcolormesh(g.x, g.y, v2.q);
+  axis("square")
+
   pause(0.01)
 end
 
-nloops = 100
-nsteps = 400
 
-fig = figure(1)
-test_plot(v)
+nloops = 100
+nsteps = 100
+
+fig, axs = subplots(ncols=2, nrows=1)
+test_plot(axs, g, v1, v2)
 
 for i = 1:nloops
-  @time stepforward!(v, nsteps, ts, eq, p, g)
-  updatevars!(v, p, g) 
-  test_plot(v)
+  #@time TimeSteppers.stepforward!(v1, nsteps, ts1, eq1, p1, g)
+  @time BarotropicQG.stepforward!(v2, nsteps, ts2, eq2, p2, g)
+
+  updatevars!(v1, p1, g) 
+  updatevars!(v2, p2, g) 
+
+  test_plot(axs, g, v1, v2)
 end
 

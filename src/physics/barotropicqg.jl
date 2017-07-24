@@ -68,7 +68,6 @@ type ConstMeanParams <: AbstractParams
 end
 
 
-# "ConstMeanParams for flows with fixed values of U
 type FreeDecayParams <: AbstractParams
   f0::Float64                       # Constant planetary vorticity
   beta::Float64                     # Planetary vorticity y-gradient
@@ -241,10 +240,12 @@ function calcNL!(NL::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2}
   v.U = sol[1, 1].re
   sol[1, 1] = 0.0
   
-  A_mul_B!( v.q, g.irfftplan, sol)
+  # This copy is necessary because FFTW's irfft destroys its input.
+  v.qh .= sol
+  A_mul_B!(v.q, g.irfftplan, sol)
 
-  v.uh .=    im .* g.Lr .* g.invKKrsq .* (sol .- p.etah)
-  v.vh .= (-im) .* g.Kr .* g.invKKrsq .* (sol .- p.etah)
+  v.uh .=    im .* g.Lr .* g.invKKrsq .* (v.qh .- p.etah)
+  v.vh .= (-im) .* g.Kr .* g.invKKrsq .* (v.qh .- p.etah)
 
   A_mul_B!(v.u, g.irfftplan, v.uh)
   A_mul_B!(v.v, g.irfftplan, v.vh)
@@ -299,10 +300,12 @@ function calc_free_decay_NL!(NL::Array{Complex{Float64}, 2},
   # Calculate the nonlinear part of a 2D equation  
   # governing the unforced, free decay of a barotropic QG flow.
 
-  A_mul_B!( v.q, g.irfftplan, sol)
+  # This copy is necessary because FFTW's irfft destroys its input.
+  v.qh .= sol
+  A_mul_B!(v.q, g.irfftplan, sol)
 
-  v.uh .=    im .* g.Lr .* g.invKKrsq .* (sol .- p.etah)
-  v.vh .= (-im) .* g.Kr .* g.invKKrsq .* (sol .- p.etah)
+  v.uh .=    im .* g.Lr .* g.invKKrsq .* (v.qh .- p.etah)
+  v.vh .= (-im) .* g.Kr .* g.invKKrsq .* (v.qh .- p.etah)
 
   A_mul_B!(v.u, g.irfftplan, v.uh)
   A_mul_B!(v.v, g.irfftplan, v.vh)
@@ -311,7 +314,7 @@ function calc_free_decay_NL!(NL::Array{Complex{Float64}, 2},
   v.vq .= v.v.*v.q
 
   A_mul_B!(v.uqh, g.rfftplan, v.uq)
-  A_mul_B!(v.vqh,  g.rfftplan, v.vq)
+  A_mul_B!(v.vqh, g.rfftplan, v.vq)
 
   # Nonlinear term for q
   NL .= (-im) .* g.Kr.*v.uqh .- im .* g.Lr.*v.vqh .- p.beta.*v.vh
@@ -332,18 +335,26 @@ function updatevars!(v::Vars, p::Params, g::TwoDGrid)
   v.qh[1, 1] = 0.0
   v.zetah .= v.qh .- p.etah
 
-  A_mul_B!(v.q, g.irfftplan, v.qh)
-  A_mul_B!(v.zeta, g.irfftplan, v.zeta)
+  # Do not use A_mul_B here because it destroys its input.
+  #A_mul_B!(v.q, g.irfftplan, v.qh)
+  #A_mul_B!(v.zeta, g.irfftplan, v.zetah)
+  v.q = irfft(v.qh, g.nx)
+  v.zeta = irfft(v.zetah, g.nx)
 
   v.uh .=    im .* g.Lr .* g.invKKrsq .* v.zetah
   v.vh .= (-im) .* g.Kr .* g.invKKrsq .* v.zetah
 
-  A_mul_B!( v.u, g.irfftplan, v.uh)
-  A_mul_B!( v.v, g.irfftplan, v.vh)
+  # Do not use A_mul_B here because it destroys its input.
+  #A_mul_B!(v.u, g.irfftplan, v.uh)
+  #A_mul_B!(v.v, g.irfftplan, v.vh)
+  v.u = irfft(v.uh, g.nx)
+  v.v = irfft(v.vh, g.nx)
 
   v.psih .= .- v.qh .* g.invKKrsq
 
-  A_mul_B!(v.psi, g.irfftplan, v.psih)
+  # Do not use A_mul_B here because it destroys its input.
+  #A_mul_B!(v.psi, g.irfftplan, v.psih)
+  v.psi = irfft(v.psih, g.nx)
 
   v.sp .= sqrt.( (v.u.+v.U).^2.0 .+ v.v.^2.0 )
 end
@@ -353,38 +364,60 @@ end
 function updatevars!(v::Vars, p::ConstMeanParams, g::TwoDGrid)
   # Update state variables, deriving model state from v.sol
   v.qh .= v.sol
-  A_mul_B!(v.q, g.irfftplan, v.qh )
+  v.zetah .= v.qh .- p.etah
 
-  v.uh .=    im .* g.Lr .* g.invKKrsq .* (v.qh .- p.etah)
-  v.vh .= (-im) .* g.Kr .* g.invKKrsq .* (v.qh .- p.etah)
+  # Do not use A_mul_B here because it destroys its input.
+  #A_mul_B!(v.q, g.irfftplan, v.qh)
+  #A_mul_B!(v.zeta, g.irfftplan, v.zetah)
+  v.q = irfft(v.qh, g.nx)
+  v.zeta = irfft(v.zetah, g.nx)
 
-  A_mul_B!( v.u, g.irfftplan, v.uh )
-  A_mul_B!( v.v, g.irfftplan, v.vh )
+  v.uh .=    im .* g.Lr .* g.invKKrsq .* v.zetah
+  v.vh .= (-im) .* g.Kr .* g.invKKrsq .* v.zetah
+
+  # Do not use A_mul_B here because it destroys its input.
+  #A_mul_B!(v.u, g.irfftplan, v.uh)
+  #A_mul_B!(v.v, g.irfftplan, v.vh)
+  v.u = irfft(v.uh, g.nx)
+  v.v = irfft(v.vh, g.nx)
 
   v.psih .= .- v.zetah .* g.invKKrsq
 
-  A_mul_B!(v.psi, g.irfftplan, v.psih)
+  # Do not use A_mul_B here because it destroys its input.
+  #A_mul_B!(v.psi, g.irfftplan, v.psih)
+  v.psi = irfft(v.psih, g.nx)
 
-  v.sp .= sqrt.( (v.u.+v.U).^2.0 .+ v.v.^2.0 )
+  v.sp .= sqrt.( (v.u.+p.U).^2.0 .+ v.v.^2.0 )
 end
+
+
+
 
 function updatevars!(v::FreeDecayVars, p::FreeDecayParams, g::TwoDGrid)
   # Update state variables, deriving model state from v.sol
   v.qh .= v.sol
   v.zetah .= v.qh .- p.etah
 
-  A_mul_B!(v.q, g.irfftplan, v.qh )
-  A_mul_B!(v.zeta, g.irfftplan, v.zetah )
+  # Do not use A_mul_B here because it destroys its input.
+  #A_mul_B!(v.q, g.irfftplan, v.qh)
+  #A_mul_B!(v.zeta, g.irfftplan, v.zetah)
+  v.q = irfft(v.qh, g.nx)
+  v.zeta = irfft(v.zetah, g.nx)
 
   v.uh .=    im .* g.Lr .* g.invKKrsq .* v.zetah
   v.vh .= (-im) .* g.Kr .* g.invKKrsq .* v.zetah
 
-  A_mul_B!(v.u, g.irfftplan, v.uh)
-  A_mul_B!(v.v, g.irfftplan, v.vh)
+  # Do not use A_mul_B here because it destroys its input.
+  #A_mul_B!(v.u, g.irfftplan, v.uh)
+  #A_mul_B!(v.v, g.irfftplan, v.vh)
+  v.u = irfft(v.uh, g.nx)
+  v.v = irfft(v.vh, g.nx)
 
   v.psih .= .- v.zetah .* g.invKKrsq
 
-  A_mul_B!(v.psi, g.irfftplan, v.psih)
+  # Do not use A_mul_B here because it destroys its input.
+  #A_mul_B!(v.psi, g.irfftplan, v.psih)
+  v.psi = irfft(v.psih, g.nx)
 
   v.sp .= sqrt.( v.u.^2.0 .+ v.v.^2.0 )
 end
@@ -459,29 +492,8 @@ end
 
 
 
-function twodturb(nx::Int; nu=1e-6, nun=4, beta=0.0, mu=0.0)
-  # Construct a barotropic QG problem that should reproduce results obtained
-  # from a bare 2D turbulence simulation when beta=0.
 
-  Lx     = 2.0*pi               # Domain size (meters)
-  f0     = 1.0                  # Central planetary vorticity
-  eta    = zeros(nx, nx)
-  etah   = rfft(eta)
-   
-  g  = Grid(nx, Lx)
-  p  = FreeDecayParams(f0, beta, etah, mu, nu, nun)
-  v  = FreeDecayVars(g)
-  eq = Equation(p, g)
-
-  # Random initial condition
-  set_zeta!(v, p, g, rand(nx, nx))
-
-  return g, p, v, eq
-end
-
-
-
-function twodturb_withmountains(nx::Int; nu=1e-6, nun=4,
+function random_topo_turb(nx::Int; nu=1e-6, nun=4,
   beta=0.0, mu=0.0, etaRms=0.0, etaScale=8.0, etaMax=0.2)
   # Construct a barotropic QG problem that should reproduce results obtained
   # from a bare 2D turbulence simulation when beta=0.
@@ -509,7 +521,47 @@ function twodturb_withmountains(nx::Int; nu=1e-6, nun=4,
 end
 
 
+
+
 function gaussian_topo_turb(nx::Int; nu=1e-6, nun=4,
+  beta=0.0, mu=0.0, hbump=0.2, dbump=0.1, topotype="mountain")
+  # Construct a barotropic QG problem that should reproduce results obtained
+  # from a bare 2D turbulence simulation when beta=0.
+
+  Lx     = 2.0*pi               # Domain size (meters)
+  f0     = 1.0                  # Central planetary vorticity
+  g      = Grid(nx, Lx)
+
+  Lbump  = dbump*Lx
+  x0, y0 = mean(g.x), mean(g.y)
+
+  if topotype == "mountain"
+    eta = f0*hbump.*exp.( 
+      -( (g.X-x0).^2.0 .+ (g.Y-y0).^2.0 ) ./ (2.0*Lbump^2.0) )
+  elseif topotype == "east-west ridge"
+    eta = f0*hbump.*exp.( 
+      -( (g.Y-y0).^2.0 ) ./ (2.0*Lbump^2.0) )
+  elseif topotype == "north-south ridge"
+    eta = f0*hbump.*exp.( 
+      -( (g.X-x0).^2.0 ) ./ (2.0*Lbump^2.0) )
+  end
+
+  etah   = rfft(eta)
+   
+  p  = FreeDecayParams(f0, beta, etah, mu, nu, nun)
+  v  = FreeDecayVars(g)
+  eq = Equation(p, g)
+
+  # Random initial condition
+  set_zeta!(v, p, g, rand(nx, nx))
+
+  return g, p, v, eq
+end
+
+
+
+
+function forced_gaussian_topo_turb(nx::Int; nu=1e-6, nun=4, U=0.0,
   beta=0.0, mu=0.0, hbump=0.2, dbump=0.1, topotype="mountain")
   # Construct a barotropic QG problem that should reproduce results obtained
   # from a bare 2D turbulence simulation when beta=0.
@@ -534,8 +586,8 @@ function gaussian_topo_turb(nx::Int; nu=1e-6, nun=4,
 
   etah   = rfft(eta)
    
-  p  = FreeDecayParams(f0, beta, etah, mu, nu, nun)
-  v  = FreeDecayVars(g)
+  p  = ConstMeanParams(f0, beta, U, etah, mu, nu, nun)
+  v  = Vars(g)
   eq = Equation(p, g)
 
   # Random initial condition
@@ -543,6 +595,8 @@ function gaussian_topo_turb(nx::Int; nu=1e-6, nun=4,
 
   return g, p, v, eq
 end
+
+
 
 
 

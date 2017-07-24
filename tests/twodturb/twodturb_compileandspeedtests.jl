@@ -1,4 +1,4 @@
-include("../../src/physics/twodturb.jl")
+include("../../src/fourierflows.jl")
 
 # twodturb_compileandspeedtests.jl
 #
@@ -6,7 +6,9 @@ include("../../src/physics/twodturb.jl")
 # tests the integrity and speed of functions used to compile and solve the
 # problem.
 
-using TwoDTurb
+using FourierFlows
+using FourierFlows.TwoDTurb
+
 
 # Problem parameters
 nx  = 256     # Numerical problem size
