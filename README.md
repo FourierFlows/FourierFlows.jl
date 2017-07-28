@@ -72,5 +72,5 @@ and [Navid C. Constantinou][] (@navidcy)
 
 [Julia]: https://julialang.org/
 [ParallelAccelerator]: https://github.com/IntelLabs/ParallelAccelerator.jl
-[Navid Constantinou]: http://www.navidconstantinou.com/
+[Navid C. Constantinou]: http://www.navidconstantinou.com
 [Gregory L. Wagner]: https://glwagner.github.io
