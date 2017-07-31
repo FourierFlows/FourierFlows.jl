@@ -77,7 +77,11 @@ type FreeDecayParams <: AbstractParams
   nun::Int                          # Vorticity hyperviscous order
 end
 
-
+function FreeDecayParams(g::TwoDGrid, beta::Real, etah::Real, mu::Real,
+  nu::Real, nun::Int)
+  etaharray = zeros(Complex{Float64}, g.nkr, g.nl)
+  FreeDecayParams(1.0, beta, etaharray, mu, nu, nun)
+end
 
 
 
@@ -308,7 +312,9 @@ function calc_free_decay_NL!(NL::Array{Complex{Float64}, 2},
   v.vh .= (-im) .* g.Kr .* g.invKKrsq .* (sol .- p.etah)
 
   A_mul_B!(v.u, g.irfftplan, v.uh)
-  A_mul_B!(v.v, g.irfftplan, v.vh)
+
+  v.qh .= v.vh  # To preserve vh
+  A_mul_B!(v.v, g.irfftplan, v.qh)
 
   v.uq .= v.u.*v.q
   v.vq .= v.v.*v.q
