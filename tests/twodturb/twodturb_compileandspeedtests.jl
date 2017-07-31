@@ -1,4 +1,4 @@
-include("../../src/physics/twodturb.jl")
+include("../../src/fourierflows.jl")
 
 # twodturb_compileandspeedtests.jl
 #
@@ -6,7 +6,9 @@ include("../../src/physics/twodturb.jl")
 # tests the integrity and speed of functions used to compile and solve the
 # problem.
 
-using TwoDTurb
+using FourierFlows
+using FourierFlows.TwoDTurb
+
 
 # Problem parameters
 nx  = 256     # Numerical problem size
@@ -16,13 +18,14 @@ nu  = 1e-6    # Vorticity hyperviscosity
 nun = 4       # Vorticity hyperviscosity order
 
 # Compile functions related to problem construction
-g = Grid(nx, Lx)
-p = Params(nu, nun, g)
-v = Vars(p, g)
-tsFE = ForwardEulerTimeStepper(dt, p.LC)
-tsAB3 = AB3TimeStepper(dt, p.LC)
-tsRK4 = RK4TimeStepper(dt, p.LC)
-tsETDRK4 = ETDRK4TimeStepper(dt, p.LC)
+g  = Grid(nx, Lx)
+p  = Params(nu, nun)
+v  = Vars(g)
+eq = Equation(p, g)
+tsFE     = ForwardEulerTimeStepper(dt, eq.LC)
+tsAB3    = AB3TimeStepper(dt, eq.LC)
+tsRK4    = RK4TimeStepper(dt, eq.LC)
+tsETDRK4 = ETDRK4TimeStepper(dt, eq.LC)
 
 # Evaluate grid, param, var generation
 println()
@@ -30,22 +33,25 @@ println()
 @time g = Grid(nx, Lx)
 
 @printf "%34s" "Init params:"
-@time p = Params(nu, nun, g)
+@time p = Params(nu, nun)
 
 @printf "%34s" "Init vars:"
-@time v = Vars(p, g)
+@time v = Vars(g)
+
+@printf "%34s" "Init equation:"
+@time eq = Equation(p, g)
 
 @printf "%34s" "Init ForwEuler time stepper:"
-@time ts = ForwardEulerTimeStepper(dt, p.LC)
+@time ts = ForwardEulerTimeStepper(dt, eq.LC)
 
 @printf "%34s" "Init AB3 time stepper:"
-@time ts = AB3TimeStepper(dt, p.LC)
+@time ts = AB3TimeStepper(dt, eq.LC)
 
 @printf "%34s" "Init RK4 time stepper:"
-@time ts = RK4TimeStepper(dt, p.LC)
+@time ts = RK4TimeStepper(dt, eq.LC)
 
 @printf "%34s" "Init ETDRK4 time stepper:"
-@time ts = ETDRK4TimeStepper(dt, p.LC)
+@time ts = ETDRK4TimeStepper(dt, eq.LC)
 
 
 
@@ -83,21 +89,21 @@ println()
 
 # Evaluate stepping forward ---------------------------------------------------
 
-stepforward!(3, tsFE, v, p, g)
-stepforward!(3, tsAB3, v, p, g)
-stepforward!(3, tsRK4, v, p, g)
-stepforward!(3, tsETDRK4, v, p, g)
+stepforward!(v, 3, tsFE, eq, p, g)
+stepforward!(v, 3, tsAB3, eq, p, g)
+stepforward!(v, 3, tsRK4, eq, p, g)
+stepforward!(v, 3, tsETDRK4, eq, p, g)
 
 nsteps = 1000
 println()
 @printf "%22s %4d %s" "ForwEuler stepforward" nsteps "times:"
-@time stepforward!(nsteps, tsFE, v, p, g)
+@time stepforward!(v, nsteps, tsFE, eq, p, g)
 
 @printf "%22s %4d %s" "AB3 stepforward" nsteps "times:"
-@time stepforward!(nsteps, tsAB3, v, p, g)
+@time stepforward!(v, nsteps, tsAB3, eq, p, g)
 
 @printf "%22s %4d %s" "RK4 stepforward" nsteps "times:"
-@time stepforward!(nsteps, tsRK4, v, p, g)
+@time stepforward!(v, nsteps, tsRK4, eq, p, g)
 
 @printf "%22s %4d %s" "ETDRK4 stepforward" nsteps "times:"
-@time stepforward!(nsteps, tsETDRK4, v, p, g)
+@time stepforward!(v, nsteps, tsETDRK4, eq, p, g)

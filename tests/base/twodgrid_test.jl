@@ -1,49 +1,42 @@
-include("../src/domain.jl")
+include("../../src/fourierflows.jl")
 
-using Domain
-# using PyPlot
+using FourierFlows
 
-
-# # test on square grids
-nx = 8                  # number of points
+# Test square grid
+nx = 32                  # number of points
 Lx = 2.0*pi             # Domain width
-g = Grid(nx, Lx)
+g = TwoDGrid(nx, Lx)
 
-# test on rectangular grids
-# nx, ny = 8, 12                  # number of points
-# Lx, Ly = 2.0, 3.4             # Domain widths
-# g = Grid(nx, ny, Lx, Ly);
-
-
-println(" ")
-################################################################################
+# -----------------------------------------------------------------------------
 # Test that the X & Y grids are actually created
 
-if maximum(abs.(g.X))<1e-10
+println()
+
+if maximum(abs.(g.X)) < 1e-10
   info("X grid is ALL zeros!")
 else
-  println("X  grid seems OK.")
+  info("X  grid seems OK.")
 end
 
 if maximum(abs.(g.Y))<1e-10
   info("Y grid is ALL zeros!")
 else
-  println("Y  grid seems OK.")
+  info("Y  grid seems OK.")
 end
 
 
-################################################################################
+# -----------------------------------------------------------------------------
 # Test that K, L, Kr, Lr grids are created in the correct order
 
 test = 0;
 for i in g.krange
   test += abs(maximum(abs.(g.K[i,:]))-minimum(abs.(g.K[i,:])));
-  #the inner abs's are needed because Greg defined K as Complex128
+  #the inner abs's are needed bedcause Greg defined K as Complex128
 end
 if test>1e-12
   info("K grid is not correcty oriented!")
 else
-  println("K  grid seems OK.")
+  info("K  grid seems OK.")
 end
 
 test = 0;
@@ -54,7 +47,7 @@ end
 if test>1e-12
   info("L grid is not correcty oriented!")
 else
-  println("L  grid seems OK.")
+  info("L  grid seems OK.")
 end
 
 
@@ -66,16 +59,16 @@ end
 if test>1e-12
   info("Kr grid is not correcty oriented!")
 else
-  println("Kr grid seems OK.")
+  info("Kr grid seems OK.")
 end
 
-println(" ")
-################################################################################
+println()
+# -----------------------------------------------------------------------------
 # Test fft's are giving what you expect them to give
 
 if nx/2>=4
 
-  m = 1;
+  m = 5;
   n = 2;
 
   f1   = cos.(m*real(g.k[2])*g.X).*cos.(n*real(g.l[2])*g.Y);
@@ -84,6 +77,9 @@ if nx/2>=4
   f2h  = fft(f2);
   f1hr = rfft(f1);
   f2hr = rfft(f2);
+
+  f1hr_mul = Array{Complex128}(g.nkr, g.nl)
+  A_mul_B!( f1hr_mul, g.rfftplan, f1 )
 
   f2hr_mul = Array{Complex128}(g.nkr, g.nl)
   A_mul_B!( f2hr_mul, g.rfftplan, f2 )
@@ -104,7 +100,7 @@ if nx/2>=4
   f2h_th = -im*f2h_th;
 
 
-  for i in g.krrange, j in g.lrange
+  for j in g.lrange, i in g.krrange
     if ( abs(g.Kr[i,j])==m*real(g.k[2]) && abs(g.L[i,j])==n*real(g.l[2]) )
       f1hr_th[i,j] = - g.nx*g.ny/4;
     end
@@ -119,37 +115,43 @@ if nx/2>=4
   if norm(f1h-f1h_th)/norm(f1h_th)>1e-12
     info("  fft for cos(mx)cos(ny) is not correcty calculated!")
   else
-    println("  fft for cos(mx)cos(ny) seems OK.")
+    info("  fft for cos(mx)cos(ny) seems OK.")
   end
 
   if norm(f1hr-f1hr_th)/norm(f1hr_th)>1e-12
     info(" rfft for cos(mx)cos(ny) is not correcty calculated!")
   else
-    println(" rfft for cos(mx)cos(ny) seems OK.")
+    info(" rfft for cos(mx)cos(ny) seems OK.")
+  end
+
+  if norm(f1hr_mul-f1hr_th)/norm(f1hr_th)>1e-12
+    info(" rfft with A_mul_B for cos(mx)cos(ny) is not correcty calculated!")
+  else
+    info(" rfft with A_mul_B for cos(mx)cos(ny) seems OK.")
   end
 
   if norm(f2h-f2h_th)/norm(f2h_th)>1e-12
     info("  fft for sin(mx+ny) is not correcty calculated!")
   else
-    println("  fft for sin(mx+ny) seems OK.")
+    info("  fft for sin(mx+ny) seems OK.")
   end
 
   if norm(f2hr-f2hr_th)/norm(f2hr_th)>1e-12
     info(" rfft for sin(mx+ny) is not correcty calculated!")
   else
-    println(" rfft for sin(mx+ny) seems OK.")
+    info(" rfft for sin(mx+ny) seems OK.")
   end
 
   if norm(f2hr_mul-f2hr_th)/norm(f2hr_th)>1e-12
     info(" rfft with A_mul_B for sin(mx+ny) is not correcty calculated!")
   else
-    println(" rfft with A_mul_B for sin(mx+ny) seems OK.")
+    info(" rfft with A_mul_B for sin(mx+ny) seems OK.")
   end
 
 end
 
-println(" ")
-################################################################################
+println()
+# -----------------------------------------------------------------------------
 # Test ifft's taking you back where you started
 
 f1b = real(ifft(f1h));
@@ -157,45 +159,51 @@ f1b = real(ifft(f1h));
 if norm(f1-f1b)/norm(f1) > 1e-12
   info(" ifft for cos(mx)cos(ny) is not correcty calculated!")
 else
-  println(" ifft for cos(mx)cos(ny) seems OK.")
+  info(" ifft for cos(mx)cos(ny) seems OK.")
 end
 
-f1b = irfft(f1hr, nx);
+f1hr_c = deepcopy(f1hr) # deepcopy is needed because FFTW irfft messes up with input!
+f1b = irfft(f1hr_c, nx)
 
 if norm(f1-f1b)/norm(f1) > 1e-12
   info("irfft for cos(mx)cos(ny) is not correcty calculated!")
 else
-  println("irfft for cos(mx)cos(ny) seems OK.")
+  info("irfft for cos(mx)cos(ny) seems OK.")
 end
 
-a = deepcopy(f2hr);
-
-f2b = Array{Float64}(g.nx, g.ny)
-A_mul_B!( f2b, g.irfftplan, f2hr )
-if norm(f2-f2b)/norm(f2) > 1e-12
-  info("irfft with A_mul_B for sin(mx+ny) is not correcty calculated!")
+f1hr_c = deepcopy(f1hr) # deepcopy is needed because FFTW irfft messes up with input!
+f1b = Array{Float64}(g.nx, g.ny)
+A_mul_B!( f1b, g.irfftplan, f1hr_c )
+if norm(f1-f1b)/norm(f1) > 1e-12
+  info("irfft with A_mul_B for cos(mx)cos(ny) is not correcty calculated!")
 else
-  println("irfft with A_mul_B for sin(mx+ny) seems OK.")
+  info("irfft with A_mul_B for cos(mx)cos(ny) seems OK.")
 end
 
-b = deepcopy(f2hr);
-
-f2b3 = irfft(f2hr, g.nx);
+f2hr_c = deepcopy(f2hr); # deepcopy is needed because FFTW irfft messes up with input!
+f2b3 = irfft(f2hr_c, g.nx);
 if norm(f2-f2b3)/norm(f2) > 1e-12
   info("irfft for sin(mx+ny) is not correcty calculated!")
 else
-  println("irfft for sin(mx+ny) seems OK.")
+  info("irfft for sin(mx+ny) seems OK.")
 end
-
-c = deepcopy(f2hr);
-
-println("why is a different from b?   norm(a-b)=", norm(a-b))
 
 
 f2b4 = real(ifft(f2h));
-
 if norm(f2-f2b4)/norm(f2) > 1e-12
   info(" ifft for sin(mx+ny) is not correcty calculated!")
 else
-  println(" ifft for sin(mx+ny) seems OK.")
+  info(" ifft for sin(mx+ny) seems OK.")
 end
+
+f2hr_c = deepcopy(f2hr) # deepcopy is needed because FFTW irfft messes up with input!
+f2b = Array{Float64}(g.nx, g.ny)
+A_mul_B!( f2b, g.irfftplan, f2hr_c )
+if norm(f2-f2b)/norm(f2) > 1e-12
+  info("irfft with A_mul_B for sin(mx+ny) is not correcty calculated!")
+else
+  info("irfft with A_mul_B for sin(mx+ny) seems OK.")
+end
+
+
+println()

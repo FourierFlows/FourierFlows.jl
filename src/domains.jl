@@ -1,14 +1,10 @@
 __precompile__()
 
-module Domain
+export TwoDGrid
 
-export Grid
-export dealias!
+# Grid types and constructors
 
-# -----------------------------------------------------------------------------
-# Grid type and constructors --------------------------------------------------
-# -----------------------------------------------------------------------------
-struct Grid
+type TwoDGrid <: AbstractGrid
   nx::Int
   ny::Int
 
@@ -28,9 +24,6 @@ struct Grid
   kderange::Array{Int64, 1}
   lderange::Array{Int64, 1}
   krderange::Array{Int64, 1}
-
-  defilt::Array{Float64, 2}
-  derfilt::Array{Float64, 2}
 
   dx::Float64
   dy::Float64
@@ -84,7 +77,7 @@ end
 
 
 # Initializer for rectangular grids
-function Grid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64}; 
+function TwoDGrid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64}; 
   nthreads=Sys.CPU_CORES)
 
   # Un-tuple arguments
@@ -110,10 +103,6 @@ function Grid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64};
   kderange  = (kcL+1):(kcR-1)
   lderange  = (lcL+1):(lcR-1)
   krderange = (kcL+1):nkr
-
-  # Dealiasing filters
-  defilt  = Array{Complex{Float64}}(nk, nl)
-  derfilt = Array{Complex{Float64}}(nkr, nl)
 
   # Physical grid allocatio
   x = Array{Float64}(nx)
@@ -195,12 +184,6 @@ function Grid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64};
       invKKsq[i, j] = 1.0/KKsq[i, j]
     end
 
-    if i in krange && j in lrange
-        defilt[i, j] = 1.0
-    else
-        defilt[i, j] = 0.0
-    end
-
   end
 
   # Build 2D real spectral arrays
@@ -215,14 +198,6 @@ function Grid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64};
     else
       invKKrsq[i, j] = 1.0/KKrsq[i, j]
     end
-
-    if i in krrange && j in lrange
-      derfilt[i, j] = 1.0
-    else
-      derfilt[i, j] = 0.0
-    end
-
-
   end
 
   # FFT plans; use grid vars.
@@ -236,66 +211,21 @@ function Grid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64};
   irfftplan = plan_irfft(Array{Complex{Float64},2}(nkr, nl), nx; flags=effort)
 
 
-  return Grid(nx, ny, Lx, Ly, nk, nl, nkr, krange, lrange, krrange,
-          kderange, lderange, krderange, defilt, derfilt, dx, dy, x, y,
+  return TwoDGrid(nx, ny, Lx, Ly, nk, nl, nkr, krange, lrange, krrange,
+          kderange, lderange, krderange, dx, dy, x, y,
           k, l, kr, ksq, lsq, krsq, ik, il, ikr, X, Y, K, L, Kr, Lr,
           K2, L2, KKsq, invKKsq,KL, KKrsq, invKKrsq,
           fftplan, ifftplan, rfftplan, irfftplan)
 end
 
 # Grid constructor with optional arguments to specify anisotropy
-function Grid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
+function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
   nthreads=Sys.CPU_CORES)
-  Grid((nx, ny), (Lx, Ly))
+  TwoDGrid((nx, ny), (Lx, Ly))
 end
 
 # Grid constructor for backwards compatability/convenience; may depcreciate
-function Grid(nx::Int, ny::Int, Lx::Float64, Ly::Float64;
+function TwoDGrid(nx::Int, ny::Int, Lx::Float64, Ly::Float64;
   nthreads=Sys.CPU_CORES)
-  Grid((nx, ny), (Lx, Ly))
-end
-
-
-# ----------------------------------------------------------------------------- 
-# Global grid-related functions for all FourierFlows -------------------------- 
-# ----------------------------------------------------------------------------- 
-
-
-# Fast loop-based dealiasing method for complex, spectral-space vars
-function dealias!(a::Array{Complex{Float64}, 2}, g::Grid)
-  if size(a)[1] == g.nk       # Transform of a complex var
-    for j in g.lderange
-      @simd for i in g.kderange
-        @inbounds a[i, j] = 0.0 + 0.0*im
-      end
-    end
-  else                        # Transform of a real var
-    for j in g.lderange
-      @simd for i in g.krderange
-        @inbounds a[i, j] = 0.0 + 0.0*im
-      end
-    end
-  end
-end
-
-# Dealiasing method for 3-arrays with broadcasting for third dimension.
-function dealias!(a::Array{Complex{Float64}, 3}, g::Grid)
-  if size(a)[1] == g.nk       # Transform of a complex var
-    for j in g.lderange
-      @simd for i in g.kderange
-        @inbounds a[i, j, :] .= 0.0 + 0.0*im
-      end
-    end
-  else                        # Transform of a real var
-    for j in g.lderange
-      @simd for i in g.krderange
-        @inbounds a[i, j, :] .= 0.0 + 0.0*im
-      end
-    end
-  end
-end
-
-
-
-
+  TwoDGrid((nx, ny), (Lx, Ly))
 end
