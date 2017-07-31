@@ -8,7 +8,7 @@ module BarotropicQG
 
 using FourierFlows
 
-export Grid, 
+export Grid,
        Params, FreeDecayParams, ConstMeanParams,
        Vars, FreeDecayVars,
        Equation
@@ -18,7 +18,7 @@ export set_zeta!
 Grid = TwoDGrid
 
 
-# P A R A M S ----------------------------------------------------------------- 
+# P A R A M S -----------------------------------------------------------------
 type Params <: AbstractParams
   f0::Float64                       # Constant planetary vorticity
   beta::Float64                     # Planetary vorticity y-gradient
@@ -29,14 +29,14 @@ type Params <: AbstractParams
   nun::Int                          # Vorticity hyperviscous order
 end
 
-function Params(g::TwoDGrid, f0::Float64, beta::Float64, FU::Real, 
+function Params(g::TwoDGrid, f0::Float64, beta::Float64, FU::Real,
   etah::Array{Complex{Float64}, 2}, mu::Float64, nu::Float64, nun::Int)
   # Construct params for constant forcing
   FUfunction(t::Float64) = FU
   Params(f0, beta, FUfunction, etah, mu, nu, nun)
 end
 
-function Params(g::TwoDGrid, f0::Float64, beta::Float64, FU::Function, 
+function Params(g::TwoDGrid, f0::Float64, beta::Float64, FU::Function,
   eta::Function, mu::Float64, nu::Float64, nun::Int)
 
   # Construct params given topographic generating function
@@ -46,9 +46,9 @@ function Params(g::TwoDGrid, f0::Float64, beta::Float64, FU::Function,
 end
 
 # Element-wise topographic generating function and constant forcing
-function Params(g::TwoDGrid, f0::Float64, beta::Float64, FU::Float64, 
+function Params(g::TwoDGrid, f0::Float64, beta::Float64, FU::Float64,
   eta::Function, mu::Float64, nu::Float64, nun::Int)
- 
+
   # Construct params given topographic generating function and const forcing
   FUfunction(t::Float64) = FU
 
@@ -84,7 +84,7 @@ end
 
 
 
-# E Q U A T I O N S ----------------------------------------------------------- 
+# E Q U A T I O N S -----------------------------------------------------------
 type Equation <: AbstractEquation
   LC::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's linear part
   calcNL!::Function               # Function to calculate eqn's nonlinear part
@@ -116,7 +116,7 @@ end
 
 
 
-# V A R S --------------------------------------------------------------------- 
+# V A R S ---------------------------------------------------------------------
 
 type Vars <: AbstractVars
   t::Float64
@@ -163,7 +163,7 @@ function Vars(g::TwoDGrid)
   psih  = zeros(Complex{Float64}, g.nkr, g.nl)
   zetah = zeros(Complex{Float64}, g.nkr, g.nl)
 
-  return Vars(t, sol, q, U, u, v, uUq, vq, psi, zeta, sp, qh, uh, vh, 
+  return Vars(t, sol, q, U, u, v, uUq, vq, psi, zeta, sp, qh, uh, vh,
     uUqh, vqh, psih, zetah)
 end
 
@@ -219,7 +219,7 @@ function FreeDecayVars(g::TwoDGrid)
   psih  = zeros(Complex{Float64}, g.nkr, g.nl)
   zetah = zeros(Complex{Float64}, g.nkr, g.nl)
 
-  return FreeDecayVars(t, sol, q, u, v, uq, vq, psi, zeta, sp, qh, uh, vh, 
+  return FreeDecayVars(t, sol, q, u, v, uq, vq, psi, zeta, sp, qh, uh, vh,
     uqh, vqh, psih, zetah)
 end
 
@@ -232,14 +232,14 @@ end
 
 function calcNL!(NL::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
   t::Float64, v::Vars, p::Params, g::TwoDGrid)
-  # Calculate the nonlinear part of two equations: one 2D equation  
-  # governing the evolution of a barotropic QG flow, and a single 
+  # Calculate the nonlinear part of two equations: one 2D equation
+  # governing the evolution of a barotropic QG flow, and a single
   # 0-dimensional equation for the time evolution of the zonal mean.
 
   # Note: U is stored in sol[1, 1]; the other elements of sol are qh.
   v.U = sol[1, 1].re
   sol[1, 1] = 0.0
-  
+
   # This copy is necessary because FFTW's irfft destroys its input.
   v.qh .= sol
   A_mul_B!(v.q, g.irfftplan, sol)
@@ -266,10 +266,10 @@ function calcNL!(NL::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2}
 end
 
 
-function calc_const_mean_NL!(NL::Array{Complex{Float64}, 2}, 
-  sol::Array{Complex{Float64}, 2}, t::Float64, v::Vars, 
+function calc_const_mean_NL!(NL::Array{Complex{Float64}, 2},
+  sol::Array{Complex{Float64}, 2}, t::Float64, v::Vars,
   p::ConstMeanParams, g::TwoDGrid)
-  # Calculate the nonlinear part of a 2D equation  
+  # Calculate the nonlinear part of a 2D equation
   # governing the evolution of a barotropic QG flow forced by
   # a constant zonal mean velocity.
 
@@ -294,18 +294,18 @@ end
 
 
 
-function calc_free_decay_NL!(NL::Array{Complex{Float64}, 2}, 
-  sol::Array{Complex{Float64}, 2}, t::Float64, v::FreeDecayVars, 
+function calc_free_decay_NL!(NL::Array{Complex{Float64}, 2},
+  sol::Array{Complex{Float64}, 2}, t::Float64, v::FreeDecayVars,
   p::FreeDecayParams, g::TwoDGrid)
-  # Calculate the nonlinear part of a 2D equation  
+  # Calculate the nonlinear part of a 2D equation
   # governing the unforced, free decay of a barotropic QG flow.
 
   # This copy is necessary because FFTW's irfft destroys its input.
   v.qh .= sol
-  A_mul_B!(v.q, g.irfftplan, sol)
+  A_mul_B!(v.q, g.irfftplan, v.qh)
 
-  v.uh .=    im .* g.Lr .* g.invKKrsq .* (v.qh .- p.etah)
-  v.vh .= (-im) .* g.Kr .* g.invKKrsq .* (v.qh .- p.etah)
+  v.uh .=    im .* g.Lr .* g.invKKrsq .* (sol .- p.etah)
+  v.vh .= (-im) .* g.Kr .* g.invKKrsq .* (sol .- p.etah)
 
   A_mul_B!(v.u, g.irfftplan, v.uh)
   A_mul_B!(v.v, g.irfftplan, v.vh)
@@ -426,7 +426,7 @@ end
 
 
 
-function set_zeta!(v::AbstractVars, p::AbstractParams, g::TwoDGrid, 
+function set_zeta!(v::AbstractVars, p::AbstractParams, g::TwoDGrid,
   zeta::Array{Float64, 2})
   # Set relative vorticity and update model state.
 
@@ -459,7 +459,7 @@ using FourierFlows.BarotropicQG
 
 import FourierFlows: peaked_isotropic_spectrum
 
-export idealizedACC, 
+export idealizedACC,
        twodturb,
        gaussian_topo_turb
 
@@ -469,9 +469,9 @@ function idealizedACC(nx::Int, etaRms::Float64,
   # Construct a barotropic QG problem with non-dimensional parameters that
   # roughly correspond to the Antarctic Circulpolar Current.
 
-  mu     = muStar*etaRms    
+  mu     = muStar*etaRms
   beta   = betaStar*etaRms
-  FU     = FStar*mu*etaRms 
+  FU     = FStar*mu*etaRms
   f0     = 1.0                  # Central planetary vorticity
   Lx     = 32.0*pi              # Domain size (meters)
   nu     = 1e-6                 # Hyperviscosity
@@ -481,7 +481,7 @@ function idealizedACC(nx::Int, etaRms::Float64,
   Leta   = 1.0
   eta  = peaked_isotropic_spectrum(nx, 16.0; rms=etaRms)
   etah = rfft(eta)
-   
+
   g  = Grid(nx, Lx)
   p  = ConstMeanParams(g, f0, beta, 1.0, etah, mu, nu, nun)
   v  = Vars(g)
@@ -508,7 +508,7 @@ function random_topo_turb(nx::Int; nu=1e-6, nun=4,
   end
 
   etah   = rfft(eta)
-   
+
   g  = Grid(nx, Lx)
   p  = FreeDecayParams(f0, beta, etah, mu, nu, nun)
   v  = FreeDecayVars(g)
@@ -536,18 +536,18 @@ function gaussian_topo_turb(nx::Int; nu=1e-6, nun=4,
   x0, y0 = mean(g.x), mean(g.y)
 
   if topotype == "mountain"
-    eta = f0*hbump.*exp.( 
+    eta = f0*hbump.*exp.(
       -( (g.X-x0).^2.0 .+ (g.Y-y0).^2.0 ) ./ (2.0*Lbump^2.0) )
   elseif topotype == "east-west ridge"
-    eta = f0*hbump.*exp.( 
+    eta = f0*hbump.*exp.(
       -( (g.Y-y0).^2.0 ) ./ (2.0*Lbump^2.0) )
   elseif topotype == "north-south ridge"
-    eta = f0*hbump.*exp.( 
+    eta = f0*hbump.*exp.(
       -( (g.X-x0).^2.0 ) ./ (2.0*Lbump^2.0) )
   end
 
   etah   = rfft(eta)
-   
+
   p  = FreeDecayParams(f0, beta, etah, mu, nu, nun)
   v  = FreeDecayVars(g)
   eq = Equation(p, g)
@@ -574,18 +574,18 @@ function forced_gaussian_topo_turb(nx::Int; nu=1e-6, nun=4, U=0.0,
   x0, y0 = mean(g.x), mean(g.y)
 
   if topotype == "mountain"
-    eta    = f0*hbump.*exp.( 
+    eta    = f0*hbump.*exp.(
       -( (g.X-x0).^2.0 .+ (g.Y-y0).^2.0 ) ./ (2.0*Lbump^2.0) )
   elseif topotype == "east-west ridge"
-    eta    = f0*hbump.*exp.( 
+    eta    = f0*hbump.*exp.(
       -( (g.X-x0).^2.0 ) ./ (2.0*Lbump^2.0) )
   elseif topotype == "north-south ridge"
-    eta    = f0*hbump.*exp.( 
+    eta    = f0*hbump.*exp.(
       -( (g.Y-y0).^2.0 ) ./ (2.0*Lbump^2.0) )
   end
 
   etah   = rfft(eta)
-   
+
   p  = ConstMeanParams(f0, beta, U, etah, mu, nu, nun)
   v  = Vars(g)
   eq = Equation(p, g)
@@ -609,5 +609,3 @@ end
 
 end
 # E N D   B A R O T R O P I C Q G >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
-
