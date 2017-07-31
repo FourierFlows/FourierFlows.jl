@@ -3,19 +3,19 @@ __precompile__()
 
 
 
-export ForwardEulerTimeStepper, 
+export ForwardEulerTimeStepper,
        AB3TimeStepper,
        RK4TimeStepper,
        ETDRK4TimeStepper
 
-export stepforward!, 
+export stepforward!,
        step_nsteps!
 
 
 
 
-# Looping stepforward functions ----------------------------------------------- 
-function stepforward!(v::AbstractVars, ts::AbstractTimeStepper, 
+# Looping stepforward functions -----------------------------------------------
+function stepforward!(v::AbstractVars, ts::AbstractTimeStepper,
   eq::AbstractEquation, p::AbstractParams, g::AbstractGrid, nsteps::Int)
 
   for i = 1:nsteps
@@ -23,7 +23,7 @@ function stepforward!(v::AbstractVars, ts::AbstractTimeStepper,
   end
 end
 
-function stepforward!(v::AbstractVars, ts::AbstractTimeStepper, 
+function stepforward!(v::AbstractVars, ts::AbstractTimeStepper,
   eq::AbstractEquation, p::AbstractParams, g::AbstractGrid; nsteps=1)
   for i = 1:nsteps
     stepforward!(v, ts, eq, p, g)
@@ -42,7 +42,7 @@ end
 
 
 
-# Forward Euler --------------------------------------------------------------- 
+# Forward Euler ---------------------------------------------------------------
 # The simplest time-stepping method in the books. Explicit and 1st-order
 # accurate.
 
@@ -54,7 +54,7 @@ end
 
 function ForwardEulerTimeStepper(dt::Float64, v::AbstractVars)
   NL = zeros(v.sol)
-  ForwardEulerTimeStepper{ndims(LC)}(0, dt, NL)
+  ForwardEulerTimeStepper{ndims(NL)}(0, dt, NL)
 end
 
 function ForwardEulerTimeStepper(dt::Float64, LC::Array{Complex{Float64}, 2})
@@ -65,7 +65,7 @@ end
 
 
 
-function stepforward!(v::AbstractVars, ts::ForwardEulerTimeStepper, 
+function stepforward!(v::AbstractVars, ts::ForwardEulerTimeStepper,
   eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
 
   eq.calcNL!(ts.NL, v.sol, v.t, v, p, g)
@@ -83,8 +83,8 @@ end
 
 
 
-# ETDRK4 ---------------------------------------------------------------------- 
-# The Rolls-Royce of time-stepping. Exact treatment of linear part of 
+# ETDRK4 ----------------------------------------------------------------------
+# The Rolls-Royce of time-stepping. Exact treatment of linear part of
 # the equation, explicit and 4th-order accurate integration of nonlinear
 # parts of equation.
 
@@ -164,7 +164,7 @@ end
 
 
 
-function stepforward!(v::AbstractVars, ts::ETDRK4TimeStepper, 
+function stepforward!(v::AbstractVars, ts::ETDRK4TimeStepper,
   eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
 
   # Substep 1
@@ -184,10 +184,10 @@ function stepforward!(v::AbstractVars, ts::ETDRK4TimeStepper,
   ts.ti = v.t + ts.dt
   eq.calcNL!(ts.NL4, ts.sol2, ts.ti, v, p, g)
 
-  # Update 
-  v.sol .= (ts.expLCdt.*v.sol .+      ts.alph .* ts.NL1 
+  # Update
+  v.sol .= (ts.expLCdt.*v.sol .+      ts.alph .* ts.NL1
                               .+ 2.0.*ts.beta .* (ts.NL2 .+ ts.NL3)
-                              .+      ts.gamm .* ts.NL4 ) 
+                              .+      ts.gamm .* ts.NL4 )
   v.t   += ts.dt
   ts.step += 1
 
@@ -200,7 +200,7 @@ end
 
 
 
-# RK4 ------------------------------------------------------------------------- 
+# RK4 -------------------------------------------------------------------------
 # RK4 is the classical explicit 4th-order Runge-Kutta time-stepping
 # method. It uses a series of substeps/estimators to achieve 4th-order
 # accuracy over each individual time-step, at the cost of requiring
@@ -268,7 +268,7 @@ function stepforward!(v::AbstractVars, ts::RK4TimeStepper,
   ts.RHS4 .+= eq.LC.*ts.sol1
 
   # Substep 4 and final step
-  v.sol .+= ts.dt.*( 
+  v.sol .+= ts.dt.*(
        (1.0/6.0).*ts.RHS1 .+ (1.0/3.0).*ts.RHS2
     .+ (1.0/3.0).*ts.RHS3 .+ (1.0/6.0).*ts.RHS4 )
 
@@ -283,7 +283,7 @@ end
 
 
 
-# AB3 ------------------------------------------------------------------------- 
+# AB3 -------------------------------------------------------------------------
 # 3rd order Adams-Bashforth time stepping is an explicit scheme that uses
 # solutions from two previous time-steps to achieve 3rd order accuracy.
 
@@ -320,7 +320,7 @@ function stepforward!(v::AbstractVars, ts::AB3TimeStepper,
   eq.calcNL!(ts.RHS, v.sol, v.t, v, p, g)
   ts.RHS  .+= eq.LC.*v.sol
 
-  v.sol .+= ts.dt .* ( 
+  v.sol .+= ts.dt .* (
     (23.0/12.0).*ts.RHS .- (16.0/12.0).*ts.RHSm1 .+ (5.0/12.0).*ts.RHSm2 )
 
   v.t += ts.dt
@@ -334,8 +334,8 @@ end
 
 
 
-function stepforward!(v::AbstractVars, nsteps::Int, 
-  ts::AB3TimeStepper, eq::AbstractEquation, 
+function stepforward!(v::AbstractVars, nsteps::Int,
+  ts::AB3TimeStepper, eq::AbstractEquation,
   p::AbstractParams, g::AbstractGrid;
   initstepper=false)
 
@@ -347,7 +347,7 @@ function stepforward!(v::AbstractVars, nsteps::Int,
     eq.calcNL!(ts.RHS, v.sol, v.t, v, p, g)
     ts.RHS .+= eq.LC.*v.sol
 
-    # Update 
+    # Update
     ts.RHSm2 .= ts.RHSm1
     ts.RHSm1 .= ts.RHS
 
