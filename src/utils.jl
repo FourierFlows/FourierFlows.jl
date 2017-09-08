@@ -3,6 +3,7 @@ __precompile__()
 
 fftwavenums(n::Int; L=1.0) = 2.0*pi/L*cat(1, 0:n/2, -n/2+1:-1)
 
+
 # Fast loop-based dealiasing method for complex, spectral-space vars
 function dealias!(a::Array{Complex{Float64}, 2}, g::AbstractGrid)
   if size(a)[1] == g.nk       # Transform of a complex var
@@ -26,13 +27,13 @@ function dealias!(a::Array{Complex{Float64}, 3}, g::AbstractGrid)
   if size(a)[1] == g.nk       # Transform of a complex var
     for j in g.lderange
       @simd for i in g.kderange
-        @inbounds a[i, j, :] .= 0.0 + 0.0*im
+        @inbounds @views @. a[i, j, :] = Complex{Float64}(0.0)
       end
     end
   else                        # Transform of a real var
     for j in g.lderange
       @simd for i in g.krderange
-        @inbounds a[i, j, :] .= 0.0 + 0.0*im
+        @inbounds @views @. a[i, j, :] = Complex{Float64}(0.0)
       end
     end
   end
@@ -49,7 +50,7 @@ function peaked_isotropic_spectrum(nkl::Tuple{Int, Int}, kpeak::Real;
 
   # Non-dimensional wavenumbers
   nk, nl = nkl
-  k, l   = fftwavenums(nl), fftwavenums(nl)
+  k, l   = fftwavenums(nk), fftwavenums(nl)
 
   K = zeros(Float64, nk, nl)
   for j = 1:nl, i = 1:nk
