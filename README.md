@@ -56,7 +56,7 @@ problem will produce the fastest possible code.
 
 ## Future work
 
-The code is an a very early stage of development. A main goal for the future
+The code is in the chaos stage of development. A main goal for the future
 is to permit the use of shared memory parallelism in the compute-intensive
 routines (shared-memory parallelism provided already by FFTW/MKLFFT, but
 is not yet native to Julia for things like element-wise matrix multiplication,
