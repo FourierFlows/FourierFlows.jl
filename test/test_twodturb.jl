@@ -38,3 +38,26 @@ stepforward!(v, 3, tsETDRK4, eq, p, g)
 @printf "Testing var updating..."
 TwoDTurb.updatevars!(v, p, g)
 @printf " well, that seemed to go well.\n"
+
+
+# Initial condition with two ellipsoid vortices for comparison.
+ampl = 1.131562576275490e-04
+qh = ampl*rfft( 200.0*exp.(-((g.X-1).^2-0.4*g.X.*g.Y)./.3^2-(g.Y-1).^2./.5^2) 
+  - 100.0* exp.(-((g.X+1).^2-0.4*g.X.*g.Y)./.3^2-(g.Y+1).^2./.5^2) )
+
+qh[1, 1] = 0
+
+g = Grid(nx, Lx)
+p = Params(f0, nuq, nuqn, g)
+v = Vars(p, g)
+qts = ForwardEulerTimeStepper(dt, p.LC)
+
+Solver.updatevars!(v, p, g)
+
+for n in 1:3
+  println("step ", n)
+  nsteps = 50
+
+  Solver.stepforward!(nsteps, qts, v, p, g)
+  Solver.updatevars!(v, p, g)
+end

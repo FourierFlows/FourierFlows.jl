@@ -3,15 +3,15 @@ __precompile__()
 module FourierFlows
 
 
-export AbstractVars,
+export AbstractGrid,
        AbstractParams,
-       AbstractGrid,
+       AbstractVars,
        AbstractEquation,
        AbstractTimeStepper
 
-abstract type AbstractVars end
-abstract type AbstractParams end
 abstract type AbstractGrid end
+abstract type AbstractParams end
+abstract type AbstractVars end
 abstract type AbstractEquation end
 abstract type AbstractTimeStepper end
 
