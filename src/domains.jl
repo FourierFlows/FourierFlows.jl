@@ -150,66 +150,47 @@ function TwoDGrid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64};
   j2 = Int(-ny/2+1):1:-1
 
   k  = 2.0*pi/Lx * cat(1, i1, i2)
-  l  = 2.0*pi/Ly * cat(1, j1, j2)
   kr = 2.0*pi/Lx * cat(1, i1)
+  l  = 2.0*pi/Ly * cat(1, j1, j2)
 
   ksq  = k.^2.0
-  lsq  = l.^2.0
   krsq = kr.^2.0
+  lsq  = l.^2.0
 
   ik  = im*k
-  il  = im*l
   ikr = im*kr
+  il  = im*l
 
-  # Build 2D physical arrays
-  for j = 1:ny, i = 1:nx
-    X[i, j] = x[i]
-    Y[i, j] = y[j]
-  end
+  X = [ x[i] for i = 1:nx, j = 1:ny]
+  Y = [ y[j] for i = 1:nx, j = 1:ny]
 
-  # Build 2D complex spectral arrays
-  for j = 1:nl, i = 1:nk
-    K[i, j] = k[i]
-    L[i, j] = l[j]
+  K = [ k[i] for i = 1:nk, j = 1:nl]
+  L = [ l[j] for i = 1:nk, j = 1:nl]
 
-    K2[i, j] = k[i]^2.0
-    L2[i, j] = l[j]^2.0
+  Kr = [ kr[i] for i = 1:nkr, j = 1:nl]
+  Lr = [ l[j]  for i = 1:nkr, j = 1:nl]
 
-    KKsq[i, j] = k[i]^2.0 + l[j]^2.0
-    KL[i, j] = k[i]*l[j]
+  K2 = K.^2.0
+  L2 = L.^2.0
 
-    if i == 1 && j == 1
-      invKKsq[i, j] = 0.0
-    else
-      invKKsq[i, j] = 1.0/KKsq[i, j]
-    end
+  KKsq  = K.^2.0 + L.^2.0
+  KL   = K.*L
+  invKKsq = 1.0./KKsq
+  invKKsq[1, 1] = 0.0
 
-  end
-
-  # Build 2D real spectral arrays
-  for j = 1:nl, i = 1:nkr
-    Kr[i, j] = kr[i]
-    Lr[i, j] = l[j]
-
-    KKrsq[i, j] = kr[i]^2.0 + l[j]^2.0
-
-    if i == 1 && j == 1
-      invKKrsq[i, j] = 0.0
-    else
-      invKKrsq[i, j] = 1.0/KKrsq[i, j]
-    end
-  end
+  KKrsq = Kr.^2.0 + Lr.^2.0
+  invKKrsq = 1.0./KKrsq
+  invKKrsq[1, 1] = 0.0
 
   # FFT plans; use grid vars.
   FFTW.set_num_threads(nthreads)
   effort = FFTW.MEASURE
 
-  fftplan   = plan_fft(  Array{Float64,2}(nx, ny);         flags=effort)
-  ifftplan  = plan_ifft( Array{Complex{Float64},2}(nk, nl);      flags=effort)
+  fftplan   = plan_fft(Array{Float64,2}(nx, ny); flags=effort)
+  ifftplan  = plan_ifft(Array{Complex{Float64},2}(nk, nl); flags=effort)
 
-  rfftplan  = plan_rfft( Array{Float64,2}(nx, ny);         flags=effort)
+  rfftplan  = plan_rfft(Array{Float64,2}(nx, ny); flags=effort)
   irfftplan = plan_irfft(Array{Complex{Float64},2}(nkr, nl), nx; flags=effort)
-
 
   return TwoDGrid(nx, ny, Lx, Ly, nk, nl, nkr, krange, lrange, krrange,
           kderange, lderange, krderange, dx, dy, x, y,
