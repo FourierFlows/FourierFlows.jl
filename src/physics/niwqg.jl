@@ -25,7 +25,7 @@ type Params <: NIWQGParams
   nu::Float64   # Wave hyperviscosity
   nnu::Int      # Order of wave hyperviscosity
   eta::Float64  # Wave dispersivity
-  kw::Float64  # Wave dispersivity
+  kw::Float64   # Wave horizontal wavenumber
   f::Float64    # Planetary vorticity
 end
 
@@ -35,7 +35,7 @@ function Params(kap::Real, nu::Real, eta::Real, f::Real)
 end
 
 function Params(kap, nkap, nu, nnu, eta, f)
-  kw = sqrt(2*eta/f)
+  kw = sqrt(f/eta)
   Params(kap, nkap, nu, nnu, eta, kw, f)
 end
 
@@ -47,7 +47,7 @@ type MeanFlowParams <: NIWQGParams
   nu::Float64   # Wave hyperviscosity
   nnu::Int      # Order of wave hyperviscosity
   eta::Float64  # Wave dispersivity
-  kw::Float64    # Planetary vorticity
+  kw::Float64   # Wave horizontal wavenumber
   f::Float64    # Planetary vorticity
   Us::Float64   # x-velocity of uniform mean flow
   Vs::Float64   # y-velocity of uniform mean flow
@@ -55,7 +55,7 @@ end
 
 function MeanFlowParams(kap, nkap, nu, nnu, eta, f, Us, Vs)
   kw = sqrt(2*eta/f)
-  Params(kap, nkap, nu, nnu, eta, kw, f, Us, Vs)
+  MeanFlowParams(kap, nkap, nu, nnu, eta, kw, f, Us, Vs)
 end
 
 
@@ -75,7 +75,7 @@ end
 
 function Equation(p::NIWQGParams, g::TwoDGrid)
   LCr = -p.kap * g.KKrsq.^(0.5*p.nkap)
-  LCc = -im*0.5*p.eta*g.KKsq - p.nu*g.KKsq.^(0.5*p.nnu)
+  LCc = -p.nu * g.KKsq.^(0.5*p.nnu) - 0.5*im*p.eta*g.KKsq 
 
   # Function calcNL! is defined below.
   Equation(LCc, LCr, calcNL!)
@@ -199,6 +199,7 @@ function calcNL!(
   @. v.phixh = im*g.K*solc
   @. v.phiyh = im*g.L*solc
 
+  A_mul_B!(v.phi,  g.ifftplan, solc)
   A_mul_B!(v.phix, g.ifftplan, v.phixh)
   A_mul_B!(v.phiy, g.ifftplan, v.phiyh)
 
@@ -219,12 +220,10 @@ function calcNL!(
   @. v.Uh = -im*g.Lr*v.psih
   @. v.Vh =  im*g.Kr*v.psih
 
-  A_mul_B!(v.U, g.irfftplan, v.Uh)
-  A_mul_B!(v.V, g.irfftplan, v.Vh)
+  A_mul_B!(v.q,    g.irfftplan, solr)
+  A_mul_B!(v.U,    g.irfftplan, v.Uh)
+  A_mul_B!(v.V,    g.irfftplan, v.Vh)
   A_mul_B!(v.zeta, g.irfftplan, v.zetah)
-
-  A_mul_B!(v.q, g.irfftplan, solr)
-  A_mul_B!(v.phi, g.ifftplan, solc)
 
 
   # Multiplies and forward transforms
@@ -235,11 +234,12 @@ function calcNL!(
   @. v.Vphi    = v.V*v.phi
   @. v.zetaphi = v.zeta*v.phi
 
+
   A_mul_B!(v.Uqh, g.rfftplan, v.Uq)
   A_mul_B!(v.Vqh, g.rfftplan, v.Vq)
 
-  A_mul_B!(v.Uphih, g.fftplan, v.Uphi)
-  A_mul_B!(v.Vphih, g.fftplan, v.Vphi)
+  A_mul_B!(v.Uphih,    g.fftplan, v.Uphi)
+  A_mul_B!(v.Vphih,    g.fftplan, v.Vphi)
   A_mul_B!(v.zetaphih, g.fftplan, v.zetaphi)
 
 
@@ -251,6 +251,7 @@ function calcNL!(
 end
 
 
+
 function calcNL!(
   NLc::Array{Complex{Float64}, 2},  NLr::Array{Complex{Float64}, 2}, 
   solc::Array{Complex{Float64}, 2}, solr::Array{Complex{Float64}, 2}, 
@@ -260,22 +261,25 @@ function calcNL!(
   @. v.phixh = im*g.K*solc
   @. v.phiyh = im*g.L*solc
 
+  A_mul_B!(v.phi,  g.ifftplan, solc)
   A_mul_B!(v.phix, g.ifftplan, v.phixh)
   A_mul_B!(v.phiy, g.ifftplan, v.phiyh)
-  A_mul_B!(v.phi,  g.ifftplan, solc)
 
-  @. v.modphi = abs2(v.phi)
   @. v.jacphi = real(im*conj(v.phix)*v.phiy - im*conj(v.phiy)*v.phix)
+  @. v.modphi = abs2(v.phi)
 
   A_mul_B!(v.modphih, g.rfftplan, v.modphi)
   A_mul_B!(v.jacphih, g.rfftplan, v.jacphi)
 
+  println("jach: ", maximum(abs.(v.jacphih)), 
+    "modh: ", maximum(abs.(v.modphih.*g.KKrsq)))
 
   # Mean flow calcs and inverse transforms
   @. v.qh = solr        # Necessary because irfft destroys input
-  @. v.zetah = (v.qh 
-    + 0.25/p.f*g.KKrsq*v.modphih - 0.5/p.f*v.jacphih
-  )
+
+  #@. v.zetah = v.qh + 0.25/p.f*g.KKrsq*v.modphih# - 0.5/p.f*v.jacphih
+  #@. v.zetah = v.qh - 0.5/p.f*v.jacphih
+  @. v.zetah = v.qh + 0.25/p.f*g.KKrsq*v.modphih - 0.5/p.f*v.jacphih
 
   @. v.psih = -g.invKKrsq*v.zetah
   @. v.Uh = -im*g.Lr*v.psih
@@ -285,16 +289,12 @@ function calcNL!(
   v.Uh[1, 1] += p.Us*g.nx*g.ny
   v.Vh[1, 1] += p.Vs*g.nx*g.ny
 
-  A_mul_B!(v.q, g.irfftplan, solr)
-  A_mul_B!(v.U, g.irfftplan, v.Uh)
-  A_mul_B!(v.V, g.irfftplan, v.Vh)
+
+  A_mul_B!(v.q,    g.irfftplan, solr)
+  A_mul_B!(v.U,    g.irfftplan, v.Uh)
+  A_mul_B!(v.V,    g.irfftplan, v.Vh)
   A_mul_B!(v.zeta, g.irfftplan, v.zetah)
 
-
-  println(mean(v.U))
-
-  #v.U .+= p.Us
-  #v.V .+= p.Vs
 
   # Multiplies and forward transforms
   @. v.Uq = v.U*v.q
@@ -307,8 +307,8 @@ function calcNL!(
   A_mul_B!(v.Uqh, g.rfftplan, v.Uq)
   A_mul_B!(v.Vqh, g.rfftplan, v.Vq)
 
-  A_mul_B!(v.Uphih, g.fftplan, v.Uphi)
-  A_mul_B!(v.Vphih, g.fftplan, v.Vphi)
+  A_mul_B!(v.Uphih,    g.fftplan, v.Uphi)
+  A_mul_B!(v.Vphih,    g.fftplan, v.Vphi)
   A_mul_B!(v.zetaphih, g.fftplan, v.zetaphi)
 
 
@@ -335,12 +335,12 @@ function updatevars!(v::Vars, p::NIWQGParams, g::TwoDGrid)
   @. v.phixh = im*g.K*v.phih
   @. v.phiyh = im*g.L*v.phih
 
-  A_mul_B!(v.phi, g.ifftplan, v.phih)
+  A_mul_B!(v.phi,  g.ifftplan, v.phih)
   A_mul_B!(v.phix, g.ifftplan, v.phixh)
   A_mul_B!(v.phiy, g.ifftplan, v.phiyh)
 
   # Wave parts of PV. J(phi', phi) = conj(phi'x)*phiy) - conj(phi'y)*phix)
-  @. v.modphi = v.phi*conj(v.phi)
+  @. v.modphi = abs2(v.phi)
   @. v.jacphi = real(im*conj(v.phix)*v.phiy - im*conj(v.phiy)*v.phix)
 
   A_mul_B!(v.modphih, g.rfftplan, v.modphi)
@@ -356,7 +356,6 @@ function updatevars!(v::Vars, p::NIWQGParams, g::TwoDGrid)
   @. v.Vh =  im*g.Kr*v.psih
 
   # We don't use A_mul_B here because irfft destroys its input.
-  # A_mul_B!(v.q, g.irfftplan, v.qh)
   v.q = irfft(v.qh, g.nx)
   v.U = irfft(v.Uh, g.nx) 
   v.V = irfft(v.Vh, g.nx) 

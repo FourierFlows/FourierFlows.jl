@@ -15,6 +15,12 @@ type TwoDGrid <: AbstractGrid
   nl::Int
   nkr::Int
 
+  dx::Float64
+  dy::Float64
+
+  x::Array{Float64, 1}
+  y::Array{Float64, 1}
+
   # Range objects that access the non-aliased part of the wavenumber range
   krange::Array{Int64, 1}
   lrange::Array{Int64, 1}
@@ -24,12 +30,6 @@ type TwoDGrid <: AbstractGrid
   kderange::Array{Int64, 1}
   lderange::Array{Int64, 1}
   krderange::Array{Int64, 1}
-
-  dx::Float64
-  dy::Float64
-
-  x::Array{Float64, 1}
-  y::Array{Float64, 1}
 
   k::Array{Complex{Float64}, 1}
   l::Array{Complex{Float64}, 1}
@@ -192,10 +192,10 @@ function TwoDGrid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64};
   rfftplan  = plan_rfft(Array{Float64,2}(nx, ny); flags=effort)
   irfftplan = plan_irfft(Array{Complex{Float64},2}(nkr, nl), nx; flags=effort)
 
-  return TwoDGrid(nx, ny, Lx, Ly, nk, nl, nkr, krange, lrange, krrange,
-          kderange, lderange, krderange, dx, dy, x, y,
+  return TwoDGrid(nx, ny, Lx, Ly, nk, nl, nkr, dx, dy, x, y,
+          krange, lrange, krrange, kderange, lderange, krderange, 
           k, l, kr, ksq, lsq, krsq, ik, il, ikr, X, Y, K, L, Kr, Lr,
-          K2, L2, KKsq, invKKsq,KL, KKrsq, invKKrsq,
+          K2, L2, KKsq, invKKsq, KL, KKrsq, invKKrsq,
           fftplan, ifftplan, rfftplan, irfftplan)
 end
 

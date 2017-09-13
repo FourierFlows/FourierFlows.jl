@@ -10,21 +10,28 @@ function rms(q)
 end
 
 
-function niwqgplot(axs, vs, pr, g, Uw, ke, tnd) 
+function niwqgplot(axs, vs, pr, g, Uw, R, tnd) 
 
+  domfrac = 20
+  xc, yc = mean(g.x), mean(g.y)
+  xl, xr = xc - g.Lx/domfrac, xc + g.Lx/domfrac
+  yl, yr = yc - g.Ly/domfrac, yc + g.Ly/domfrac
+
+  # All lengths non-dimensionalized by R
   axes(axs[1])
-  pcolormesh(1e-3*g.X, 1e-3*g.Y, vs.q*tnd, cmap="RdBu_r")
+  pcolormesh(g.X/R, g.Y/R, vs.q*tnd, cmap="RdBu_r")
+  xlim(xl/R, xr/R); ylim(yl/R, yr/R)
   axis("tight")
   title(L"q")
 
   axes(axs[2])
-  pcolormesh(1e-3*g.X, 1e-3*g.Y, abs.(vs.phi),
-    cmap="YlGnBu_r")
+  pcolormesh(g.X/R, g.Y/R, abs.(vs.phi), cmap="YlGnBu_r")
+  xlim(xl/R, xr/R); ylim(yl/R, yr/R)
   axis("tight")
   title(L"\sqrt{u^2+v^2}")
 
   @printf("rms Ro: %.2e, max speed: %.3f, t: %.3f\n",
-     rms(vs.q)/pr.f, maximum(pr.kw^2*abs.(vs.phi)), vs.t/tnd)
+     rms(vs.q)/pr.f, maximum(abs.(vs.phi)), vs.t/tnd)
 
   nothing
 end
@@ -33,22 +40,23 @@ end
 # Parameters
 Lx  = 2*pi*200e3
 f0  = 1e-4
-nu = kap = 5e7
+kap = 5e7
+nu = 5e8
 nnu = nkap = 4
 
 # Dispersivity
 N0, m = 5e-3, 2*pi/325
-eta = 0.5/f0*(N0/m)^2.0
-kapw = N0/(m*f0)
+eta = N0^2.0/(f0*m^2.0)
 
-nx  = 256
-dt  = 1e-1 * 2*pi/f0
-nsteps = 20000
+nx  = 512
+dt  = 1e-3 * 2*pi/f0
+nsteps = 2000
 
 # Initial condition
-Uw  = 5e-1          # Wave speed
+Uw  = 5e-2          # Wave speed
 Ue  = 5e-2          # Eddy speed
 R   = 84e3          # Eddy radius
+ke  = 2*pi/R        # Inverse eddy scale
 te  = R/(2*pi*Ue)   # Eddy turn-over time
 
 
@@ -56,13 +64,13 @@ g  = TwoDGrid(nx, Lx)
 #p  = NIWQG.Params(kap, nkap, nu, nnu, eta, f0)
 pr = NIWQG.MeanFlowParams(kap, nkap, nu, nnu, eta, f0, Ue, 0.0)
 vs = NIWQG.Vars(g)
-eq = NIWQG.Equation(p, g)
+eq = NIWQG.Equation(pr, g)
 ts = ETDRK4TimeStepper(dt, eq.LCr, eq.LCc)
 
 
 # Initial condition
 q0   = FourierFlows.lambdipole(Ue, R, g)
-phi0 = Uw/kapw^2 * ones(Complex{Float64}, g.nx, g.ny)
+phi0 = (1.0+im)/sqrt(2)*Uw * ones(Complex{Float64}, g.nx, g.ny)
 
 # Normalize
 #Ro = 0.1
@@ -76,7 +84,7 @@ NIWQG.set_phi!(vs, pr, g, phi0)
 fig, axs = subplots(nrows=1, ncols=2, sharex=true, sharey=true,
   figsize=(12, 5))
 
-niwqgplot(axs, vs, pr, g, 2*Uw, te)
+niwqgplot(axs, vs, pr, g, 2*Uw, R, te)
 pause(0.01) 
 #show()
 
@@ -89,7 +97,7 @@ for i = 1:nplots
 
   NIWQG.updatevars!(vs, pr, g)
 
-  niwqgplot(axs, vs, pr, g, 2*Uw, te)
+  niwqgplot(axs, vs, pr, g, 2*Uw, R, te)
   pause(0.1)
 
 
