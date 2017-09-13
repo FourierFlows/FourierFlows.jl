@@ -24,6 +24,7 @@ include("utils.jl")
 
 include("physics/twodturb.jl")
 include("physics/barotropicqg.jl")
-include("physics/twomodeboussinesq/twomodeboussinesq.jl")
+include("physics/twomodeboussinesq.jl")
+include("physics/niwqg.jl")
 
 end
