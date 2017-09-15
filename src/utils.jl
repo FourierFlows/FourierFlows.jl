@@ -5,6 +5,9 @@ import SpecialFunctions
 "Return the fftwavenumber vector with length n and domain size L."
 fftwavenums(n::Int; L=1.0) = 2.0*pi/L*cat(1, 0:n/2, -n/2+1:-1)
 
+""" Return the root-mean-square of an array. """
+rms(q) = sqrt(mean(q.^2))
+
 
 "Fast loop-based dealiasing method for complex, spectral-space vars."
 function dealias!(a::Array{Complex{Float64}, 2}, g::AbstractGrid)
@@ -99,13 +102,22 @@ function lambdipole(Ue::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
 
   # Wavenumber corresponding to radius R and the first bessel func zero.
   k = 3.8317 / R 
-  #k = 3.8287 / R 
-  q0 = 2*Ue*k/SpecialFunctions.besselj(0, k*R)
+  q0 = -2*Ue*k/SpecialFunctions.besselj(0, k*R)
 
   r = sqrt.((g.X-xc).^2.0 + (g.Y-yc).^2.0)
   q = q0 * SpecialFunctions.besselj.(1, k*r) .* (g.Y-yc)./r
 
+  q[r .== 0.0] = 0.0 # just in case.
   q[r .> R] = 0.0
 
   return q
+end
+
+
+
+""" Return an array of random numbers on a TwoDGrid normalized to have a 
+specifed rms value. """
+function rmsrand(g::TwoDGrid, rmsval::Real)
+  q = rand(g.nx, g.ny)
+  q .*= rmsval / rms(q) 
 end
