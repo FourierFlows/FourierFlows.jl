@@ -134,15 +134,15 @@ end
 
 
 
-type DualETDRK4TimeStepper{dimr, dimc} <: AbstractTimeStepper
-  r::ETDRK4TimeStepper{dimr}
+type DualETDRK4TimeStepper{dimc, dimr} <: AbstractTimeStepper
   c::ETDRK4TimeStepper{dimc}
+  r::ETDRK4TimeStepper{dimr}
 end
 
-function ETDRK4TimeStepper(dt::Float64, LCr::AbstractArray, LCc::AbstractArray)
-  r = ETDRK4TimeStepper(dt::Float64, LCr)
+function ETDRK4TimeStepper(dt::Float64, LCc::AbstractArray, LCr::AbstractArray)
   c = ETDRK4TimeStepper(dt::Float64, LCc)
-  DualETDRK4TimeStepper{ndims(LCr), ndims(LCc)}(r, c)
+  r = ETDRK4TimeStepper(dt::Float64, LCr)
+  DualETDRK4TimeStepper{ndims(LCc), ndims(LCr)}(c, r)
 end
 
 

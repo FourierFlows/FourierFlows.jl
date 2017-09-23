@@ -115,9 +115,57 @@ end
 
 
 
+
+
+""" Return a vorticity field with magnitude q0, radius R, and center at
+center[1], center[2] on a TwoDGrid g corresponding to a 'Gaussian vortex' with 
+Gaussian streamfunction. """
+function gaussianvortex(q0::Real, R::Real, g::TwoDGrid; 
+  center=(nothing, nothing))
+
+  if center == (nothing, nothing)
+    xc = mean(g.x)
+    yc = mean(g.y)
+  else
+    xc = center[1]
+    yc = center[2]
+  end
+
+  ( q0/R^2.0 * ( (g.X-xc).^2.0 + (g.Y-yc).^2.0 - 2*R^2.0 )
+        .* exp.( -((g.X-xc).^2.0 + (g.Y-yc).^2.0) / (2.0*R^2.0)) )
+end
+
+
+
 """ Return an array of random numbers on a TwoDGrid normalized to have a 
 specifed rms value. """
 function rmsrand(g::TwoDGrid, rmsval::Real)
   q = rand(g.nx, g.ny)
   q .*= rmsval / rms(q) 
+  return q
+end
+
+
+
+
+""" Integrate the square of a variables's Fourier transform on a 2D grid
+using Parseval's theorem, taking into account for FFT normalization and
+testing whether the coefficients are the product of a real or complex
+Fourier transform. """
+function parsint(uh, g::TwoDGrid)
+
+  # Weird normalization (hopefully holds for both Julia and MKL FFT)
+  norm = 2*g.Lx*g.Ly/(g.nx^2*g.ny^2)
+
+  nk, nl = size(uh) 
+
+  # Different summing techniques for complex or real transform
+  if nk == g.nkr
+    U = sum(abs2.(uh[1, :]))
+    U += 2*sum(abs2.(uh[2:end, :]))
+  else
+    U = sum(abs2.(uh))
+  end
+
+  return U*norm
 end
