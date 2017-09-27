@@ -1,26 +1,19 @@
 __precompile__()
 
-
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-# T W O D T U R B >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 module TwoDTurb
 
 using FourierFlows
 
-export Grid,
-       Params,
+export Params,
        Vars,
        Equation
 
 export set_q!, updatevars!
 
-# 2D grids for Two-D turbulence.
-Grid = TwoDGrid
 
 
 
-
-# P A R A M S ----------------------------------------------------------------- 
+# P A R A M S
 type Params <: AbstractParams
   nu::Float64                     # Vorticity viscosity
   nun::Int                        # Vorticity hyperviscous order
@@ -29,7 +22,7 @@ end
 
 
 
-# E Q U A T I O N S ----------------------------------------------------------- 
+# E Q U A T I O N S
 type Equation <: AbstractEquation
   LC::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's linear part
   calcNL!::Function               # Function to calculate eqn's nonlinear part
@@ -44,7 +37,7 @@ end
 
 
 
-# V A R S --------------------------------------------------------------------- 
+# V A R S
 type Vars <: AbstractVars
 
   t::Float64
@@ -97,8 +90,7 @@ end
 
 
 
-# S O L V E R S ---------------------------------------------------------------
-
+# S O L V E R S
 function calcNL!(NL::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
   t::Float64, v::Vars, p::Params, g::TwoDGrid)
 
@@ -127,7 +119,7 @@ end
 
 
 
-# H E L P E R   F U N C T I O N S --------------------------------------------- 
+# H E L P E R   F U N C T I O N S
 function updatevars!(v::Vars, g::TwoDGrid)
 
   v.qh .= v.sol
@@ -158,45 +150,6 @@ end
 
 
 
-# This function exists only to test the speed of fused vs hand-coded loops.
-function updatevars!(v::Vars, p::Params, g::TwoDGrid, withloops::Bool)
-
-  for j = 1:g.nl, i = 1:g.nkr 
-    v.qh[i, j] = v.sol[i, j]
-  end
-
-  # We don't use A_mul_B here because irfft destroys its input.
-  #A_mul_B!(v.q, g.irfftplan, v.qh)
-  v.q = irfft(v.qh)
-
-  for j = 1:g.nl, i = 1:g.nkr 
-    v.psih[i, j] = -v.qh[i, j] * g.invKKrsq[i, j]
-  end
-
-  for j = 1:g.nl, i = 1:g.nkr 
-    v.Uh[i, j] =  im*g.Lr[i, j]*g.invKKrsq[i, j]*v.qh[i, j]
-    v.Vh[i, j] = -im*g.Lr[i, j]*g.invKKrsq[i, j]*v.qh[i, j]
-  end
- 
-  # We don't use A_mul_B here because irfft destroys its input.
-  #A_mul_B!(v.U, g.irfftplan, v.Uh)
-  #A_mul_B!(v.V, g.irfftplan, v.Vh)
-  v.U = irfft(v.Uh)
-  v.V = irfft(v.Vh)
-
-  for j = 1:g.ny, i = 1:g.nx
-    v.Uq[i, j] = v.U[i, j]*v.q[i, j]
-    v.Vq[i, j] = v.V[i, j]*v.q[i, j]
-  end
-
-  A_mul_B!(v.Uqh, g.rfftplan, v.Uq)
-  A_mul_B!(v.Vqh, g.rfftplan, v.Vq)
-
-end
-
-
-
-
 function set_q!(v::Vars, g::TwoDGrid, q::Array{Float64, 2})
   # Set vorticity
   A_mul_B!(v.sol, g.rfftplan, q)
@@ -206,32 +159,58 @@ end
 
 
 
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-# S E T U P S >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-module Setups
+""" Make a field of mature turbulence on a square grid.
 
-using FourierFlows.TwoDTurb
+  Args:
+    nx: grid resolution
+    Lx: grid extent
+    qf: final maximum vorticity
+    q0: initial maximum vorticity
+    nnu: order of hyperviscosity
+    maxsteps: maximum number of steps to take
+    dt: time step
+    nu: hyperviscosity
+    k0: initial wavenumber
 
-export simplenondim
+  Returns
+    q: The vorticity field
+"""
+function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nnu=4, 
+  maxsteps=10000, dt=nothing, nu=nothing, k0=nothing)
 
-function simplenondim(nx::Int; nu=1e-6, nun=4)
-  # Construct a barotropic QG problem that should reproduce results obtained
-  # from a bare 2D turbulence simulation when beta=0.
+  # Number of substeps between vorticity-checking
+  substeps = 100
+  
+  # Defaults
+  if k0 == nothing; k0 = nx/2;                       end
+  if dt == nothing; dt = 0.1/q0;                     end
+  if nu == nothing; nu = 0.1/(dt*(0.65*nx/Lx)^nnu);  end
 
-  Lx     = 2.0*pi                   # Domain size (meters)
-   
-  g  = Grid(nx, Lx)
-  p  = Params(nu, nun)
-  v  = Vars(g)
-  eq = Equation(p, g)
+  g  = TwoDTurb.Grid(nx, Lx)
+  pr = TwoDTurb.Params(nu, nnu)
+  vs = TwoDTurb.Vars(g)
+  eq = TwoDTurb.Equation(pr, g)
+  ts = ETDRK4TimeStepper(dt, eq.LC)
 
-  set_q!(v, g, rand(nx, nx))        # Random initial condition
+  q0 = FourierFlows.peaked_isotropic_spectrum(nx, k0; maxval=q0)
+  TwoDTurb.set_q!(vs, g, q0)
+  maxq = maximum(abs.(vs.q))
 
-  return g, p, v, eq
+  @printf("\nMaking a mature turbulence field with max(q) = %.2f...\n", qf)
+  while maxq > qf && ts.step < maxsteps
+    stepforward!(vs, substeps, ts, eq, pr, g)
+    TwoDTurb.updatevars!(vs, g)
+    maxq = maximum(abs.(vs.q))
+
+    @printf("  step: %d, t*q0: %.2e, max Ro: %.3f, CFL: %.3f\n", 
+      ts.step, vs.t*q0, maxq, maximum([vs.U; vs.V])*ts.dt/g.dx)
+  end
+
+  return vs.q
 end
 
-end
-# E N D   S E T U P S >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+
 
 
 

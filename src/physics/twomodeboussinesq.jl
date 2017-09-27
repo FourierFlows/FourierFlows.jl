@@ -520,10 +520,12 @@ end
 
 
 
-""" Returns mode 1 horizontal speed. """
-function calc_speed1(vs::Vars)
+
+""" Returns the wave speed projected onto the zeroth mode. """
+function calc_wavespeed(vs::Vars)
   sqrt.(2*abs2.(vs.u) + 2*abs2.(vs.v))
 end
+
 
 
 

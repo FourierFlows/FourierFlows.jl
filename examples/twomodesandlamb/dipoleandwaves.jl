@@ -22,7 +22,7 @@ m    = 2*pi/325
 
 # Initial condition
 Ro   = 1e-1                                # Eddy Rossby number
-ep   = 1e-1                                # Wave nonlinearity
+ep   = 2e-1                                # Wave nonlinearity
 R    = Lx/10                               # Eddy radius
 tsig = 2*pi/f0                             # Inertial period
 Ue   = Ro*f0*R/(2*pi)                      # Eddy velocity
@@ -104,6 +104,7 @@ S00 = 1.0*maximum(meanspeed(vs, pr, g))
 
 pl = FourComponentPlot(
   g, vs, pr, 
+# Component            Title               Color limits      Color name
   rossbynum,           L"q/f",             [-R00, R00],      "RdBu_r",
   wavespeed,           L"\sqrt{u^2+v^2}",  [0.0,  2uw],      "YlGnBu_r",
   apvinducedflow,      L"|\nabla \psi^q|", [0.0,  S00],      "YlGnBu_r",
@@ -118,14 +119,15 @@ makeplot!(axs, pl)
 
 
 
-# Some initial properties
+# Initial energy
 E0i, E1i = TwoModeBoussinesq.calc_energies(vs, pr, g)
 Ei = E0i + E1i
 
 # Run
+tic()
 for i = 1:nplots
 
-  @time stepforward!(vs, nsubs, ts, eq, pr, g)
+  stepforward!(vs, nsubs, ts, eq, pr, g)
 
   TwoModeBoussinesq.updatevars!(vs, pr, g)
 
@@ -135,12 +137,13 @@ for i = 1:nplots
   E      = E0 + E1
 
   @printf("
-    step: %04d, t: %.3f, 
-    CFL: %.3f, max Ro: %.2e, max speed: %.2e, 
+    step: %04d, t: %.3f, wall time: %.3f,
+    CFL: %.3f, max Z/f: %.2e, max q/f: %.2e, max speed: %.2e, 
     E: %.6f, E0: %.6f, E1: %.6f, E0frac: %.3f, E1frac: %.3f\n\n", 
-    ts.r.step, vs.t/tsig, 
+    ts.r.step, vs.t/tsig, toq(),
     maximum([abs.(2*vs.u); abs2.(2*vs.v); vs.U; vs.V])*ts.r.dt/g.dx, 
-    maximum(q)/pr.f, maximum(sp), E/Ei, E0/E0i, E1/E1i, E0/Ei, E1/Ei,
+    maximum(vs.Z)/pr.f, maximum(q)/pr.f, maximum(sp), 
+    E/Ei, E0/E0i, E1/E1i, E0/Ei, E1/Ei,
   )
 
   makeplot!(axs, pl)
