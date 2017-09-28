@@ -2,7 +2,8 @@ __precompile__()
 
 import SpecialFunctions, 
        PyPlot,
-       PyCall
+       PyCall,
+       JLD
 
 using PyPlot
 
@@ -553,4 +554,53 @@ function makeplot!(pl::ThreeComponentPlot; save=false, show=false)
   end
 
 
+end
+
+
+
+
+function saveproblem(name::String, v::AbstractVars, 
+  p::AbstractParams, g::AbstractGrid, ts::AbstractTimeStepper, 
+  eq::AbstractEquation)
+
+  savename = @sprintf("%s_problem.jld", name)
+
+  JLD.save(savename, "v", v, "ts", ts, "p", p, "g", g, "eq", eq)
+
+  nothing
+end
+
+
+
+
+function savesnapshot(name::String, v::AbstractVars, 
+  ts::AbstractTimeStepper) 
+
+  savename = @sprintf("%s_%06d.jld", name, ts.step)
+
+  if symbol("c") in fieldnames(ts) # Problem has real and complex parts
+    JLD.save(savename, "t", v.t, "step", ts.step, 
+      "solc", v.solc, "solr", v.solr)
+  else
+    JLD.save(savename, "t", v.t, "step", ts.step, "sol", v.sol)
+  end
+
+  nothing
+end
+
+
+
+
+function savesnapshot(name::String, pb::Problem)
+
+  savename = @sprintf("%s_%06d.jld", name, ts.step)
+
+  if symbol("c") in fieldnames(pb.ts) # Problem has real and complex parts
+    JLD.save(savename, "t", pb.v.t, "step", pb.ts.step, 
+      "solc", pb.v.solc, "solr", pb.v.solr)
+  else
+    JLD.save(savename, "t", pb.v.t, "step", pb.ts.step, "sol", pb.v.sol)
+  end
+
+  nothing
 end

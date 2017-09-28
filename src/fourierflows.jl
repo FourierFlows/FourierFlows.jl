@@ -15,6 +15,14 @@ abstract type AbstractVars end
 abstract type AbstractEquation end
 abstract type AbstractTimeStepper end
 
+type Problem
+  g::AbstractGrid
+  v::AbstractVars
+  p::AbstractParams
+  eq::AbstractEquation
+  ts::AbstractTimeStepper
+end
+
 
 
 

@@ -2,7 +2,8 @@ __precompile__()
 
 module TwoDTurb
 
-using FourierFlows
+using FourierFlows, 
+      PyPlot
 
 export Params,
        Vars,
@@ -158,6 +159,13 @@ end
 
 
 
+function calc_energy(v::Vars, g::TwoDGrid)
+  updatevars!(v, g)
+  FourierFlows.parsint(g.KKrsq.*abs2.(v.psih), g)
+end
+
+
+
 
 """ Make a field of mature turbulence on a square grid.
 
@@ -171,40 +179,88 @@ end
     dt: time step
     nu: hyperviscosity
     k0: initial wavenumber
+    E0: initial energy
+    tf: final time
+    plots: whether or not to plot field evolution
 
   Returns
     q: The vorticity field
 """
 function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nnu=4, 
-  maxsteps=10000, dt=nothing, nu=nothing, k0=nothing)
+  maxsteps=10000, dt=nothing, nu=nothing, k0=nx/2, 
+  E0=nothing, tf=nothing, plots=false)
+
+  g  = TwoDGrid(nx, Lx)
+  vs = TwoDTurb.Vars(g)
+
+  if E0 != nothing # set initial energy rather than vorticity
+
+    # Closely following the formulation in Rocha, Wagner, Young
+    modk = sqrt(g.KKsq)
+
+    psik = zeros(g.nk, g.nl)
+    psik =  (modk .* (1 + (modk/k0).^4)).^(-0.5)
+    psik[1, 1] = 0.0
+    C = real(sqrt(E0/sum(g.KKsq.*abs2.(psik))))
+
+    psi = zeros(g.nx, g.ny)
+    for i = 1:128
+      for j = 1:128
+        psi .+= real.(C*psik[i, j]*cos.(
+          g.k[i]*g.X + g.l[j]*g.Y + 2*pi*rand(1)[1]))
+      end
+    end
+
+    psih = rfft(psi)
+    qi = -irfft(g.KKrsq.*psih, g.nx)
+    set_q!(vs, g, qi)
+
+  else
+    qi = FourierFlows.peaked_isotropic_spectrum(nx, k0; maxval=q0)
+    set_q!(vs, g, qi)
+  end
+
+  maxq = maximum(abs.(vs.q))
+  q0 = maxq
+  E0 = calc_energy(vs, g)
+
+  # Defaults
+  if dt == nothing; dt = 0.05/maxq;                        end
+  if nu == nothing; nu = 0.1/(dt*(0.65*nx/Lx)^nnu);        end
+  if tf != nothing; maxsteps = ceil(Int, tf/dt); qf = 0.0; end
 
   # Number of substeps between vorticity-checking
-  substeps = 100
-  
-  # Defaults
-  if k0 == nothing; k0 = nx/2;                       end
-  if dt == nothing; dt = 0.1/q0;                     end
-  if nu == nothing; nu = 0.1/(dt*(0.65*nx/Lx)^nnu);  end
+  substeps = 10*ceil(Int, 1/(maxq*dt))
 
-  g  = TwoDTurb.Grid(nx, Lx)
   pr = TwoDTurb.Params(nu, nnu)
-  vs = TwoDTurb.Vars(g)
   eq = TwoDTurb.Equation(pr, g)
   ts = ETDRK4TimeStepper(dt, eq.LC)
 
-  q0 = FourierFlows.peaked_isotropic_spectrum(nx, k0; maxval=q0)
-  TwoDTurb.set_q!(vs, g, q0)
-  maxq = maximum(abs.(vs.q))
+  if plots
+    fig, axs = subplots()
+    imshow(vs.q)
+    pause(0.01)
+  end
 
-  @printf("\nMaking a mature turbulence field with max(q) = %.2f...\n", qf)
+  @printf("\nMaking a mature turbulence field...\n")
+  starttime = time()
   while maxq > qf && ts.step < maxsteps
-    stepforward!(vs, substeps, ts, eq, pr, g)
+    stepforward!(vs, ts, eq, pr, g; nsteps=substeps)
     TwoDTurb.updatevars!(vs, g)
     maxq = maximum(abs.(vs.q))
 
-    @printf("  step: %d, t*q0: %.2e, max Ro: %.3f, CFL: %.3f\n", 
-      ts.step, vs.t*q0, maxq, maximum([vs.U; vs.V])*ts.dt/g.dx)
+    if plots
+      imshow(vs.q)
+      pause(0.01)
+    end
+
+    @printf("  wall time: %.3f s, step: %d, t*q0: %.2e, 
+               max q: %.3e, delta E: %.3f, CFL: %.3f\n", 
+      time()-starttime, ts.step, vs.t*q0, 
+      maxq, calc_energy(vs, g)/E0, maximum([vs.U; vs.V])*ts.dt/g.dx)
   end
+
+  @printf("... done.")
 
   return vs.q
 end

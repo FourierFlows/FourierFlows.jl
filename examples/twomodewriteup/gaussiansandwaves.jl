@@ -1,4 +1,4 @@
-include("/Users/glwagner/Numerics/FourierFlows/src/fourierflows.jl")
+include("../../src/fourierflows.jl")
 
 using FourierFlows,
       PyPlot
@@ -85,7 +85,7 @@ function eddywave(uw, nsteps, name)
   startwalltime = time()
   for i = 1:nplots
 
-    stepforward!(vs, nsubs, ts, eq, pr, g)
+    stepforward!(vs, ts, eq, pr, g; nsteps=nsubs)
 
     TwoModeBoussinesq.updatevars!(vs, pr, g)
 

@@ -189,7 +189,7 @@ Ei = E0i + E1i
 startwalltime = time()
 for i = 1:nplots
 
-  stepforward!(vs, nsubs, ts, eq, pr, g)
+  stepforward!(vs, ts, eq, pr, g; nsteps=nsubs)
 
   TwoModeBoussinesq.updatevars!(vs, pr, g)
 

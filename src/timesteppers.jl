@@ -14,30 +14,19 @@ export stepforward!,
 
 
 
-# Looping stepforward functions -----------------------------------------------
-function stepforward!(v::AbstractVars, ts::AbstractTimeStepper,
-  eq::AbstractEquation, p::AbstractParams, g::AbstractGrid, nsteps::Int)
-
-  for i = 1:nsteps
-    stepforward!(v, ts, eq, p, g)
-  end
-end
-
+# Looping stepforward function ------------------------------------------------
 function stepforward!(v::AbstractVars, ts::AbstractTimeStepper,
   eq::AbstractEquation, p::AbstractParams, g::AbstractGrid; nsteps=1)
-  for i = 1:nsteps
+  for step = 1:nsteps
     stepforward!(v, ts, eq, p, g)
   end
 end
 
-# Let's depreciate this form!
-function stepforward!(v::AbstractVars, nsteps::Int, ts::AbstractTimeStepper,
-  eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
-
-  for i = 1:nsteps
-    stepforward!(v, ts, eq, p, g)
-  end
+function stepforward!(pb::Problem; nsteps=1)
+  stepforward!(pb.v, pb.ts, pb.eq, pb.p, pb.g; nsteps=nsteps)
 end
+
+
 
 
 
@@ -135,6 +124,8 @@ end
 
 
 type DualETDRK4TimeStepper{dimc, dimr} <: AbstractTimeStepper
+  step::Int
+  dt::Float64
   c::ETDRK4TimeStepper{dimc}
   r::ETDRK4TimeStepper{dimr}
 end
@@ -142,7 +133,7 @@ end
 function ETDRK4TimeStepper(dt::Float64, LCc::AbstractArray, LCr::AbstractArray)
   c = ETDRK4TimeStepper(dt::Float64, LCc)
   r = ETDRK4TimeStepper(dt::Float64, LCr)
-  DualETDRK4TimeStepper{ndims(LCc), ndims(LCr)}(c, r)
+  DualETDRK4TimeStepper{ndims(LCc), ndims(LCr)}(0, dt, c, r)
 end
 
 
@@ -320,7 +311,8 @@ function stepforward!(v::AbstractVars, ts::DualETDRK4TimeStepper,
                                   .+ 2.0.*ts.r.beta .* (ts.r.NL2 .+ ts.r.NL3)
                                   .+      ts.r.gamm .* ts.r.NL4 )
 
-  v.t += ts.c.dt
+  v.t += ts.dt
+  ts.step += 1
   ts.c.step += 1
   ts.r.step += 1
 
