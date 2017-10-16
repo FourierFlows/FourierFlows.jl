@@ -505,15 +505,14 @@ end
 
 """ Calculate the projection of APV onto the zeroth mode. """
 function calc_apv(v::Vars, p::TwoModeParams, g::TwoDGrid)
-
   v.Z = irfft(v.solr, g.nx)
   @views A_mul_B!(v.u, g.ifftplan, v.solc[:, :, 1])
   @views A_mul_B!(v.v, g.ifftplan, v.solc[:, :, 2])
   @views A_mul_B!(v.p, g.ifftplan, v.solc[:, :, 3])
 
-  (v.Z + irfft( p.m^2.0/p.N^2.0 * (
-      im*g.Lr.*rfft(real.(v.u.*conj.(v.p) + conj.(v.u).*v.p)) 
-    - im*g.Kr.*rfft(real.(v.v.*conj.(v.p) + conj.(v.v).*v.p))
+  (v.Z .+ irfft( p.m^2.0./p.N^2.0 .* (
+      im.*g.Lr.*rfft(real.(v.u.*conj.(v.p) .+ conj.(v.u).*v.p)) 
+    - im.*g.Kr.*rfft(real.(v.v.*conj.(v.p) .+ conj.(v.v).*v.p))
   ), g.nx))
 end
 
@@ -523,7 +522,7 @@ end
 
 """ Returns the wave speed projected onto the zeroth mode. """
 function calc_wavespeed(vs::Vars)
-  sqrt.(2*abs2.(vs.u) + 2*abs2.(vs.v))
+  sqrt.(2.0.*abs2.(vs.u) .+ 2.0.*abs2.(vs.v))
 end
 
 

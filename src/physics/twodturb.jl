@@ -129,10 +129,10 @@ function updatevars!(v::Vars, g::TwoDGrid)
   # A_mul_B!(v.q, g.irfftplan, v.qh)
   v.q = irfft(v.qh, g.nx)
 
-  v.psih .= .- v.qh .* g.invKKrsq
+  @. v.psih = -v.qh*g.invKKrsq
 
-  v.Uh .=    im .* g.Lr .* g.invKKrsq .* v.qh
-  v.Vh .= (-im) .* g.Kr .* g.invKKrsq .* v.qh
+  @. v.Uh =    im * g.Lr * g.invKKrsq * v.qh
+  @. v.Vh = (-im) * g.Kr * g.invKKrsq * v.qh
  
   # We don't use A_mul_B here because irfft destroys its input.
   #A_mul_B!(v.U, g.irfftplan, v.Uh)
@@ -148,6 +148,10 @@ function updatevars!(v::Vars, g::TwoDGrid)
 
 end
 
+function updatevars!(v::Vars, p::Params, g::TwoDGrid)
+  updatevars!(v, g)
+end
+
 
 
 
@@ -157,11 +161,16 @@ function set_q!(v::Vars, g::TwoDGrid, q::Array{Float64, 2})
   updatevars!(v, g)
 end
 
+function set_q!(v::Vars, p::Params, g::TwoDGrid, q::Array{Float64, 2})
+  set_q!(v, g, q)
+end
+
+
 
 
 function calc_energy(v::Vars, g::TwoDGrid)
   updatevars!(v, g)
-  FourierFlows.parsint(g.KKrsq.*abs2.(v.psih), g)
+  0.5*FourierFlows.parsint(g.KKrsq.*abs2.(v.psih), g)
 end
 
 
@@ -214,20 +223,20 @@ function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nnu=4,
     psih = rfft(psi)
     qi = -irfft(g.KKrsq.*psih, g.nx)
     set_q!(vs, g, qi)
+    E0 = FourierFlows.parsint(g.KKrsq.*abs2.(psih), g)
 
   else
     qi = FourierFlows.peaked_isotropic_spectrum(nx, k0; maxval=q0)
     set_q!(vs, g, qi)
+    E0 = calc_energy(vs, g)
   end
 
-  maxq = maximum(abs.(vs.q))
-  q0 = maxq
-  E0 = calc_energy(vs, g)
+  maxq = q0 = maximum(abs.(vs.q))
 
   # Defaults
-  if dt == nothing; dt = 0.05/maxq;                        end
-  if nu == nothing; nu = 0.1/(dt*(0.65*nx/Lx)^nnu);        end
-  if tf != nothing; maxsteps = ceil(Int, tf/dt); qf = 0.0; end
+  if dt == nothing; dt = 0.2*g.dx/maximum([vs.U; vs.V]);    end
+  if nu == nothing; nu = 0.1/(dt*(0.65*nx/Lx)^nnu);         end
+  if tf != nothing; maxsteps = ceil(Int, tf/dt); qf = 0.0;  end
 
   # Number of substeps between vorticity-checking
   substeps = 10*ceil(Int, 1/(maxq*dt))

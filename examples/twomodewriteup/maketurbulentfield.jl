@@ -8,27 +8,42 @@ import FourierFlows.TwoDTurb,
        FourierFlows.TwoModeBoussinesq
 
 # Rocha Wagner Young parameters
-nx   = 512                                 # Resolution
-Lx   = 2*pi*200e3                          # Domain extent
+#nx   = 1024                                 # Resolution
+#nnu  = 8                                    # Hyperviscous order
+
+Lx   = 2*pi*200e3                           # Domain extent
 Ue   = 5e-2
 ke   = 20*pi/Lx
 f0   = 1e-4
 
-# Numerical parameters
-dt   = 2e-2 * 2*pi/f0
-nnu  = 8                                   # Hyperviscous order
-nu0 = nu1 = 1e-1/(dt*(0.65*pi*nx/Lx)^nnu)  # Hyperviscosity
-name = @sprintf("macroturb_niw")
+for nx in [2048, 4096]
+  for nnu in [2, 4, 8]
 
+    # Numerical parameters
+    dt   = 2e-2 * 2*pi/f0
+    nu0  = nu1 = 1e-1/(dt*(0.65*pi*nx/Lx)^nnu)  # Hyperviscosity
+    name = @sprintf("macroturb_niw")
 
-#Z0 = TwoDTurb.makematureturb(nx, Lx; nu=nu0, nnu=nnu,
-#  k0=ke*Lx/(2*pi), E0=0.5*Ue^2, tf=200/(Ue*ke), plots=true)
+    qf   = 0.1*f0                               # Final vorticity 
 
-Z0 = TwoDTurb.makematureturb(nx, Lx; nu=nu0, nnu=nnu,
-  k0=256, qf=0.1*f0, q0=0.12*f0, tf = 1000/f0, plots=true)
+    k0 = 256 #max(nx/4, 256)
 
-fig, axs = subplots()
-imshow(Z0)
-show()
+    Z0 = TwoDTurb.makematureturb(nx, Lx; nu=nu0, nnu=nnu,
+      k0=k0, qf=qf, q0=1.2*qf, tf=20/qf, plots=true)
 
-save("testturb.jld", "Z", Z0)
+    maxz = maximum(Z0) 
+
+    savename = @sprintf("twodturb_nx%04d_nnu%d.jld", nx, nnu)
+    plotname = @sprintf("twodturb_nx%04d_nnu%d.png", nx, nnu)
+    titlname = @sprintf("twodturb: \$n=%d\$, \$n_{\\nu}=%d\$, max(Z)=%.2e", 
+      nx, nnu, maxz)
+
+    fig, axs = subplots()
+    imshow(Z0)
+    title(titlname)
+    savefig(plotname, dpi=240)
+
+    save(savename, "Z", Z0)
+
+  end
+end
