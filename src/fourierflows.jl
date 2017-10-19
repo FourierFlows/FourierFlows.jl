@@ -34,5 +34,6 @@ include("physics/twodturb.jl")
 include("physics/barotropicqg.jl")
 include("physics/twomodeboussinesq.jl")
 include("physics/niwqg.jl")
+include("physics/traceradvdiff.jl")
 
 end
