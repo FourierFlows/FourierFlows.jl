@@ -715,7 +715,7 @@ end
 function savesnapshot(name::String, v::AbstractVars, 
   ts::AbstractTimeStepper) 
 
-  savename = @sprintf("%s_%06d.jld", name, ts.step)
+  savename = @sprintf("%s_%09d.jld", name, ts.step)
 
   if symbol("c") in fieldnames(ts) # Problem has real and complex parts
     JLD.save(savename, "t", v.t, "step", ts.step, 
@@ -732,7 +732,7 @@ end
 
 function savesnapshot(name::String, pb::Problem)
 
-  savename = @sprintf("%s_%06d.jld", name, ts.step)
+  savename = @sprintf("%s_%09d.jld", name, ts.step)
 
   if symbol("c") in fieldnames(pb.ts) # Problem has real and complex parts
     JLD.save(savename, "t", pb.v.t, "step", pb.ts.step, 

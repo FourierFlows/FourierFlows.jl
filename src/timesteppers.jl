@@ -8,8 +8,7 @@ export ForwardEulerTimeStepper,
        RK4TimeStepper,
        ETDRK4TimeStepper
 
-export stepforward!,
-       step_nsteps!
+export stepforward!
 
 
 

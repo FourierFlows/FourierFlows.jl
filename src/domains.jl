@@ -77,12 +77,8 @@ end
 
 
 # Initializer for rectangular grids
-function TwoDGrid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64}; 
-  nthreads=Sys.CPU_CORES)
-
-  # Un-tuple arguments
-  nx, ny = nxy
-  Lx, Ly = Lxy
+function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
+  x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU_CORES)
 
   # Size attributes
   dx = Lx/nx
@@ -140,8 +136,8 @@ function TwoDGrid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64};
   ikr = Array{Complex{Float64}}(nkr, nl)
 
   # 1D pre-constructors
-  x = linspace(-Lx/2.0, Lx/2.0-dx, nx)
-  y = linspace(-Ly/2.0, Ly/2.0-dy, ny)
+  x = linspace(x0, x0+Lx-dx, nx)
+  y = linspace(y0, y0+Ly-dy, ny)
 
   i1 = 0:1:Int(nx/2)
   i2 = Int(-nx/2+1):1:-1
@@ -200,13 +196,15 @@ function TwoDGrid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64};
 end
 
 # Grid constructor with optional arguments to specify anisotropy
-function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
-  nthreads=Sys.CPU_CORES)
-  TwoDGrid((nx, ny), (Lx, Ly))
-end
+#function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
+#  nthreads=Sys.CPU_CORES)
+#  TwoDGrid(nx, Lx, ny, Ly; nthreads=nthreads)
+#end
 
-# Grid constructor for backwards compatability/convenience; may depcreciate
-function TwoDGrid(nx::Int, ny::Int, Lx::Float64, Ly::Float64;
+# Grid constructor for tupled arguments
+function TwoDGrid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64};
   nthreads=Sys.CPU_CORES)
-  TwoDGrid((nx, ny), (Lx, Ly))
+  nx, ny = nxy
+  Lx, Ly = Lxy
+  TwoDGrid(nx, Lx, ny, Ly)
 end
