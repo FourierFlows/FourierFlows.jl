@@ -23,8 +23,8 @@ end
 
 function stepforward!(prob::Problem; nsteps=1)
   for step = 1:nsteps
-    stepforward!(prob.v, prob.ts, prob.eq, prob.p, prob.g)
-    prob.t = prob.v.t
+    stepforward!(prob.vars, prob.ts, prob.eqn, prob.params, prob.grid)
+    prob.t = prob.vars.t
     prob.step = prob.ts.step
   end
 end
