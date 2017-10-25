@@ -1,4 +1,4 @@
-include("../../src/fourierflows.jl")
+include("../src/fourierflows.jl")
 
 using FourierFlows
 import FourierFlows.TwoDTurb
@@ -42,7 +42,7 @@ TwoDTurb.updatevars!(v, p, g)
 
 # Initial condition with two ellipsoid vortices for comparison.
 ampl = 1.131562576275490e-04
-qh = ampl*rfft( 200.0*exp.(-((g.X-1).^2-0.4*g.X.*g.Y)./.3^2-(g.Y-1).^2./.5^2) 
+qh = ampl*rfft( 200.0*exp.(-((g.X-1).^2-0.4*g.X.*g.Y)./.3^2-(g.Y-1).^2./.5^2)
   - 100.0* exp.(-((g.X+1).^2-0.4*g.X.*g.Y)./.3^2-(g.Y+1).^2./.5^2) )
 
 qh[1, 1] = 0

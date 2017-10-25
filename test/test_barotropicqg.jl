@@ -1,4 +1,4 @@
-include("../../src/fourierflows.jl")
+include("../src/fourierflows.jl")
 
 using FourierFlows,
       PyPlot,
