@@ -21,8 +21,12 @@ function stepforward!(v::AbstractVars, ts::AbstractTimeStepper,
   end
 end
 
-function stepforward!(pb::Problem; nsteps=1)
-  stepforward!(pb.v, pb.ts, pb.eq, pb.p, pb.g; nsteps=nsteps)
+function stepforward!(prob::Problem; nsteps=1)
+  for step = 1:nsteps
+    stepforward!(prob.v, prob.ts, prob.eq, prob.p, prob.g)
+    prob.t = prob.v.t
+    prob.step = prob.ts.step
+  end
 end
 
 

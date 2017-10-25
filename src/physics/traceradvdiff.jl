@@ -126,6 +126,10 @@ function updatevars!(v::AbstractVars, p::AbstractTracerParams, g::TwoDGrid)
   v.c    = irfft(v.ch, g.nx)
 end
 
+function updatevars!(prob::Problem)
+  updatevars!(prob.vars, prob.params, prob.grid)
+end
+
 
 """ Set the concentration field of the model with an array. """
 function set_c!(v::AbstractVars, p::AbstractTracerParams, g::TwoDGrid,
@@ -144,6 +148,16 @@ function set_c!(v::AbstractVars, p::AbstractTracerParams, g::TwoDGrid,
   v.sol .= v.ch
   updatevars!(v, p, g)
 end
+
+function set_c!(prob::Problem, c::Function)
+  set_c!(prob.vars, prob.params, prob.grid, c)
+end
+
+function set_c!(prob::Problem, c::Array{Float64, 2})
+  set_c!(prob.vars, prob.params, prob.grid, c)
+end
+
+
 
 
 

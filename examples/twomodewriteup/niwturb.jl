@@ -25,7 +25,7 @@ sig  = sqrt(f0^2.0 + N0^2.0*(nkw*2*pi/Lx)^2.0 / m^2.0)
 alph = sig^2.0/f0^2.0 - 1.0
 tsig = 2.0*pi / sig
 
-dt   = 2e-2 * 2*pi/sig
+dt   = 1e-2 * 2*pi/sig
 nnu0 = 4
 nnu1 = 4
 nu0  = 1e-1/(dt*(0.65*pi*nx/Lx)^nnu0)  # Hyperviscosity
