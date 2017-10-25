@@ -30,7 +30,7 @@ Cy3(c, g) = iixy(g)*sum((g.Y-Cy1(c, g)).^3.0.*c) / M0(c, g)
 intx(II, g) = iix(g)*sum(II)
 inty(II, g) = iiy(g)*sum(II)
 
-mxn(c, g, n) = iiy(g)*sum(g.Y.^n.*c, 1)
+mxn(c, g, n) = iix(g)*sum(g.Y.^n.*c, 1)
 myn(c, g, n) = iiy(g)*sum(g.Y.^n.*c, 2)
 
 cx1(c, g) = iix(g)*sum(g.X.*c) ./ mxn(c, g, 0)

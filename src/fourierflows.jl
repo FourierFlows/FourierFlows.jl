@@ -38,7 +38,7 @@ function Problem(g::AbstractGrid, v::AbstractVars, p::AbstractParams,
 end
 
 function unpack(prob::Problem)
-  prob.vars, prob.params, pb.grid
+  prob.vars, prob.params, prob.grid
 end
 
 

@@ -27,7 +27,7 @@ println("dt: ", CFL*del/umax)
 
 
 # Initial condition
-xi, yi, dc = 0.0, -0.5*Ly, 0.005*Lx
+xi, yi, dc = 0.0, -0.5*Ly, 0.01
 ci(x, y) = exp( -((x-xi)^2+(y-yi)^2)/(2*dc^2) ) / (2*pi*dc^2)
 
 
@@ -44,19 +44,19 @@ Cy2i = maximum(Cy2(prob.vars.c, g))
 
 
 # Diagnostics
-calc_xcen(prob)    = Cx1(prob.vars.c, prob.grid)
-calc_ycen(prob)    = Cy1(prob.vars.c, prob.grid)
-calc_ybar(prob)    = cy1(prob.vars.c, prob.grid)
-calc_yvar(prob)    = cy2(prob.vars.c, prob.grid)
-calc_maxyvar(prob) = maximum(cy2(prob.vars.c, prob.grid))
+calc_xcen(prob)   = Cx1(prob.vars.c, prob.grid)
+calc_ycen(prob)   = Cy1(prob.vars.c, prob.grid)
+calc_yvar(prob)   = Cy2(prob.vars.c, prob.grid)
+calc_ym2(prob)    = myn(prob.vars.c, prob.grid, 2)
+calc_intym2(prob) = Myn(prob.vars.c, prob.grid, 2)
 
-xcen    = ProblemDiagnostic(calc_xcen, substeps, prob)
-ycen    = ProblemDiagnostic(calc_ycen, substeps, prob)
-ybar    = ProblemDiagnostic(calc_ybar, substeps, prob)
-yvar    = ProblemDiagnostic(calc_yvar, substeps, prob)
-maxyvar = ProblemDiagnostic(calc_maxyvar, substeps, prob)
+xcen   = ProblemDiagnostic(calc_xcen, substeps, prob)
+ycen   = ProblemDiagnostic(calc_ycen, substeps, prob)
+yvar   = ProblemDiagnostic(calc_yvar, substeps, prob)
+ym2    = ProblemDiagnostic(calc_ym2, substeps, prob)
+intym2 = ProblemDiagnostic(calc_intym2, substeps, prob)
 
-diags = [xcen, ycen, ybar, yvar, maxyvar]
+diags = [xcen, ycen, yvar, ym2, intym2]
 
 
 
@@ -73,16 +73,19 @@ function makeplot(axs, prob)
   vs, pr, g = unpack(prob)
   cplot = NullableArray(vs.c, mask)
 
-  M2flat = 2.0*M0i*kap*maxyvar.time + maximum(Cy2i)
+  M2flat = 2.0*M0i*kap*ycen.time + maximum(Cy2i)
+
+  axs[1][:cla]()
+  axs[2][:cla]()
 
   axes(axs[1])
   pcolormesh(g.X, g.Y, PyObject(cplot))
   xlabel("x"); ylabel("z")
 
   axes(axs[2])
-  plot(vs.t, maxyvar.data; color="C0", linestyle="-")
-  plot(vs.t, M2flat;       color="C1", linestyle="--")
-  xlabel("t"); ylabel("Variance")
+  plot(intym2.time, intym2.data; color="C0", linestyle="-")
+  plot(intym2.time, M2flat;   color="C1", linestyle="--")
+  xlabel("t"); ylabel("Second moment")
 
   pause(0.01)
   nothing
@@ -100,10 +103,10 @@ while prob.t < tfinal
   TracerAdvDiff.updatevars!(prob)
   increment!(diags)
 
-  @printf("step: %04d, x-center: %.2e, y-center: %.2e, max y-variance: %.2e\n", 
-    prob.step, xcen.value, ycen.value, maximum(yvar.value))
+  @printf("step: %04d, x-center: %.2e, y-center: %.2e, y-variance: %.2e\n", 
+    prob.step, xcen.value, ycen.value, yvar.value)
 
   makeplot(axs, prob)
-  savefig(sprintf("./plots/tracertest_%06d.png", prob.step), dpi=240)
+  savefig(@sprintf("./plots/tracertest_%06d.png", prob.step), dpi=240)
 
 end
