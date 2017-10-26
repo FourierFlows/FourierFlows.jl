@@ -5,39 +5,39 @@ using PyPlot, PyCall, NullableArrays
 PyObject(a::NullableArray) = pycall(ma.array, Any, a.values, mask=a.isnull)
 
 # For integrals
-iixy(g) = g.dx*g.dy/(g.nx*g.ny)
-iix(g) = g.dx/g.nx
-iiy(g) = g.dy/g.ny
+ddxy(g) = g.dx*g.dy
+ddx(g)  = g.dx
+ddy(g)  = g.dy
 
 
 
 # Moment-calculating functions
-M0(c, g)     = iixy(g)*sum(c)
-Mxn(c, g, n) = iixy(g)*sum(g.X.^n.*c)
-Myn(c, g, n) = iixy(g)*sum(g.Y.^n.*c) 
+M0(c, g)     = ddxy(g)*sum(c)
+Mxn(c, g, n) = ddxy(g)*sum(g.X.^n.*c)
+Myn(c, g, n) = ddxy(g)*sum(g.Y.^n.*c) 
 
 
 # Cumulants
-Cx1(c, g) = iixy(g)*sum(g.X.*c) / M0(c, g)
-Cy1(c, g) = iixy(g)*sum(g.Y.*c) / M0(c, g)
+Cx1(c, g) = ddxy(g)*sum(g.X.*c) / M0(c, g)
+Cy1(c, g) = ddxy(g)*sum(g.Y.*c) / M0(c, g)
 
-Cx2(c, g) = iixy(g)*sum((g.X-Cx1(c, g)).^2.0.*c) / M0(c, g)
-Cy2(c, g) = iixy(g)*sum((g.Y-Cy1(c, g)).^2.0.*c) / M0(c, g)
+Cx2(c, g) = ddxy(g)*sum((g.X-Cx1(c, g)).^2.0.*c) / M0(c, g)
+Cy2(c, g) = ddxy(g)*sum((g.Y-Cy1(c, g)).^2.0.*c) / M0(c, g)
 
-Cx3(c, g) = iixy(g)*sum((g.X-Cx1(c, g)).^3.0.*c) / M0(c, g)
-Cy3(c, g) = iixy(g)*sum((g.Y-Cy1(c, g)).^3.0.*c) / M0(c, g)
+Cx3(c, g) = ddxy(g)*sum((g.X-Cx1(c, g)).^3.0.*c) / M0(c, g)
+Cy3(c, g) = ddxy(g)*sum((g.Y-Cy1(c, g)).^3.0.*c) / M0(c, g)
 
-intx(II, g) = iix(g)*sum(II)
-inty(II, g) = iiy(g)*sum(II)
+intx(II, g) = ddx(g)*sum(II)
+inty(II, g) = ddy(g)*sum(II)
 
-mxn(c, g, n) = iix(g)*sum(g.Y.^n.*c, 1)
-myn(c, g, n) = iiy(g)*sum(g.Y.^n.*c, 2)
+mxn(c, g, n) = ddx(g)*sum(g.Y.^n.*c, 1)
+myn(c, g, n) = ddy(g)*sum(g.Y.^n.*c, 2)
 
-cx1(c, g) = iix(g)*sum(g.X.*c) ./ mxn(c, g, 0)
-cy1(c, g) = iiy(g)*sum(g.Y.*c) ./ myn(c, g, 0)
+cx1(c, g) = ddx(g)*sum(g.X.*c) ./ mxn(c, g, 0)
+cy1(c, g) = ddy(g)*sum(g.Y.*c) ./ myn(c, g, 0)
 
 delyc1(c, g) = g.Y - broadcast(*, cy1(c, g), ones(g.nx, g.ny))
-cy2(c, g) = iiy(g) * sum(delyc1(c, g).*c, 2)./myn(c, g, 0)
+cy2(c, g) = ddy(g) * sum(delyc1(c, g).*c, 2)./myn(c, g, 0)
 
 
 

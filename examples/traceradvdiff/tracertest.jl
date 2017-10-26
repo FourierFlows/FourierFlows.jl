@@ -27,8 +27,8 @@ println("dt: ", CFL*del/umax)
 
 
 # Initial condition
-xi, yi, dc = 0.0, -0.5*Ly, 0.01
-ci(x, y) = exp( -((x-xi)^2+(y-yi)^2)/(2*dc^2) ) / (2*pi*dc^2)
+xi, yi, dc = 0.0, -0.5*Ly, 0.05
+ci(x, y) = exp( -((x-xi)^2.0+(y-yi)^2.0)/(2.0*dc^2) ) / (2.0*pi*dc^2.0)
 
 
 
@@ -37,8 +37,6 @@ ci(x, y) = exp( -((x-xi)^2+(y-yi)^2)/(2*dc^2) ) / (2*pi*dc^2)
 g = FourierFlows.TwoDGrid(nx, Lx, nx, Ly+ep; y0=-Ly-ep)
 prob = TracerProblem(g, kap, ub, wb, CFL*del/umax)
 TracerAdvDiff.set_c!(prob, ci)
-M0i = M0(prob.vars.c, g)
-Cy2i = maximum(Cy2(prob.vars.c, g))
 
 
 
@@ -57,6 +55,7 @@ ym2    = ProblemDiagnostic(calc_ym2, substeps, prob)
 intym2 = ProblemDiagnostic(calc_intym2, substeps, prob)
 
 diags = [xcen, ycen, yvar, ym2, intym2]
+M0i   = M0(prob.vars.c, g)
 
 
 
@@ -69,11 +68,12 @@ end
 
 
 
+
 function makeplot(axs, prob)
   vs, pr, g = unpack(prob)
   cplot = NullableArray(vs.c, mask)
 
-  M2flat = 2.0*M0i*kap*ycen.time + maximum(Cy2i)
+  flatvar = 2.0*kap*yvar.time + yvar.data[1]
 
   axs[1][:cla]()
   axs[2][:cla]()
@@ -83,8 +83,8 @@ function makeplot(axs, prob)
   xlabel("x"); ylabel("z")
 
   axes(axs[2])
-  plot(intym2.time, intym2.data; color="C0", linestyle="-")
-  plot(intym2.time, M2flat;   color="C1", linestyle="--")
+  plot(yvar.time, yvar.data; color="C0", linestyle="-")
+  plot(yvar.time, flatvar;    color="C1", linestyle="--")
   xlabel("t"); ylabel("Second moment")
 
   pause(0.01)
@@ -103,8 +103,10 @@ while prob.t < tfinal
   TracerAdvDiff.updatevars!(prob)
   increment!(diags)
 
-  @printf("step: %04d, x-center: %.2e, y-center: %.2e, y-variance: %.2e\n", 
-    prob.step, xcen.value, ycen.value, yvar.value)
+  flatvar = 2.0*kap*yvar.time[end] + yvar.data[1]
+
+  @printf("step: %04d, xc: %.2f, yc: %.2f, sigma (flat): %.2e, sigma (wavy): %.2e\n", 
+  prob.step, xcen.value, ycen.value, flatvar, yvar.value)
 
   makeplot(axs, prob)
   savefig(@sprintf("./plots/tracertest_%06d.png", prob.step), dpi=240)
