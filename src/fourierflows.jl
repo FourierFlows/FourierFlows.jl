@@ -2,15 +2,18 @@ __precompile__()
 
 module FourierFlows
 
-
 export AbstractGrid,
        AbstractParams,
        AbstractVars,
        AbstractEquation,
        AbstractTimeStepper,
-       Problem
+       AbstractProblem
+
+export Problem
 
 export unpack
+
+
 
 
 # Abstract supertypes 
@@ -20,6 +23,8 @@ abstract type AbstractVars end
 abstract type AbstractEquation end
 abstract type AbstractTimeStepper end
 abstract type AbstractProblem end
+
+
 
 
 # Problem type and associated functions
@@ -45,13 +50,13 @@ end
 
 
 
-# Base functionality
+# Include base functionality
 include("domains.jl")
 include("timesteppers.jl")
 include("utils.jl")
 
 
-# Physics
+# Include physics modules
 include("physics/twodturb.jl")
 include("physics/barotropicqg.jl")
 include("physics/twomodeboussinesq.jl")

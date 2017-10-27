@@ -20,24 +20,24 @@ abstract type AbstractTracerParams <: AbstractParams end
 type ConstDiffParams <: AbstractTracerParams
   eta::Float64                   # Constant isotropic horizontal diffusivity
   kap::Float64                   # Constant isotropic vertical diffusivity
-  u::Function                    # Advecting horizontal velocity
-  w::Function                    # Advecting vertical velocity (here z=y)
+  u::Function                    # Advecting x-velocity
+  v::Function                    # Advecting y-velocity
 end
 
-function ConstDiffParams(eta::Real, kap::Real, u::Real, w::Real)
-  ufunc(x, z, t) = u
-  wfunc(x, z, t) = w
-  ConstDiffParams(eta, kap, ufunc, wfunc)
+function ConstDiffParams(eta::Real, kap::Real, u::Real, v::Real)
+  ufunc(x, y, t) = u
+  vfunc(x, y, t) = v
+  ConstDiffParams(eta, kap, ufunc, vfunc)
 end
 
-function ConstDiffParams(kap::Real, u::Function, w::Function)
-  ConstDiffParams(kap, kap, u, w)
+function ConstDiffParams(kap::Real, u::Function, v::Function)
+  ConstDiffParams(kap, kap, u, v)
 end
 
-function ConstDiffParams(kap::Real, u::Real, w::Real)
-  ufunc(x::Float64, z::Float64, t::Float64) = u
-  wfunc(x::Float64, z::Float64, t::Float64) = w
-  ConstDiffParams(kap, ufunc, wfunc)
+function ConstDiffParams(kap::Real, u::Real, v::Real)
+  ufunc(x::Float64, y::Float64, t::Float64) = u
+  vfunc(x::Float64, y::Float64, t::Float64) = v
+  ConstDiffParams(kap, ufunc, vfunc)
 end
 
 
@@ -65,11 +65,11 @@ type Vars <: AbstractVars
   sol::Array{Complex{Float64}, 2}
   c::Array{Float64, 2}
   cu::Array{Float64, 2}
-  cw::Array{Float64, 2}
+  cv::Array{Float64, 2}
 
   ch::Array{Complex{Float64}, 2}
   cuh::Array{Complex{Float64}, 2}
-  cwh::Array{Complex{Float64}, 2}
+  cvh::Array{Complex{Float64}, 2}
 end
 
 """ Initialize the vars type on a grid g with zero'd arrays and t=0. """
@@ -79,12 +79,12 @@ function Vars(g::TwoDGrid)
 
   c     = zeros(Float64, g.nx, g.ny)
   cu    = zeros(Float64, g.nx, g.ny)
-  cw    = zeros(Float64, g.nx, g.ny)
+  cv    = zeros(Float64, g.nx, g.ny)
 
   ch    = zeros(Complex{Float64}, g.nkr, g.nl)
   cuh   = zeros(Complex{Float64}, g.nkr, g.nl)
-  cwh   = zeros(Complex{Float64}, g.nkr, g.nl)
-  return Vars(t, sol, c, cu, cw, ch, cuh, cwh)
+  cvh   = zeros(Complex{Float64}, g.nkr, g.nl)
+  return Vars(t, sol, c, cu, cv, ch, cuh, cvh)
 end
 
 
@@ -103,15 +103,15 @@ function calcNL!(NL::Array{Complex{Float64}, 2},
   A_mul_B!(v.c, g.irfftplan, v.ch)
 
   v.cu .= p.u.(g.X, g.Y, v.t)
-  v.cw .= p.w.(g.X, g.Y, v.t)
+  v.cv .= p.v.(g.X, g.Y, v.t)
 
   v.cu .*= v.c
-  v.cw .*= v.c
+  v.cv .*= v.c
 
   A_mul_B!(v.cuh, g.rfftplan, v.cu)
-  A_mul_B!(v.cwh, g.rfftplan, v.cw)
+  A_mul_B!(v.cvh, g.rfftplan, v.cv)
 
-  NL .= (-im).*g.Kr.*v.cuh .- im.*g.Lr.*v.cwh
+  NL .= (-im).*g.Kr.*v.cuh .- im.*g.Lr.*v.cvh
 
 end
 

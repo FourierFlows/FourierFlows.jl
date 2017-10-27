@@ -13,7 +13,7 @@ h(x)  = Ly*(1.0 - ep*sin(k1*x))             # Topography
 hx(x) = -Ly*k1*ep*cos(k1*x)                 # Topographic x-gradient
 
 ub(x, y, t) = U/h(x)                        # Barotropic x-velocity
-wb(x, y, t) = y*ub(x, y, t)*hx(x)/h(x)      # Topography-following z-velocity
+vb(x, y, t) = y*ub(x, y, t)*hx(x)/h(x)      # Topography-following z-velocity
 
 CFL, del, umax = 0.2, Lx/nx, U/(Ly*(1-ep))  # Time stepping parameters
 dt, tfinal     = CFL*del/umax, 4.0*Ly*Lx/U  # Time-step and final time
@@ -33,7 +33,7 @@ ci(x, y) = exp( -((x-xi)^2.0+(y-yi)^2.0)/(2.0*dc^2) ) / (2.0*pi*dc^2.0)
 
 # Initialize problem
 g = FourierFlows.TwoDGrid(nx, Lx, nx, Ly+ep; y0=-Ly-ep)
-prob = TracerProblem(g, kap, ub, wb, CFL*del/umax)
+prob = TracerProblem(g, kap, ub, vb, CFL*del/umax)
 TracerAdvDiff.set_c!(prob, ci)
 
 
@@ -46,14 +46,22 @@ calc_yvar(prob)   = Cy2(prob.vars.c, prob.grid)
 calc_ym2(prob)    = myn(prob.vars.c, prob.grid, 2)
 calc_intym2(prob) = Myn(prob.vars.c, prob.grid, 2)
 
-xcen   = ProblemDiagnostic(calc_xcen,   prob)
-ycen   = ProblemDiagnostic(calc_ycen,   prob)
-yvar   = ProblemDiagnostic(calc_yvar,   prob)
-ym2    = ProblemDiagnostic(calc_ym2,    prob)
-intym2 = ProblemDiagnostic(calc_intym2, prob)
+xcen   = Diagnostic(calc_xcen,   prob)
+ycen   = Diagnostic(calc_ycen,   prob)
+yvar   = Diagnostic(calc_yvar,   prob)
+ym2    = Diagnostic(calc_ym2,    prob)
+intym2 = Diagnostic(calc_intym2, prob)
 
 diags = [xcen, ycen, yvar, ym2, intym2]
 M0i   = M0(prob.vars.c, g)
+
+
+get_c(prob) = prob.vars.c
+get_cy(prob) = irfft(im*prob.grid.Lr.*prob.vars.sol, prob.grid.nx)
+
+c_out  = Output("c", get_c,   prob, "testout.jld2")
+cy_out = Output("cy", get_cy, prob, "testout.jld2")
+outputs = [c_out, cy_out]
 
 
 
@@ -107,6 +115,7 @@ while prob.t < tfinal
   stepforward!(prob; nsteps=substeps)
   TracerAdvDiff.updatevars!(prob)
   increment!(diags)
+  saveoutput!(outputs)
 
   flatvar = 2.0*kap*yvar.time[end] + yvar.data[1]
 
@@ -114,7 +123,7 @@ while prob.t < tfinal
   "step: %04d, xc: %.2f, yc: %.2f, sigma (flat): %.2e, sigma (wavy): %.2e\n", 
   prob.step, xcen.value, ycen.value, flatvar, yvar.value)
 
-  makeplot(axs, prob)
-  savefig(@sprintf("%s_%06d.png", name, prob.step), dpi=240)
+  #makeplot(axs, prob)
+  #savefig(@sprintf("%s_%06d.png", name, prob.step), dpi=240)
 
 end
