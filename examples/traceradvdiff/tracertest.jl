@@ -6,8 +6,8 @@ import FourierFlows, FourierFlows.TracerAdvDiff
 include("./tracerutils.jl")
        
 
-nx, kap, Lx, Ly = 256, 1e-4, 2*pi, 1.0      # Domain
-U, ep, k1       = 1.0, 0.6, 2*pi/Lx         # Specify barotropic flow
+nx, kap, Lx, Ly = 128, 1e-4, 2*pi, 1.0      # Domain
+U, ep, k1       = 1.0, 0.4, 2*pi/Lx         # Specify barotropic flow
 
 h(x)  = Ly*(1.0 - ep*sin(k1*x))             # Topography
 hx(x) = -Ly*k1*ep*cos(k1*x)                 # Topographic x-gradient
@@ -16,18 +16,16 @@ ub(x, y, t) = U/h(x)                        # Barotropic x-velocity
 wb(x, y, t) = y*ub(x, y, t)*hx(x)/h(x)      # Topography-following z-velocity
 
 CFL, del, umax = 0.2, Lx/nx, U/(Ly*(1-ep))  # Time stepping parameters
-dt, tfinal = CFL*del/umax, Ly*Lx / U        # Integration for one period
-nsteps = ceil(Int, tfinal/dt)               # Number of steps
-substeps = ceil(Int, 0.01*nsteps)           # 100 snapshots
+dt, tfinal     = CFL*del/umax, 4.0*Ly*Lx/U  # Time-step and final time
+nsteps         = ceil(Int, tfinal/dt)       # Number of steps
+substeps       = ceil(Int, 0.01*nsteps)     # Number of snapshots and diags
 
-
-println("dt: ", CFL*del/umax)
-
+name = @sprintf("./plots/wavychannel_ep%d_nx%04d", Int(ep*10), nx)
 
 
 
 # Initial condition
-xi, yi, dc = 0.0, -0.5*Ly, 0.05
+xi, yi, dc = 0.0, -0.5*Ly, 0.05 
 ci(x, y) = exp( -((x-xi)^2.0+(y-yi)^2.0)/(2.0*dc^2) ) / (2.0*pi*dc^2.0)
 
 
@@ -48,11 +46,11 @@ calc_yvar(prob)   = Cy2(prob.vars.c, prob.grid)
 calc_ym2(prob)    = myn(prob.vars.c, prob.grid, 2)
 calc_intym2(prob) = Myn(prob.vars.c, prob.grid, 2)
 
-xcen   = ProblemDiagnostic(calc_xcen, substeps, prob)
-ycen   = ProblemDiagnostic(calc_ycen, substeps, prob)
-yvar   = ProblemDiagnostic(calc_yvar, substeps, prob)
-ym2    = ProblemDiagnostic(calc_ym2, substeps, prob)
-intym2 = ProblemDiagnostic(calc_intym2, substeps, prob)
+xcen   = ProblemDiagnostic(calc_xcen,   prob)
+ycen   = ProblemDiagnostic(calc_ycen,   prob)
+yvar   = ProblemDiagnostic(calc_yvar,   prob)
+ym2    = ProblemDiagnostic(calc_ym2,    prob)
+intym2 = ProblemDiagnostic(calc_intym2, prob)
 
 diags = [xcen, ycen, yvar, ym2, intym2]
 M0i   = M0(prob.vars.c, g)
@@ -68,24 +66,31 @@ end
 
 
 
-
+t_theory = linspace(0.0, tfinal, 100)
 function makeplot(axs, prob)
   vs, pr, g = unpack(prob)
   cplot = NullableArray(vs.c, mask)
 
-  flatvar = 2.0*kap*yvar.time + yvar.data[1]
+  flatvar = 2.0*kap*t_theory + yvar.data[1]
 
   axs[1][:cla]()
   axs[2][:cla]()
 
   axes(axs[1])
   pcolormesh(g.X, g.Y, PyObject(cplot))
-  xlabel("x"); ylabel("z")
+  xlabel(L"$x$"); ylabel(L"$z$")
 
   axes(axs[2])
-  plot(yvar.time, yvar.data; color="C0", linestyle="-")
-  plot(yvar.time, flatvar;    color="C1", linestyle="--")
-  xlabel("t"); ylabel("Second moment")
+  plot(t_theory, flatvar;    color="C0", linestyle="-")
+  plot(yvar.time, yvar.data; color="C1", linestyle="--")
+  xlabel(L"$t$")
+  ylabel(L"C_2 = \int (y-\bar y)^2 c \mathrm{d}y \mathrm{d}x")
+    
+  xlim(0.0, tfinal)
+
+  # Formatting
+  axs[1][:xaxis][:set_ticks_position]("top")
+  axs[1][:xaxis][:set_label_position]("top")
 
   pause(0.01)
   nothing
@@ -109,6 +114,6 @@ while prob.t < tfinal
   prob.step, xcen.value, ycen.value, flatvar, yvar.value)
 
   makeplot(axs, prob)
-  savefig(@sprintf("./plots/tracertest_%06d.png", prob.step), dpi=240)
+  savefig(@sprintf("%s_%06d.png", name, prob.step), dpi=240)
 
 end

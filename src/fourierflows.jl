@@ -19,10 +19,11 @@ abstract type AbstractParams end
 abstract type AbstractVars end
 abstract type AbstractEquation end
 abstract type AbstractTimeStepper end
+abstract type AbstractProblem end
 
 
 # Problem type and associated functions
-type Problem
+type Problem <: AbstractProblem
   grid::AbstractGrid
   vars::AbstractVars
   params::AbstractParams
@@ -37,7 +38,7 @@ function Problem(g::AbstractGrid, v::AbstractVars, p::AbstractParams,
   Problem(g, v, p, eq, ts, 0.0, 0)
 end
 
-function unpack(prob::Problem)
+function unpack(prob::AbstractProblem)
   prob.vars, prob.params, prob.grid
 end
 

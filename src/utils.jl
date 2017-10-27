@@ -730,15 +730,16 @@ end
 
 
 
-function savesnapshot(name::String, pb::Problem)
+function savesnapshot(name::String, prob::AbstractProblem)
 
   savename = @sprintf("%s_%09d.jld", name, ts.step)
 
-  if symbol("c") in fieldnames(pb.ts) # Problem has real and complex parts
-    JLD.save(savename, "t", pb.v.t, "step", pb.ts.step, 
-      "solc", pb.v.solc, "solr", pb.v.solr)
+  if symbol("c") in fieldnames(prob.ts) # Problem has real and complex parts
+    JLD.save(savename, "t", prob.vars.t, "step", prob.ts.step, 
+      "solc", prob.vars.solc, "solr", prob.vars.solr)
   else
-    JLD.save(savename, "t", pb.v.t, "step", pb.ts.step, "sol", pb.v.sol)
+    JLD.save(savename, 
+      "t", prob.vars.t, "step", prob.ts.step, "sol", prob.vars.sol)
   end
 
   nothing

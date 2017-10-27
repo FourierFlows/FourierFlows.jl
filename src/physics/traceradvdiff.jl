@@ -126,7 +126,7 @@ function updatevars!(v::AbstractVars, p::AbstractTracerParams, g::TwoDGrid)
   v.c    = irfft(v.ch, g.nx)
 end
 
-function updatevars!(prob::Problem)
+function updatevars!(prob::AbstractProblem)
   updatevars!(prob.vars, prob.params, prob.grid)
 end
 
@@ -149,11 +149,11 @@ function set_c!(v::AbstractVars, p::AbstractTracerParams, g::TwoDGrid,
   updatevars!(v, p, g)
 end
 
-function set_c!(prob::Problem, c::Function)
+function set_c!(prob::AbstractProblem, c::Function)
   set_c!(prob.vars, prob.params, prob.grid, c)
 end
 
-function set_c!(prob::Problem, c::Array{Float64, 2})
+function set_c!(prob::AbstractProblem, c::Array{Float64, 2})
   set_c!(prob.vars, prob.params, prob.grid, c)
 end
 

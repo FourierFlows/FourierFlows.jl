@@ -1,3 +1,4 @@
+using JLD, HDF5
 using PyPlot, PyCall, NullableArrays
 @pyimport numpy.ma as ma
 
@@ -74,7 +75,6 @@ type ProblemDiagnostic{T} <: AbstractDiagnostic
   count::Int
 end
 
-
 """ Constructor for the ProblemDiagnostic type. """
 function ProblemDiagnostic(calc::Function, freq::Int, 
   prob::FourierFlows.Problem; num=1)
@@ -88,6 +88,21 @@ function ProblemDiagnostic(calc::Function, freq::Int,
   time[1] = prob.vars.t
 
   ProblemDiagnostic{T}(calc, freq, prob, num, data, time, value, 1)
+end
+
+""" Constructor for the ProblemDiagnostic type that sets the freq attribute
+to zero. """
+function ProblemDiagnostic(calc::Function, prob::FourierFlows.Problem; num=1)
+  value = calc(prob)
+  T = typeof(value)
+
+  data    = Array{T}(num)
+  time    = Array{Float64}(num)
+
+  data[1] = value
+  time[1] = prob.vars.t
+
+  ProblemDiagnostic{T}(calc, 0, prob, num, data, time, value, 1)
 end
 
 
@@ -166,22 +181,36 @@ end
 
 
 
-type Output
+""" Output type for FourierFlows problems. """
+type Output{dims}
   name::String
+  nout::Int
   freq::Int
   calc::Function
   prob::Problem
+  filename::String
+  file::JLD.JldFile
+end
+
+function Output(name::String, nout::Int, calc::Function, prob::Problem)
+  filename = "name" * ".jld"
+  outputvalue = calc(prob)
+   
+  Output{ndims(outputvalue)}(name, nout, 0, calc, prob, filename)
 end
 
 
 
 
 type Model
+  name::String
   grid::AbstractGrid
   vars::AbstractVars
   params::AbstractParams
   eqn::AbstractEquation
   ts::AbstractTimeStepper
+  t::Real
+  step::Int
   diags::Array{AbstractDiagnostic, 1}
   outputs::Array{Any, 1}
 end
