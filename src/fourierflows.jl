@@ -11,8 +11,6 @@ export AbstractGrid,
 
 export Problem
 
-export unpack
-
 
 
 
@@ -54,6 +52,9 @@ end
 include("domains.jl")
 include("timesteppers.jl")
 include("utils.jl")
+include("plotting.jl")
+include("diagnostics.jl")
+include("output.jl")
 
 
 # Include physics modules
