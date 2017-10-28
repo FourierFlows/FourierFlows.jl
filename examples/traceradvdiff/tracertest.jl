@@ -1,10 +1,16 @@
 include("../../src/fourierflows.jl")
 
 using FourierFlows
+
 import FourierFlows, FourierFlows.TracerAdvDiff
+
+import FourierFlows: M0, Cx1, Cy1, Cy2, myn, Myn
+import FourierFlows: Diagnostic
 
 include("./tracerutils.jl")
        
+
+
 
 nx, kap, Lx, Ly = 128, 1e-4, 2*pi, 1.0      # Domain
 U, ep, k1       = 1.0, 0.4, 2*pi/Lx         # Specify barotropic flow
@@ -46,14 +52,13 @@ calc_yvar(prob)   = Cy2(prob.vars.c, prob.grid)
 calc_ym2(prob)    = myn(prob.vars.c, prob.grid, 2)
 calc_intym2(prob) = Myn(prob.vars.c, prob.grid, 2)
 
-xcen   = ProblemDiagnostic(calc_xcen,   prob)
-ycen   = ProblemDiagnostic(calc_ycen,   prob)
-yvar   = ProblemDiagnostic(calc_yvar,   prob)
-ym2    = ProblemDiagnostic(calc_ym2,    prob)
-intym2 = ProblemDiagnostic(calc_intym2, prob)
+xcen   = Diagnostic(calc_xcen,   prob)
+ycen   = Diagnostic(calc_ycen,   prob)
+yvar   = Diagnostic(calc_yvar,   prob)
+ym2    = Diagnostic(calc_ym2,    prob)
+intym2 = Diagnostic(calc_intym2, prob)
 
 diags = [xcen, ycen, yvar, ym2, intym2]
-M0i   = M0(prob.vars.c, g)
 
 
 
@@ -65,10 +70,9 @@ for j=1:g.ny, i=1:g.nx
 end
 
 
-
 t_theory = linspace(0.0, tfinal, 100)
 function makeplot(axs, prob)
-  vs, pr, g = unpack(prob)
+  vs, pr, g = FourierFlows.unpack(prob)
   cplot = NullableArray(vs.c, mask)
 
   flatvar = 2.0*kap*t_theory + yvar.data[1]

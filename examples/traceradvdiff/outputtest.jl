@@ -1,42 +1,45 @@
 include("../../src/fourierflows.jl")
 
 using FourierFlows
-import FourierFlows, FourierFlows.TracerAdvDiff
+
+import FourierFlows,
+       FourierFlows.TracerAdvDiff
+
+import FourierFlows: M0, Cx1, Cy1, Cy2, myn, Myn
+import FourierFlows: Diagnostic
 
 include("./tracerutils.jl")
        
 
-nx, kap, Lx, Ly = 128, 1e-4, 2*pi, 1.0      # Domain
-U, ep, k1       = 1.0, 0.4, 2*pi/Lx         # Specify barotropic flow
+# Parameters
+nx, kap, Lx, Ly = 128, 1e-4, 2*pi, 1.0       # Domain
+U, ep, k1       = 1.0, 0.4, 2*pi/Lx          # Specify barotropic flow
 
-h(x)  = Ly*(1.0 - ep*sin(k1*x))             # Topography
-hx(x) = -Ly*k1*ep*cos(k1*x)                 # Topographic x-gradient
+CFL, del, umax  = 0.2, Lx/nx, U/(Ly*(1-ep))  # Time stepping parameters
+dt, tfinal      = CFL*del/umax, 1.0*Ly*Lx/U  # Time-step and final time
+nsteps          = ceil(Int, tfinal/dt)       # Number of steps
+substeps        = ceil(Int, nsteps/40)       # Number of snapshots and diags
 
-ub(x, y, t) = U/h(x)                        # Barotropic x-velocity
-vb(x, y, t) = y*ub(x, y, t)*hx(x)/h(x)      # Topography-following z-velocity
-
-CFL, del, umax = 0.2, Lx/nx, U/(Ly*(1-ep))  # Time stepping parameters
-dt, tfinal     = CFL*del/umax, 4.0*Ly*Lx/U  # Time-step and final time
-nsteps         = ceil(Int, tfinal/dt)       # Number of steps
-substeps       = ceil(Int, 0.01*nsteps)     # Number of snapshots and diags
-
-name = @sprintf("./plots/wavychannel_ep%d_nx%04d", Int(ep*10), nx)
-
-
+plotname = @sprintf("./plots/wavychannel_ep%d_nx%04d", Int(ep*10), nx)
+filename = "testout.jld2"
 
 # Initial condition
 xi, yi, dc = 0.0, -0.5*Ly, 0.05 
 ci(x, y) = exp( -((x-xi)^2.0+(y-yi)^2.0)/(2.0*dc^2) ) / (2.0*pi*dc^2.0)
 
 
+# Sinsuidal topography and barotropic velocity
+h(x)  = Ly*(1.0 - ep*sin(k1*x))             # Topography
+hx(x) = -Ly*k1*ep*cos(k1*x)                 # Topographic x-gradient
+
+ub(x, y, t) = U/h(x)                        # Barotropic x-velocity
+vb(x, y, t) = y*ub(x, y, t)*hx(x)/h(x)      # Topography-following z-velocity
 
 
 # Initialize problem
 g = FourierFlows.TwoDGrid(nx, Lx, nx, Ly+ep; y0=-Ly-ep)
 prob = TracerProblem(g, kap, ub, vb, CFL*del/umax)
 TracerAdvDiff.set_c!(prob, ci)
-
-
 
 
 # Diagnostics
@@ -53,30 +56,30 @@ ym2    = Diagnostic(calc_ym2,    prob)
 intym2 = Diagnostic(calc_intym2, prob)
 
 diags = [xcen, ycen, yvar, ym2, intym2]
-M0i   = M0(prob.vars.c, g)
 
 
+# Output
 get_c(prob) = prob.vars.c
 get_cy(prob) = irfft(im*prob.grid.Lr.*prob.vars.sol, prob.grid.nx)
 
-c_out  = Output("c", get_c,   prob, "testout.jld2")
-cy_out = Output("cy", get_cy, prob, "testout.jld2")
+c_out  = Output("c", get_c,   prob, filename)
+cy_out = Output("cy", get_cy, prob, filename)
 outputs = [c_out, cy_out]
-
-
+saveproblem!(prob, filename)
 
 
 # Plotting
+fig, axs = subplots(nrows=2)
+
 mask = Array{Bool}(g.nx, g.ny)
 for j=1:g.ny, i=1:g.nx
   mask[i, j] = g.y[j] < -h(g.x[i]) ? true : false
 end
 
 
-
 t_theory = linspace(0.0, tfinal, 100)
 function makeplot(axs, prob)
-  vs, pr, g = unpack(prob)
+  vs, pr, g = FourierFlows.unpack(prob)
   cplot = NullableArray(vs.c, mask)
 
   flatvar = 2.0*kap*t_theory + yvar.data[1]
@@ -100,11 +103,9 @@ function makeplot(axs, prob)
   axs[1][:xaxis][:set_ticks_position]("top")
   axs[1][:xaxis][:set_label_position]("top")
 
-  pause(0.01)
+  #pause(0.01)
   nothing
 end
-
-fig, axs = subplots(nrows=2)
 
 
 
@@ -123,7 +124,7 @@ while prob.t < tfinal
   "step: %04d, xc: %.2f, yc: %.2f, sigma (flat): %.2e, sigma (wavy): %.2e\n", 
   prob.step, xcen.value, ycen.value, flatvar, yvar.value)
 
-  #makeplot(axs, prob)
-  #savefig(@sprintf("%s_%06d.png", name, prob.step), dpi=240)
+  makeplot(axs, prob)
+  savefig(@sprintf("%s_%06d.png", plotname, prob.step), dpi=240)
 
 end
