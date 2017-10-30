@@ -16,21 +16,22 @@ function niwqgplot(axs, vs, pr, g, q0, Uw, R, tnd)
   xl, xr = -g.Lx/domfrac, g.Lx/domfrac
   yl, yr = -g.Ly/domfrac, g.Ly/domfrac
 
-  KE = 0.5*(abs2.(vs.u) + abs2.(vs.v))
-
-  qw = calc_qw(vs.u, vs.v, pr.f, pr, g)
-
   # All lengths non-dimensionalized by R
   axes(axs[1])
-  pcolormesh(g.X/R, g.Y/R, vs.q*tnd, cmap="RdBu_r",
+
+  pcolormesh(g.X/R, g.Y/R, vs.Z*tnd, cmap="RdBu_r",
     vmin=-q0, vmax=q0)
+
   xlim(xl/R, xr/R); ylim(yl/R, yr/R)
   xlabel(L"x/R"); ylabel(L"y/R")
-  title(L"q")
+  title(L"\zeta_0")
 
   axes(axs[2])
+
+  KE = 0.5*(abs2.(vs.u) + abs2.(vs.v))
   pcolormesh(g.X/R, g.Y/R, KE, cmap="YlGnBu_r",
     vmin=0, vmax=0.5*Uw^2)
+
   xlim(xl/R, xr/R); ylim(yl/R, yr/R)
   xlabel(L"x/R")
   title(L"\sqrt{u^2+v^2}")
@@ -39,7 +40,7 @@ function niwqgplot(axs, vs, pr, g, q0, Uw, R, tnd)
   E1 = 0.5*sum(abs2.(vs.uh)) + 0.5*sum(abs2.(vs.vh))
 
   @printf("rms Ro: %.2e, max speed: %.3f, t: %.3f, E1: %.6e\n",
-     rms(vs.q)/pr.f, maximum(sqrt.(KE)), vs.t/tnd, E1/E10)
+     rms(vs.Z)/pr.f, maximum(sqrt.(KE)), vs.t/tnd, E1/E10)
 
   pause(0.01)
 
@@ -79,10 +80,11 @@ ts = ETDRK4TimeStepper(dt, eq.LCc, eq.LCr)
 
 # Initial condition
 q0 = FourierFlows.lambdipole(Ue, R, g; center=(0.0, 0.0))
+
 u0 = 0.5*Uw/sqrt(2) * ones(Complex{Float64}, g.nx, g.ny)
 v0 = 0.5*Uw/sqrt(2) * ones(Complex{Float64}, g.nx, g.ny)
 
-TwoModeBoussinesq.set_q!(vs, pr, g, q0)
+TwoModeBoussinesq.set_zeta!(vs, pr, g, q0)
 TwoModeBoussinesq.set_uvp!(vs, pr, g, u0, v0, 0.0*u0)
 
 q00 = maximum(q0)
@@ -95,7 +97,7 @@ niwqgplot(axs, vs, pr, g, q00*tf, 2*Uw, R, tf)
 
 for i = 1:nplots
 
-  @time stepforward!(vs, nsubsteps, ts, eq, pr, g)
-  niwqgplot(axs, vs, pr, g, q00*tf, 2*Uw, R, tf)
+  @time stepforward!(vs, ts, eq, pr, g; nsteps=nsubsteps)
+  niwqgplot(axs, vs, pr, g, q00*tf, Uw^2, R, tf)
 
 end

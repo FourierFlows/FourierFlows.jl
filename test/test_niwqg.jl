@@ -65,11 +65,11 @@ nplots = ceil(Int, nsteps/nsubsteps)   # Number of plots
 @printf("Rossby number: %.3f", 1/(te*f0))
 
 
-pr = NIWQG.Params(kap, nkap, nu, nnu, eta, f0, Ue, 0.0)
+pr = NIWQG.Params(kap, nkap, nu, nnu, eta, f0, -Ue, 0.0)
 g  = TwoDGrid(nx, Lx)
 vs = NIWQG.Vars(g)
 eq = NIWQG.Equation(pr, g)
-ts = ETDRK4TimeStepper(dt, eq.LCr, eq.LCc)
+ts = ETDRK4TimeStepper(dt, eq.LCc, eq.LCr)
 
 
 # Initial condition
@@ -89,7 +89,7 @@ niwqgplot(axs, vs, pr, g, q00*te, 2*Uw, R, te)
 
 for i = 1:nplots
 
-  @time stepforward!(vs, nsubsteps, ts, eq, pr, g)
+  @time stepforward!(vs, ts, eq, pr, g, nsteps=nsubsteps)
   NIWQG.updatevars!(vs, pr, g)
   niwqgplot(axs, vs, pr, g, q00*te, 2*Uw, R, te)
 

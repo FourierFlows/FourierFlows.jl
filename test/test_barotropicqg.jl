@@ -53,7 +53,7 @@ nsteps = 200
 #test_plot(g, v, zetaan, fig, axs)
 
 for i = 1:nloops
-  @time stepforward!(v, ts, eq, p, g, nsteps)
+  @time stepforward!(v, ts, eq, p, g, nsteps=nsteps)
   BarotropicQG.updatevars!(v, p, g)
   zetaan = zeta0*cos.(kwave*(g.X-omega/kwave*v.t)).*cos.(lwave*g.Y)
   test_plot(g, v, zetaan, fig, axs; iter=i)
