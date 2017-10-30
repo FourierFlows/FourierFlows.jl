@@ -5,6 +5,8 @@ module NIWQG
 
 using FourierFlows
 
+import FourierFlows: jacobian
+
 export Timestepper, 
        TwoDGrid,
        Params,
@@ -12,6 +14,40 @@ export Timestepper,
        Equation
 
 export set_q!, updatevars!
+
+
+
+
+# Problems --------------------------------------------------------------------- 
+function NIWQGProblem(nx::Int, Lx::Real, dt::Real, kap::Real, 
+  nkap::Int, nu::Real, nnu::Int, eta::Real, f::Real, Us::Real, Vs::Real)
+
+  gr = FourierFlows.TwoDGrid(nx, Lx)
+  pr = Params(kap, nkap, nu, nnu, eta, f, Us, Vs) 
+  eq = Equation(pr, gr)
+  vs = Vars(gr)
+  ts = Timestepper(dt, eq)
+
+  Problem(gr, vs, pr, eq, ts)
+end
+
+function NIWQGProblem(nx::Int, Lx::Real; kap=nothing,
+  nkap=4, nu=nothing, nnu=4, eta=1.0, f=1.0, Us=0.0, Vs=0.0, dt=nothing)
+
+  if dt  == nothing;  dt = 0.01*2*pi/f;                     end
+  if kap == nothing; kap = 0.1/(dt*(0.65*pi*nx/Lx)^nkap);   end
+  if nu  == nothing;  nu = 0.1/(dt*(0.65*pi*nx/Lx)^nnu);    end
+
+  gr = FourierFlows.TwoDGrid(nx, Lx)
+  pr = Params(kap, nkap, nu, nnu, eta, f, Us, Vs) 
+  eq = Equation(pr, gr)
+  vs = Vars(gr)
+  ts = ETDRK4TimeStepper(dt, eq.LCc, eq.LCr)
+
+  Problem(gr, vs, pr, eq, ts)
+end
+
+
 
 
 
@@ -25,7 +61,7 @@ type Params <: NIWQGParams
   nu::Float64   # Wave hyperviscosity
   nnu::Int      # Order of wave hyperviscosity
   eta::Float64  # Wave dispersivity
-  kw::Float64   # Wave horizontal wavenumber
+  kw::Float64   # Wave vertical-mode horizontal wavenumber N*m/f
   f::Float64    # Planetary vorticity
   Us::Float64   # x-velocity of uniform mean flow
   Vs::Float64   # y-velocity of uniform mean flow
@@ -46,6 +82,8 @@ function Params(kap::Real, nkap::Int, nu::Real, nnu::Int, eta::Real, f::Real,
   kw = sqrt(2*eta/f)
   Params(kap, nkap, nu, nnu, eta, kw, f, Us, Vs)
 end
+
+
 
 
 
@@ -283,7 +321,7 @@ function updatevars!(v::Vars, p::NIWQGParams, g::TwoDGrid)
   A_mul_B!(v.phiy, g.ifftplan, v.phiyh)
 
 
-  # Wave parts of PV. J(phi', phi) = conj(phi'x)*phiy) - conj(phi'y)*phix)
+  # Wave parts of PV. J(conj(phi), phi) = conj(phix)*phiy - conj(phiy)*phix
   @. v.modphi = abs2(v.phi)
   @. v.jacphi = real(im*conj(v.phix)*v.phiy - im*conj(v.phiy)*v.phix)
 
@@ -307,6 +345,10 @@ function updatevars!(v::Vars, p::NIWQGParams, g::TwoDGrid)
   nothing
 end
 
+function updatevars!(prob::AbstractProblem)
+  updatevars!(prob.vars, prob.params, prob.grid)
+end
+
 
 
 
@@ -315,6 +357,10 @@ function set_q!(v::Vars, p::NIWQGParams, g::TwoDGrid, q)
   A_mul_B!(v.solr, g.rfftplan, q)
   updatevars!(v, p, g)
   nothing
+end
+
+function set_q!(prob::AbstractProblem, q)
+  set_q!(prob.vars, prob.params, prob.grid, q)
 end
 
 
@@ -328,23 +374,134 @@ function set_phi!(vs::Vars, pr::NIWQGParams, g::TwoDGrid, phi)
   nothing
 end
 
+function set_phi!(prob::AbstractProblem, phi)
+  set_phi!(prob.vars, prob.params, prob.grid, phi)
+end
 
 
+function delphi(vs, pr, g)
+  0.5*(vs.phix-im*vs.phiy)
+end
+
+  
 
 """ Return the horizontal velocities u and v, vertical velocity w, and 
 buoyancy b. """
-function getprimitivefields(vs::Vars, pr::NIWQGParams)
+function getprimitivefields(vs::Vars, pr::NIWQGParams, g::TwoDGrid; z=0.0, 
+  N=10*pr.f)
 
   updatevars!(vs, pr, g)
+  
+  # k = N*m/f
+  m = pr.f*pr.kw/N
 
-  u = pr.kw^2.0* exp(im*pr.f*vs.t) * real.(vs.phi) 
-  v = pr.kw^2.0* exp(im*pr.f*vs.t) * imag.(vs.phi) 
-  w = zeros(vs.phi)
-  b = zeros(vs.phi)
+  phase = m*z - pr.f*vs.t
+
+  delphi = 0.5*(vs.phix - im*vs.phiy)
+
+  wc = im/m * exp(im*phase) * delphi
+  bc = m*pr.eta * exp(im*phase) * delphi
+
+  u = real.(exp(im*phase) * vs.phi) 
+  v = imag.(exp(im*phase) * vs.phi) 
+  w = real.(wc + conj.(wc))
+  b = real.(bc + conj.(bc))
 
   return u, v, w, b
 end
 
+function getprimitivefields(prob::AbstractProblem)
+  getprimitivefields(prob.vars, prob.params, prob.grid)
+end
+
+
+""" Returns the net NIW kinetic energy. """
+function niwke(v::AbstractVars, p::AbstractParams, g::AbstractGrid)
+  0.5*g.dx*g.dy*sum(abs.(v.phi))
+end
+
+function niwke(prob::AbstractProblem)
+  niwke(prob.vars, prob.params, prob.grid)
+end 
+
+
+""" Returns the net NIW potential energy. """
+function niwpe(v::AbstractVars, p::AbstractParams, g::AbstractGrid)
+  0.25/p.kw^2.0*g.dx*g.dy*sum(abs2.(v.phix)+abs2.(v.phiy))
+end
+
+function niwpe(prob::AbstractProblem)
+  niwpe(prob.vars, prob.params, prob.grid)
+end
+
+
+""" Returns the net QG energy. """
+function qgenergy(v::AbstractVars, p::AbstractParams, g::AbstractGrid)
+  (0.5*g.dx*g.dy*sum(v.U.^2.0+v.V.^2.0) 
+    + 0.25/p.kw^2.0*g.dx*g.dy*sum(abs2.(v.phix)+abs2.(v.phiy)))
+end
+
+function qgenergy(prob::AbstractProblem)
+  qgenergy(prob.vars, prob.params, prob.grid)
+end
+
+
+""" Returns the net kinetic energy dissipation. """
+function niwke_dissipation(
+  v::AbstractVars, p::AbstractParams, g::AbstractGrid)
+  -p.nu*FourierFlows.parsevalsum(g.KKsq.^(p.nnu/4).*v.phih, g)
+end
+
+function niwke_dissipation(prob::AbstractProblem)
+  niwke_dissipation(prob.vars, prob.params, prob.grid)
+end
+
+
+""" Returns the net potential energy dissipation. """
+function niwpe_dissipation(
+  v::AbstractVars, p::AbstractParams, g::AbstractGrid)
+  -0.5/p.kw^2.0*p.nu*(
+    FourierFlows.parsevalsum(im*g.K.*g.KKsq.^(p.nnu/4).*v.phih, g)
+    + FourierFlows.parsevalsum(im*g.L.*g.KKsq.^(p.nnu/4).*v.phih, g)
+  )
+end
+
+function niwpe_dissipation(prob::AbstractProblem)
+  niwpe_dissipation(prob.vars, prob.params, prob.grid)
+end
+
+
+""" Returns the net dissipation of balanced kinetic energy. """
+function qg_dissipation(
+  v::AbstractVars, p::AbstractParams, g::AbstractGrid)
+  delq = irfft(g.KKrsq.^(p.nkap/2).*v.qh, g.nx)
+  p.kap*g.dx*g.dy*sum(v.psi.*delq)
+end
+
+function qg_dissipation(prob::AbstractProblem)
+  qg_dissipation(prob.vars, prob.params, prob.grid)
+end
+
+
+""" Returns the wave-QG cross-term that contributes to the balanced energy 
+budget. """
+function waveqg_dissipation(
+  v::AbstractVars, p::AbstractParams, g::AbstractGrid)
+
+  delphi = (-1.0)^(p.nnu/2).*ifft(g.KKsq.^(p.nnu/2).*v.phih)
+
+  chi = 0.25.*p.nu./p.f .* v.zeta .* real.(
+    conj.(v.phi).*delphi .+ v.phi.*conj.(delphi))
+
+  chi .+= 0.5.*p.nu./p.f .* v.psi .* real.(
+    im.*jacobian(conj.(v.phi), delphi) .- im.*jacobian(v.phi, conj.(delphi)))
+
+  g.dx*g.dy*sum(chi)
+end
+
+function waveqg_dissipation(prob::AbstractProblem)
+  waveqg_dissipation(prob.vars, prob.params, prob.grid)
+end
 
 
 

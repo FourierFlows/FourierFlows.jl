@@ -28,9 +28,10 @@ type Params <: TwoModeParams
   Vs::Float64                     # Steady mode-0 mean y-velocity
 end
 
-function Params(nu0, nnu0, nu1, nnu1, f, N, m)
+function Params(nu0, nnu0::Int, nu1, nnu1::Int, f, N, m)
   Params(nu0, nnu0, nu1, nnu1, f, N, m, 0.0, 0.0)
 end
+
 
 
 
@@ -47,7 +48,7 @@ function Equation(p::TwoModeParams, g::TwoDGrid)
   LCc = zeros(g.nx, g.ny, 3)
   LCc[:, :, 1] = -p.nu1 * g.KKsq.^(0.5*p.nnu1)
   LCc[:, :, 2] = -p.nu1 * g.KKsq.^(0.5*p.nnu1)
-  LCc[:, :, 3] = -p.nu1 * g.KKsq.^(0.5*p.nnu1)
+  #LCc[:, :, 3] = -p.nu1 * g.KKsq.^(0.5*p.nnu1)
 
   # Function calcNL! is defined below.
   Equation(LCc, LCr, calcNL!)
@@ -59,9 +60,9 @@ end
 # V A R S --------------------------------------------------------------------- 
 type Vars <: AbstractVars
 
-  # Z = zeta_0
-  # u0, v0, psi0 = U, V, psi
-  # u1, v1, w1, p1 = u, v, w, p
+  # Z : zeta_0
+  # u0, v0, psi0 : U, V, psi
+  # u1, v1, w1, p1 : u, v, w, p
 
   t::Float64
   solr::Array{Complex128, 2}
@@ -452,8 +453,12 @@ end
 
 
 """ Calculate the zeroth mode energy. """
-function calc_E0(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  0.5*FourierFlows.parsint(v.Uh, g) + 0.5*FourierFlows.parsint(v.Vh, g)
+function mode0energy(v::Vars, p::TwoModeParams, g::TwoDGrid)
+  0.5*FourierFlows.parsevalsum(v.Uh, g) + 0.5*FourierFlows.parsevalsum(v.Vh, g)
+end
+
+function mode0energy(prob::AbstractProblem)
+  mode0energy(prob.vars, prob.params, prob.grid)
 end
 
 
@@ -461,8 +466,12 @@ end
 
 """ Calculate the projection of the first mode kinetic energy onto the
 zeroth mode. """
-function calc_KE1(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  FourierFlows.parsint(v.uh, g) + FourierFlows.parsint(v.vh, g)
+function mode1ke(v::Vars, p::TwoModeParams, g::TwoDGrid)
+  FourierFlows.parsevalsum(v.uh, g) + FourierFlows.parsevalsum(v.vh, g)
+end
+
+function mode1ke(prob::AbstractProblem)
+  mode1ke(prob.vars, prob.params, prob.grid)
 end
 
 
@@ -470,34 +479,57 @@ end
 
 """ Calculate the projection of the first mode potential energy onto the
 zeroth mode. """
-function calc_PE1(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  p.m^2/p.N^2*FourierFlows.parsint(v.ph, g)
+function mode1pe(v::Vars, p::TwoModeParams, g::TwoDGrid)
+  p.m^2/p.N^2*FourierFlows.parsevalsum(v.ph, g)
+end
+
+function mode1pe(prob::AbstractProblem)
+  mode1pe(prob.vars, prob.params, prob.grid)
 end
 
 
 
 
 """ Calculate the first mode energy. """
-function calc_E1(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  calc_KE1(v, p, g) + calc_PE1(v, p, g)
+function mode1energy(v::Vars, p::TwoModeParams, g::TwoDGrid)
+  mode1ke(v, p, g) + mode1pe(v, p, g)
+end
+
+function mode1energy(prob::AbstractProblem)
+  mode1energy(prob.vars, prob.params, prob.grid)
 end
 
 
 
 
 """ Calculate the total energy projected onto the zeroth mode. """
-function calc_energy(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  calc_E0(v, p, g) + calc_E1(v, p, g)
+function totalenergy(v::Vars, p::TwoModeParams, g::TwoDGrid)
+  mode0energy(v, p, g) + mode1energy(v, p, g)
+end
+
+function totalenergy(prob::AbstractProblem)
+  totalenergy(prob.vars, prob.params, prob.grid)
 end
 
 
 
 
 """ Return the zeroth and first mode energy as a tuple. """
-function calc_energies(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  calc_E0(v, p, g), calc_E1(v, p, g)
+function twoenergies(v::Vars, p::TwoModeParams, g::TwoDGrid)
+  mode0energy(v, p, g), mode1energy(v, p, g)
 end
 
+function twoenergies(prob::AbstractProblem)
+  twoenergies(prob.vars, prob.params, prob.grid)
+end
+
+
+
+
+""" Return kinetic energy dissipation of the zeroth mode. """
+function mode0dissipation(v::Vars, p::TwoModeParams, g::TwoDGrid)
+  #p.nu0*g.dx*g.dy*sum(
+end
 
 
 

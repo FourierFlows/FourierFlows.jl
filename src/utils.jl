@@ -171,7 +171,17 @@ function parsint(uh, g::TwoDGrid)
   return U*norm
 end
 
+function parsevalsum(uh, g::TwoDGrid)
+  parsint(uh, g::TwoDGrid)
+end
 
+
+""" Return the Jacobian of a and b. """
+function jacobian(a, b, g::TwoDGrid)
+  ax = ifft(im*g.K.*fft(a))
+  ay = ifft(im*g.L.*fft(a))
+  ifft(im.*g.L.*fft(ax.*b) .- im.*g.K.*fft(ay.*b))
+end
 
 
 
