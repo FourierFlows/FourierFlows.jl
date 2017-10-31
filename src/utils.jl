@@ -153,7 +153,7 @@ end
 using Parseval's theorem, taking into account for FFT normalization and
 testing whether the coefficients are the product of a real or complex
 Fourier transform. """
-function parsint(uh, g::TwoDGrid)
+function parsevalsum2(uh, g::TwoDGrid)
 
   # Weird normalization (hopefully holds for both Julia and MKL FFT)
   norm = 2*g.Lx*g.Ly/(g.nx^2*g.ny^2)
@@ -171,8 +171,25 @@ function parsint(uh, g::TwoDGrid)
   return U*norm
 end
 
+
+""" Sum a wavenumber variable, applying the proper normalization to convert
+this sum into an integral over physical space, and taking into account
+reflected wavenumbers if the variable is the product of a 'real FFT'. """
 function parsevalsum(uh, g::TwoDGrid)
-  parsint(uh, g::TwoDGrid)
+  # Weird normalization (hopefully holds for both Julia and MKL FFT)
+  norm = 2*g.Lx*g.Ly/(g.nx^2*g.ny^2)
+
+  nk, nl = size(uh) 
+
+  # Different summing techniques for complex or real transform
+  if nk == g.nkr
+    U = sum(uh[1, :])
+    U += 2*sum(uh[2:end, :])
+  else
+    U = sum(uh)
+  end
+
+  return U*norm
 end
 
 

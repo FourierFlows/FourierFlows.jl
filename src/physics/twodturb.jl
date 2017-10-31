@@ -154,9 +154,8 @@ end
 
 
 
-
+""" Set the vorticity field. """
 function set_q!(v::Vars, g::TwoDGrid, q::Array{Float64, 2})
-  # Set vorticity
   A_mul_B!(v.sol, g.rfftplan, q)
   updatevars!(v, g)
 end
@@ -168,9 +167,10 @@ end
 
 
 
-function calc_energy(v::Vars, g::TwoDGrid)
-  updatevars!(v, g)
-  0.5*FourierFlows.parsint(g.KKrsq.*abs2.(v.psih), g)
+""" Calculate the domain integrated kinetic energy. """
+function energy(v::Vars, g::TwoDGrid)
+  0.5*(FourierFlows.parsevalsum2(im*g.Kr.*v.psih, g)
+        + FourierFlows.parsevalsum2(im*g.Lr.*v.psih, g))
 end
 
 
@@ -223,12 +223,12 @@ function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nnu=4,
     psih = rfft(psi)
     qi = -irfft(g.KKrsq.*psih, g.nx)
     set_q!(vs, g, qi)
-    E0 = FourierFlows.parsint(g.KKrsq.*abs2.(psih), g)
+    E0 = FourierFlows.parsevalsum2(g.KKrsq.*abs2.(psih), g)
 
   else
     qi = FourierFlows.peaked_isotropic_spectrum(nx, k0; maxval=q0)
     set_q!(vs, g, qi)
-    E0 = calc_energy(vs, g)
+    E0 = energy(vs, g)
   end
 
   maxq = q0 = maximum(abs.(vs.q))
@@ -266,7 +266,7 @@ function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nnu=4,
     @printf("  wall time: %.3f s, step: %d, t*q0: %.2e, 
                max q: %.3e, delta E: %.3f, CFL: %.3f\n", 
       time()-starttime, ts.step, vs.t*q0, 
-      maxq, calc_energy(vs, g)/E0, maximum([vs.U; vs.V])*ts.dt/g.dx)
+      maxq, energy(vs, g)/E0, maximum([vs.U; vs.V])*ts.dt/g.dx)
   end
 
   @printf("... done.")

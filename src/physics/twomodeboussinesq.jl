@@ -1,19 +1,54 @@
 __precompile__()
 
-# T W O M O D E B O U S S I N E S Q >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# A module for solving a two-vertical-mode truncation of the Boussinesq 
+# equations
 module TwoModeBoussinesq
 
 using FourierFlows
 
-export Grid,
-       Params,
+export Params,
        Vars,
        Equation
 
 export set_zeta!, updatevars!
 
 
-# P A R A M S ----------------------------------------------------------------- 
+# Problem --------------------------------------------------------------------- 
+""" Construct a FourierFlows Problem. """
+function InitialValueProblem(;
+  nx   = 128, 
+  Lx   = 2pi, 
+  ny   = nothing,
+  Ly   = nothing,
+  nu0  = nothing, 
+  nnu0 = 2, 
+  nu1  = nothing,
+  nnu1 = 2, 
+  f    = 1.0,
+  N    = 10.0,
+  m    = 40.0,
+  Us   = 0.0,
+  Vs   = 0.0,
+  dt   = 0.01
+  )
+
+  if Ly == nothing; Ly = Lx; end
+  if ny == nothing; ny = nx; end
+  if nu0 == nothing; nu0 = 1e-1/(dt*(0.65*pi*nx/Lx)^nnu0); end
+  if nu1 == nothing; nu1 = 1e-1/(dt*(0.65*pi*nx/Lx)^nnu1); end
+
+  g  = TwoDGrid(nx, Lx)
+  pr = TwoModeBoussinesq.Params(nu0, nnu0, nu1, nnu1, f, N, m)
+  vs = TwoModeBoussinesq.Vars(g)
+  eq = TwoModeBoussinesq.Equation(pr, g)
+  ts = ETDRK4TimeStepper(dt, eq.LCc, eq.LCr)
+
+  FourierFlows.Problem(g, vs, pr, eq, ts)
+end
+
+
+
+# Params ---------------------------------------------------------------------- 
 abstract type TwoModeParams <: AbstractParams end
 
 type Params <: TwoModeParams
@@ -35,7 +70,7 @@ end
 
 
 
-# E Q U A T I O N S ----------------------------------------------------------- 
+# Equations ------------------------------------------------------------------- 
 type Equation <: AbstractEquation
   LCc::Array{Complex{Float64}, 3}  # Element-wise coeff of the eqn's linear part
   LCr::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's linear part
@@ -57,7 +92,7 @@ end
 
 
 
-# V A R S --------------------------------------------------------------------- 
+# Vars ------------------------------------------------------------------------ 
 type Vars <: AbstractVars
 
   # Z : zeta_0
@@ -234,8 +269,7 @@ end
 
 
 
-# S O L V E R S ---------------------------------------------------------------
-
+# Solvers --------------------------------------------------------------------- 
 function calcNL!(
   NLc::Array{Complex{Float64}, 3},  NLr::Array{Complex{Float64}, 2}, 
   solc::Array{Complex{Float64}, 3}, solr::Array{Complex{Float64}, 2}, 
@@ -364,7 +398,7 @@ end
 
 
 
-# H E L P E R   F U N C T I O N S --------------------------------------------- 
+# Helper functions ------------------------------------------------------------ 
 function updatevars!(v::Vars, p::TwoModeParams, g::TwoDGrid)
 
   v.Zh .= v.solr
@@ -395,6 +429,10 @@ function updatevars!(v::Vars, p::TwoModeParams, g::TwoDGrid)
   nothing
 end
 
+function updatevars!(prob::AbstractProblem)
+  updatevars!(prob.vars, prob.params, prob.grid)
+end
+
 
 
 
@@ -403,6 +441,10 @@ function set_zeta!(v::Vars, p::TwoModeParams, g::TwoDGrid, Z)
   A_mul_B!(v.solr, g.rfftplan, Z)
   updatevars!(v, p, g)
   nothing
+end
+
+function set_zeta!(prob::AbstractProblem, Z)
+  set_zeta!(prob.vars, prob.params, prob.grid, Z)
 end
 
 
@@ -422,13 +464,24 @@ function set_uvp!(vs::Vars, pr::TwoModeParams, g::TwoDGrid, u, v, p)
   nothing
 end
 
+function set_uvp!(prob::AbstractProblem, u, v, p)
+  set_uvp!(prob.vars, prob.params, prob.grid, u, v, p)
+end
+
 
 
 
 """ Set a plane wave solution with initial speed uw and non-dimensional wave
 number nkw. The dimensional wavenumber will be 2*pi*nkw/Lx. """
 function set_planewave!(vs::Vars, pr::TwoModeParams, g::TwoDGrid,
-  uw::Real, nkw::Int)
+  uw::Real, nkw::Int; rotate=0.0)
+
+  if rotate != 0.0
+    x = g.X*cos(rotate) + g.Y*sin(rotate)
+    y = -g.X*sin(rotate) + g.Y*cos(rotate)
+  else
+    x, y = g.X, g.Y
+  end
 
   # Wave parameters
   kw = 2*pi*nkw/g.Lx
@@ -441,12 +494,17 @@ function set_planewave!(vs::Vars, pr::TwoModeParams, g::TwoDGrid,
   p0 = 2*u0*alpha*pr.f^2 / (sig*kw)
 
   # Initial conditions
-  u = u0     * exp.(im*kw*g.X)    # u = 2*u0*cos(phi)
-  v = -im*v0 * exp.(im*kw*g.X)    # v = 2*v0*sin(phi)
-  p = p0     * exp.(im*kw*g.X)    # p = 2*p0*cos(phi)
+  u = u0     * exp.(im*kw*x)    # u = 2*u0*cos(phi)
+  v = -im*v0 * exp.(im*kw*x)    # v = 2*v0*sin(phi)
+  p = p0     * exp.(im*kw*x)    # p = 2*p0*cos(phi)
   
   set_uvp!(vs, pr, g, u, v, p)
   nothing
+end
+
+function set_planewave!(prob::AbstractProblem, uw::Real, nkw::Int; rotate=0.0)
+  set_planewave!(prob.vars, prob.params, prob.grid, uw::Real, nkw::Int;
+    rotate=rotate)
 end
 
 
@@ -454,7 +512,7 @@ end
 
 """ Calculate the zeroth mode energy. """
 function mode0energy(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  0.5*FourierFlows.parsevalsum(v.Uh, g) + 0.5*FourierFlows.parsevalsum(v.Vh, g)
+  0.5*FourierFlows.parsevalsum(g.invKKrsq.*abs2.(v.solr), g)
 end
 
 function mode0energy(prob::AbstractProblem)
@@ -467,7 +525,8 @@ end
 """ Calculate the projection of the first mode kinetic energy onto the
 zeroth mode. """
 function mode1ke(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  FourierFlows.parsevalsum(v.uh, g) + FourierFlows.parsevalsum(v.vh, g)
+  (FourierFlows.parsevalsum2(v.solc[:, :, 1], g) 
+    + FourierFlows.parsevalsum2(v.solc[:, :, 2], g))
 end
 
 function mode1ke(prob::AbstractProblem)
@@ -480,7 +539,7 @@ end
 """ Calculate the projection of the first mode potential energy onto the
 zeroth mode. """
 function mode1pe(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  p.m^2/p.N^2*FourierFlows.parsevalsum(v.ph, g)
+  p.m^2/p.N^2*FourierFlows.parsevalsum2(v.solc[:, :, 3], g)
 end
 
 function mode1pe(prob::AbstractProblem)
@@ -528,9 +587,10 @@ end
 
 """ Return kinetic energy dissipation of the zeroth mode. """
 function mode0dissipation(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  #p.nu0*g.dx*g.dy*sum(
+  delzeta = irfft(
+    (-1.0)^(p.nnu0/2) .* g.KKrsq.^(p.nnu0/2) .* vs.solr, g.nx)
+  -p.nu*g.dx*g.dy*sum(vs.psi.*delzeta)
 end
-
 
 
 
@@ -549,16 +609,252 @@ function calc_apv(v::Vars, p::TwoModeParams, g::TwoDGrid)
 end
 
 
+mode0speed(prob) = sqrt.(prob.vars.U.^2.0 + prob.vars.V.^2.0)
+
+mode1u(v::AbstractVars) = real.(v.u + conj.(v.u))
+mode1v(v::AbstractVars) = real.(v.v + conj.(v.v))
+mode1w(v::AbstractVars) = real.(v.w + conj.(v.w))
+mode1p(v::AbstractVars) = real.(v.p + conj.(v.p))
+
+mode1u(prob::AbstractProblem) = mode1u(prob.vars)
+mode1v(prob::AbstractProblem) = mode1v(prob.vars)
+mode1w(prob::AbstractProblem) = mode1w(prob.vars)
+mode1p(prob::AbstractProblem) = mode1p(prob.vars)
+
+mode1speed(v::AbstractVars) = sqrt.(mode1u(v).^2.0 + mode1v(v).^2.0)
+mode1speed(prob::AbstractProblem) = mode1speed(prob.vars)
+
+mode1buoyancy(v, p) = real.(im*p.m*v.p - im*p.m*conj.(v.p))
+mode1buoyancy(prob::AbstractProblem) = mode1buoyancy(prob.vars, prob.params)
 
 
+""" Compute the transform of the Jacobian of two fields a, b on a grid g. """
+function jacobianh(a, b, g::TwoDGrid)
+  # J(a, b) = dx(a b_y) - dy(a b_x)
+  bh = fft(b)
+  bx = ifft(im*g.K.*bh)
+  by = ifft(im*g.L.*bh)
+  im*g.K.*fft(a.*bx) - im*g.L.*fft(a.*by)
+end
 
-""" Returns the wave speed projected onto the zeroth mode. """
-function calc_wavespeed(vs::Vars)
-  sqrt.(2.0.*abs2.(vs.u) .+ 2.0.*abs2.(vs.v))
+""" Compute the Jacobian of two fields a, b on a grid g. """
+function jacobian(a, b, g::TwoDGrid)
+  ifft(jacobianh(a, b, g))
 end
 
 
 
 
+
+
+
+
+
+# Wave-induced flow and potential vorticity ----------------------------------- 
+""" Calculate the wave-induced streamfunction and velocity fields. """
+function wave_induced_uv(qw, g::TwoDGrid)
+
+  qwh = rfft(qw)
+
+  psiwh = g.invKKrsq.*qwh
+  uwh   = -im*g.Lr.*psiwh
+  vwh   =  im*g.Kr.*psiwh
+
+  psiw = irfft(psiwh, g.nx)
+  uw   = irfft(uwh, g.nx)
+  vw   = irfft(vwh, g.nx)
+
+  return uw, vw
 end
-# E N D   T W O M O D E B O U S S I N E S Q >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 
+
+""" Calculate the wave-induced streamfunction and velocity fields. """
+function wave_induced_uv(sig::Real, v::Vars, p::TwoModeParams, g::TwoDGrid)
+  wave_induced_uv(calc_qw(sig::Real, v::Vars, p::TwoModeParams, g::TwoDGrid), 
+    g::TwoDGrid)
+end
+
+function wave_induced_uv(sig, prob::AbstractProblem)
+  wave_induced_uv(sig, prob.vars, prob.params, prob.grid)
+end
+
+
+
+
+""" Calculate the wave contribution to PV, qw. """
+function calc_qw(sig::Real, v::Vars, p::TwoModeParams, g::TwoDGrid)
+
+  usig, vsig = calc_usigvsig(sig, v, p, g)
+
+  # Non-Jacobian terms
+  usig2xx = ifft(-g.K.^2.0.*fft(abs2.(usig)))
+  vsig2yy = ifft(-g.L.^2.0.*fft(abs2.(vsig)))
+  usigvsigxy = ifft(-g.K.*g.L.*fft(usig.*conj.(vsig) + conj.(usig).*vsig))
+
+  # Assemble contributions
+  qw = -real.( 
+       2.0*im/sig * (
+        jacobian(conj.(usig), usig, g) + jacobian(conj.(vsig), vsig, g))
+    + p.f/sig^2.0 * (
+        jacobian(conj.(vsig), usig, g) + jacobian(vsig, conj.(usig), g))
+    + p.f/sig^2.0 * (usig2xx + vsig2yy + usigvsigxy)
+  )
+
+  return qw
+end
+
+""" Calculate the wave contribution to PV, qw. """
+function calc_qw(usig::AbstractArray, vsig::AbstractArray, sig::Real, 
+  p::TwoModeParams, g::TwoDGrid)
+
+  usigh = fft(usig)
+  vsigh = fft(vsig)
+
+  # Non-Jacobian terms
+  usig2xx = ifft(-g.K.^2.0.*fft(abs2.(usig)))
+  vsig2yy = ifft(-g.L.^2.0.*fft(abs2.(vsig)))
+  usigvsigxy = ifft(-g.K.*g.L.*fft(usig.*conj.(vsig) + conj.(usig).*vsig))
+
+  # Assemble contributionsCalulate
+  qw = -real.( 
+       2.0*im/sig * (
+        jacobian(conj.(usig), usig, g) + jacobian(conj.(vsig), vsig, g))
+    + p.f/sig^2.0 * (
+        jacobian(conj.(vsig), usig, g) + jacobian(vsig, conj.(usig), g))
+    + p.f/sig^2.0 * (usig2xx + vsig2yy + usigvsigxy)
+  )
+
+  return qw
+end
+
+function calc_qw(sig::Real, prob::AbstractProblem)
+  calc_qw(sig, prob.vars, prob.params, prob.grid)
+end
+
+
+""" Calculate usig and vsig, the complex, sigm-ified amplitudes 
+of u_1 and v_1. """
+function calc_usigvsig(sig, v::Vars, p::TwoModeParams, g::TwoDGrid)
+
+  # Calculate u_t and v_t, and use them to find usig and vsig
+
+  @views @. v.uh = v.solc[:, :, 1]
+  @views @. v.vh = v.solc[:, :, 2]
+  @views @. v.ph = v.solc[:, :, 3]
+
+  # This copy is necessary because calling A_mul_B(v.Z, g.irfftplan, sol) 
+  # a few lines below destroys solr
+  v.Zh .= v.solr
+
+  @. v.psih = -g.invKKrsq*v.Zh
+  @. v.Uh   = -im*g.Lr*v.psih
+  @. v.Vh   =  im*g.Kr*v.psih
+  @. v.Uxh  = im*g.Kr*v.Uh
+  @. v.Vxh  = im*g.Kr*v.Vh
+  @. v.Uyh  = im*g.Lr*v.Uh
+  @. v.Vyh  = im*g.Lr*v.Vh
+
+  v.Uh[1, 1] += p.Us*g.nx*g.ny
+  v.Vh[1, 1] += p.Vs*g.nx*g.ny
+
+  # Inverse transforms
+  A_mul_B!(v.U,  g.irfftplan, v.Uh)
+  A_mul_B!(v.V,  g.irfftplan, v.Vh)
+  A_mul_B!(v.Ux, g.irfftplan, v.Uxh)
+  A_mul_B!(v.Uy, g.irfftplan, v.Uyh)
+  A_mul_B!(v.Vx, g.irfftplan, v.Vxh)
+  A_mul_B!(v.Vy, g.irfftplan, v.Vyh)
+
+  A_mul_B!(v.u,  g.ifftplan, v.uh)
+  A_mul_B!(v.v,  g.ifftplan, v.vh)
+
+  @. v.Uu =  v.U * v.u
+  @. v.Vu =  v.V * v.u
+  @. v.Uv =  v.U * v.v
+  @. v.Vv =  v.V * v.v
+  @. v.uUx = v.u * v.Ux
+  @. v.uVx = v.u * v.Vx
+  @. v.vUy = v.v * v.Uy
+  @. v.vVy = v.v * v.Vy
+
+  A_mul_B!(v.Uuh,  g.fftplan, v.Uu)
+  A_mul_B!(v.Uvh,  g.fftplan, v.Uv)
+  A_mul_B!(v.Vuh,  g.fftplan, v.Vu)
+  A_mul_B!(v.Vvh,  g.fftplan, v.Vv)
+  A_mul_B!(v.uUxh, g.fftplan, v.uUx)
+  A_mul_B!(v.uVxh, g.fftplan, v.uVx)
+  A_mul_B!(v.vUyh, g.fftplan, v.vUy)
+  A_mul_B!(v.vVyh, g.fftplan, v.vVy)
+
+  # First-mode nonlinear terms:
+  # u
+  uth = ( -p.nu1*g.KKsq.^(0.5*p.nnu1) .* v.uh
+    + p.f*v.vh - im*g.K.*v.ph
+    - im*g.K.*v.Uuh - im*g.L.*v.Vuh - v.uUxh - v.vUyh
+  )
+
+  # v
+  vth = ( -p.nu1*g.KKsq.^(0.5*p.nnu1) .* v.vh
+    - p.f*v.uh - im*g.L.*v.ph
+    - im*g.K.*v.Uvh - im*g.L.*v.Vvh - v.uVxh - v.vVyh
+  )
+
+  ut = ifft(uth)
+  vt = ifft(vth)
+
+  # Calculate amplitudes
+  usig = exp(im*sig*v.t) * (v.u + im/sig*ut)
+  vsig = exp(im*sig*v.t) * (v.v + im/sig*vt)
+
+  return usig, vsig
+end
+
+
+
+""" Returns the wave-induced speed. """
+function wave_induced_speed(vs, pr, g)
+  uw, vw = wave_induced_uv(sig, vs, pr, g)
+  return sqrt.(uw.^2.0 + vw.^2.0)
+end
+
+function wave_induced_speed(prob::AbstractProblem)
+  wave_induced_speed(prob.vars, prob.params, prob.grid)
+end
+
+
+""" Returns the wave-induced x-velocity. """
+function wave_induced_u(vs, pr, g)
+  uw, vw = wave_induced_uv(sig, vs, pr, g)
+  return uw
+end
+
+function wave_induced_u(prob::AbstractProblem)
+  wave_induced_u(prob.vars, prob.params, prob.grid)
+end
+
+
+""" Returns the wave-induced y-velocity. """
+function wave_induced_v(vs, pr, g)
+  uw, vw = wave_induced_uv(sig, vs, pr, g)
+  return vw
+end
+
+function wave_induced_v(prob::AbstractProblem)
+  wave_induced_v(prob.vars, prob.params, prob.grid)
+end
+
+
+function apvinducedflow(vs, pr, g)
+  q = TwoModeBoussinesq.calc_apv(vs, pr, g)
+  psiqh = -g.invKKrsq.*rfft(q)
+  uq = irfft(-im*g.Lr.*psiqh, g.nx)
+  vq = irfft( im*g.Kr.*psiqh, g.nx)
+  return sqrt.(uq.^2.0+vq.^2.0)
+end
+
+
+
+  
+
+
+# End module
+end

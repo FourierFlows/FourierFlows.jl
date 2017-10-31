@@ -449,7 +449,7 @@ end
 """ Returns the net kinetic energy dissipation. """
 function niwke_dissipation(
   v::AbstractVars, p::AbstractParams, g::AbstractGrid)
-  -p.nu*FourierFlows.parsevalsum(g.KKsq.^(p.nnu/4).*v.phih, g)
+  -p.nu*FourierFlows.parsevalsum2(g.KKsq.^(p.nnu/4).*v.phih, g)
 end
 
 function niwke_dissipation(prob::AbstractProblem)
@@ -461,8 +461,8 @@ end
 function niwpe_dissipation(
   v::AbstractVars, p::AbstractParams, g::AbstractGrid)
   -0.5/p.kw^2.0*p.nu*(
-    FourierFlows.parsevalsum(im*g.K.*g.KKsq.^(p.nnu/4).*v.phih, g)
-    + FourierFlows.parsevalsum(im*g.L.*g.KKsq.^(p.nnu/4).*v.phih, g)
+    FourierFlows.parsevalsum2(im*g.K.*g.KKsq.^(p.nnu/4).*v.phih, g)
+    + FourierFlows.parsevalsum2(im*g.L.*g.KKsq.^(p.nnu/4).*v.phih, g)
   )
 end
 
