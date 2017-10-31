@@ -561,7 +561,9 @@ end
 
 
 
-""" Calculate the total energy projected onto the zeroth mode. """
+""" 
+Calculate the total energy projected onto the zeroth mode. 
+"""
 function totalenergy(v::Vars, p::TwoModeParams, g::TwoDGrid)
   mode0energy(v, p, g) + mode1energy(v, p, g)
 end
@@ -573,7 +575,9 @@ end
 
 
 
-""" Return the zeroth and first mode energy as a tuple. """
+""" 
+Return the zeroth and first mode energy as a tuple. 
+"""
 function twoenergies(v::Vars, p::TwoModeParams, g::TwoDGrid)
   mode0energy(v, p, g), mode1energy(v, p, g)
 end
