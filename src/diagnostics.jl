@@ -29,8 +29,9 @@ function Diagnostic(calc::Function, prob::FourierFlows.Problem; freq=1,
   value = calc(prob)
   T = typeof(value)
 
-  data    = Array{T}(num)
-  time    = Array{Float64}(num)
+  data = Array{T}(num)
+  time = Array{Float64}(num)
+  step = Array{Int64}(num)
 
   data[1] = value
   time[1] = prob.t
@@ -60,6 +61,13 @@ function update!(diag::AbstractDiagnostic)
   diag.time[diag.count] = diag.prob.t
   diag.step[diag.count] = diag.prob.step
   diag.value = diag.data[diag.count]
+  nothing
+end
+
+function update!(diags::Array{AbstractDiagnostic, 1})
+  for diag in diags
+    update!(diag)
+  end
   nothing
 end
 
