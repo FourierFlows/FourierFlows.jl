@@ -3,8 +3,9 @@ include("../../src/fourierflows.jl")
 using  FourierFlows, PyPlot, JLD2
 import FourierFlows.TwoModeBoussinesq
 
-import FourierFlows.TwoModeBoussinesq: updatevars!, mode1speed,
- set_zeta!, set_planewave! 
+import FourierFlows.TwoModeBoussinesq: 
+          updatevars!, mode1speed, set_zeta!, set_planewave!, 
+          mode0energy, mode1ke, mode1pe, mode1energy 
 
 
 # Turbulent background
@@ -34,15 +35,22 @@ nu1 = 1e-2/(dt*(0.65*pi*nx/Lx)^nnu1)
 prob = TwoModeBoussinesq.InitialValueProblem(nx=nx, Lx=Lx, 
   nnu0=nnu0, nnu1=nnu1, f=f, N=N, m=m, dt=dt)
 
-
+# diag = Diagnostic(calc, prob; nsteps=...)
+etot = Diagnostic(totalenergy, prob; nsteps=nsteps)
+e0   = Diagnostic(mode0energy, prob; nsteps=nsteps)
+e1   = Diagnostic(mode1energy, prob; nsteps=nsteps)
+ke1  = Diagnostic(mode1ke,     prob; nsteps=nsteps)
+pe1  = Diagnostic(mode1pe,     prob; nsteps=nsteps)
+diags = [etot, e0, e1, ke1, pe1]
 
 
 # Jet + plane wave initial condition
-
 TwoModeBoussinesq.set_zeta!(prob, Z)
 TwoModeBoussinesq.set_planewave!(prob, uw0, nkw)
+update!(diags)
 
-message(prob) = @sprintf("\$t = %.1f\$ wave periods", prob.t/twave)
+
+#message(prob) = @sprintf("\$t = %.1f\$ wave periods", prob.t/twave)
 
 
 x, y = prob.grid.X, prob.grid.Y
@@ -50,14 +58,17 @@ fig, axs = subplots(ncols=2, nrows=1, sharex=true, sharey=true,
   figsize=(10, 5))
 
 
+message(prob, diags) = @sprintf("step: %04d, e: %.2f, e0: %.2f, e1: %.2f",
+  prob.step, diags.etot.value/diags.etot.data[1], 
+  diags.e0.value/diags.e0.data[1], diags.e1.value/diags.e1.data[1])
 
 # Step forward
 while prob.step < nsteps
 
-  stepforward!(prob, nsteps=substeps)
+  stepforward!(prob, diags, nsteps=substeps)
   updatevars!(prob)
 
-  println(prob.step)
+  println(message(prob, diags))
 
   axes(axs[1])
   pcolormesh(x, y, prob.vars.Z, cmap="RdBu_r")
@@ -76,4 +87,3 @@ while prob.step < nsteps
   savefig(savename, dpi=240)
 
 end
-
