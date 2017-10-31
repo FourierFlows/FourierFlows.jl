@@ -10,13 +10,6 @@ nx  = 128
 dt  = 1e-4;
 
 
-# Initial condition with two ellipsoid vortices for comparison.
-ampl = 1.131562576275490e-04
-qh = ampl*rfft( 200.0*exp.(-((g.X-1).^2-0.4*g.X.*g.Y)./.3^2-(g.Y-1).^2./.5^2) 
-  - 100.0* exp.(-((g.X+1).^2-0.4*g.X.*g.Y)./.3^2-(g.Y+1).^2./.5^2) )
-
-qh[1, 1] = 0
-
 
 
 println("Initialize grid, vars, params, time stepper:")

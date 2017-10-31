@@ -1,4 +1,6 @@
-include("../../src/fourierflows.jl")
+include("../src/fourierflows.jl")
+
+module GridTest
 
 using FourierFlows
 
@@ -9,8 +11,6 @@ g = TwoDGrid(nx, Lx)
 
 # -----------------------------------------------------------------------------
 # Test that the X & Y grids are actually created
-
-println()
 
 if maximum(abs.(g.X)) < 1e-10
   info("X grid is ALL zeros!")
@@ -206,4 +206,5 @@ else
 end
 
 
-println()
+
+end

@@ -15,6 +15,12 @@ type TwoDGrid <: AbstractGrid
   nl::Int
   nkr::Int
 
+  dx::Float64
+  dy::Float64
+
+  x::Array{Float64, 1}
+  y::Array{Float64, 1}
+
   # Range objects that access the non-aliased part of the wavenumber range
   krange::Array{Int64, 1}
   lrange::Array{Int64, 1}
@@ -24,12 +30,6 @@ type TwoDGrid <: AbstractGrid
   kderange::Array{Int64, 1}
   lderange::Array{Int64, 1}
   krderange::Array{Int64, 1}
-
-  dx::Float64
-  dy::Float64
-
-  x::Array{Float64, 1}
-  y::Array{Float64, 1}
 
   k::Array{Complex{Float64}, 1}
   l::Array{Complex{Float64}, 1}
@@ -77,12 +77,8 @@ end
 
 
 # Initializer for rectangular grids
-function TwoDGrid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64}; 
-  nthreads=Sys.CPU_CORES)
-
-  # Un-tuple arguments
-  nx, ny = nxy
-  Lx, Ly = Lxy
+function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
+  x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU_CORES)
 
   # Size attributes
   dx = Lx/nx
@@ -140,8 +136,8 @@ function TwoDGrid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64};
   ikr = Array{Complex{Float64}}(nkr, nl)
 
   # 1D pre-constructors
-  x = linspace(-Lx/2.0, Lx/2.0-dx, nx)
-  y = linspace(-Ly/2.0, Ly/2.0-dy, ny)
+  x = linspace(x0, x0+Lx-dx, nx)
+  y = linspace(y0, y0+Ly-dy, ny)
 
   i1 = 0:1:Int(nx/2)
   i2 = Int(-nx/2+1):1:-1
@@ -150,82 +146,65 @@ function TwoDGrid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64};
   j2 = Int(-ny/2+1):1:-1
 
   k  = 2.0*pi/Lx * cat(1, i1, i2)
-  l  = 2.0*pi/Ly * cat(1, j1, j2)
   kr = 2.0*pi/Lx * cat(1, i1)
+  l  = 2.0*pi/Ly * cat(1, j1, j2)
 
   ksq  = k.^2.0
-  lsq  = l.^2.0
   krsq = kr.^2.0
+  lsq  = l.^2.0
 
   ik  = im*k
-  il  = im*l
   ikr = im*kr
+  il  = im*l
 
-  # Build 2D physical arrays
-  for j = 1:ny, i = 1:nx
-    X[i, j] = x[i]
-    Y[i, j] = y[j]
-  end
+  X = [ x[i] for i = 1:nx, j = 1:ny]
+  Y = [ y[j] for i = 1:nx, j = 1:ny]
 
-  # Build 2D complex spectral arrays
-  for j = 1:nl, i = 1:nk
-    K[i, j] = k[i]
-    L[i, j] = l[j]
+  K = [ k[i] for i = 1:nk, j = 1:nl]
+  L = [ l[j] for i = 1:nk, j = 1:nl]
 
-    K2[i, j] = k[i]^2.0
-    L2[i, j] = l[j]^2.0
+  Kr = [ kr[i] for i = 1:nkr, j = 1:nl]
+  Lr = [ l[j]  for i = 1:nkr, j = 1:nl]
 
-    KKsq[i, j] = k[i]^2.0 + l[j]^2.0
-    KL[i, j] = k[i]*l[j]
+  K2 = K.^2.0
+  L2 = L.^2.0
 
-    if i == 1 && j == 1
-      invKKsq[i, j] = 0.0
-    else
-      invKKsq[i, j] = 1.0/KKsq[i, j]
-    end
+  KKsq  = K.^2.0 + L.^2.0
+  KL   = K.*L
+  invKKsq = 1.0./KKsq
+  invKKsq[1, 1] = 0.0
 
-  end
-
-  # Build 2D real spectral arrays
-  for j = 1:nl, i = 1:nkr
-    Kr[i, j] = kr[i]
-    Lr[i, j] = l[j]
-
-    KKrsq[i, j] = kr[i]^2.0 + l[j]^2.0
-
-    if i == 1 && j == 1
-      invKKrsq[i, j] = 0.0
-    else
-      invKKrsq[i, j] = 1.0/KKrsq[i, j]
-    end
-  end
+  KKrsq = Kr.^2.0 + Lr.^2.0
+  invKKrsq = 1.0./KKrsq
+  invKKrsq[1, 1] = 0.0
 
   # FFT plans; use grid vars.
   FFTW.set_num_threads(nthreads)
   effort = FFTW.MEASURE
 
-  fftplan   = plan_fft(  Array{Float64,2}(nx, ny);         flags=effort)
-  ifftplan  = plan_ifft( Array{Complex{Float64},2}(nk, nl);      flags=effort)
+  fftplan   = plan_fft(Array{Float64,2}(nx, ny); flags=effort)
+  ifftplan  = plan_ifft(Array{Complex{Float64},2}(nk, nl); flags=effort)
 
-  rfftplan  = plan_rfft( Array{Float64,2}(nx, ny);         flags=effort)
+  rfftplan  = plan_rfft(Array{Float64,2}(nx, ny); flags=effort)
   irfftplan = plan_irfft(Array{Complex{Float64},2}(nkr, nl), nx; flags=effort)
 
-
-  return TwoDGrid(nx, ny, Lx, Ly, nk, nl, nkr, krange, lrange, krrange,
-          kderange, lderange, krderange, dx, dy, x, y,
+  return TwoDGrid(nx, ny, Lx, Ly, nk, nl, nkr, dx, dy, x, y,
+          krange, lrange, krrange, kderange, lderange, krderange, 
           k, l, kr, ksq, lsq, krsq, ik, il, ikr, X, Y, K, L, Kr, Lr,
-          K2, L2, KKsq, invKKsq,KL, KKrsq, invKKrsq,
+          K2, L2, KKsq, invKKsq, KL, KKrsq, invKKrsq,
           fftplan, ifftplan, rfftplan, irfftplan)
 end
 
 # Grid constructor with optional arguments to specify anisotropy
-function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
-  nthreads=Sys.CPU_CORES)
-  TwoDGrid((nx, ny), (Lx, Ly))
-end
+#function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
+#  nthreads=Sys.CPU_CORES)
+#  TwoDGrid(nx, Lx, ny, Ly; nthreads=nthreads)
+#end
 
-# Grid constructor for backwards compatability/convenience; may depcreciate
-function TwoDGrid(nx::Int, ny::Int, Lx::Float64, Ly::Float64;
+# Grid constructor for tupled arguments
+function TwoDGrid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64};
   nthreads=Sys.CPU_CORES)
-  TwoDGrid((nx, ny), (Lx, Ly))
+  nx, ny = nxy
+  Lx, Ly = Lxy
+  TwoDGrid(nx, Lx, ny, Ly)
 end
