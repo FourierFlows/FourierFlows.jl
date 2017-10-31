@@ -52,8 +52,8 @@ maxsp = maximum([vs.U; vs.V])
 
 # Eddy length scale:
 ke = (
-  FourierFlows.parsint(sqrt.(g.KKrsq).*g.KKrsq.*abs2.(vs.psih), g) / 
-    FourierFlows.parsint(g.KKrsq.*abs2.(vs.psih), g)
+  FourierFlows.parsevalsum2(sqrt.(g.KKrsq).*g.KKrsq.*abs2.(vs.psih), g) / 
+    FourierFlows.parsevalsum2(g.KKrsq.*abs2.(vs.psih), g)
 )
 
 fig, axs = subplots(ncols=2, figsize=(12, 4))

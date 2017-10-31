@@ -1,4 +1,4 @@
-include("../src/fourierflows.jl")
+include("../../src/fourierflows.jl")
 
 using FourierFlows,
       PyPlot
@@ -66,7 +66,7 @@ te  = 1/(Ue*ke)               # Eddy turn-over time
 nx  = 512                     # Resolution
 dt  = 0.00025 * te            # Time-step
 nsteps = Int(ceil(30*te/dt))  # Total number of time-steps
-nsubsteps = 100 #ceil(Int, te/dt)  # Number of steps between plots
+nsubsteps = ceil(Int, te/dt)  # Number of steps between plots
 nplots = ceil(Int, nsteps/nsubsteps)   # Number of plots
 
 @printf("Rossby number: %.3f", 1/(te*f0))
@@ -80,6 +80,8 @@ g  = NIWQG.TwoDGrid(nx, Lx)
 vs = NIWQG.Vars(g)
 eq = NIWQG.Equation(pr, g)
 ts = NIWQG.Timestepper(dt, eq)
+
+
 
 
 # Initial condition
@@ -98,7 +100,7 @@ niwqgplot(axs, vs, pr, g, q00, 2*Uw, R, te)
 
 for i = 1:nplots
 
-  @time stepforward!(vs, nsubsteps, ts, eq, pr, g)
+  @time stepforward!(vs, ts, eq, pr, g; nsteps=nsubsteps)
   NIWQG.updatevars!(vs, pr, g)
   niwqgplot(axs, vs, pr, g, q00, 2*Uw, R, te)
 

@@ -73,8 +73,8 @@ maxsp = maximum([vs1.U; vs1.V])
 
 # Eddy length scale:
 ke = (
-  FourierFlows.parsint(sqrt.(g.KKrsq).*g.KKrsq.*abs2.(vs1.psih), g) / 
-    FourierFlows.parsint(g.KKrsq.*abs2.(vs1.psih), g)
+  FourierFlows.parsevalsum2(sqrt.(g.KKrsq).*g.KKrsq.*abs2.(vs1.psih), g) / 
+    FourierFlows.parsevalsum2(g.KKrsq.*abs2.(vs1.psih), g)
 )
 
 # Initial wave velocity:

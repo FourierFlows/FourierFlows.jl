@@ -12,26 +12,23 @@ TwoModeParams = TwoModeBoussinesq.TwoModeParams
 
 rms(a) = sqrt(mean(a.^2))
 
-abstract type AbstractPlot end
 
 """ Compute the transform of the Jacobian of two fields a, b on a grid g. """
-function jach(a, b, g::TwoDGrid)
+function jacobianh(a, b, g::TwoDGrid)
   # J(a, b) = dx(a b_y) - dy(a b_x)
-
   bh = fft(b)
   bx = ifft(im*g.K.*bh)
   by = ifft(im*g.L.*bh)
-
-  return im*g.K.*fft(a.*bx) - im*g.L.*fft(a.*by)
+  im*g.K.*fft(a.*bx) - im*g.L.*fft(a.*by)
 end
 
 """ Compute the Jacobian of two fields a, b on a grid g. """
-function jac(a, b, g::TwoDGrid)
-  ifft(jach(a, b, g))
+function jacobian(a, b, g::TwoDGrid)
+  ifft(jacobianh(a, b, g))
 end
 
 """ Calculate the wave-induced streamfunction and velocity fields. """
-function calc_uw(qw, g::TwoDGrid)
+function wave_induced_uv(qw, g::TwoDGrid)
 
   qwh = rfft(qw)
 
@@ -47,12 +44,14 @@ function calc_uw(qw, g::TwoDGrid)
 end
 
 
-
-
 """ Calculate the wave-induced streamfunction and velocity fields. """
-function calc_uw(sig::Real, v::Vars, p::TwoModeParams, g::TwoDGrid)
-  calc_uw(calc_qw(sig::Real, v::Vars, p::TwoModeParams, g::TwoDGrid), 
+function wave_induced_uv(sig::Real, v::Vars, p::TwoModeParams, g::TwoDGrid)
+  wave_induced_uv(calc_qw(sig::Real, v::Vars, p::TwoModeParams, g::TwoDGrid), 
     g::TwoDGrid)
+end
+
+function wave_induced_uv(sig, prob::AbstractProblem)
+  wave_induced_uv(sig, prob.vars, prob.params, prob.grid)
 end
 
 
@@ -70,18 +69,15 @@ function calc_qw(sig::Real, v::Vars, p::TwoModeParams, g::TwoDGrid)
 
   # Assemble contributions
   qw = -real.( 
-       2.0*im/sig * (jac(conj.(usig), usig, g) + jac(conj.(vsig), vsig, g))
-    + p.f/sig^2.0 * (jac(conj.(vsig), usig, g) + jac(vsig, conj.(usig), g))
+       2.0*im/sig * (
+        jacobian(conj.(usig), usig, g) + jacobian(conj.(vsig), vsig, g))
+    + p.f/sig^2.0 * (
+        jacobian(conj.(vsig), usig, g) + jacobian(vsig, conj.(usig), g))
     + p.f/sig^2.0 * (usig2xx + vsig2yy + usigvsigxy)
   )
 
   return qw
 end
-
-
-
-
-
 
 """ Calculate the wave contribution to PV, qw. """
 function calc_qw(usig::AbstractArray, vsig::AbstractArray, sig::Real, 
@@ -97,15 +93,19 @@ function calc_qw(usig::AbstractArray, vsig::AbstractArray, sig::Real,
 
   # Assemble contributionsCalulate
   qw = -real.( 
-       2.0*im/sig * (jac(conj.(usig), usig, g) + jac(conj.(vsig), vsig, g))
-    + p.f/sig^2.0 * (jac(conj.(vsig), usig, g) + jac(vsig, conj.(usig), g))
+       2.0*im/sig * (
+        jacobian(conj.(usig), usig, g) + jacobian(conj.(vsig), vsig, g))
+    + p.f/sig^2.0 * (
+        jacobian(conj.(vsig), usig, g) + jacobian(vsig, conj.(usig), g))
     + p.f/sig^2.0 * (usig2xx + vsig2yy + usigvsigxy)
   )
 
   return qw
 end
 
-
+function calc_qw(sig::Real, prob::AbstractProblem)
+  calc_qw(sig, prob.vars, prob.params, prob.grid)
+end
 
 
 """ Calculate usig and vsig, the complex, sigm-ified amplitudes 
@@ -186,6 +186,48 @@ function calc_usigvsig(sig, v::Vars, p::TwoModeParams, g::TwoDGrid)
 end
 
 
+
+""" Returns the wave-induced speed. """
+function wave_induced_speed(vs, pr, g)
+  uw, vw = wave_induced_uv(sig, vs, pr, g)
+  return sqrt.(uw.^2.0 + vw.^2.0)
+end
+
+function wave_induced_speed(prob::AbstractProblem)
+  wave_induced_speed(prob.vars, prob.params, prob.grid)
+end
+
+
+""" Returns the wave-induced x-velocity. """
+function wave_induced_u(vs, pr, g)
+  uw, vw = wave_induced_uv(sig, vs, pr, g)
+  return uw
+end
+
+function wave_induced_u(prob::AbstractProblem)
+  wave_induced_u(prob.vars, prob.params, prob.grid)
+end
+
+
+""" Returns the wave-induced y-velocity. """
+function wave_induced_v(vs, pr, g)
+  uw, vw = wave_induced_uv(sig, vs, pr, g)
+  return vw
+end
+
+function wave_induced_v(prob::AbstractProblem)
+  wave_induced_v(prob.vars, prob.params, prob.grid)
+end
+
+
+function apvinducedflow(vs, pr, g)
+  q = TwoModeBoussinesq.calc_apv(vs, pr, g)
+  psiqh = -g.invKKrsq.*rfft(q)
+  uq = irfft(-im*g.Lr.*psiqh, g.nx)
+  vq = irfft( im*g.Kr.*psiqh, g.nx)
+  return sqrt.(uq.^2.0+vq.^2.0)
+end
+
 # Potential plot functions
 rossbyq(vs, pr, g)      = TwoModeBoussinesq.calc_apv(vs, pr, g) / pr.f
 rossbynum(vs, pr, g)    = vs.Z / pr.f
@@ -196,26 +238,3 @@ wavespeed(vs, pr, g)    = sqrt.(waveu(vs, pr, g).^2.0 + wavev(vs, pr, g).^2.0)
 wavepressure(vs, pr, g) = real.(vs.p + conj.(vs.p)) 
 wavebuoyancy(vs, pr, g) = real.(im*pr.m*vs.p - im*pr.m*conj.(vs.p))
 meanspeed(vs, pr, g)    = sqrt.(vs.U.^2.0 + vs.V.^2.0)
-
-function waveinducedflow(vs, pr, g)
-  uw, vw = calc_uw(sig, vs, pr, g)
-  return sqrt.(uw.^2.0 + vw.^2.0)
-end
-
-function waveinducedu(vs, pr, g)
-  uw, vw = calc_uw(sig, vs, pr, g)
-  return uw
-end
-
-function waveinducedv(vs, pr, g)
-  uw, vw = calc_uw(sig, vs, pr, g)
-  return vw
-end
-
-function apvinducedflow(vs, pr, g)
-  q = TwoModeBoussinesq.calc_apv(vs, pr, g)
-  psiqh = -g.invKKrsq.*rfft(q)
-  uq = irfft(-im*g.Lr.*psiqh, g.nx)
-  vq = irfft( im*g.Kr.*psiqh, g.nx)
-  return sqrt.(uq.^2.0+vq.^2.0)
-end
