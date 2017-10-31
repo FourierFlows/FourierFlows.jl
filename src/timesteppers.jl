@@ -31,7 +31,7 @@ function stepforward!(prob::Problem; nsteps=1)
   nothing
 end
 
-function stepforward!(prob::Problem, diags::Array{AbstractDiagnostic, 1}; 
+function stepforward!(prob::Problem, diags::Array{Diagnostic, 1}; 
   nsteps=1)
 
   # Initialize diagnostics for speed
