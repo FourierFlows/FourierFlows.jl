@@ -52,11 +52,11 @@ end
 
 # Include base functionality
 include("domains.jl")
+include("diagnostics.jl")
+include("output.jl")
 include("timesteppers.jl")
 include("utils.jl")
 include("plotting.jl")
-include("diagnostics.jl")
-include("output.jl")
 
 
 # Include physics modules

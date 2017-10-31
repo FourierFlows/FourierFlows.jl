@@ -19,6 +19,7 @@ function stepforward!(v::AbstractVars, ts::AbstractTimeStepper,
   for step = 1:nsteps
     stepforward!(v, ts, eq, p, g)
   end
+  nothing
 end
 
 function stepforward!(prob::Problem; nsteps=1)
@@ -27,6 +28,36 @@ function stepforward!(prob::Problem; nsteps=1)
     prob.t = prob.vars.t
     prob.step = prob.ts.step
   end
+  nothing
+end
+
+function stepforward!(prob::Problem, diags::Array{AbstractDiagnostic, 1}; 
+  nsteps=1)
+
+  # Initialize diagnostics for speed
+  for diag in diags
+    newnum = ceil(Int, (diag.count+nsteps)/diag.freq) 
+    if newnum > diag.num 
+      resize!(diag, newnum)
+    end
+  end
+
+  for step = 1:nsteps
+    stepforward!(prob.vars, prob.ts, prob.eqn, prob.params, prob.grid)
+    prob.t = prob.vars.t
+    prob.step = prob.ts.step
+    for diag in diags
+      if (prob.step+1) % diag.freq == 0.0
+        increment!(diag)
+      end
+    end
+
+  end
+  nothing
+end
+
+function stepforward!(prob::Problem, diag::AbstractDiagnostic; nsteps=1)
+  stepforward!(prob, [diag]; nsteps=nsteps)
 end
 
 
