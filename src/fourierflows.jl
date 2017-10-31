@@ -41,6 +41,8 @@ function Problem(g::AbstractGrid, v::AbstractVars, p::AbstractParams,
   Problem(g, v, p, eq, ts, 0.0, 0)
 end
 
+
+
 function unpack(prob::AbstractProblem)
   prob.vars, prob.params, prob.grid
 end
