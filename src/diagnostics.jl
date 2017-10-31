@@ -64,7 +64,7 @@ function update!(diag::AbstractDiagnostic)
   nothing
 end
 
-function update!(diags::Array{Diagnostic, 1})
+function update!(diags::AbstractArray)
   for diag in diags
     update!(diag)
   end
