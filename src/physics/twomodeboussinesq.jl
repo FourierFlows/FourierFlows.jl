@@ -512,7 +512,7 @@ end
 
 """ Calculate the zeroth mode energy. """
 function mode0energy(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  0.5*FourierFlows.parsevalsum(g.invKKrsq.*abs2.(v.solr), g)
+  0.5*FourierFlows.parsevalsum(real.(g.invKKrsq).*abs2.(v.solr), g)
 end
 
 function mode0energy(prob::AbstractProblem)
@@ -606,6 +606,10 @@ function calc_apv(v::Vars, p::TwoModeParams, g::TwoDGrid)
       im.*g.Lr.*rfft(real.(v.u.*conj.(v.p) .+ conj.(v.u).*v.p)) 
     - im.*g.Kr.*rfft(real.(v.v.*conj.(v.p) .+ conj.(v.v).*v.p))
   ), g.nx))
+end
+
+function apv(prob::AbstractProblem)
+  calc_apv(prob.vars, prob.params, prob.grid)
 end
 
 
