@@ -7,12 +7,11 @@ import FourierFlows.NIWQG
 
 rms(a) = sqrt(mean(a.^2))
 
-function niwqgplot(axs, vs, pr, g, q0, Uw, R, tnd) 
+function niwqgplot(axs, vs, pr, g, q0, Uw, R, tnd)
 
   domfrac = 5
   xl, xr = -g.Lx/domfrac, g.Lx/domfrac
   yl, yr = -g.Ly/domfrac, g.Ly/domfrac
-
 
   # All lengths non-dimensionalized by R
   axes(axs[1])
@@ -59,8 +58,8 @@ te  = 1/(Ue*ke)               # Eddy turn-over time
 nx  = 256                     # Resolution
 dt  = 0.01 * te               # Time-step
 nsteps = Int(ceil(30*te/dt))  # Total number of time-steps
-nsubsteps = ceil(Int, te/dt)  # Number of steps between plots
-nplots = ceil(Int, nsteps/nsubsteps)   # Number of plots
+nsubsteps = 1 #ceil(Int, te/dt)  # Number of steps between plots
+nplots =1 # ceil(Int, nsteps/nsubsteps)   # Number of plots
 
 @printf("Rossby number: %.3f", 1/(te*f0))
 
@@ -73,8 +72,8 @@ ts = ETDRK4TimeStepper(dt, eq.LCc, eq.LCr)
 
 
 # Initial condition
-q0   = FourierFlows.lambdipole(Ue, R, g; center=(0.0, 0.0))
-phi0 = (1.0+im)/sqrt(2)*Uw * ones(Complex{Float64}, g.nx, g.ny)
+q0   =  FourierFlows.lambdipole(Ue, R, g; center=(0.0, 0.0))
+phi0 = 0*(1.0+im)/sqrt(2)*Uw * ones(Complex{Float64}, g.nx, g.ny)
 
 NIWQG.set_q!(vs, pr, g, q0)
 NIWQG.set_phi!(vs, pr, g, phi0)
@@ -92,5 +91,5 @@ for i = 1:nplots
   @time stepforward!(vs, ts, eq, pr, g, nsteps=nsubsteps)
   NIWQG.updatevars!(vs, pr, g)
   niwqgplot(axs, vs, pr, g, q00*te, 2*Uw, R, te)
-
+  plt.pause()
 end
