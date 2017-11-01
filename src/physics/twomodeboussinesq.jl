@@ -472,19 +472,14 @@ end
 
 
 """ Set a plane wave solution with initial speed uw and non-dimensional wave
-number nkw. The dimensional wavenumber will be 2*pi*nkw/Lx. """
+number nkw. The dimensional wavenumber will be 2π*nkw/Lx. """
 function set_planewave!(vs::Vars, pr::TwoModeParams, g::TwoDGrid,
-  uw::Real, nkw::Int; rotate=0.0)
+  uw::Real, nkw::Int)
 
-  if rotate != 0.0
-    x = g.X*cos(rotate) + g.Y*sin(rotate)
-    y = -g.X*sin(rotate) + g.Y*cos(rotate)
-  else
-    x, y = g.X, g.Y
-  end
+  x, y = g.X, g.Y
 
   # Wave parameters
-  kw = 2*pi*nkw/g.Lx
+  kw = 2π*nkw/g.Lx
   sig = sqrt(pr.f^2 + pr.N^2*kw^2/pr.m^2)
   alpha = pr.N^2*kw^2/(pr.f^2*pr.m^2) # also (sig^2-f^2)/f^2
 
