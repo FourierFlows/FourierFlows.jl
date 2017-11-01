@@ -83,7 +83,7 @@ function Equation(p::TwoModeParams, g::TwoDGrid)
   LCc = zeros(g.nx, g.ny, 3)
   LCc[:, :, 1] = -p.nu1 * g.KKsq.^(0.5*p.nnu1)
   LCc[:, :, 2] = -p.nu1 * g.KKsq.^(0.5*p.nnu1)
-  #LCc[:, :, 3] = -p.nu1 * g.KKsq.^(0.5*p.nnu1)
+  LCc[:, :, 3] = -p.nu1 * g.KKsq.^(0.5*p.nnu1)
 
   # Function calcNL! is defined below.
   Equation(LCc, LCr, calcNL!)
@@ -301,7 +301,7 @@ function calcNL!(
   @views @. v.uyh = im*g.L*solc[:, :, 1]
  
   # Inverse transforms
-  A_mul_B!(v.Z, g.irfftplan, solr)
+  A_mul_B!(v.Z, g.irfftplan, v.Zh)
   A_mul_B!(v.U, g.irfftplan, v.Uh)
   A_mul_B!(v.V, g.irfftplan, v.Vh)
 
@@ -853,6 +853,20 @@ function apvinducedflow(vs, pr, g)
   uq = irfft(-im*g.Lr.*psiqh, g.nx)
   vq = irfft( im*g.Kr.*psiqh, g.nx)
   return sqrt.(uq.^2.0+vq.^2.0)
+end
+
+
+
+""" Calculate the Courant-Freidrich-Levant number. """
+function CFL(prob, dt)
+  dx = minimum([prob.grid.dx, prob.grid.dy])
+  U = maximum([
+    maximum(abs.(prob.vars.U)), 
+    maximum(abs.(prob.vars.V)),
+    maximum(abs.(prob.vars.u)),
+    maximum(abs.(prob.vars.v))])
+
+  U*dt/dx
 end
 
 
