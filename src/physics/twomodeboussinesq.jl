@@ -301,7 +301,7 @@ function calcNL!(
   @views @. v.uyh = im*g.L*solc[:, :, 1]
  
   # Inverse transforms
-  A_mul_B!(v.Z, g.irfftplan, solr)
+  A_mul_B!(v.Z, g.irfftplan, v.Zh)
   A_mul_B!(v.U, g.irfftplan, v.Uh)
   A_mul_B!(v.V, g.irfftplan, v.Vh)
 
@@ -740,8 +740,8 @@ function calc_usigvsig(sig, v::Vars, p::TwoModeParams, g::TwoDGrid)
   @views @. v.vh = v.solc[:, :, 2]
   @views @. v.ph = v.solc[:, :, 3]
 
-  # This copy is necessary because calling A_mul_B(v.Z, g.irfftplan, sol) 
-  # a few lines below destroys solr
+  # This copy is necessary because calling A_mul_B(v.Z, g.irfftplan, v.Zh) 
+  # a few lines below destroys v.Zh
   v.Zh .= v.solr
 
   @. v.psih = -g.invKKrsq*v.Zh

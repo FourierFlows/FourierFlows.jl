@@ -270,7 +270,7 @@ function calcNL!(
 
 
   # Inverse transforms
-  A_mul_B!(v.q,    g.irfftplan, solr)
+  A_mul_B!(v.q,    g.irfftplan, v.qh)
   A_mul_B!(v.U,    g.irfftplan, v.Uh)
   A_mul_B!(v.V,    g.irfftplan, v.Vh)
   A_mul_B!(v.zeta, g.irfftplan, v.zetah)

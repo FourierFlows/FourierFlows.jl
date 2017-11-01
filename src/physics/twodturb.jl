@@ -99,10 +99,10 @@ function calcNL!(NL::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2}
   # a few lines below destroys sol when using Julia's FFTW.
   v.qh .= sol
 
-  A_mul_B!(v.q, g.irfftplan, sol)
+  A_mul_B!(v.q, g.irfftplan, v.qh)
 
-  v.Uh .=    im .* g.Lr .* g.invKKrsq .* v.qh
-  v.Vh .= (-im) .* g.Kr .* g.invKKrsq .* v.qh
+  v.Uh .=    im .* g.Lr .* g.invKKrsq .* sol
+  v.Vh .= (-im) .* g.Kr .* g.invKKrsq .* sol
  
   A_mul_B!(v.U, g.irfftplan, v.Uh)
   A_mul_B!(v.V, g.irfftplan, v.Vh)
