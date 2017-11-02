@@ -277,7 +277,9 @@ function calc_const_mean_NL!(NL::Array{Complex{Float64}, 2},
   # governing the evolution of a barotropic QG flow forced by
   # a constant zonal mean velocity.
 
-  A_mul_B!(v.q, g.irfftplan, sol)
+  # This copy is necessary because FFTW's irfft destroys its input.
+  v.qh .= sol
+  A_mul_B!(v.q, g.irfftplan, v.qh)
 
   v.uh .=    im .* g.Lr .* g.invKKrsq .* (sol .- p.etah)
   v.vh .= (-im) .* g.Kr .* g.invKKrsq .* (sol .- p.etah)
