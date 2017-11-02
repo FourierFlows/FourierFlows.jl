@@ -497,9 +497,8 @@ function set_planewave!(vs::Vars, pr::TwoModeParams, g::TwoDGrid,
   nothing
 end
 
-function set_planewave!(prob::AbstractProblem, uw::Real, nkw::Int; rotate=0.0)
-  set_planewave!(prob.vars, prob.params, prob.grid, uw::Real, nkw::Int;
-    rotate=rotate)
+function set_planewave!(prob::AbstractProblem, uw::Real, nkw::Int)
+  set_planewave!(prob.vars, prob.params, prob.grid, uw::Real, nkw::Int)
 end
 
 
