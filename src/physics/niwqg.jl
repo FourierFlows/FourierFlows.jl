@@ -31,6 +31,16 @@ function NIWQGProblem(nx::Int, Lx::Real, dt::Real, kap::Real,
   Problem(gr, vs, pr, eq, ts)
 end
 
+function InitialValueProblem(nx, Lx, dt, kap, nkap, nu, nnu, eta, f, Us, Vs)
+  NIWQGProblem(nx, Lx, dt, kap, nkap, nu, nnu, eta, f, Us, Vs)
+end
+
+function InitialValueProblem(nx, Lx, dt, kap, nkap, nu, nnu, eta, f)
+  NIWQGProblem(nx, Lx, dt, kap, nkap, nu, nnu, eta, f, 0.0, 0.0)
+end
+
+
+
 function NIWQGProblem(nx::Int, Lx::Real; kap=nothing,
   nkap=4, nu=nothing, nnu=4, eta=1.0, f=1.0, Us=0.0, Vs=0.0, dt=nothing)
 
@@ -260,7 +270,7 @@ function calcNL!(
 
 
   # Inverse transforms
-  A_mul_B!(v.q,    g.irfftplan, solr)
+  A_mul_B!(v.q,    g.irfftplan, v.qh)
   A_mul_B!(v.U,    g.irfftplan, v.Uh)
   A_mul_B!(v.V,    g.irfftplan, v.Vh)
   A_mul_B!(v.zeta, g.irfftplan, v.zetah)
@@ -417,7 +427,7 @@ end
 
 """ Returns the net NIW kinetic energy. """
 function niwke(v::AbstractVars, p::AbstractParams, g::AbstractGrid)
-  0.5*g.dx*g.dy*sum(abs.(v.phi))
+  0.5*FourierFlows.parsevalsum2(v.solc, g)
 end
 
 function niwke(prob::AbstractProblem)
@@ -427,7 +437,8 @@ end
 
 """ Returns the net NIW potential energy. """
 function niwpe(v::AbstractVars, p::AbstractParams, g::AbstractGrid)
-  0.25/p.kw^2.0*g.dx*g.dy*sum(abs2.(v.phix)+abs2.(v.phiy))
+  #0.25/p.kw^2.0*g.dx*g.dy*sum(abs2.(v.phix)+abs2.(v.phiy))
+  0.25/p.kw^2.0*FourierFlows.parsevalsum2(g.KKsq.*v.solc, g)
 end
 
 function niwpe(prob::AbstractProblem)
@@ -449,7 +460,7 @@ end
 """ Returns the net kinetic energy dissipation. """
 function niwke_dissipation(
   v::AbstractVars, p::AbstractParams, g::AbstractGrid)
-  -p.nu*FourierFlows.parsevalsum2(g.KKsq.^(p.nnu/4).*v.phih, g)
+  -p.nu*FourierFlows.parsevalsum(g.KKsq.^(p.nnu/2).*abs2.(v.phih), g)
 end
 
 function niwke_dissipation(prob::AbstractProblem)
@@ -494,7 +505,9 @@ function waveqg_dissipation(
     conj.(v.phi).*delphi .+ v.phi.*conj.(delphi))
 
   chi .+= 0.5.*p.nu./p.f .* v.psi .* real.(
-    im.*jacobian(conj.(v.phi), delphi) .- im.*jacobian(v.phi, conj.(delphi)))
+              im.*jacobian(conj.(v.phi), delphi, g) 
+           .- im.*jacobian(v.phi, conj.(delphi), g)
+  )
 
   g.dx*g.dy*sum(chi)
 end

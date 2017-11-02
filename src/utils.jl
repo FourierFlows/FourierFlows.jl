@@ -189,7 +189,7 @@ function parsevalsum(uh, g::TwoDGrid)
     U = sum(uh)
   end
 
-  return U*norm
+  return real(U)*norm
 end
 
 

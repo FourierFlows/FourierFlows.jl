@@ -246,10 +246,10 @@ function calcNL!(NL::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2}
 
   # This copy is necessary because FFTW's irfft destroys its input.
   v.qh .= sol
-  A_mul_B!(v.q, g.irfftplan, sol)
+  A_mul_B!(v.q, g.irfftplan, v.qh)
 
-  v.uh .=    im .* g.Lr .* g.invKKrsq .* (v.qh .- p.etah)
-  v.vh .= (-im) .* g.Kr .* g.invKKrsq .* (v.qh .- p.etah)
+  v.uh .=    im .* g.Lr .* g.invKKrsq .* (sol .- p.etah)
+  v.vh .= (-im) .* g.Kr .* g.invKKrsq .* (sol .- p.etah)
 
   A_mul_B!(v.u, g.irfftplan, v.uh)
   A_mul_B!(v.v, g.irfftplan, v.vh)
@@ -341,25 +341,16 @@ function updatevars!(v::Vars, p::Params, g::TwoDGrid)
   v.qh[1, 1] = 0.0
   v.zetah .= v.qh .- p.etah
 
-  # Do not use A_mul_B here because it destroys its input.
-  #A_mul_B!(v.q, g.irfftplan, v.qh)
-  #A_mul_B!(v.zeta, g.irfftplan, v.zetah)
-  v.q = irfft(v.qh, g.nx)
+  v.q    = irfft(v.qh, g.nx)
   v.zeta = irfft(v.zetah, g.nx)
 
   v.uh .=    im .* g.Lr .* g.invKKrsq .* v.zetah
   v.vh .= (-im) .* g.Kr .* g.invKKrsq .* v.zetah
 
-  # Do not use A_mul_B here because it destroys its input.
-  #A_mul_B!(v.u, g.irfftplan, v.uh)
-  #A_mul_B!(v.v, g.irfftplan, v.vh)
   v.u = irfft(v.uh, g.nx)
   v.v = irfft(v.vh, g.nx)
 
-  v.psih .= .- v.qh .* g.invKKrsq
-
-  # Do not use A_mul_B here because it destroys its input.
-  #A_mul_B!(v.psi, g.irfftplan, v.psih)
+  @. v.psih = -v.qh * g.invKKrsq
   v.psi = irfft(v.psih, g.nx)
 
   v.sp .= sqrt.( (v.u.+v.U).^2.0 .+ v.v.^2.0 )
@@ -372,25 +363,16 @@ function updatevars!(v::Vars, p::ConstMeanParams, g::TwoDGrid)
   v.qh .= v.sol
   v.zetah .= v.qh .- p.etah
 
-  # Do not use A_mul_B here because it destroys its input.
-  #A_mul_B!(v.q, g.irfftplan, v.qh)
-  #A_mul_B!(v.zeta, g.irfftplan, v.zetah)
-  v.q = irfft(v.qh, g.nx)
+  v.q    = irfft(v.qh, g.nx)
   v.zeta = irfft(v.zetah, g.nx)
 
   v.uh .=    im .* g.Lr .* g.invKKrsq .* v.zetah
   v.vh .= (-im) .* g.Kr .* g.invKKrsq .* v.zetah
 
-  # Do not use A_mul_B here because it destroys its input.
-  #A_mul_B!(v.u, g.irfftplan, v.uh)
-  #A_mul_B!(v.v, g.irfftplan, v.vh)
   v.u = irfft(v.uh, g.nx)
   v.v = irfft(v.vh, g.nx)
 
   v.psih .= .- v.zetah .* g.invKKrsq
-
-  # Do not use A_mul_B here because it destroys its input.
-  #A_mul_B!(v.psi, g.irfftplan, v.psih)
   v.psi = irfft(v.psih, g.nx)
 
   v.sp .= sqrt.( (v.u.+p.U).^2.0 .+ v.v.^2.0 )
@@ -404,9 +386,6 @@ function updatevars!(v::FreeDecayVars, p::FreeDecayParams, g::TwoDGrid)
   v.qh .= v.sol
   v.zetah .= v.qh .- p.etah
 
-  # Do not use A_mul_B here because it destroys its input.
-  #A_mul_B!(v.q, g.irfftplan, v.qh)
-  #A_mul_B!(v.zeta, g.irfftplan, v.zetah)
   v.q = irfft(v.qh, g.nx)
   v.zeta = irfft(v.zetah, g.nx)
 

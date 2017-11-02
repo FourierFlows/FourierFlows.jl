@@ -472,19 +472,14 @@ end
 
 
 """ Set a plane wave solution with initial speed uw and non-dimensional wave
-number nkw. The dimensional wavenumber will be 2*pi*nkw/Lx. """
+number nkw. The dimensional wavenumber will be 2π*nkw/Lx. """
 function set_planewave!(vs::Vars, pr::TwoModeParams, g::TwoDGrid,
-  uw::Real, nkw::Int; rotate=0.0)
+  uw::Real, nkw::Int)
 
-  if rotate != 0.0
-    x = g.X*cos(rotate) + g.Y*sin(rotate)
-    y = -g.X*sin(rotate) + g.Y*cos(rotate)
-  else
-    x, y = g.X, g.Y
-  end
+  x, y = g.X, g.Y
 
   # Wave parameters
-  kw = 2*pi*nkw/g.Lx
+  kw = 2π*nkw/g.Lx
   sig = sqrt(pr.f^2 + pr.N^2*kw^2/pr.m^2)
   alpha = pr.N^2*kw^2/(pr.f^2*pr.m^2) # also (sig^2-f^2)/f^2
 
@@ -561,7 +556,9 @@ end
 
 
 
-""" Calculate the total energy projected onto the zeroth mode. """
+""" 
+Calculate the total energy projected onto the zeroth mode. 
+"""
 function totalenergy(v::Vars, p::TwoModeParams, g::TwoDGrid)
   mode0energy(v, p, g) + mode1energy(v, p, g)
 end
@@ -573,7 +570,9 @@ end
 
 
 
-""" Return the zeroth and first mode energy as a tuple. """
+""" 
+Return the zeroth and first mode energy as a tuple. 
+"""
 function twoenergies(v::Vars, p::TwoModeParams, g::TwoDGrid)
   mode0energy(v, p, g), mode1energy(v, p, g)
 end
@@ -745,8 +744,8 @@ function calc_usigvsig(sig, v::Vars, p::TwoModeParams, g::TwoDGrid)
   @views @. v.vh = v.solc[:, :, 2]
   @views @. v.ph = v.solc[:, :, 3]
 
-  # This copy is necessary because calling A_mul_B(v.Z, g.irfftplan, sol) 
-  # a few lines below destroys solr
+  # This copy is necessary because calling A_mul_B(v.Z, g.irfftplan, v.Zh) 
+  # a few lines below destroys v.Zh
   v.Zh .= v.solr
 
   @. v.psih = -g.invKKrsq*v.Zh
