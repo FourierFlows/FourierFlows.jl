@@ -4,122 +4,123 @@ using FourierFlows,
       PyPlot
 
 import FourierFlows.TwoModeBoussinesq
+import FourierFlows.TwoModeBoussinesq: apv, mode1speed, mode1w,
+  totalenergy, mode0energy, mode1energy, CFL
 
-include("./twomodeutils.jl")
+# Resolution and domain
+nx, Lx = 256, 2π*1600e3
 
-nkw  = 16
-nx   = 256                                  # Resolution
-Ro   = 2e-1                                 # Eddy Rossby number
+# Initial condition params
+nkw   = 8         # Wave number   
+alpha = 0.01      # Frequency parameter
+ep    = 1e-2      # Wave amplitude
+Ro    = 2e-1      # Eddy Rossby number
+Reddy = Lx/20     # Eddy radius
 
-# Physical parameters
-Lx    = 2*pi*1600e3                         # Domain extent
-f0    = 1e-4                                # Inertial or Coriolis frequency
-N0    = 5e-3                                # Buoyancy frequency
-alph0 = 3                                   # Frequency parameter
-nkw0  = 16                                  # Non-dimensional wavenumber
-kw0   = 2*pi*nkw0/Lx                        # Wavenumber
-m     = N0*kw0/(f0*sqrt(alph0))             # Vertical scale
-
-# Initial condition
-kw    = 2*pi*nkw/Lx                         # Non-dimensional wavenumber
-alph  = (N0*kw/(f0*m))^2    
-sig   = f0*sqrt(1+alph)                     # Wave frequency
-R     = Lx/20                               # Eddy radius
-tsig  = 2*pi/sig                            # Inertial period
+# Simulation and computed params
+f, N = 1e-4, 5e-3
+sigma, kw = f*sqrt(1+alpha), 2π*nkw/Lx
+m = N*kw/(f*sqrt(alpha))              # Vertical scale
 
 # Numerical params
-dt    = 2.0e-2 * tsig                       # Time-step
-nnu   = 8                                   # Hyperviscous order
-nu0 = nu1 = 1e-1/(dt*(0.65*pi*nx/Lx)^nnu)   # Hyperviscosity
+twave = 2π/sigma                      # Wave period
+dt = 2e-2 * twave                     # Time-step
+nnu0, nnu1 = 8, 8                     # Hyperviscous order
+nu0 = 1e-2/(dt*(0.65π*nx/Lx)^nnu0)    # Hyperviscosity
+nu1 = 1e-3/(dt*(0.65π*nx/Lx)^nnu1)    # Hyperviscosity
 
-# Initialize problem
-g  = TwoDGrid(nx, Lx)
-pr = TwoModeBoussinesq.Params(nu0, nnu, nu1, nnu, f0, N0, m)
-vs = TwoModeBoussinesq.Vars(g)
-eq = TwoModeBoussinesq.Equation(pr, g)
-ts = ETDRK4TimeStepper(dt, eq.LCc, eq.LCr)
+nsteps, nsubs = round(Int, 100twave/dt), round(Int, 2twave/dt)
+
+prob = TwoModeBoussinesq.InitialValueProblem(
+  nx=nx, Lx=Lx, nu0=nu0, nnu0=nnu0, nu1=nu1, nnu1=nnu1, f=f, N=N, m=m, dt=dt)
+
+# Initial condition
+x, y = prob.grid.X, prob.grid.Y
+Z0 = f*Ro * exp.(-(x.^2+y.^2)/2Reddy^2)
+TwoModeBoussinesq.set_zeta!(prob, Z0)
+
+# ep = U/(Reddy*sigma) or U*kw/sigma
+uw = minimum([ep*Reddy*sigma, ep*sigma/kw])
+TwoModeBoussinesq.set_planewave!(prob, uw, nkw)
 
 
-message(vs, pr, g) = @sprintf("\$t = %.1f\$ wave periods", vs.t/tsig)
+etot = Diagnostic(totalenergy, prob; nsteps=nsteps)
+e0   = Diagnostic(mode0energy, prob; nsteps=nsteps)
+e1   = Diagnostic(mode1energy, prob; nsteps=nsteps) 
+diags = [etot, e0, e1]
 
-function eddywave(uw, nsteps, name)
 
-  vs.t = 0.0
-  ep = uw*kw/sig
+# Plotting
+fig, axs = subplots(ncols=2, nrows=1, figsize=(10, 5), 
+  sharex=true, sharey=true)
+xr, yr = x/Reddy, y/Reddy
+Z00 = maximum(abs.(prob.vars.Z))
+w00 = maximum(abs.(mode1w(prob)))
 
-  @printf("
-    *** %s *** 
-    Ro: %.2f, alph: %.3f, sig/f: %.1f, ep: %.2f, uw: %.2f m/s, nkw: %d\n\n",
-    name, Ro, alph, sig/f0, ep, uw, nkw
-  )
 
-  # Make initial condition
-  Z0 = Ro*f0 * exp.(-(g.X.^2+g.Y.^2)/(2*R^2))
-  TwoModeBoussinesq.set_zeta!(vs, pr, g, Z0)
-  TwoModeBoussinesq.set_planewave!(vs, pr, g, uw, nkw)
+""" Plot the mode-0 available potential vorticity and vertical velocity. """
+function makeplot!(axs, prob; eddylim=8, message=nothing, save=false)
 
-  # Some plot properties
-  R00 = 1.0*maximum(abs.(rossbynum(vs, pr, g)))
-  S00 = 0.5*maximum(meanspeed(vs, pr, g))
-  u00 = 4.0*uw
+  q = apv(prob)
+  w = mode1w(prob)
 
-  basicplot = FourierFlows.ThreeComponentPlot(
-    g, vs, pr, 
-  # Component            Color limits      Color name
-    rossbyq,             [-R00, R00],      "RdBu_r",
-    wavespeed,           [0.0,  u00],      "YlGnBu_r",
-    waveinducedflow,     [0.0, 1.0*S00],   "YlGnBu_r",
-    message, @sprintf("./plots/%s", name)
-  )
+  axs[1][:cla]()
+  axs[2][:cla]()
 
-  FourierFlows.makeplot!(basicplot, save=true, show=true)
+  axes(axs[1])
+  pcolormesh(xr, yr, q, cmap="RdBu_r",
+    vmin=-Z00, vmax=Z00)
 
-  # Initial energy
-  E0i, E1i = TwoModeBoussinesq.calc_energies(vs, pr, g)
-  Ei = E0i + E1i
+  axes(axs[2])
+  pcolormesh(xr, yr, w, cmap="RdBu_r",
+    vmin=-4w00, vmax=4w00)
 
-  nsubs  = ceil(Int, tsig/dt)        # Number of steps between plots
-  nplots = ceil(Int, nsteps/nsubs)   # Number of plots
+  axs[1][:set_xlim](-eddylim, eddylim)
+  axs[1][:set_ylim](-eddylim, eddylim)
+  axs[2][:set_xlim](-eddylim, eddylim)
+  axs[2][:set_ylim](-eddylim, eddylim)
 
-  # Run
-  startwalltime = time()
-  for i = 1:nplots
+  axs[1][:tick_params](axis="both", which="both", length=0)
+  axs[2][:tick_params](axis="both", which="both", length=0)
 
-    stepforward!(vs, ts, eq, pr, g; nsteps=nsubs)
+  axs[1][:set_xlabel](L"x/R")
+  axs[1][:set_ylabel](L"x/R")
+  axs[2][:set_xlabel](L"x/R")
 
-    TwoModeBoussinesq.updatevars!(vs, pr, g)
-
-    q      = TwoModeBoussinesq.calc_apv(vs, pr, g)
-    sp     = TwoModeBoussinesq.calc_wavespeed(vs) 
-    E0, E1 = TwoModeBoussinesq.calc_energies(vs, pr, g)
-    E      = E0 + E1
-
-    @printf("
-      step: %04d, t: %.3f, wall time: %.3f,
-      CFL: %.3f, max Z/f: %.2e, max q/f: %.2e, max speed: %.2e, 
-      E: %.6f, E0: %.6f, E1: %.6f, E0frac: %.3f, E1frac: %.3f\n\n", 
-      ts.r.step, vs.t/tsig, time()-startwalltime,
-      maximum([abs.(2*vs.u); abs2.(2*vs.v); vs.U; vs.V])*ts.r.dt/g.dx, 
-      maximum(vs.Z)/pr.f, maximum(q)/pr.f, maximum(sp), 
-      E/Ei, E0/E0i, E1/E1i, E0/Ei, E1/Ei,
-    )
-
-    FourierFlows.makeplot!(basicplot; save=true, show=true)
-
+  if message != nothing
+    text(0.00, 1.05, message, transform=axs[1][:transAxes], fontsize=14)
   end
 
+  tight_layout(rect=(0.05, 0.05, 0.95, 0.95))
+  pause(0.1)
+
+  if save
+    savefig(@sprintf("./plots/eddywave_%04d.png", prob.step), dpi=240)
+  end
+
+  nothing
 end
+ 
 
+# Run
+makeplot!(axs, prob)
+startwalltime = time()
+while prob.step < nsteps
 
-nsteps = 40 * ceil(Int, tsig/dt)
-epz    = [1e-2, 5e-2]
+  stepforward!(prob, diags; nsteps=nsubs)
+  TwoModeBoussinesq.updatevars!(prob)
 
-for iep = 1:length(epz)
+  @printf(
+    "wall: %.2f min, step: %04d, CFL: %.2f, e0: %.3f, e1: %.3f, etot: %.3f\n",
+    (time()-startwalltime)/60, prob.step, CFL(prob, prob.ts.dt),
+    e0.value/e0.data[1], e1.value/e1.data[1], etot.value/etot.data[1]
+  )
 
-  ep = epz[iep]
-  uw = ep*sig/kw
-  name = @sprintf("eddy_ep%02d", Int(ep*100))
+  message = @sprintf(
+    "\$t=%02d\$ wave periods, \$E_0=%.3f\$, \$E_1=%.3f\$, \$E_{\\mathrm{tot}}=%.6f\$",
+    round(Int, prob.t/twave), 
+    e0.value/e0.data[1], e1.value/e1.data[1], etot.value/etot.data[1])
 
-  eddywave(uw, nsteps, name)
+  makeplot!(axs, prob; message=message, save=true)
 
 end
