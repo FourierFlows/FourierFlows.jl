@@ -7,7 +7,7 @@ import FourierFlows.NIWQG
 
 rms(a) = sqrt(mean(a.^2))
 
-function niwqgplot(axs, vs, pr, g, q0, Uw, R, tnd) 
+function niwqgplot(axs, vs, pr, g, q0, Uw, R, tnd)
 
   domfrac = 5
   xl, xr = -g.Lx/domfrac, g.Lx/domfrac

@@ -104,11 +104,13 @@ end
 
 
 function wavy_barotropic_tracer_run(ep, kap; nx=256, dcx=0.05, dcy=0.05,
-  xi=0.0, yi=-0.5, Lx=2*pi, Ly=1.0, savefreq=40, U=1.0, CFL=0.2)
+  eta=nothing, xi=0.0, yi=-0.5, Lx=2*pi, Ly=1.0, savefreq=40, U=1.0, CFL=0.2)
        
   # Names for plotting and saving
   plotname = @sprintf("./plots/wavychannel_ep%d_nx%04d", Int(ep*10), nx)
-  filename = @sprintf("wavychannel_ep%03d_nx%04d.jld2", Int(ep*100), nx)
+  filename = @sprintf("./data/wavychannel_ep%03d_nx%04d.jld2", Int(ep*100), nx)
+
+  if eta == nothing; eta=kap; end
 
   # Parameters
   k1       = 2*pi/Lx      
@@ -138,14 +140,16 @@ function wavy_barotropic_tracer_run(ep, kap; nx=256, dcx=0.05, dcy=0.05,
 
   # Initialize problem
   g = FourierFlows.TwoDGrid(nx, Lx, nx, Ly+ep; y0=-Ly-ep)
-  prob = ConstDiffTracerProblem(g, kap, ub, vb, CFL*del/umax)
+  prob = ConstDiffTracerProblem(g, eta, kap, ub, vb, CFL*del/umax)
   TracerAdvDiff.set_c!(prob, ci)
 
 
   # Diagnostics
+  calc_c(prob) = prob.vars.c
   calc_yvar(prob) = Cy2(prob.vars.c, prob.grid)
   yvar = Diagnostic(calc_yvar, prob)
-  diags = [yvar]
+  conc = Diagnostic(calc_c,    prob)
+  diags = [yvar, conc]
 
 
   # Output
