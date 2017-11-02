@@ -680,6 +680,21 @@ function wave_induced_uv(sig, prob::AbstractProblem)
 end
 
 
+""" Returns the wave-induced streamfunction. """
+function wave_induced_psi(qw, g::TwoDGrid)
+  irfft(g.invKKrsq.*rfft(qw), g.nx)
+end
+
+function wave_induced_psi(sig::Real, v::Vars, p::TwoModeParams, g::TwoDGrid)
+  wave_induced_psi(calc_qw(sig::Real, v::Vars, p::TwoModeParams, g::TwoDGrid), 
+    g::TwoDGrid)
+end
+
+function wave_induced_psi(sig, prob::AbstractProblem)
+  wave_induced_psi(sig, prob.vars, prob.params, prob.grid)
+end
+
+
 
 
 """ Calculate the wave contribution to PV, qw. """
@@ -813,23 +828,25 @@ end
 
 
 """ Returns the wave-induced speed. """
-function wave_induced_speed(vs, pr, g)
+function wave_induced_speed(sig, vs::AbstractVars, pr::AbstractParams, 
+  g::AbstractGrid)
   uw, vw = wave_induced_uv(sig, vs, pr, g)
   return sqrt.(uw.^2.0 + vw.^2.0)
 end
 
-function wave_induced_speed(prob::AbstractProblem)
-  wave_induced_speed(prob.vars, prob.params, prob.grid)
+function wave_induced_speed(sig, prob::AbstractProblem)
+  wave_induced_speed(sig, prob.vars, prob.params, prob.grid)
 end
 
 
 """ Returns the wave-induced x-velocity. """
-function wave_induced_u(vs, pr, g)
+function wave_induced_u(sig, vs::AbstractVars, pr::AbstractParams, 
+  g::AbstractGrid)
   uw, vw = wave_induced_uv(sig, vs, pr, g)
   return uw
 end
 
-function wave_induced_u(prob::AbstractProblem)
+function wave_induced_u(sig, prob::AbstractProblem)
   wave_induced_u(prob.vars, prob.params, prob.grid)
 end
 
