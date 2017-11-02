@@ -862,12 +862,36 @@ function wave_induced_v(prob::AbstractProblem)
 end
 
 
-function apvinducedflow(vs, pr, g)
-  q = TwoModeBoussinesq.calc_apv(vs, pr, g)
+""" Return the speed of the flow induced by the available potential 
+vorticity field. """
+function apv_induced_speed(vs, pr, g)
+  q = calc_apv(vs, pr, g)
   psiqh = -g.invKKrsq.*rfft(q)
   uq = irfft(-im*g.Lr.*psiqh, g.nx)
   vq = irfft( im*g.Kr.*psiqh, g.nx)
   return sqrt.(uq.^2.0+vq.^2.0)
+end
+
+function apv_induced_speed(prob::AbstractProblem)
+  apv_induced_speed(prob.vars, prob.params, prob.grid)
+end
+
+
+""" Return the total Lagrangian-mean flow. """
+function lagrangian_mean_uv(sig, vs::AbstractVars, pr::AbstractParams, 
+  g::AbstractGrid)
+  q  = calc_apv(vs, pr, g)
+  qw = calc_qw(sig, vs, pr, g)
+
+  psiLh = -g.invKKrsq.*rfft(q-qw)
+  uL = irfft(-im*g.Lr.*psiLh, g.nx)
+  vL = irfft( im*g.Kr.*psiLh, g.nx)
+
+  uL, vL
+end
+
+function lagrangian_mean_uv(sig, prob::AbstractProblem)
+  lagrangian_mean_uv(sig, prob.vars, prob.params, prob.grid)
 end
 
 
