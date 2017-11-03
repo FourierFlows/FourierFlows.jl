@@ -3,12 +3,14 @@ include("../src/fourierflows.jl")
 using FourierFlows,
       FourierFlows.BarotropicQG
 
+module baroQGtests
 
-module IRFFTbaroQGtests
+using FourierFlows,
+      FourierFlows.BarotropicQG
 
-""" Test whether the irfft's are implemented correctly by evolving a random
-initial condition for dt=1e-15 looking at relative error of the norm. """
-function test_baroQG_irfft(grid, params, vars, eq)
+""" Test that the time-stepper is not doing anything wild by evolving a random
+initial condition for dt=1e-16 looking at relative error of the norm. """
+function test_baroQG_timestep(grid, params, vars, eq, dt)
 
     # a random initial condition
     zeta0 = randn(grid.nx, grid.nx)
@@ -24,21 +26,20 @@ function test_baroQG_irfft(grid, params, vars, eq)
 
     @time stepforward!(vars, ts, eq, params, grid, nsteps=1)
     BarotropicQG.updatevars!(vars, params, grid)
-    println(norm(zeta0-v.zeta)/norm(zeta0))
+    println("error = ", norm(zeta0-vars.zeta)/norm(zeta0))
 
-    norm(zeta0-v.zeta)/norm(zeta0) < 1.0e-14
+    norm(zeta0-vars.zeta)/norm(zeta0) < 1.0e-12
 end
 
 
 end # end IRFFTbaroQGtests
 
 
-import IRFFTbaroQGtests: test_baroQG_irfft
-
+import baroQGtests: test_baroQG_timestep
 
 # Run tests
 nx  = 128
-dt  = 1e-17
+dt  = 1e-16
 nu  = 1e-6
 nun = 4
 
@@ -51,4 +52,4 @@ p  = FreeDecayParams(g, beta, 0.0, mu, nu, nun)
 v  = FreeDecayVars(g)
 eq = Equation(p, g)
 
-println("test_baroQG_irfft:    ", test_baroQG_irfft(g, p, v, eq))
+println("test_baroQG_irfft:    ", test_baroQG_timestep(g, p, v, eq, dt))
