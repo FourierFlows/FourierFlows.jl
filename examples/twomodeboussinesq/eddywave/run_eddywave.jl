@@ -1,37 +1,37 @@
 include("./setup_eddywave.jl")
 
-# Basics
-nkw = 8
-nx = 256
-Lx = 2π*100e3*nkw
+
+
+# -- Parameters --
+  nkw = 8
+    n = 256
+    L = 2π*100e3*nkw
+    α = 1               # Frequency parameter
+    ε = 2e-1            # Wave amplitude
+   Ro = 5e-2            # Eddy Rossby number
+Reddy = L/10           # Eddy radius
 
 plotpath = "./plots"
 plotname = "strongsixthorder"
 
-alpha    = 1         # Frequency parameter
-ep       = 2e-1      # Wave amplitude
-Ro       = 5e-2      # Eddy Rossby number
-Reddy    = Lx/10     # Eddy radius
-
 
 # Setup
-ew = EddyWave(Lx, alpha, ep, Ro, Reddy; nkw=nkw, dtfrac=5e-3, nsubperiods=1,
-  nnu0=6, nnu1=6, nu0=1e22, nu1=1e6) 
-  #nnu0=4, nnu1=6, nu0=1e14, nu1=1e6)
+ew = EddyWave(L, α, ε, Ro, Reddy; nkw=nkw, dtfrac=5e-3, nsubperiods=1,
+  nν0=6, nν1=6, ν0=1e24, ν1=1e6) 
   
-prob, diags = eddywavesetup(nx, ew, perturbwavefield=false)
+prob, diags = eddywavesetup(n, ew, perturbwavefield=false)
 etot, e0, e1 = diags[1], diags[2], diags[3]
 
 
 # Output
 getsolr(prob) = prob.vars.solr
 getsolc(prob) = prob.vars.solc
-getpsiw(prob) = wave_induced_psi(ew.sigma, prob)
-getuw(prob)   = wave_induced_uv(ew.sigma, prob)[1]
-getvw(prob)   = wave_induced_uv(ew.sigma, prob)[2]
+getpsiw(prob) = wave_induced_psi(ew.σ, prob)
+getuw(prob)   = wave_induced_uv(ew.σ, prob)[1]
+getvw(prob)   = wave_induced_uv(ew.σ, prob)[2]
 
-filename = @sprintf("./data/%s_%df_nx%d_ep%02d_Ro%02d_nkw%02d.jld2",
-  plotname, 100*ew.sigma/ew.f, nx, 100ep, 100Ro, ew.nkw)
+filename = @sprintf("./data/%s_%df_n%d_ep%02d_Ro%02d_nkw%02d.jld2",
+  plotname, 100*ew.σ/ew.f, n, 100ε, 100Ro, ew.nkw)
 
 outs = [
   Output("solr", getsolr,  prob, filename),
@@ -78,9 +78,9 @@ while prob.step < ew.nsteps
     "\$E_1=%.3f\$, \$E_{\\mathrm{tot}}=%.6f\$",
     e1.value/e1.data[1], etot.value/etot.data[1])
 
-  savename = @sprintf("%s_nx%d_%02df_ep%02d_Ro%02d_%06d.png", 
-    joinpath(plotpath, plotname), nx, floor(Int, 100ew.sigma/ew.f), 
-    floor(Int, 100*ew.ep), floor(Int, 100*ew.Ro), prob.step)
+  savename = @sprintf("%s_n%d_%02df_ε%02d_Ro%02d_%06d.png", 
+    joinpath(plotpath, plotname), n, floor(Int, 100ew.σ/ew.f), 
+    floor(Int, 100*ew.ε), floor(Int, 100*ew.Ro), prob.step)
 
   makeplot!(axs, prob, ew, xr, yr, savename; 
     message=plotmsg1*plotmsg2, save=true, eddylim=nothing)

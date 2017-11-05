@@ -1,6 +1,7 @@
 __precompile__()
 
 include("../../../src/fourierflows.jl")
+
 using FourierFlows,
       PyPlot
 
@@ -14,26 +15,26 @@ import FourierFlows.TwoModeBoussinesq: mode0apv, mode1apv, mode1speed, mode1w,
 
 
 struct EddyWave
-  Lx
+  L
   f
   N
   nkw
-  alpha
-  ep
+  α
+  ε
   Ro 
   Reddy
-  sigma
+  σ
   kw
   m
   twave
-  nnu0
-  nnu1
+  nν0
+  nν1
   dtfrac
-  nu0frac
-  nu1frac
+  ν0frac
+  ν1frac
   dt
-  nu0
-  nu1
+  ν0
+  ν1
   uw
   nsteps
   nsubs
@@ -42,20 +43,20 @@ end
 
 
 
-function EddyWave(Lx, alpha, ep, Ro, Reddy;
-  f=1e-4, N=5e-3, nkw=16, nnu0=8, nnu1=8, dtfrac=5e-2, nu0frac=1e-1, 
-  nu1frac=1e-1, nu0=nothing, nu1=nothing, nperiods=400, nsubperiods=1)
+function EddyWave(L, α, ε, Ro, Reddy;
+  f=1e-4, N=5e-3, nkw=16, nν0=8, nν1=8, dtfrac=5e-2, ν0frac=1e-1, 
+  ν1frac=1e-1, ν0=nothing, ν1=nothing, nperiods=400, nsubperiods=1)
 
-  sigma = f*sqrt(1+alpha)
-  kw = 2π*nkw/Lx
-  m = N*kw/(f*sqrt(alpha))
-  twave = 2π/sigma                      
+  σ = f*sqrt(1+α)
+  kw = 2π*nkw/L
+  m = N*kw/(f*sqrt(α))
+  twave = 2π/σ                      
 
   dt = dtfrac * twave
-  if nu0 == nothing; nu0 = nu0frac/(dt*(0.65π*nx/Lx)^nnu0); end
-  if nu1 == nothing; nu1 = nu1frac/(dt*(0.65π*nx/Lx)^nnu1); end   
+  if ν0 == nothing; ν0 = ν0frac/(dt*(0.65π*n/L)^nν0); end
+  if ν1 == nothing; ν1 = ν1frac/(dt*(0.65π*n/L)^nν1); end   
 
-  uw = minimum([ep*Reddy*sigma, ep*sigma/kw])
+  uw = minimum([ε*Reddy*σ, ε*σ/kw])
 
   nsteps = round(Int, nperiods*twave/dt)
   nsubs = round(Int, nsubperiods*twave/dt)
@@ -63,24 +64,24 @@ function EddyWave(Lx, alpha, ep, Ro, Reddy;
   msg = "\n"
   msg *= @sprintf("% 12s: %.1e s^-1\n",   "f",        f             )
   msg *= @sprintf("% 12s: %.1e s^-1\n",   "N",        N             )
-  msg *= @sprintf("% 12s: %.2f \n",       "sigma/f",  sigma/f       )
+  msg *= @sprintf("% 12s: %.2f \n",       "σ/f",      σ/f       )
   msg *= @sprintf("% 12s: %.2e km\n",     "m^-1",     1e-3/m        )
   msg *= @sprintf("% 12s: %.2e km\n",     "N/fm",     1e-3*N/(f*m)  )
-  msg *= @sprintf("% 12s: %.2e (n=%d)\n", "nu0",      nu0, nnu0     )
-  msg *= @sprintf("% 12s: %.2e (n=%d)\n", "nu1",      nu1, nnu1     )
+  msg *= @sprintf("% 12s: %.2e (n=%d)\n", "ν0",       ν0, nν0     )
+  msg *= @sprintf("% 12s: %.2e (n=%d)\n", "ν1",       ν1, nν1     )
 
   println(msg)
 
-  EddyWave(Lx, f, N, nkw, alpha, ep, Ro, Reddy, sigma, kw, m, twave, 
-    nnu0, nnu1, dtfrac, nu0frac, nu1frac, dt, nu0, nu1, uw, nsteps, nsubs)
+  EddyWave(L, f, N, nkw, α, ε, Ro, Reddy, σ, kw, m, twave, 
+    nν0, nν1, dtfrac, ν0frac, ν1frac, dt, ν0, ν1, uw, nsteps, nsubs)
 end
  
 
 
 
-function eddywavesetup(nx, ew::EddyWave; perturbwavefield=false)
+function eddywavesetup(n, ew::EddyWave; perturbwavefield=false)
   prob = TwoModeBoussinesq.InitialValueProblem(
-    nx=nx, Lx=ew.Lx, nu0=ew.nu0, nnu0=ew.nnu0, nu1=ew.nu1, nnu1=ew.nnu1, 
+    n=n, L=ew.L, ν0=ew.ν0, nν0=ew.nν0, ν1=ew.ν1, nν1=ew.nν1, 
     f=ew.f, N=ew.N, m=ew.m, dt=ew.dt)
 
   # Initial condition
@@ -88,21 +89,21 @@ function eddywavesetup(nx, ew::EddyWave; perturbwavefield=false)
   Z0 = ew.f*ew.Ro * exp.(-(x.^2+y.^2)/(2*ew.Reddy^2))
   TwoModeBoussinesq.set_Z!(prob, Z0)
 
-  # ep = U/(Reddy*sigma) or U*kw/sigma
+  # ε = U/(Reddy*σ) or U*kw/σ
   TwoModeBoussinesq.set_planewave!(prob, ew.uw, ew.nkw)
 
   # Use a regular perturbation expansion solution to the mode-1
   # PV equation to reduce the initial mode-1 APV
-  if perturbwavefield && ew.alpha > 0.0
+  if perturbwavefield && ew.α > 0.0
     g = prob.grid
 
     p1 = eigenperturbation!(prob.vars.p, ew, prob.vars.Z, g)
     p = prob.vars.p + p1
 
-    # Determine u, v from linear equations. Will fail if alpha=0.
+    # Determine u, v from linear equations. Will fail if α=0.
     ph = fft(p)
-    uh = -1.0/(ew.alpha*ew.f^2) * (-ew.sigma*g.K .- ew.f*im*g.L).*ph 
-    vh = -1.0/(ew.alpha*ew.f^2) * (-ew.sigma*g.L .+ ew.f*im*g.K).*ph 
+    uh = -1.0/(ew.α*ew.f^2) * (-ew.σ*g.K .- ew.f*im*g.L).*ph 
+    vh = -1.0/(ew.α*ew.f^2) * (-ew.σ*g.L .+ ew.f*im*g.K).*ph 
 
     u = ifft(uh)
     v = ifft(vh)
@@ -139,10 +140,10 @@ function makeplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
   q      = real.(qc+conj.(qc))
   Q      = mode0apv(prob)/ew.f
   w      = mode1w(prob)
-  spw    = wave_induced_speed(ew.sigma, prob)
-  uw, vw = wave_induced_uv(ew.sigma, prob)
-  uL, vL = lagrangian_mean_uv(ew.sigma, prob)
-  psiw   = wave_induced_psi(ew.sigma, prob)
+  spw    = wave_induced_speed(ew.σ, prob)
+  uw, vw = wave_induced_uv(ew.σ, prob)
+  uL, vL = lagrangian_mean_uv(ew.σ, prob)
+  psiw   = wave_induced_psi(ew.σ, prob)
   nlresw = (real.(prob.vars.zeta - ew.m^2*ew.f/ew.N^2*prob.vars.p)
             /maximum(abs.(prob.vars.zeta)))
 
@@ -173,13 +174,13 @@ function makeplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
   axis("equal")
   #pcolormesh(x, y, q, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
   pcolormesh(x, y, spchi, cmap="YlGnBu_r", vmin=0.0, vmax=U00)
-  contour(x, y, chi, 10, colors="w", linewidths=0.2, alpha=0.5)
+  contour(x, y, chi, 10, colors="w", linewidths=0.2, α=0.5)
 
 
   axes(axs[2, 2])
   axis("equal")
   pcolormesh(x, y, spw, cmap="YlGnBu_r", vmin=0.0, vmax=U00)
-  contour(x, y, psiw, 10, colors="w", linewidths=0.2, alpha=0.5)
+  contour(x, y, psiw, 10, colors="w", linewidths=0.2, α=0.5)
 
 
 
@@ -240,10 +241,10 @@ function makeplotwithquiver!(axs, prob, ew, x, y, savename; eddylim=nothing,
   q      = real.(qc+conj.(qc))
   Q      = mode0apv(prob)/ew.f
   w      = mode1w(prob)
-  spw    = wave_induced_speed(ew.sigma, prob)
-  uw, vw = wave_induced_uv(ew.sigma, prob)
-  uL, vL = lagrangian_mean_uv(ew.sigma, prob)
-  psiw   = wave_induced_psi(ew.sigma, prob)
+  spw    = wave_induced_speed(ew.σ, prob)
+  uw, vw = wave_induced_uv(ew.σ, prob)
+  uL, vL = lagrangian_mean_uv(ew.σ, prob)
+  psiw   = wave_induced_psi(ew.σ, prob)
   nlresw = (real.(prob.vars.zeta - ew.m^2*ew.f/ew.N^2*prob.vars.p)
             /maximum(abs.(prob.vars.zeta)))
 
@@ -260,11 +261,11 @@ function makeplotwithquiver!(axs, prob, ew, x, y, savename; eddylim=nothing,
   axis("equal")
   pcolormesh(x, y, Q, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
 
-  skip = floor(Int, prob.grid.nx/32)
+  skip = floor(Int, prob.grid.n/32)
   quiverplot = quiver(
     xr[1:skip:end, 1:skip:end], yr[1:skip:end, 1:skip:end],
     uL[1:skip:end, 1:skip:end], vL[1:skip:end, 1:skip:end], 
-    units="x", alpha=0.2, scale=2.0, scale_units="x")
+    units="x", α=0.2, scale=2.0, scale_units="x")
 
     
 
@@ -282,7 +283,7 @@ function makeplotwithquiver!(axs, prob, ew, x, y, savename; eddylim=nothing,
   axis("equal")
   pcolormesh(x, y, spw, cmap="YlGnBu_r", vmin=0.0, vmax=U00)
 
-  contour(x, y, psiw, 10, colors="w", linewidths=0.2, alpha=0.5)
+  contour(x, y, psiw, 10, colors="w", linewidths=0.2, α=0.5)
 
 
 
@@ -326,7 +327,7 @@ end
 """ Efficiently solve one iteration of the non-constant coeff,
 APV-neutralizing A-eqn. """
 function eigenperturbation!(p0, ew, Z, g)
-  c = ew.alpha*ew.f*ew.m^2/ew.N^2
+  c = ew.α*ew.f*ew.m^2/ew.N^2
 
   # Invert in Fourier space
   p1h = c * fft(Z.*p0) ./ (-g.KKsq + ew.f*c)
