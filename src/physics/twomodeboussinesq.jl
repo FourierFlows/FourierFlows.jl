@@ -180,7 +180,7 @@ abstract type TwoModeVars <: AbstractVars end
 
 type Vars <: TwoModeVars
   # Z : zeta_0
-  # u0, v0, psi0 : U, V, psi
+  # u0, v0, Psi0 : U, V, Psi
   # u1, v1, w1, p1 : u, v, w, p
 
   t::Float64
@@ -201,7 +201,7 @@ type Vars <: TwoModeVars
   vw::Array{Float64, 2}
   uzeta::Array{Float64, 2}
   vzeta::Array{Float64, 2}
-  psi::Array{Float64, 2}
+  Psi::Array{Float64, 2}
 
   # Auxiliary first-mode vars
   u::Array{Complex{Float64}, 2}
@@ -238,7 +238,7 @@ type Vars <: TwoModeVars
   vwh::Array{Complex{Float64}, 2}
   uzetah::Array{Complex{Float64}, 2}
   vzetah::Array{Complex{Float64}, 2}
-  psih::Array{Complex{Float64}, 2}
+  Psih::Array{Complex{Float64}, 2}
 
   # First-mode transforms
   uh::Array{Complex{Float64}, 2}
@@ -281,7 +281,7 @@ function Vars(g::TwoDGrid)
   vw     = zeros(Float64, g.nx, g.ny)
   uzeta  = zeros(Float64, g.nx, g.ny)
   vzeta  = zeros(Float64, g.nx, g.ny)
-  psi    = zeros(Float64, g.nx, g.ny)
+  Psi    = zeros(Float64, g.nx, g.ny)
   
   # Auxiliary first-mode vars
   u      = zeros(Complex{Float64}, g.nx, g.ny)
@@ -318,7 +318,7 @@ function Vars(g::TwoDGrid)
   vwh    = zeros(Complex{Float64}, g.nkr, g.ny)
   uzetah = zeros(Complex{Float64}, g.nkr, g.ny)
   vzetah = zeros(Complex{Float64}, g.nkr, g.ny)
-  psih   = zeros(Complex{Float64}, g.nkr, g.nl)
+  Psih   = zeros(Complex{Float64}, g.nkr, g.nl)
 
   uh     = zeros(Complex{Float64}, g.nk, g.nl)
   vh     = zeros(Complex{Float64}, g.nk, g.nl)
@@ -340,9 +340,9 @@ function Vars(g::TwoDGrid)
   vVyh   = zeros(Complex{Float64}, g.nk, g.nl)
 
   return Vars(t, solr, solc, 
-    Z, U, V, UZ, VZ, Ux, Uy, Vx, Vy, uw, vw, uzeta, vzeta, psi, 
+    Z, U, V, UZ, VZ, Ux, Uy, Vx, Vy, uw, vw, uzeta, vzeta, Psi, 
     u, v, w, p, vx, uy, zeta, Uu, Uv, Up, Vu, Vv, Vp, uUx, uVx, vUy, vVy,
-    Zh, Uh, Vh, UZh, VZh, Uxh, Uyh, Vxh, Vyh, uwh, vwh, uzetah, vzetah, psih, 
+    Zh, Uh, Vh, UZh, VZh, Uxh, Uyh, Vxh, Vyh, uwh, vwh, uzetah, vzetah, Psih, 
     uh, vh, wh, ph, vxh, uyh, Uuh, Uvh, Uph, Vuh, Vvh, Vph, uUxh, uVxh, vUyh, 
     vVyh,
     )
@@ -353,7 +353,7 @@ end
 
 type PassiveAPVVars <: TwoModeVars
   # Z : zeta_0
-  # u0, v0, psi0 : U, V, psi
+  # u0, v0, Psi0 : U, V, Psi
   # u1, v1, w1, p1 : u, v, w, p
 
   t::Float64
@@ -374,7 +374,7 @@ type PassiveAPVVars <: TwoModeVars
   vw::Array{Float64, 2}
   uzeta::Array{Float64, 2}
   vzeta::Array{Float64, 2}
-  psi::Array{Float64, 2}
+  Psi::Array{Float64, 2}
 
   q::Array{Float64, 2}
   ul::Array{Float64, 2}
@@ -417,7 +417,7 @@ type PassiveAPVVars <: TwoModeVars
   vwh::Array{Complex{Float64}, 2}
   uzetah::Array{Complex{Float64}, 2}
   vzetah::Array{Complex{Float64}, 2}
-  psih::Array{Complex{Float64}, 2}
+  Psih::Array{Complex{Float64}, 2}
 
   qh::Array{Complex{Float64}, 2}
   ulqh::Array{Complex{Float64}, 2}
@@ -464,7 +464,7 @@ function PassiveAPVVars(g::TwoDGrid)
   vw     = zeros(Float64, g.nx, g.ny)
   uzeta  = zeros(Float64, g.nx, g.ny)
   vzeta  = zeros(Float64, g.nx, g.ny)
-  psi    = zeros(Float64, g.nx, g.ny)
+  Psi    = zeros(Float64, g.nx, g.ny)
 
   q      = zeros(Float64, g.nx, g.ny)
   ul     = zeros(Float64, g.nx, g.ny)
@@ -507,7 +507,7 @@ function PassiveAPVVars(g::TwoDGrid)
   vwh    = zeros(Complex{Float64}, g.nkr, g.ny)
   uzetah = zeros(Complex{Float64}, g.nkr, g.ny)
   vzetah = zeros(Complex{Float64}, g.nkr, g.ny)
-  psih   = zeros(Complex{Float64}, g.nkr, g.nl)
+  Psih   = zeros(Complex{Float64}, g.nkr, g.nl)
 
   qh     = zeros(Complex{Float64}, g.nkr, g.nl)
   ulqh   = zeros(Complex{Float64}, g.nkr, g.nl)
@@ -533,10 +533,10 @@ function PassiveAPVVars(g::TwoDGrid)
   vVyh   = zeros(Complex{Float64}, g.nk, g.nl)
 
   PassiveAPVVars(t, solr, solc, 
-    Z, U, V, UZ, VZ, Ux, Uy, Vx, Vy, uw, vw, uzeta, vzeta, psi,
+    Z, U, V, UZ, VZ, Ux, Uy, Vx, Vy, uw, vw, uzeta, vzeta, Psi,
     q, ul, vl, ulq, vlq, 
     u, v, w, p, vx, uy, zeta, Uu, Uv, Up, Vu, Vv, Vp, uUx, uVx, vUy, vVy,
-    Zh, Uh, Vh, UZh, VZh, Uxh, Uyh, Vxh, Vyh, uwh, vwh, uzetah, vzetah, psih, 
+    Zh, Uh, Vh, UZh, VZh, Uxh, Uyh, Vxh, Vyh, uwh, vwh, uzetah, vzetah, Psih, 
     qh, ulqh, vlqh,
     uh, vh, wh, ph, vxh, uyh, Uuh, Uvh, Uph, Vuh, Vvh, Vph, uUxh, uVxh, vUyh, 
     vVyh,
@@ -564,10 +564,10 @@ function calcNL!(
   # a few lines below destroys sol when using Julia's FFTW.
   v.Zh .= solr
 
-  @. v.psih = -g.invKKrsq*v.Zh
+  @. v.Psih = -g.invKKrsq*v.Zh
 
-  @. v.Uh = -im*g.Lr*v.psih
-  @. v.Vh =  im*g.Kr*v.psih
+  @. v.Uh = -im*g.Lr*v.Psih
+  @. v.Vh =  im*g.Kr*v.Psih
 
   @. v.Uxh = im*g.Kr*v.Uh
   @. v.Vxh = im*g.Kr*v.Vh
@@ -693,10 +693,10 @@ function calcNL!(
   @views @. v.Zh = solr[:, :, 1]
   @views @. v.qh = solr[:, :, 2]
 
-  @. v.psih = -g.invKKrsq*v.Zh
+  @. v.Psih = -g.invKKrsq*v.Zh
 
-  @. v.Uh = -im*g.Lr*v.psih
-  @. v.Vh =  im*g.Kr*v.psih
+  @. v.Uh = -im*g.Lr*v.Psih
+  @. v.Vh =  im*g.Kr*v.Psih
 
   @. v.Uxh = im*g.Kr*v.Uh
   @. v.Vxh = im*g.Kr*v.Vh
@@ -827,7 +827,7 @@ function updatevars!(v::Vars, p::TwoModeParams, g::TwoDGrid)
   # A_mul_B!(v.Z, g.irfftplan, v.Zh)
   v.Z = irfft(v.Zh, g.nx)
 
-  @. v.psih =         -g.invKKrsq*v.Zh
+  @. v.Psih =         -g.invKKrsq*v.Zh
   @. v.Uh   =  im*g.Lr*g.invKKrsq*v.Zh
   @. v.Vh   = -im*g.Kr*g.invKKrsq*v.Zh
  
@@ -859,7 +859,7 @@ function updatevars!(v::PassiveAPVVars, p::PassiveAPVParams, g::TwoDGrid)
   v.Z = irfft(v.Zh, g.nx)
   v.q = irfft(v.qh, g.nx)
 
-  @. v.psih =         -g.invKKrsq*v.Zh
+  @. v.Psih =         -g.invKKrsq*v.Zh
   @. v.Uh   =  im*g.Lr*g.invKKrsq*v.Zh
   @. v.Vh   = -im*g.Kr*g.invKKrsq*v.Zh
  
@@ -1090,7 +1090,7 @@ end
 function mode0dissipation(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   delzeta = irfft(
     (-1.0)^(p.nν0/2) .* g.KKrsq.^(p.nν0/2) .* vs.solr, g.nx)
-  -p.nu*g.dx*g.dy*sum(vs.psi.*delzeta)
+  -p.nu*g.dx*g.dy*sum(vs.Psi.*delzeta)
 end
 
 
@@ -1217,11 +1217,11 @@ function wave_induced_uv(qw, g::TwoDGrid)
 
   qwh = rfft(qw)
 
-  psiwh = g.invKKrsq.*qwh
-  uwh   = -im*g.Lr.*psiwh
-  vwh   =  im*g.Kr.*psiwh
+  Psiwh = g.invKKrsq.*qwh
+  uwh   = -im*g.Lr.*Psiwh
+  vwh   =  im*g.Kr.*Psiwh
 
-  psiw = irfft(psiwh, g.nx)
+  Psiw = irfft(Psiwh, g.nx)
   uw   = irfft(uwh, g.nx)
   vw   = irfft(vwh, g.nx)
 
@@ -1322,9 +1322,9 @@ function calc_usigvsig(sig, Zh, v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   # a few lines below destroys v.Zh
   #v.Zh .= v.solr
 
-  @. v.psih = -g.invKKrsq*Zh
-  @. v.Uh   = -im*g.Lr*v.psih
-  @. v.Vh   =  im*g.Kr*v.psih
+  @. v.Psih = -g.invKKrsq*Zh
+  @. v.Uh   = -im*g.Lr*v.Psih
+  @. v.Vh   =  im*g.Kr*v.Psih
   @. v.Uxh  = im*g.Kr*v.Uh
   @. v.Vxh  = im*g.Kr*v.Vh
   @. v.Uyh  = im*g.Lr*v.Uh
@@ -1437,9 +1437,9 @@ end
 vorticity field. """
 function apv_induced_speed(vs, pr, g)
   q = mode0apv(vs, pr, g)
-  psiqh = -g.invKKrsq.*rfft(q)
-  uq = irfft(-im*g.Lr.*psiqh, g.nx)
-  vq = irfft( im*g.Kr.*psiqh, g.nx)
+  Psiqh = -g.invKKrsq.*rfft(q)
+  uq = irfft(-im*g.Lr.*Psiqh, g.nx)
+  vq = irfft( im*g.Kr.*Psiqh, g.nx)
   return sqrt.(uq.^2.0+vq.^2.0)
 end
 
@@ -1451,9 +1451,9 @@ end
 """ Return the total Lagrangian-mean flow. """
 function lagrangian_mean_uv(sig, vs::AbstractVars, pr::AbstractParams, 
   g::AbstractGrid)
-  psiLh = lagrangian_mean_psih(sig, vs, pr, g)
-  uL = irfft(-im*g.Lr.*psiLh, g.nx)
-  vL = irfft( im*g.Kr.*psiLh, g.nx)
+  PsiLh = lagrangian_mean_psih(sig, vs, pr, g)
+  uL = irfft(-im*g.Lr.*PsiLh, g.nx)
+  vL = irfft( im*g.Kr.*PsiLh, g.nx)
   uL, vL
 end
 
