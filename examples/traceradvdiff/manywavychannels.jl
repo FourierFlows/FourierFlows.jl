@@ -29,7 +29,7 @@ for i = 1:nepz
   time, variance = yvar.time, yvar.data
   c, X, Y = prob.vars.c, prob.grid.X, prob.grid.Y
 
-  filename = @sprintf("wavychannel_nx%04d_ep%02d.jld2", Int(ep*10))
+  filename = @sprintf("wavychannel_nx%04d_ep%02d.jld2", nx, Int(ep*10))
   @save filename time variance c X Y
 
 end
