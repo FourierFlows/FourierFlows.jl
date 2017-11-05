@@ -10,42 +10,6 @@ fftwavenums(n::Int; L=1.0) = 2.0*pi/L*cat(1, 0:n/2, -n/2+1:-1)
 rms(q) = sqrt(mean(q.^2))
 
 
-"Fast loop-based dealiasing method for complex, spectral-space vars."
-function dealias!(a::Array{Complex{Float64}, 2}, g::AbstractGrid)
-  if size(a)[1] == g.nk       # Transform of a complex var
-    for j in g.lderange
-      @simd for i in g.kderange
-        @inbounds a[i, j] = 0.0 + 0.0*im
-      end
-    end
-  else                        # Transform of a real var
-    for j in g.lderange
-      @simd for i in g.krderange
-        @inbounds a[i, j] = 0.0 + 0.0*im
-      end
-    end
-  end
-end
-
-
-"Dealiasing method for 3-arrays with broadcasting for third dimension."
-function dealias!(a::Array{Complex{Float64}, 3}, g::AbstractGrid)
-  if size(a)[1] == g.nk       # Transform of a complex var
-    for j in g.lderange
-      @simd for i in g.kderange
-        @inbounds @views @. a[i, j, :] = Complex{Float64}(0.0)
-      end
-    end
-  else                        # Transform of a real var
-    for j in g.lderange
-      @simd for i in g.krderange
-        @inbounds @views @. a[i, j, :] = Complex{Float64}(0.0)
-      end
-    end
-  end
-end
-
-
 """ 
 Generate a real and random two-dimensional distribution phi(x, y) with
 a Fourier spectrum peaked around a central non-dimensional wavenumber kpeak.
