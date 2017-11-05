@@ -4,20 +4,20 @@ include("./setup_eddywave.jl")
 
 # -- Parameters --
   nkw = 8
-    n = 256
+    n = 512
     L = 2π*100e3*nkw
     α = 1               # Frequency parameter
     ε = 2e-1            # Wave amplitude
    Ro = 5e-2            # Eddy Rossby number
 Reddy = L/10           # Eddy radius
 
-plotpath = "./plots"
-plotname = "strongsixthorder"
-
 
 # Setup
 ew = EddyWave(L, α, ε, Ro, Reddy; nkw=nkw, dtfrac=5e-3, nsubperiods=1,
-  nν0=6, nν1=6, ν0=1e24, ν1=1e6) 
+  nν0=6, nν1=6, ν0=1e20, ν1=1e6) 
+
+plotpath = "./plots"
+plotname = @sprintf("shortdt_nu0_%.0e", ew.ν0)
   
 prob, diags = eddywavesetup(n, ew, perturbwavefield=false)
 etot, e0, e1 = diags[1], diags[2], diags[3]
