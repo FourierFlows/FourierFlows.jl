@@ -1,6 +1,6 @@
 __precompile__()
 
-export TwoDGrid
+export TwoDGrid, dealias!
 
 # Grid types and constructors
 
@@ -22,14 +22,9 @@ type TwoDGrid <: AbstractGrid
   y::Array{Float64, 1}
 
   # Range objects that access the non-aliased part of the wavenumber range
-  krange::Array{Int64, 1}
-  lrange::Array{Int64, 1}
-  krrange::Array{Int64, 1}
-
-  # Dealiasing "derange" objects are arrays, not UnitRanges.
-  kderange::Array{Int64, 1}
-  lderange::Array{Int64, 1}
-  krderange::Array{Int64, 1}
+  ialias::UnitRange{Int64}
+  iralias::UnitRange{Int64}
+  jalias::UnitRange{Int64}
 
   k::Array{Complex{Float64}, 1}
   l::Array{Complex{Float64}, 1}
@@ -88,18 +83,6 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
   nl = ny
   nkr = Int(nx/2+1)
 
-  # Index ranges for physical, non-dealiased wavenumbers
-  kcL, kcR = Int(floor(nk/3))+1, 2*Int(ceil(nk/3))-1
-  lcL, lcR = Int(floor(nl/3))+1, 2*Int(ceil(nl/3))-1
-
-  krange  = cat(1, 1:kcL, kcR:nk)
-  lrange  = cat(1, 1:lcL, lcR:nl)
-  krrange = cat(1, 1:kcL)
-
-  kderange  = (kcL+1):(kcR-1)
-  lderange  = (lcL+1):(lcR-1)
-  krderange = (kcL+1):nkr
-
   # Physical grid allocatio
   x = Array{Float64}(nx)
   y = Array{Float64}(ny)
@@ -144,10 +127,10 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
 
   j1 = 0:1:Int(ny/2)
   j2 = Int(-ny/2+1):1:-1
-
-  k  = 2.0*pi/Lx * cat(1, i1, i2)
-  kr = 2.0*pi/Lx * cat(1, i1)
-  l  = 2.0*pi/Ly * cat(1, j1, j2)
+  
+  k  = 2π/Lx * cat(1, i1, i2)
+  kr = 2π/Lx * cat(1, i1)
+  l  = 2π/Ly * cat(1, j1, j2)
 
   ksq  = k.^2.0
   krsq = kr.^2.0
@@ -178,6 +161,15 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
   invKKrsq = 1.0./KKrsq
   invKKrsq[1, 1] = 0.0
 
+  # Index endpoints for aliased i, j wavenumbers
+  iaL, iaR = Int(floor(nk/3))+1, 2*Int(ceil(nk/3))-1
+  jaL, jaR = Int(floor(nl/3))+1, 2*Int(ceil(nl/3))-1
+
+  ialias  = iaL:iaR
+  iralias = iaL:nkr
+  jalias  = iaL:iaR
+
+
   # FFT plans; use grid vars.
   FFTW.set_num_threads(nthreads)
   effort = FFTW.MEASURE
@@ -189,17 +181,11 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
   irfftplan = plan_irfft(Array{Complex{Float64},2}(nkr, nl), nx; flags=effort)
 
   return TwoDGrid(nx, ny, Lx, Ly, nk, nl, nkr, dx, dy, x, y,
-          krange, lrange, krrange, kderange, lderange, krderange, 
+          ialias, iralias, jalias, 
           k, l, kr, ksq, lsq, krsq, ik, il, ikr, X, Y, K, L, Kr, Lr,
           K2, L2, KKsq, invKKsq, KL, KKrsq, invKKrsq,
           fftplan, ifftplan, rfftplan, irfftplan)
 end
-
-# Grid constructor with optional arguments to specify anisotropy
-#function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
-#  nthreads=Sys.CPU_CORES)
-#  TwoDGrid(nx, Lx, ny, Ly; nthreads=nthreads)
-#end
 
 # Grid constructor for tupled arguments
 function TwoDGrid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64};
@@ -207,4 +193,22 @@ function TwoDGrid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64};
   nx, ny = nxy
   Lx, Ly = Lxy
   TwoDGrid(nx, Lx, ny, Ly)
+end
+
+function dealias!(a::Array{Complex{Float64}, 2}, g)
+  if size(a)[1] == g.nkr
+    a[g.iralias, g.jalias] = 0im
+  else
+    a[g.ialias, g.jalias] = 0im
+  end
+  nothing
+end
+
+function dealias!(a::Array{Complex{Float64}, 3}, g)
+  if size(a)[1] == g.nkr
+    @views @. a[g.iralias, g.jalias, :] = 0im
+  else
+    @views @. a[g.ialias, g.jalias, :] = 0im
+  end
+  nothing
 end
