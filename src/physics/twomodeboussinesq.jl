@@ -20,10 +20,10 @@ function InitialValueProblem(;
   Lx   = 2pi, 
   ny   = nothing,
   Ly   = nothing,
-  ν0  = nothing, 
-  nν0 = 2, 
-  ν1  = nothing,
-  nν1 = 2, 
+  ν0   = nothing, 
+  nν0  = 2, 
+  ν1   = nothing,
+  nν1  = 2, 
   f    = 1.0,
   N    = 10.0,
   m    = 40.0,
@@ -179,10 +179,6 @@ end
 abstract type TwoModeVars <: AbstractVars end
 
 type Vars <: TwoModeVars
-  # Z : zeta_0
-  # u0, v0, Psi0 : U, V, Psi
-  # u1, v1, w1, p1 : u, v, w, p
-
   t::Float64
   solr::Array{Complex128, 2}
   solc::Array{Complex128, 3}
@@ -352,10 +348,6 @@ end
 
 
 type PassiveAPVVars <: TwoModeVars
-  # Z : zeta_0
-  # u0, v0, Psi0 : U, V, Psi
-  # u1, v1, w1, p1 : u, v, w, p
-
   t::Float64
   solr::Array{Complex128, 3}
   solc::Array{Complex128, 3}
@@ -678,7 +670,9 @@ end
 
 
 
-# Solvers --------------------------------------------------------------------- 
+""" Calculate the nonlinear right side for the two-mode Boussinesq equations
+and a passive tracer-advection equation, where the tracer is available 
+potential vorticity. """
 function calcNL!(
   NLc::Array{Complex{Float64}, 3},  NLr::Array{Complex{Float64}, 3}, 
   solc::Array{Complex{Float64}, 3}, solr::Array{Complex{Float64}, 3}, 
