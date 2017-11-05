@@ -20,10 +20,10 @@ function InitialValueProblem(;
   Lx   = 2pi, 
   ny   = nothing,
   Ly   = nothing,
-  nu0  = nothing, 
-  nnu0 = 2, 
-  nu1  = nothing,
-  nnu1 = 2, 
+  ν0  = nothing, 
+  nν0 = 2, 
+  ν1  = nothing,
+  nν1 = 2, 
   f    = 1.0,
   N    = 10.0,
   m    = 40.0,
@@ -34,11 +34,11 @@ function InitialValueProblem(;
 
   if Ly == nothing; Ly = Lx; end
   if ny == nothing; ny = nx; end
-  if nu0 == nothing; nu0 = 1e-1/(dt*(0.65*pi*nx/Lx)^nnu0); end
-  if nu1 == nothing; nu1 = 1e-1/(dt*(0.65*pi*nx/Lx)^nnu1); end
+  if ν0 == nothing; ν0 = 1e-1/(dt*(0.65*pi*nx/Lx)^nν0); end
+  if ν1 == nothing; ν1 = 1e-1/(dt*(0.65*pi*nx/Lx)^nν1); end
 
   g  = TwoDGrid(nx, Lx)
-  pr = TwoModeBoussinesq.Params(nu0, nnu0, nu1, nnu1, f, N, m)
+  pr = TwoModeBoussinesq.Params(ν0, nν0, ν1, nν1, f, N, m)
   vs = TwoModeBoussinesq.Vars(g)
   eq = TwoModeBoussinesq.Equation(pr, g)
   ts = ETDRK4TimeStepper(dt, eq.LCc, eq.LCr)
@@ -55,10 +55,10 @@ function PassiveAPVInitialValueProblem(;
   Lx    = 2pi, 
   ny    = nothing,
   Ly    = nothing,
-  nu0   = nothing, 
-  nnu0  = 2, 
-  nu1   = nothing,
-  nnu1  = 2, 
+  ν0   = nothing, 
+  nν0  = 2, 
+  ν1   = nothing,
+  nν1  = 2, 
   f     = 1.0,
   N     = 10.0,
   m     = 40.0,
@@ -70,12 +70,12 @@ function PassiveAPVInitialValueProblem(;
 
   if Ly == nothing; Ly = Lx; end
   if ny == nothing; ny = nx; end
-  if nu0 == nothing; nu0 = 1e-1/(dt*(0.65*pi*nx/Lx)^nnu0); end
-  if nu1 == nothing; nu1 = 1e-1/(dt*(0.65*pi*nx/Lx)^nnu1); end
+  if ν0 == nothing; ν0 = 1e-1/(dt*(0.65*pi*nx/Lx)^nν0); end
+  if ν1 == nothing; ν1 = 1e-1/(dt*(0.65*pi*nx/Lx)^nν1); end
 
   g  = TwoDGrid(nx, Lx)
   pr = TwoModeBoussinesq.PassiveAPVParams(
-    nu0, nnu0, nu1, nnu1, f, N, m, sigma)
+    ν0, nν0, ν1, nν1, f, N, m, sigma)
   vs = TwoModeBoussinesq.PassiveAPVVars(g)
   eq = TwoModeBoussinesq.PassiveAPVEquation(pr, g)
   ts = ETDRK4TimeStepper(dt, eq.LCc, eq.LCr)
@@ -90,10 +90,10 @@ end
 abstract type TwoModeParams <: AbstractParams end
 
 type Params <: TwoModeParams
-  nu0::Float64                    # Mode-0 viscosity
-  nnu0::Int                       # Mode-0 hyperviscous order
-  nu1::Float64                    # Mode-1 viscosity
-  nnu1::Int                       # Mode-1 hyperviscous order
+  ν0::Float64                    # Mode-0 viscosity
+  nν0::Int                       # Mode-0 hyperviscous order
+  ν1::Float64                    # Mode-1 viscosity
+  nν1::Int                       # Mode-1 hyperviscous order
   f::Float64                      # Planetary vorticity
   N::Float64                      # Buoyancy frequency
   m::Float64                      # Mode-one wavenumber
@@ -101,8 +101,8 @@ type Params <: TwoModeParams
   Vs::Float64                     # Steady mode-0 mean y-velocity
 end
 
-function Params(nu0, nnu0::Int, nu1, nnu1::Int, f, N, m)
-  Params(nu0, nnu0, nu1, nnu1, f, N, m, 0.0, 0.0)
+function Params(ν0, nν0::Int, ν1, nν1::Int, f, N, m)
+  Params(ν0, nν0, ν1, nν1, f, N, m, 0.0, 0.0)
 end
 
 
@@ -110,10 +110,10 @@ end
 
 
 type PassiveAPVParams <: TwoModeParams
-  nu0::Float64                    # Mode-0 viscosity
-  nnu0::Int                       # Mode-0 hyperviscous order
-  nu1::Float64                    # Mode-1 viscosity
-  nnu1::Int                       # Mode-1 hyperviscous order
+  ν0::Float64                    # Mode-0 viscosity
+  nν0::Int                       # Mode-0 hyperviscous order
+  ν1::Float64                    # Mode-1 viscosity
+  nν1::Int                       # Mode-1 hyperviscous order
   f::Float64                      # Planetary vorticity
   N::Float64                      # Buoyancy frequency
   m::Float64                      # Mode-one wavenumber
@@ -123,8 +123,8 @@ type PassiveAPVParams <: TwoModeParams
 end
 
 
-function PassiveAPVParams(nu0, nnu0::Int, nu1, nnu1::Int, f, N, m, sigma)
-  PassiveAPVParams(nu0, nnu0, nu1, nnu1, f, N, m, 0.0, 0.0, sigma)
+function PassiveAPVParams(ν0, nν0::Int, ν1, nν1::Int, f, N, m, sigma)
+  PassiveAPVParams(ν0, nν0, ν1, nν1, f, N, m, 0.0, 0.0, sigma)
 end
 
 
@@ -138,12 +138,12 @@ type Equation <: AbstractEquation
 end
 
 function Equation(p::TwoModeParams, g::TwoDGrid)
-  LCr = -p.nu0 * g.KKrsq.^(0.5*p.nnu0)
+  LCr = -p.ν0 * g.KKrsq.^(0.5*p.nν0)
 
   LCc = zeros(g.nk, g.nl, 3)
-  LCc[:, :, 1] = -p.nu1 * g.KKsq.^(0.5*p.nnu1)
-  LCc[:, :, 2] = -p.nu1 * g.KKsq.^(0.5*p.nnu1)
-  #LCc[:, :, 3] = -p.nu1 * g.KKsq.^(0.5*p.nnu1)
+  LCc[:, :, 1] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
+  LCc[:, :, 2] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
+  #LCc[:, :, 3] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
 
   Equation(LCc, LCr, calcNL!)
 end
@@ -159,13 +159,13 @@ end
 
 function PassiveAPVEquation(p::PassiveAPVParams, g::TwoDGrid)
   LCr = zeros(g.nkr, g.nl, 2)
-  LCr[:, :, 1] = -p.nu0 * g.KKrsq.^(0.5*p.nnu0)
-  LCr[:, :, 2] = -p.nu0 * g.KKrsq.^(0.5*p.nnu0)
+  LCr[:, :, 1] = -p.ν0 * g.KKrsq.^(0.5*p.nν0)
+  LCr[:, :, 2] = -p.ν0 * g.KKrsq.^(0.5*p.nν0)
 
   LCc = zeros(g.nk, g.nl, 3)
-  LCc[:, :, 1] = -p.nu1 * g.KKsq.^(0.5*p.nnu1)
-  LCc[:, :, 2] = -p.nu1 * g.KKsq.^(0.5*p.nnu1)
-  LCc[:, :, 3] = -p.nu1 * g.KKsq.^(0.5*p.nnu1)
+  LCc[:, :, 1] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
+  LCc[:, :, 2] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
+  LCc[:, :, 3] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
 
   PassiveAPVEquation(LCc, LCr, calcNL!)
 end
@@ -1089,7 +1089,7 @@ end
 """ Return kinetic energy dissipation of the zeroth mode. """
 function mode0dissipation(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   delzeta = irfft(
-    (-1.0)^(p.nnu0/2) .* g.KKrsq.^(p.nnu0/2) .* vs.solr, g.nx)
+    (-1.0)^(p.nν0/2) .* g.KKrsq.^(p.nν0/2) .* vs.solr, g.nx)
   -p.nu*g.dx*g.dy*sum(vs.psi.*delzeta)
 end
 
@@ -1364,13 +1364,13 @@ function calc_usigvsig(sig, Zh, v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
 
   # First-mode nonlinear terms:
   # u
-  uth = ( -p.nu1*g.KKsq.^(0.5*p.nnu1) .* v.uh
+  uth = ( -p.ν1*g.KKsq.^(0.5*p.nν1) .* v.uh
     + p.f*v.vh - im*g.K.*v.ph
     - im*g.K.*v.Uuh - im*g.L.*v.Vuh - v.uUxh - v.vUyh
   )
 
   # v
-  vth = ( -p.nu1*g.KKsq.^(0.5*p.nnu1) .* v.vh
+  vth = ( -p.ν1*g.KKsq.^(0.5*p.nν1) .* v.vh
     - p.f*v.uh - im*g.L.*v.ph
     - im*g.K.*v.Uvh - im*g.L.*v.Vvh - v.uVxh - v.vVyh
   )

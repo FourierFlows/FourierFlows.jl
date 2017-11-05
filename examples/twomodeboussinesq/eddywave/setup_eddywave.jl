@@ -81,7 +81,7 @@ end
 
 function eddywavesetup(n, ew::EddyWave; perturbwavefield=false)
   prob = TwoModeBoussinesq.InitialValueProblem(
-    n=n, L=ew.L, ν0=ew.ν0, nν0=ew.nν0, ν1=ew.ν1, nν1=ew.nν1, 
+    nx=n, Lx=ew.L, ν0=ew.ν0, nν0=ew.nν0, ν1=ew.ν1, nν1=ew.nν1, 
     f=ew.f, N=ew.N, m=ew.m, dt=ew.dt)
 
   # Initial condition
