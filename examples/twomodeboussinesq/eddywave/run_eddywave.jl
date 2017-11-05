@@ -13,11 +13,11 @@ Reddy = L/10           # Eddy radius
 
 
 # Setup
-ew = EddyWave(L, α, ε, Ro, Reddy; nkw=nkw, dtfrac=5e-3, nsubperiods=1,
-  nν0=6, nν1=6, ν0=1e20, ν1=1e6) 
+ew = EddyWave(L, α, ε, Ro, Reddy; nkw=nkw, dtfrac=1e-2, nsubperiods=1,
+  nν0=6, nν1=6, ν0=1e19, ν1=1e6) 
 
 plotpath = "./plots"
-plotname = @sprintf("shortdt_nu0_%.0e", ew.ν0)
+plotname = @sprintf("nu0_%.0e", ew.ν0)
   
 prob, diags = eddywavesetup(n, ew, perturbwavefield=false)
 etot, e0, e1 = diags[1], diags[2], diags[3]
@@ -64,7 +64,7 @@ while prob.step < ew.nsteps
     maximum(abs.(prob.vars.Z))/ew.f)
 
   log2 = @sprintf(
-    "e0: %.3f, e1: %.3f, etot: %.6f, wall: %.2f min",
+    "ΔE: %.3f, Δe: %.3f, Δ(E+e): %.6f, τ: %.2f min",
     e0.value/e0.data[1], e1.value/e1.data[1], etot.value/etot.data[1],
     walltime)
 
