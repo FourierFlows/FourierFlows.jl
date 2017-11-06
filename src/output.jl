@@ -68,7 +68,7 @@ function saveoutput(out::Output)
   groupname = "timeseries"
 
   jldopen(out.filename, "a+") do file
-    file[$groupname/t/$step] = out.prob.t
+    file["$groupname/t/$step"] = out.prob.t
     for fieldname in keys(out.fields)
       file["$groupname/$fieldname/$step"] = out[fieldname]
     end
