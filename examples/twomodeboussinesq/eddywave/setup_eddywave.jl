@@ -225,11 +225,13 @@ end
 
 """ Plot the mode-0 available potential vorticity and vertical velocity. """
 function makethreeplot!(axs, prob, ew, x, y, savename; eddylim=nothing, 
-  message=nothing, save=false, show=false)
-
+  message=nothing, save=false, show=false, makecolorbar=false, 
+  remakecolorbar=nothing) 
+  
   if eddylim == nothing
     eddylim = maximum(x)
   end
+
 
   # Some limits
   Z00 = ew.Ro*ew.f
@@ -248,6 +250,11 @@ function makethreeplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
   axs[2][:cla]()
   axs[3][:cla]()
 
+  if remakecolorbar != nothing
+    for cb in cbs; cb[:ax][:cla](); end
+    makecolorbar = true
+  end
+
 
   axes(axs[1])
   axis("equal")
@@ -262,12 +269,13 @@ function makethreeplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
   axes(axs[3])
   axis("equal")
   spplot = pcolormesh(x, y, spw, cmap="YlGnBu_r", vmin=0.0, vmax=U00)
-  contour(x, y, psiw, 10, colors="w", linewidths=0.2, α=0.5)
+  contour(x, y, psiw, 10, colors="w", linewidths=0.2, alpha=0.5)
 
 
   plots = [Qplot, wplot, spplot]
   cbs = []
   for (i, ax) in enumerate(axs)
+
     ax[:set_adjustable]("box-forced")
     ax[:set_xlim](-eddylim, eddylim)
     ax[:set_ylim](-eddylim, eddylim)
@@ -275,12 +283,16 @@ function makethreeplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
 
     ax[:set_xlabel](L"x/R")
 
-    divider = pltgrid.make_axes_locatable(ax)
-    cax = divider[:append_axes]("top", size="5%", pad="10%")
-    push!(cbs, colorbar(plots[i], cax=cax, orientation="horizontal")) 
+    if makecolorbar
+      divider = pltgrid.make_axes_locatable(ax)
+      cax = divider[:append_axes]("top", size="5%", pad="10%")
+      push!(cbs, colorbar(plots[i], cax=cax, orientation="horizontal"))
 
-    cbs[i][:ax][:tick_params](axis="x", length=0)
-    cbs[i][:ax][:xaxis][:set_label_position]("top")
+      cbs[i][:ax][:xaxis][:set_ticks_position]("top")
+      cbs[i][:ax][:xaxis][:set_label_position]("top")
+      cbs[i][:ax][:tick_params](axis="x", length=0)
+      locator_params(tight=true, nbins=5)
+    end
   end
 
 
@@ -290,11 +302,12 @@ function makethreeplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
 
 
   if message != nothing
-    text(0.00, 0.05, message, transform=axs[1][:transAxes], fontsize=14)
+    msg = text(0.00, 1.30, message, transform=axs[1][:transAxes], fontsize=14)
+  else
+    msg = nothing
   end
 
-
-  tight_layout(rect=(0.10, 0.00, 0.95, 0.95))
+  tight_layout(rect=(0.00, 0.05, 1.00, 0.90))
 
   if show
     pause(0.1)
@@ -304,111 +317,11 @@ function makethreeplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
     savefig(savename, dpi=240)
   end
 
-  nothing
+  cbs, msg
 end
 
 
 
-
-""" Plot the mode-0 available potential vorticity and vertical velocity. """
-function makeplotwithquiver!(axs, prob, ew, x, y, savename; eddylim=nothing, 
-  message=nothing, save=false, show=false)
-
-  if eddylim == nothing
-    eddylim = maximum(x)
-  end
-
-  # Some limits
-  Z00 = ew.Ro*ew.f
-  w00 = ew.uw*ew.kw/(2*ew.m)
-  U00 = ew.Ro*ew.Reddy*ew.f
-
-  # Quantities to plot
-  qc     = mode1apv(prob)/ew.f
-  q      = real.(qc+conj.(qc))
-  Q      = mode0apv(prob)/ew.f
-  w      = mode1w(prob)
-  spw    = wave_induced_speed(ew.σ, prob)
-  uw, vw = wave_induced_uv(ew.σ, prob)
-  uL, vL = lagrangian_mean_uv(ew.σ, prob)
-  psiw   = wave_induced_psi(ew.σ, prob)
-  nlresw = (real.(prob.vars.zeta - ew.m^2*ew.f/ew.N^2*prob.vars.p)
-            /maximum(abs.(prob.vars.zeta)))
-
-  spL = sqrt.(uL.^2+vL.^2)
-  uL, vL = uL/maximum(spL), vL/maximum(spL)
-
-  # Plot
-  axs[1, 1][:cla]()
-  axs[1, 2][:cla]()
-  axs[2, 1][:cla]()
-  axs[2, 2][:cla]()
-
-  axes(axs[1, 1])
-  axis("equal")
-  pcolormesh(x, y, Q, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
-
-  skip = floor(Int, prob.grid.n/32)
-  quiverplot = quiver(
-    xr[1:skip:end, 1:skip:end], yr[1:skip:end, 1:skip:end],
-    uL[1:skip:end, 1:skip:end], vL[1:skip:end, 1:skip:end], 
-    units="x", α=0.2, scale=2.0, scale_units="x")
-
-    
-
-  axes(axs[1, 2])
-  axis("equal")
-  pcolormesh(x, y, w, cmap="RdBu_r", vmin=-4w00, vmax=4w00)
-
-
-  axes(axs[2, 1])
-  axis("equal")
-  pcolormesh(x, y, q, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
-
-
-  axes(axs[2, 2])
-  axis("equal")
-  pcolormesh(x, y, spw, cmap="YlGnBu_r", vmin=0.0, vmax=U00)
-
-  contour(x, y, psiw, 10, colors="w", linewidths=0.2, α=0.5)
-
-
-
-
-  for ax in axs
-    ax[:set_xlim](-eddylim, eddylim)
-    ax[:set_ylim](-eddylim, eddylim)
-    ax[:tick_params](axis="both", which="both", length=0)
-  end
-
-  axs[2, 1][:set_xlabel](L"x/R")
-  axs[2, 2][:set_xlabel](L"x/R")
-
-  axs[1, 1][:set_ylabel](L"x/R")
-  axs[2, 1][:set_ylabel](L"x/R")
-
-  axs[1, 1][:set_xticks]([])
-  axs[1, 2][:set_xticks]([])
-
-  axs[1, 2][:set_yticks]([])
-  axs[2, 2][:set_yticks]([])
-
-  if message != nothing
-    text(0.00, 1.03, message, transform=axs[1, 1][:transAxes], fontsize=14)
-  end
-
-  tight_layout(rect=(0.00, 0.00, 0.95, 0.95))
-
-  if show
-    pause(0.1)
-  end
-
-  if save
-    savefig(savename, dpi=240)
-  end
-
-  nothing
-end
 
 
 """ Efficiently solve one iteration of the non-constant coeff,
