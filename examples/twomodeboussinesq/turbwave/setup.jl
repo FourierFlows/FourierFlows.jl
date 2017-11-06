@@ -29,7 +29,7 @@ struct TurbWave
   α
   σ
   Ro
-  Rturb
+  Lturb
   dt
   nsteps
   nsubs
@@ -44,6 +44,8 @@ function turbwavesetup(name, n, L, α, ε, Ro;
   ν1frac=1e-1, ν0=nothing, ν1=nothing, nperiods=400, nsubperiods=1, 
   k0turb=n/2)
 
+
+  # Initialize problem
   σ = f*sqrt(1+α)
   kw = 2π*nkw/L
   m = N*kw/(f*sqrt(α))
@@ -56,19 +58,6 @@ function turbwavesetup(name, n, L, α, ε, Ro;
   nsteps = round(Int, nperiods*twave/dt)
   nsubs = round(Int, nsubperiods*twave/dt)
 
-  msg = "\n"
-  msg *= @sprintf("% 12s: %.3f\n",        "ε",        ε             )
-  msg *= @sprintf("% 12s: %.3f\n",        "Ro",       Ro            )
-  msg *= @sprintf("% 12s: %.3f \n",       "σ/f",      σ/f           )
-  msg *= @sprintf("% 12s: %.1e s^-1\n",   "f",        f             )
-  msg *= @sprintf("% 12s: %.1e s^-1\n",   "N",        N             )
-  msg *= @sprintf("% 12s: %.2e km\n",     "m^-1",     1e-3/m        )
-  msg *= @sprintf("% 12s: %.2e km\n",     "N/fm",     1e-3*N/(f*m)  )
-  msg *= @sprintf("% 12s: %.2e (n=%d)\n", "ν0",       ν0, nν0       )
-  msg *= @sprintf("% 12s: %.2e (n=%d)\n", "ν1",       ν1, nν1       )
-
-  println(msg)
-
   prob = TwoModeBoussinesq.InitialValueProblem(nx=n, Lx=L, 
     ν0=ν0, nν0=nν0, ν1=ν1, nν1=nν1, f=f, N=N, m=m, dt=dt)
 
@@ -80,7 +69,7 @@ function turbwavesetup(name, n, L, α, ε, Ro;
   if !isfile(savename) 
     qf = f*Ro
     Z = TwoDTurb.makematureturb(n, L; nnu=nν0, nu=ν0, k0=k0turb, 
-      qf=qf, q0=1.2*qf, tf=20/qf)
+      qf=qf, q0=1.2*qf, tf=40/qf)
     titlname = @sprintf("twodturb: \$n=%d\$, \$n_{\\nu}=%d\$, max(Z)=%.2e", 
       n, nν0, maximum(Z))
     plotname = @sprintf("./turbplots/twodturb_n%04d_Ro%02d_nnu%d_nu%.0e.png", 
@@ -102,12 +91,14 @@ function turbwavesetup(name, n, L, α, ε, Ro;
 
   TwoModeBoussinesq.set_Z!(prob, Z)
 
+
   # Initial wave field  
   # ε = U/(Reddy*σ) or U*kw/σ
-  Rturb = maximum(sqrt.(prob.vars.U.^2+prob.vars.V.^2)/f)
-  uw = minimum([ε*σ/kw, ε*Rturb*σ])
-  #uw = maximum([ε*σ/kw, ε*Rturb*σ])
-  tw = TurbWave(name, n, L, f, N, m, ε, uw, kw, α, σ, Ro, Rturb, 
+  Lturb = maximum(sqrt.(prob.vars.U.^2+prob.vars.V.^2)/f)
+  Umax = maximum(sqrt.(prob.vars.U.^2+prob.vars.V.^2))
+  uw = Umax*ε/Ro
+  #uw = ε*σ*Lturb #minimum([ε*σ/kw, ε*Lturb*σ])
+  tw = TurbWave(name, n, L, f, N, m, ε, uw, kw, α, σ, Ro, Lturb, 
     dt, nsteps, nsubs, twave)
 
   TwoModeBoussinesq.set_planewave!(prob, uw, nkw)
@@ -133,12 +124,27 @@ function turbwavesetup(name, n, L, α, ε, Ro;
   getsolr(prob) = prob.vars.solr
   getsolc(prob) = prob.vars.solc
 
-  outs = [
-    Output("solr", getsolr, prob, filename),
-    Output("solc", getsolc, prob, filename),
-  ]
+  output = Output(prob, filename, (:solr, getsolr), (:solc, getsolc))
 
-  tw, prob, diags, outs
+  
+  # Print message
+  msg = "\n"
+  msg *= @sprintf("% 12s: %.3f\n",        "ε",        ε             )
+  msg *= @sprintf("% 12s: %.3f\n",        "Ro",       Ro            )
+  msg *= @sprintf("% 12s: %.3f\n",        "max u",    uw            )
+  msg *= @sprintf("% 12s: %.3f\n",        "max U",    Umax          )
+  msg *= @sprintf("% 12s: %.3f\n",        "Lturb",    Lturb         )
+  msg *= @sprintf("% 12s: %.3f \n",       "σ/f",      σ/f           )
+  msg *= @sprintf("% 12s: %.1e s^-1\n",   "f",        f             )
+  msg *= @sprintf("% 12s: %.1e s^-1\n",   "N",        N             )
+  msg *= @sprintf("% 12s: %.2e km\n",     "m^-1",     1e-3/m        )
+  msg *= @sprintf("% 12s: %.2e km\n",     "N/fm",     1e-3*N/(f*m)  )
+  msg *= @sprintf("% 12s: %.2e (n=%d)\n", "ν0",       ν0, nν0       )
+  msg *= @sprintf("% 12s: %.2e (n=%d)\n", "ν1",       ν1, nν1       )
+
+  println(msg)
+
+  tw, prob, diags, output
 end
 
 
@@ -179,7 +185,8 @@ function makefourplot(prob, tw; eddylim=nothing,
   # Color limits
   Z00 = tw.Ro*tw.f
   w00 = tw.uw*tw.kw/(2*tw.m)
-  U00 = tw.Ro*tw.Rturb*tw.f
+  U00 = tw.uw*tw.Ro/tw.ε
+  Ro0 = 0.8*tw.Ro
 
   # Quantities to plot
   Q      = mode0apv(prob)/tw.f
@@ -192,25 +199,25 @@ function makefourplot(prob, tw; eddylim=nothing,
   # Plot
   axes(axs[1, 1])
   axis("equal")
-  pcolormesh(x, y, prob.vars.Z/tw.f, cmap="RdBu_r", vmin=-tw.Ro, vmax=tw.Ro)
+  pcolormesh(x, y, prob.vars.Z/tw.f, cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
     
 
   axes(axs[1, 2])
   axis("equal")
-  pcolormesh(x, y, w, cmap="RdBu_r", vmin=-4w00, vmax=4w00)
+  pcolormesh(x, y, w, cmap="RdBu_r", vmin=-6w00, vmax=6w00)
 
 
   axes(axs[2, 1])
   axis("equal")
-  pcolormesh(x, y, Q, cmap="RdBu_r", vmin=-tw.Ro, vmax=tw.Ro)
+  pcolormesh(x, y, Q, cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
   #contour(x, y, psiw, 10, colors="k", linewidths=0.2, alpha=0.5)
 
-  nquiv = 32
-  iquiv = floor(Int, prob.grid.nx/nquiv)
-  quiverplot = quiver(
-    x[1:iquiv:end, 1:iquiv:end], y[1:iquiv:end, 1:iquiv:end],
-    uL[1:iquiv:end, 1:iquiv:end], vL[1:iquiv:end, 1:iquiv:end], 
-    units="x", alpha=0.2, scale=2.0, scale_units="x")
+  #nquiv = 32
+  #iquiv = floor(Int, prob.grid.nx/nquiv)
+  #quiverplot = quiver(
+  #  x[1:iquiv:end, 1:iquiv:end], y[1:iquiv:end, 1:iquiv:end],
+  #  uL[1:iquiv:end, 1:iquiv:end], vL[1:iquiv:end, 1:iquiv:end], 
+  #  units="x", alpha=0.2, scale=2.0, scale_units="x")
 
 
   axes(axs[2, 2])
