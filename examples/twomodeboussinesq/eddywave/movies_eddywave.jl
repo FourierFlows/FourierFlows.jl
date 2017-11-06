@@ -62,17 +62,17 @@ function makefigure()
   subplots(ncols=3, nrows=1, figsize=(12, 5)) 
 end
 
+getmsg(prob) = @sprintf("t = % 3d wave periods", prob.t/ew.twave)
+
 fig, axs = makefigure()
 xr, yr = prob.grid.X/Reddy, prob.grid.Y/Reddy
-
-tperiods = 0
 
 savename = @sprintf("%s_n%d_%02df_ep%02d_Ro%02d_%06d.png", 
   joinpath(plotpath, plotname), n, floor(Int, 100ew.σ/ew.f), 
   floor(Int, 100*ew.ε), floor(Int, 100*ew.Ro), prob.step)
 
 cbs, msg = makethreeplot!(axs, prob, ew, xr, yr, savename; 
-  message="$tperiods", save=true, eddylim=nothing, show=false, 
+  message=getmsg(prob), save=true, eddylim=nothing, show=false, 
   makecolorbar=true)
 
 
@@ -107,10 +107,8 @@ while prob.step < ew.nsteps
   close("all")
   fig, axs = makefigure()
 
-  tperiods = round(Int, prob.t/ew.twave)
   cbs, msg = makethreeplot!(axs, prob, ew, xr, yr, savename; 
-    message="$tperiods", save=true, eddylim=nothing, show=false,
+    message=getmsg(prob), save=true, eddylim=nothing, show=false,
     makecolorbar=true)
-    
 
 end
