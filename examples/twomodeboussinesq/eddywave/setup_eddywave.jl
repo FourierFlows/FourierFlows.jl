@@ -2,8 +2,7 @@ __precompile__()
 
 include("../../../src/fourierflows.jl")
 
-using FourierFlows,
-      PyPlot
+using FourierFlows, PyPlot, PyCall
 
 import FourierFlows.TwoModeBoussinesq
 
@@ -11,9 +10,12 @@ import FourierFlows.TwoModeBoussinesq: mode0apv, mode1apv, mode1speed, mode1w,
   wave_induced_speed, wave_induced_psi, wave_induced_uv, lagrangian_mean_uv,
   calc_chi, calc_chi_uv, totalenergy, mode0energy, mode1energy, CFL
 
+@pyimport mpl_toolkits.axes_grid1 as pltgrid
 
 
 
+
+""" The EddyWave type organizes parameters in the eddy/wave simulation."""
 struct EddyWave
   L
   f
@@ -62,13 +64,15 @@ function EddyWave(L, α, ε, Ro, Reddy;
   nsubs = round(Int, nsubperiods*twave/dt)
 
   msg = "\n"
+  msg *= @sprintf("% 12s: %.3f\n",        "ε",        ε             )
+  msg *= @sprintf("% 12s: %.3f\n",        "Ro",       Ro            )
+  msg *= @sprintf("% 12s: %.3f \n",       "σ/f",      σ/f           )
   msg *= @sprintf("% 12s: %.1e s^-1\n",   "f",        f             )
   msg *= @sprintf("% 12s: %.1e s^-1\n",   "N",        N             )
-  msg *= @sprintf("% 12s: %.2f \n",       "σ/f",      σ/f       )
   msg *= @sprintf("% 12s: %.2e km\n",     "m^-1",     1e-3/m        )
   msg *= @sprintf("% 12s: %.2e km\n",     "N/fm",     1e-3*N/(f*m)  )
-  msg *= @sprintf("% 12s: %.2e (n=%d)\n", "ν0",       ν0, nν0     )
-  msg *= @sprintf("% 12s: %.2e (n=%d)\n", "ν1",       ν1, nν1     )
+  msg *= @sprintf("% 12s: %.2e (n=%d)\n", "ν0",       ν0, nν0       )
+  msg *= @sprintf("% 12s: %.2e (n=%d)\n", "ν1",       ν1, nν1       )
 
   println(msg)
 
@@ -123,7 +127,7 @@ end
 
 
 """ Plot the mode-0 available potential vorticity and vertical velocity. """
-function makeplot!(axs, prob, ew, x, y, savename; eddylim=nothing, 
+function makefourplot!(axs, prob, ew, x, y, savename; eddylim=nothing, 
   message=nothing, save=false, show=false)
 
   if eddylim == nothing
@@ -136,23 +140,11 @@ function makeplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
   U00 = ew.Ro*ew.Reddy*ew.f
 
   # Quantities to plot
-  qc     = mode1apv(prob)/ew.f
-  q      = real.(qc+conj.(qc))
   Q      = mode0apv(prob)/ew.f
   w      = mode1w(prob)
   spw    = wave_induced_speed(ew.σ, prob)
-  uw, vw = wave_induced_uv(ew.σ, prob)
-  uL, vL = lagrangian_mean_uv(ew.σ, prob)
   psiw   = wave_induced_psi(ew.σ, prob)
-  nlresw = (real.(prob.vars.zeta - ew.m^2*ew.f/ew.N^2*prob.vars.p)
-            /maximum(abs.(prob.vars.zeta)))
-
-  chi = calc_chi(prob)
-  uchi, vchi = calc_chi_uv(prob)
-  spchi = sqrt.(uchi.^2+vchi.^2)
-
-  spL = sqrt.(uL.^2+vL.^2)
-  uL, vL = uL/maximum(spL), vL/maximum(spL)
+  uL, vL = wave_induced_uv(ew.σ, prob)
 
   # Plot
   axs[1, 1][:cla]()
@@ -160,9 +152,10 @@ function makeplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
   axs[2, 1][:cla]()
   axs[2, 2][:cla]()
 
+
   axes(axs[1, 1])
   axis("equal")
-  pcolormesh(x, y, Q, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
+  pcolormesh(x, y, prob.vars.Z/ew.f, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
     
 
   axes(axs[1, 2])
@@ -172,14 +165,22 @@ function makeplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
 
   axes(axs[2, 1])
   axis("equal")
-  pcolormesh(x, y, prob.vars.Z, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
-  contour(x, y, psiw, 10, colors="k", linewidths=0.2, α=0.5)
+  pcolormesh(x, y, Q, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
+  contour(x, y, psiw, 10, colors="k", linewidths=0.2, alpha=0.5)
+
+
+  nquiv = 16
+  iquiv = floor(Int, prob.grid.nx/nquiv)
+  quiverplot = quiver(
+    x[1:iquiv:end, 1:iquiv:end], y[1:iquiv:end, 1:iquiv:end],
+    uL[1:iquiv:end, 1:iquiv:end], vL[1:iquiv:end, 1:iquiv:end], 
+    units="x", alpha=0.2, scale=2.0, scale_units="x")
 
 
   axes(axs[2, 2])
   axis("equal")
   pcolormesh(x, y, spw, cmap="YlGnBu_r", vmin=0.0, vmax=U00)
-  contour(x, y, psiw, 10, colors="w", linewidths=0.2, α=0.5)
+  contour(x, y, psiw, 10, colors="w", linewidths=0.2, alpha=0.5)
 
 
 
@@ -207,6 +208,93 @@ function makeplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
   end
 
   tight_layout(rect=(0.00, 0.00, 0.95, 0.95))
+
+  if show
+    pause(0.1)
+  end
+
+  if save
+    savefig(savename, dpi=240)
+  end
+
+  nothing
+end
+
+
+
+
+""" Plot the mode-0 available potential vorticity and vertical velocity. """
+function makethreeplot!(axs, prob, ew, x, y, savename; eddylim=nothing, 
+  message=nothing, save=false, show=false)
+
+  if eddylim == nothing
+    eddylim = maximum(x)
+  end
+
+  # Some limits
+  Z00 = ew.Ro*ew.f
+  w00 = ew.uw*ew.kw/(2*ew.m)
+  U00 = ew.Ro*ew.Reddy*ew.f
+
+  # Quantities to plot
+  Q      = mode0apv(prob)/ew.f
+  w      = mode1w(prob)
+  spw    = wave_induced_speed(ew.σ, prob)
+  psiw   = wave_induced_psi(ew.σ, prob)
+
+
+  # Plot
+  axs[1][:cla]()
+  axs[2][:cla]()
+  axs[3][:cla]()
+
+
+  axes(axs[1])
+  axis("equal")
+  Qplot = pcolormesh(x, y, Q, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
+    
+
+  axes(axs[2])
+  axis("equal")
+  wplot = pcolormesh(x, y, w, cmap="RdBu_r", vmin=-4w00, vmax=4w00)
+
+
+  axes(axs[3])
+  axis("equal")
+  spplot = pcolormesh(x, y, spw, cmap="YlGnBu_r", vmin=0.0, vmax=U00)
+  contour(x, y, psiw, 10, colors="w", linewidths=0.2, α=0.5)
+
+
+  plots = [Qplot, wplot, spplot]
+  cbs = []
+  for (i, ax) in enumerate(axs)
+    ax[:set_adjustable]("box-forced")
+    ax[:set_xlim](-eddylim, eddylim)
+    ax[:set_ylim](-eddylim, eddylim)
+    ax[:tick_params](axis="both", which="both", length=0)
+
+    ax[:set_xlabel](L"x/R")
+
+    divider = pltgrid.make_axes_locatable(ax)
+    cax = divider[:append_axes]("top", size="5%", pad="10%")
+    push!(cbs, colorbar(plots[i], cax=cax, orientation="horizontal")) 
+
+    cbs[i][:ax][:tick_params](axis="x", length=0)
+    cbs[i][:ax][:xaxis][:set_label_position]("top")
+  end
+
+
+  axs[1][:set_ylabel](L"y/R")
+  axs[2][:set_yticks]([])
+  axs[3][:set_yticks]([])
+
+
+  if message != nothing
+    text(0.00, 0.05, message, transform=axs[1][:transAxes], fontsize=14)
+  end
+
+
+  tight_layout(rect=(0.10, 0.00, 0.95, 0.95))
 
   if show
     pause(0.1)
