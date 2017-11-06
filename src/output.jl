@@ -2,22 +2,91 @@ __precompile__()
 
 using JLD2, HDF5
 
+import Base: getindex, setindex!, push!
+
 export Output, saveoutput, saveproblem, groupsize
 
 
 
 
+gridfieldstosave = [:nx, :ny, :Lx, :Ly, :X, :Y]
+
+
 """ Output type for FourierFlows problems. """
 type Output
+  fields::Dict{Symbol, Function}
+  prob::Problem
+  filename::String
+end
+
+function getindex(out::Output, key)
+  out.fields[key]  
+end
+
+function setindex!(out::Output, calcfield::Function, fieldname::Symbol)
+  out.fields[fieldname] = calcfield  
+end
+
+function push!(out::Output, calcfield::Function, fieldname::Symbol)
+  out.fields[fieldname] = calcfield
+end
+
+function push!(out::Output, newfields::Dict{Symbol, Function})
+  out.fields[fieldname] = calcfield
+end
+
+function saveoutput(out::Output)
+  step = out.prob.step
+  groupname = "timeseries"
+
+  jldopen(out.filename, "a+") do file
+    file[$groupname/t/$step] = out.prob.t
+    for fieldname in keys(out.fields)
+      file["$groupname/$fieldname/$step"] = out[fieldname](out.prob)
+    end
+  end
+
+  nothing
+end
+
+function saveproblem(out::Output)
+
+  jldopen(out.filename, "a+") do file
+    file["timestepper/dt"] = out.prob.ts.dt
+    for field in gridfieldstosave
+        file["grid/$field"] = getfield(out.prob.grid, field)
+    end
+
+    for name in fieldnames(out.prob.params)
+      field = getfield(out.prob.params, name) 
+      if !(typeof(field) <: Function)
+        file["params/$name"] = field
+      end
+    end
+
+  end
+
+  nothing
+end
+
+
+
+
+
+""" Original output type for FourierFlows problems. """
+type OldOutput
   name::String
   calc::Function
   prob::Problem
   filename::String
 end
 
+function Output(name::String, calc::Function, prob::Problem, filename::String)
+  OldOutput(name, calc, prob, filename)
+end
 
 """ Save output to file. """
-function saveoutput(out::Output)
+function saveoutput(out::OldOutput)
   step = out.prob.step
   groupname = "timeseries"
   name = out.name
@@ -65,8 +134,6 @@ in general, because functions cannot be saved (and functions may use
 arbitrary numbers of global variables that cannot be included in a saved 
 object). """
 function saveproblem(prob::AbstractProblem, filename::String)
-
-  gridfieldstosave = [:nx, :ny, :Lx, :Ly, :x, :y, :X, :Y, :K, :L, :Kr, :Lr]
 
   jldopen(filename, "a+") do file
       file["setup/dt"] = prob.ts.dt
