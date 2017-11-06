@@ -4,16 +4,16 @@ include("./setup_eddywave.jl")
 
 # -- Parameters --
   nkw = 8
-    n = 512
+    n = 256
     L = 2π*100e3*nkw
-    α = 1               # Frequency parameter
+    α = 0.5             # Frequency parameter
     ε = 1e-1            # Wave amplitude
    Ro = 5e-2            # Eddy Rossby number
 Reddy = L/10           # Eddy radius
 
 
 # Setup
-ew = EddyWave(L, α, ε, Ro, Reddy; nkw=nkw, dtfrac=1e-2, nsubperiods=1,
+ew = EddyWave(L, α, ε, Ro, Reddy; nkw=nkw, dtfrac=5e-2, nsubperiods=1,
   nν0=6, nν1=6, ν0=1e20, ν1=1e6) 
 
 plotpath = "./plots"
@@ -82,7 +82,7 @@ while prob.step < ew.nsteps
     joinpath(plotpath, plotname), n, floor(Int, 100ew.σ/ew.f), 
     floor(Int, 100*ew.ε), floor(Int, 100*ew.Ro), prob.step)
 
-  makeplot!(axs, prob, ew, xr, yr, savename; 
-    message=plotmsg1*plotmsg2, save=true, eddylim=nothing)
+  makefourplot!(axs, prob, ew, xr, yr, savename; 
+    message=plotmsg1*plotmsg2, save=true, eddylim=nothing, show=false)
 
 end
