@@ -9,7 +9,7 @@ include("./setup_eddywave.jl")
     α = 0.5             # Frequency parameter
     ε = 1e-1            # Wave amplitude
    Ro = 5e-2            # Eddy Rossby number
-Reddy = L/10           # Eddy radius
+Reddy = L/20           # Eddy radius
 
 
 # Setup
