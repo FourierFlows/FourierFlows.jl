@@ -2,7 +2,7 @@ __precompile__()
 
 include("../../../src/fourierflows.jl")
 
-using FourierFlows, PyPlot, PyCall
+using FourierFlows, PyPlot, PyCall, JLD2
 
 import FourierFlows.TwoModeBoussinesq
 
@@ -42,6 +42,20 @@ struct EddyWave
   nsubs
 end
 
+
+
+
+function saveeddywave(ew::EddyWave, filename::String)
+  jldopen(filename, "a+") do file
+      names = fieldnames(ew)
+      for name in names
+        field = getfield(ew, name)
+        file["eddywaveparams/$name"] = field
+      end
+  end
+
+  nothing
+end
 
 
 
@@ -166,7 +180,7 @@ function makefourplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
   axes(axs[2, 1])
   axis("equal")
   pcolormesh(x, y, Q, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
-  contour(x, y, psiw, 10, colors="k", linewidths=0.2, alpha=0.5)
+  #contour(x, y, psiw, 10, colors="k", linewidths=0.2, alpha=0.5)
 
 
   nquiv = 16
@@ -186,6 +200,7 @@ function makefourplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
 
 
   for ax in axs
+    ax[:set_adjustable]("box-forced")
     ax[:set_xlim](-eddylim, eddylim)
     ax[:set_ylim](-eddylim, eddylim)
     ax[:tick_params](axis="both", which="both", length=0)
@@ -194,8 +209,8 @@ function makefourplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
   axs[2, 1][:set_xlabel](L"x/R")
   axs[2, 2][:set_xlabel](L"x/R")
 
-  axs[1, 1][:set_ylabel](L"x/R")
-  axs[2, 1][:set_ylabel](L"x/R")
+  axs[1, 1][:set_ylabel](L"y/R")
+  axs[2, 1][:set_ylabel](L"y/R")
 
   axs[1, 1][:set_xticks]([])
   axs[1, 2][:set_xticks]([])
@@ -207,7 +222,7 @@ function makefourplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
     text(0.00, 1.03, message, transform=axs[1, 1][:transAxes], fontsize=14)
   end
 
-  tight_layout(rect=(0.00, 0.00, 0.95, 0.95))
+  tight_layout(rect=(0.05, 0.05, 0.95, 0.95))
 
   if show
     pause(0.1)
@@ -290,7 +305,8 @@ function makethreeplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
 
       cbs[i][:ax][:xaxis][:set_ticks_position]("top")
       cbs[i][:ax][:xaxis][:set_label_position]("top")
-      cbs[i][:ax][:tick_params](axis="x", length=0)
+      cbs[i][:ax][:tick_params](axis="x", which="both", length=0)
+
       locator_params(tight=true, nbins=5)
     end
   end
@@ -299,6 +315,10 @@ function makethreeplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
   axs[1][:set_ylabel](L"y/R")
   axs[2][:set_yticks]([])
   axs[3][:set_yticks]([])
+
+  cbs[1][:set_ylabel](L"f^{-1}Q")
+  cbs[2][:set_ylabel](L"w + w^*")
+  cbs[3][:set_ylabel](L"| \nabla \Psi^w |^2")
 
 
   if message != nothing
