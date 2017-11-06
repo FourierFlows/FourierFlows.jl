@@ -23,6 +23,8 @@ prob, diags = eddywavesetup(n, ew, perturbwavefield=false)
 etot, e0, e1 = diags[1], diags[2], diags[3]
 
 
+
+
 # Output
 fileprefix = @sprintf("./data/%s_%df_n%d_ep%02d_Ro%02d_nkw%02d",
   plotname, 100*ew.σ/ew.f, n, 100ε, 100Ro, ew.nkw)
@@ -54,6 +56,7 @@ outs = [
 
 
 
+
 # Plotting
 fig, axs = subplots(ncols=3, nrows=1, figsize=(12, 5)) 
 xr, yr = prob.grid.X/Reddy, prob.grid.Y/Reddy
@@ -67,6 +70,9 @@ savename = @sprintf("%s_n%d_%02df_ep%02d_Ro%02d_%06d.png",
 cbs, msg = makethreeplot!(axs, prob, ew, xr, yr, savename; 
   message="$tperiods", save=true, eddylim=nothing, show=false, 
   makecolorbar=true)
+
+
+
 
 # Run
 startwalltime = time()
@@ -94,10 +100,10 @@ while prob.step < ew.nsteps
     joinpath(plotpath, plotname), n, floor(Int, 100ew.σ/ew.f), 
     floor(Int, 100*ew.ε), floor(Int, 100*ew.Ro), prob.step)
 
+  #msg[:visible](false)
   tperiods = round(Int, prob.t/ew.twave)
   cbs, msg = makethreeplot!(axs, prob, ew, xr, yr, savename; 
-    message="$tperiods", save=true, eddylim=nothing, show=false, 
-    removemsg=msg)
-
+    message="$tperiods", save=true, eddylim=nothing, show=false)
+    
 
 end
