@@ -197,7 +197,7 @@ end
 """
 function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nnu=4, 
   maxsteps=10000, dt=nothing, nu=nothing, k0=nx/2, 
-  E0=nothing, tf=nothing, plots=false)
+  E0=nothing, tf=nothing, plots=false, loginterval=5)
 
   g  = TwoDGrid(nx, Lx)
   vs = TwoDTurb.Vars(g)
@@ -239,7 +239,7 @@ function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nnu=4,
   if tf != nothing; maxsteps = ceil(Int, tf/dt); qf=0.0     end
 
   # Number of substeps between vorticity-checking
-  substeps = ceil(Int, 1/(maxq*dt))
+  substeps = ceil(Int, loginterval/(maxq*dt))
 
   pr = TwoDTurb.Params(nu, nnu)
   eq = TwoDTurb.Equation(pr, g)
