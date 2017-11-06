@@ -7,14 +7,14 @@ include("./setup_eddywave.jl")
     n = 512
     L = 2π*100e3*nkw
     α = 1               # Frequency parameter
-    ε = 2e-1            # Wave amplitude
+    ε = 1e-1            # Wave amplitude
    Ro = 5e-2            # Eddy Rossby number
 Reddy = L/10           # Eddy radius
 
 
 # Setup
 ew = EddyWave(L, α, ε, Ro, Reddy; nkw=nkw, dtfrac=1e-2, nsubperiods=1,
-  nν0=6, nν1=6, ν0=1e19, ν1=1e6) 
+  nν0=6, nν1=6, ν0=1e20, ν1=1e6) 
 
 plotpath = "./plots"
 plotname = @sprintf("nu0_%.0e", ew.ν0)
@@ -78,7 +78,7 @@ while prob.step < ew.nsteps
     "\$E_1=%.3f\$, \$E_{\\mathrm{tot}}=%.6f\$",
     e1.value/e1.data[1], etot.value/etot.data[1])
 
-  savename = @sprintf("%s_n%d_%02df_ε%02d_Ro%02d_%06d.png", 
+  savename = @sprintf("%s_n%d_%02df_ep%02d_Ro%02d_%06d.png", 
     joinpath(plotpath, plotname), n, floor(Int, 100ew.σ/ew.f), 
     floor(Int, 100*ew.ε), floor(Int, 100*ew.Ro), prob.step)
 

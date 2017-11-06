@@ -172,9 +172,8 @@ function makeplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
 
   axes(axs[2, 1])
   axis("equal")
-  #pcolormesh(x, y, q, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
-  pcolormesh(x, y, spchi, cmap="YlGnBu_r", vmin=0.0, vmax=U00)
-  contour(x, y, chi, 10, colors="w", linewidths=0.2, α=0.5)
+  pcolormesh(x, y, prob.vars.Z, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
+  contour(x, y, psiw, 10, colors="k", linewidths=0.2, α=0.5)
 
 
   axes(axs[2, 2])
