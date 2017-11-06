@@ -2,7 +2,7 @@ __precompile__()
 
 using JLD2, HDF5
 
-export Output, saveoutput!, saveproblem!, groupsize
+export Output, saveoutput, saveproblem, groupsize
 
 
 
@@ -17,7 +17,7 @@ end
 
 
 """ Save output to file. """
-function saveoutput!(out::Output)
+function saveoutput(out::Output)
   step = out.prob.step
   groupname = "timeseries"
   name = out.name
@@ -32,7 +32,7 @@ end
 
 
 """ Save an array of outputs to file. """
-function saveoutput!(outs::AbstractArray)
+function saveoutput(outs::AbstractArray)
 
   step = outs[1].prob.step
   groupname = "timeseries"
@@ -64,7 +64,7 @@ end
 in general, because functions cannot be saved (and functions may use
 arbitrary numbers of global variables that cannot be included in a saved 
 object). """
-function saveproblem!(prob::AbstractProblem, filename::String)
+function saveproblem(prob::AbstractProblem, filename::String)
 
   gridfieldstosave = [:nx, :ny, :Lx, :Ly, :x, :y, :X, :Y, :K, :L, :Kr, :Lr]
 
