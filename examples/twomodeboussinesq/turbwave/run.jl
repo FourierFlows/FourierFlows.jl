@@ -1,10 +1,10 @@
 include("./setup.jl")
 
 # -- Parameters --
-  nkw = 8
+  nkw = 16
     n = 512
     L = 2π*100e3*nkw
-    α = 0.2             # Frequency parameter
+    α = 1               # Frequency parameter
     ε = 1e-1            # Wave amplitude
    Ro = 1e-1            # Eddy Rossby number
  name = "turbwave"
@@ -12,7 +12,8 @@ include("./setup.jl")
 
 # Setup
 tw, prob, diags, outs = turbwavesetup(name, n, L, α, ε, Ro; nkw=nkw,
-   dtfrac=1e-2, nsubperiods=4, nν0=6, nν1=6, ν0=1e20, ν1=1e6) 
+  dtfrac=1e-2, nsubperiods=4, nν0=8, nν1=8, ν0=1e32, ν1=1e24,
+  k0turb=256)
 
 etot, e0, e1 = diags[1], diags[2], diags[3]
 
@@ -37,11 +38,11 @@ while prob.step < tw.nsteps
   println(log1*log2)
 
   plotmsg1 = @sprintf(
-    "\$t=% 3d\$ wave periods, \$E_0=%.3f\$, ",
+    "\$t=% 3d\$ wave periods, \$\\Delta E=%.3f\$, ",
     round(Int, prob.t/tw.twave), e0.value/e0.data[1])
     
   plotmsg2 = @sprintf(
-    "\$E_1=%.3f\$, \$E_{\\mathrm{tot}}=%.6f\$",
+    "\$\\Delta e=%.3f\$, \$\\Delta (E+e)=%.6f\$",
     e1.value/e1.data[1], etot.value/etot.data[1])
 
   plotmsg = plotmsg1*plotmsg2
