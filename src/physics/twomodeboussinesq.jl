@@ -1483,7 +1483,8 @@ end
 
 
   
-""" Calculate q^chi, the unaveraged "mode-1-induced" barotropic flow. """
+""" Calculate q^chi, the unaveraged, quadratic mode-1 contribution to
+available potential vorticity. """
 function calc_qchi(u, v, p, pr::TwoModeParams, g::TwoDGrid)
   pr.m.^2.0./pr.N.^2.0 .* irfft(
        im.*g.Kr .* rfft(real.(v.*conj.(p) .+ conj.(v).*p))
