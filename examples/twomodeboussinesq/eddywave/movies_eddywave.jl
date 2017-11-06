@@ -58,7 +58,11 @@ outs = [
 
 
 # Plotting
-fig, axs = subplots(ncols=3, nrows=1, figsize=(12, 5)) 
+function makefigure()
+  subplots(ncols=3, nrows=1, figsize=(12, 5)) 
+end
+
+fig, axs = makefigure()
 xr, yr = prob.grid.X/Reddy, prob.grid.Y/Reddy
 
 tperiods = 0
@@ -100,10 +104,13 @@ while prob.step < ew.nsteps
     joinpath(plotpath, plotname), n, floor(Int, 100ew.σ/ew.f), 
     floor(Int, 100*ew.ε), floor(Int, 100*ew.Ro), prob.step)
 
-  #msg[:visible](false)
+  close("all")
+  fig, axs = makefigure()
+
   tperiods = round(Int, prob.t/ew.twave)
   cbs, msg = makethreeplot!(axs, prob, ew, xr, yr, savename; 
-    message="$tperiods", save=true, eddylim=nothing, show=false)
+    message="$tperiods", save=true, eddylim=nothing, show=false,
+    makecolorbar=true)
     
 
 end
