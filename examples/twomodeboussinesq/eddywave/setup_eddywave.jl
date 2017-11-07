@@ -193,7 +193,7 @@ function makefourplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
   if passiveapv
     pcolormesh(x, y, prob.vars.Q/ew.f, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
 
-    contour(x, y, psiL, 20, colors="k", linewidths=0.2, alpha=0.5)
+    contour(x, y, PsiL, 20, colors="k", linewidths=0.2, alpha=0.5)
 
     nquiv = 32
     iquiv = floor(Int, prob.grid.nx/nquiv)
