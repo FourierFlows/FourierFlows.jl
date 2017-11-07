@@ -3,7 +3,7 @@ include("./setup.jl")
 function rungallerysimulation(α, nkw;
       n = 256,
       L = 2π*1600e3,
-      ε = 5e-2,           # Wave amplitude
+      ε = 1e-1,           # Wave amplitude
      Ro = 1e-1,           # Eddy Rossby number
   Reddy = L/20,           # Eddy radius
    name = "gallery"
@@ -11,7 +11,7 @@ function rungallerysimulation(α, nkw;
 
   # Setup
   ew = EddyWave(name, L, α, ε, Ro, Reddy; nkw=nkw, dtfrac=1e-2, nsubperiods=4,
-    nν0=8, nν1=8, ν0=1e32, ν1=1e16, nperiods=40) 
+    nν0=8, nν1=8, ν0=1e32, ν1=1e16, nperiods=24) 
 
   prob, diags, outs = eddywavesetup(n, ew)
   etot, e0, e1 = diags[1], diags[2], diags[3]
@@ -46,13 +46,10 @@ function rungallerysimulation(α, nkw;
 end
 
 # -- Parameters --
-  nkw = 16    
-    α = 0.02            # Frequency parameter
-
-nkwgallery = [     1,     2,    4,    8]
-  αgallery = [  0.02,  0.02, 0.02, 0.02]
+nkwgallery = [    4,    8,   16,   16,   16,   16,   16 ] 
+  αgallery = [ 0.02, 0.02, 0.02, 0.50, 1.00, 3.00, 8.00 ] 
 
 for (ig, α) in enumerate(αgallery)
   nkw = nkwgallery[ig]
-  rungallerysimulation(α, nkw)
+  rungallerysimulation(α, nkw; n=512)
 end
