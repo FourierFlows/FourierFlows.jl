@@ -965,7 +965,6 @@ function updatevars!(v::Vars, p::TwoModeParams, g::TwoDGrid)
   v.Zh .= v.solr
 
   # We don't use A_mul_B here because irfft destroys its input.
-  # A_mul_B!(v.Z, g.irfftplan, v.Zh)
   v.Z = irfft(v.Zh, g.nx)
 
   @. v.Psih =         -g.invKKrsq*v.Zh
@@ -996,7 +995,6 @@ function updatevars!(v::PassiveAPVVars, p::PassiveAPVParams, g::TwoDGrid)
   @views @. v.Qh = v.solr[:, :, 2]
 
   # We don't use A_mul_B here because irfft destroys its input.
-  # A_mul_B!(v.Z, g.irfftplan, v.Zh)
   v.Z = irfft(v.Zh, g.nx)
   v.Q = irfft(v.Qh, g.nx)
 
