@@ -144,9 +144,9 @@ function eddywavesetup(n, ew::EddyWave; perturbwavefield=false,
   e1   = Diagnostic(mode1energy, prob; nsteps=ew.nsteps) 
   diags = [etot, e0, e1]
 
-# Output
+  # Output
   fileprefix = @sprintf("./data/%s_nu%.0e, %df_n%d_ep%02d_Ro%02d_nkw%02d",
-    ew.name, ew.ν0, 100*ew.σ/ew.f, n, 100ε, 100Ro, ew.nkw)
+    ew.name, ew.ν0, 100*ew.σ/ew.f, n, 100ew.ε, 100ew.Ro, ew.nkw)
 
   i, testprefix = 0, fileprefix
   while isfile(testprefix*".jld2"); i+=1; testprefix=fileprefix*"-$i"; end
@@ -168,9 +168,9 @@ end
 
 """ Plot the mode-0 available potential vorticity and vertical velocity. """
 function makefourplot(prob, ew; eddylim=nothing, 
-  message=nothing, save=false, show=false, passiveapv=false)
+  message=nothing, save=false, show=false, passiveapv=false,
+  plotpath="./plots")
 
-  plotpath = "./plots"
   savename = @sprintf("%s_nu%.0e_n%d_%02df_ep%02d_Ro%02d_%06d.png", 
     joinpath(plotpath, ew.name), ew.ν0, prob.grid.nx, floor(Int, 100ew.σ/ew.f), 
     floor(Int, 100*ew.ε), floor(Int, 100*ew.Ro), prob.step)
