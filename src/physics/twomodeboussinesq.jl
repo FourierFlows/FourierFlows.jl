@@ -51,21 +51,21 @@ end
 
 
 function PassiveAPVInitialValueProblem(;
-  nx    = 128, 
-  Lx    = 2pi, 
-  ny    = nothing,
-  Ly    = nothing,
-  ν0   = nothing, 
-  nν0  = 2, 
-  ν1   = nothing,
-  nν1  = 2, 
-  f     = 1.0,
-  N     = 10.0,
-  m     = 40.0,
-  Us    = 0.0,
-  Vs    = 0.0,
-  dt    = 0.01,
-  sigma = f
+  nx  = 128, 
+  Lx  = 2pi, 
+  ny  = nothing,
+  Ly  = nothing,
+  ν0  = nothing, 
+  nν0 = 2, 
+  ν1  = nothing,
+  nν1 = 2, 
+  f   = 1.0,
+  N   = 10.0,
+  m   = 40.0,
+  Us  = 0.0,
+  Vs  = 0.0,
+  dt  = 0.01,
+  σ   = f
   )
 
   if Ly == nothing; Ly = Lx; end
@@ -75,7 +75,7 @@ function PassiveAPVInitialValueProblem(;
 
   g  = TwoDGrid(nx, Lx)
   pr = TwoModeBoussinesq.PassiveAPVParams(
-    ν0, nν0, ν1, nν1, f, N, m, sigma)
+    ν0, nν0, ν1, nν1, f, N, m, σ)
   vs = TwoModeBoussinesq.PassiveAPVVars(g)
   eq = TwoModeBoussinesq.PassiveAPVEquation(pr, g)
   ts = ETDRK4TimeStepper(dt, eq.LCc, eq.LCr)
@@ -90,15 +90,15 @@ end
 abstract type TwoModeParams <: AbstractParams end
 
 type Params <: TwoModeParams
-  ν0::Float64                    # Mode-0 viscosity
-  nν0::Int                       # Mode-0 hyperviscous order
-  ν1::Float64                    # Mode-1 viscosity
-  nν1::Int                       # Mode-1 hyperviscous order
-  f::Float64                      # Planetary vorticity
-  N::Float64                      # Buoyancy frequency
-  m::Float64                      # Mode-one wavenumber
-  Us::Float64                     # Steady mode-0 mean x-velocity
-  Vs::Float64                     # Steady mode-0 mean y-velocity
+  ν0::Float64                 # Mode-0 viscosity
+  nν0::Int                    # Mode-0 hyperviscous order
+  ν1::Float64                 # Mode-1 viscosity
+  nν1::Int                    # Mode-1 hyperviscous order
+  f::Float64                  # Planetary vorticity
+  N::Float64                  # Buoyancy frequency
+  m::Float64                  # Mode-one wavenumber
+  Us::Float64                 # Steady mode-0 mean x-velocity
+  Vs::Float64                 # Steady mode-0 mean y-velocity
 end
 
 function Params(ν0, nν0::Int, ν1, nν1::Int, f, N, m)
@@ -110,21 +110,21 @@ end
 
 
 type PassiveAPVParams <: TwoModeParams
-  ν0::Float64                    # Mode-0 viscosity
-  nν0::Int                       # Mode-0 hyperviscous order
-  ν1::Float64                    # Mode-1 viscosity
-  nν1::Int                       # Mode-1 hyperviscous order
-  f::Float64                      # Planetary vorticity
-  N::Float64                      # Buoyancy frequency
-  m::Float64                      # Mode-one wavenumber
-  Us::Float64                     # Steady mode-0 mean x-velocity
-  Vs::Float64                     # Steady mode-0 mean y-velocity
-  sigma::Float64                  # Wave frequency
+  ν0::Float64                 # Mode-0 viscosity
+  nν0::Int                    # Mode-0 hyperviscous order
+  ν1::Float64                 # Mode-1 viscosity
+  nν1::Int                    # Mode-1 hyperviscous order
+  f::Float64                  # Planetary vorticity
+  N::Float64                  # Buoyancy frequency
+  m::Float64                  # Mode-one wavenumber
+  Us::Float64                 # Steady mode-0 mean x-velocity
+  Vs::Float64                 # Steady mode-0 mean y-velocity
+  σ::Float64                  # Wave frequency
 end
 
 
-function PassiveAPVParams(ν0, nν0::Int, ν1, nν1::Int, f, N, m, sigma)
-  PassiveAPVParams(ν0, nν0, ν1, nν1, f, N, m, 0.0, 0.0, sigma)
+function PassiveAPVParams(ν0, nν0::Int, ν1, nν1::Int, f, N, m, σ)
+  PassiveAPVParams(ν0, nν0, ν1, nν1, f, N, m, 0.0, 0.0, σ)
 end
 
 
@@ -132,8 +132,8 @@ end
 
 # Equations ------------------------------------------------------------------- 
 type Equation <: AbstractEquation
-  LCc::Array{Complex{Float64}, 3}  # Element-wise coeff of the eqn's linear part
-  LCr::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's linear part
+  LCc::Array{Complex{Float64}, 3} # Element-wise coeff of the eqn's linear part
+  LCr::Array{Complex{Float64}, 2} # Element-wise coeff of the eqn's linear part
   calcNL!::Function               # Function to calculate eqn's nonlinear part
 end
 
@@ -711,7 +711,7 @@ function calcNL!(
   A_mul_B!(v.U, g.irfftplan, v.Uh)
   A_mul_B!(v.V, g.irfftplan, v.Vh)
 
-  v.ul, v.vl = lagrangian_mean_uv(p.sigma, v, p, g)
+  v.ul, v.vl = lagrangian_mean_uv(p.σ, v, p, g)
 
   A_mul_B!(v.Ux, g.irfftplan, v.Uxh)
   A_mul_B!(v.Uy, g.irfftplan, v.Uyh)
@@ -872,7 +872,7 @@ function updatevars!(v::PassiveAPVVars, p::PassiveAPVParams, g::TwoDGrid)
   A_mul_B!(v.p, g.ifftplan, v.ph)
   A_mul_B!(v.w, g.ifftplan, v.wh)
 
-  v.ul, v.vl = lagrangian_mean_uv(p.sigma, v, p, g)
+  v.ul, v.vl = lagrangian_mean_uv(p.σ, v, p, g)
 
   nothing
 end
@@ -965,13 +965,13 @@ function set_planewave!(vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid,
 
   # Wave parameters
   kw = 2π*nkw/g.Lx
-  sigma = sqrt(pr.f^2 + pr.N^2*kw^2/pr.m^2)
+  σ = sqrt(pr.f^2 + pr.N^2*kw^2/pr.m^2)
   alpha = pr.N^2*kw^2/(pr.f^2*pr.m^2) # also (sig^2-f^2)/f^2
 
   # Component amplitudes
-  #u0 = uw * sigma/(sqrt(2)*sqrt(alpha+2)*pr.f)
-  #v0 = pr.f/sigma * u0
-  #p0 = 2*u0*alpha*pr.f^2 / (sigma*kw)
+  #u0 = uw * σ/(sqrt(2)*sqrt(alpha+2)*pr.f)
+  #v0 = pr.f/σ * u0
+  #p0 = 2*u0*alpha*pr.f^2 / (σ*kw)
 
   ## Initial conditions
   #u = u0     * exp.(im*kw*x)    # u = 2*u0*cos(phi)
@@ -979,8 +979,8 @@ function set_planewave!(vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid,
   #p = p0     * exp.(im*kw*x)    # p = 2*p0*cos(phi)
 
   u0 = uw/2
-  v0 = -uw * im*pr.f/2sigma
-  p0 = uw * kw*pr.N^2/(2sigma*pr.m^2)
+  v0 = -uw * im*pr.f/2σ
+  p0 = uw * kw*pr.N^2/(2σ*pr.m^2)
 
   u = u0 * exp.(im*kw*x)
   v = v0 * exp.(im*kw*x)
