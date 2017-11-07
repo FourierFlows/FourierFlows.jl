@@ -145,7 +145,7 @@ function eddywavesetup(n, ew::EddyWave; perturbwavefield=false,
   diags = [etot, e0, e1]
 
   # Output
-  fileprefix = @sprintf("./data/%s_nu%.0e, %df_n%d_ep%02d_Ro%02d_nkw%02d",
+  fileprefix = @sprintf("./data/%s_nu%.0e_%df_n%d_ep%02d_Ro%02d_nkw%02d",
     ew.name, ew.ν0, 100*ew.σ/ew.f, n, 100ew.ε, 100ew.Ro, ew.nkw)
 
   i, testprefix = 0, fileprefix
