@@ -756,8 +756,6 @@ function calcNL!(
   # Spectral-space calculations
   @views @. v.wh = -1.0/p.m*(g.K*solc[:, :, 1] + g.L*solc[:, :, 2])
 
-  # This copy is necessary because calling A_mul_B(v.Z, g.irfftplan, sol) 
-  # a few lines below destroys sol when using Julia's FFTW.
   @views @. v.Zh = solr[:, :, 1]
   @views @. v.Qh = solr[:, :, 2]
 
@@ -780,7 +778,6 @@ function calcNL!(
 
  
   # Inverse transforms
-  A_mul_B!(v.Q, g.irfftplan, v.Qh)
   A_mul_B!(v.Z, g.irfftplan, v.Zh)
   A_mul_B!(v.U, g.irfftplan, v.Uh)
   A_mul_B!(v.V, g.irfftplan, v.Vh)
@@ -797,7 +794,6 @@ function calcNL!(
   A_mul_B!(v.vx, g.ifftplan, v.vxh)
   A_mul_B!(v.uy, g.ifftplan, v.uyh)
   A_mul_B!(v.w,  g.ifftplan, v.wh)
-
 
   # Multiplies
   @. v.UZ = v.U * v.Z
@@ -829,9 +825,6 @@ function calcNL!(
 
   A_mul_B!(v.uwh, g.rfftplan, v.uw)
   A_mul_B!(v.vwh, g.rfftplan, v.vw)
-
-  #A_mul_B!(v.ULQh, g.rfftplan, v.ULQ)
-  #A_mul_B!(v.VLQh, g.rfftplan, v.VLQ)
 
   A_mul_B!(v.uzetah, g.rfftplan, v.uzeta)
   A_mul_B!(v.vzetah, g.rfftplan, v.vzeta)
@@ -884,21 +877,20 @@ function calcNL!(
   #@views @. v.Uσh = exp(im*p.σ*v.t) * (solc[:, :, 1] + im/p.σ*v.uth)
   #@views @. v.Vσh = exp(im*p.σ*v.t) * (solc[:, :, 2] + im/p.σ*v.vth)
 
+  # Calculate Qwh
   @views @. v.Uσh = exp(im*p.σ*v.t) * solc[:, :, 1]
   @views @. v.Vσh = exp(im*p.σ*v.t) * solc[:, :, 2]
-
-  # Calculate Qwh
-  A_mul_B!(v.Uσ, g.ifftplan, v.Uσh)
-  A_mul_B!(v.Vσ, g.ifftplan, v.Vσh)
 
   @. v.Uσxh = im*g.K*v.Uσh
   @. v.Vσxh = im*g.K*v.Vσh
   @. v.Uσyh = im*g.L*v.Uσh
   @. v.Vσyh = im*g.L*v.Vσh
 
+  A_mul_B!(v.Uσ,  g.ifftplan, v.Uσh)
   A_mul_B!(v.Uσx, g.ifftplan, v.Uσxh)
-  A_mul_B!(v.Vσx, g.ifftplan, v.Vσxh)
   A_mul_B!(v.Uσy, g.ifftplan, v.Uσyh)
+  A_mul_B!(v.Vσ,  g.ifftplan, v.Vσh)
+  A_mul_B!(v.Vσx, g.ifftplan, v.Vσxh)
   A_mul_B!(v.Vσy, g.ifftplan, v.Vσyh)
 
   @. v.Juu = real(im*conj(v.Uσx)*v.Uσy - im*conj(v.Uσy)*v.Uσx)
@@ -925,38 +917,103 @@ function calcNL!(
        v.Juvh - g.Kr2*v.Uσ2h - g.Lr2*v.Vσ2h - g.KLr*v.UσVσh)
   
   # Calculate Q
-  @. v.up = real(v.u*conj(v.p) + conj(v.u)*v.p) 
-  @. v.vp = real(v.v*conj(v.p) + conj(v.v)*v.p) 
-  
-  A_mul_B!(v.uph, g.rfftplan, v.up)
-  A_mul_B!(v.vph, g.rfftplan, v.vp)
+  #@. v.up = real(v.u*conj(v.p) + conj(v.u)*v.p) 
+  #@. v.vp = real(v.v*conj(v.p) + conj(v.v)*v.p) 
+  #
+  #A_mul_B!(v.uph, g.rfftplan, v.up)
+  #A_mul_B!(v.vph, g.rfftplan, v.vp)
 
-  # Z - curl(Uw)
-  @views @. v.Qh = solr[:, :, 1] + p.m^2.0/p.N^2.0*(
-    im*g.Lr*v.uph - im*g.Kr*v.vph)
+  #@views @. v.Qh = solr[:, :, 1] + p.m^2.0/p.N^2.0*(
+  #  im*g.Lr*v.uph - im*g.Kr*v.vph)
 
-  @. v.ULh =  im*g.Lr*g.invKKrsq*(v.Qh - v.Qwh)
-  @. v.VLh = -im*g.Kr*g.invKKrsq*(v.Qh - v.Qwh)
+  #@. v.ULh =  im*g.Lr*g.invKKrsq*(v.Qh - v.Qwh)
+  #@. v.VLh = -im*g.Kr*g.invKKrsq*(v.Qh - v.Qwh)
 
+  @. v.ULh =  im*g.Lr*g.invKKrsq*v.Qh
+  @. v.VLh = -im*g.Kr*g.invKKrsq*v.Qh
+
+  v.ULh[1, 1] += p.Us*g.nx*g.ny
+  v.VLh[1, 1] += p.Vs*g.nx*g.ny
 
   # Calculate nonlinear term.
+  A_mul_B!(v.Q,  g.irfftplan, v.Qh)
   A_mul_B!(v.UL, g.irfftplan, v.ULh) 
   A_mul_B!(v.VL, g.irfftplan, v.VLh) 
 
-  @. v.ULQ = v.UL * v.Q
-  @. v.ULQ = v.VL * v.Q
+
+  @. v.ULQ = v.UL*v.Q
+  @. v.ULQ = v.VL*v.Q
 
   A_mul_B!(v.ULQh, g.rfftplan, v.ULQ)
   A_mul_B!(v.VLQh, g.rfftplan, v.VLQ)
 
   @views @. NLr[:, :, 2] = -im*g.Kr*v.ULQh - im*g.Lr*v.VLQh
 
-
   dealias!(NLr, g)
   dealias!(NLc, g)
 
   nothing
 end
+
+function calc_ULVL(solr, solc, v::PassiveAPVVars, p::PassiveAPVParams, 
+  g::TwoDGrid)
+
+  @views @. v.Qh = solr[:, :, 2]
+
+  @views @. v.Uσh = exp(im*p.σ*v.t) * solc[:, :, 1]
+  @views @. v.Vσh = exp(im*p.σ*v.t) * solc[:, :, 2]
+
+  # Calculate Qwh
+  @. v.Uσxh = im*g.K*v.Uσh
+  @. v.Uσyh = im*g.L*v.Uσh
+  @. v.Vσxh = im*g.K*v.Vσh
+  @. v.Vσyh = im*g.L*v.Vσh
+
+  A_mul_B!(v.Uσ,  g.ifftplan, v.Uσh)
+  A_mul_B!(v.Uσx, g.ifftplan, v.Uσxh)
+  A_mul_B!(v.Uσy, g.ifftplan, v.Uσyh)
+  A_mul_B!(v.Vσ,  g.ifftplan, v.Vσh)
+  A_mul_B!(v.Vσx, g.ifftplan, v.Vσxh)
+  A_mul_B!(v.Vσy, g.ifftplan, v.Vσyh)
+
+  @. v.Juu = real(im*conj(v.Uσx)*v.Uσy - im*conj(v.Uσy)*v.Uσx)
+  @. v.Jvv = real(im*conj(v.Vσx)*v.Vσy - im*conj(v.Vσy)*v.Vσx)
+
+  @. v.Juv = real(
+    conj(v.Vσx)*v.Uσy - conj(v.Vσy)*v.Uσx + 
+    v.Vσx*conj(v.Uσy) - v.Vσy*conj(v.Uσx)
+  )
+
+  # Non-Jacobian terms
+  @. v.Uσ2 = abs2(v.Uσ)
+  @. v.Vσ2 = abs2(v.Vσ)
+  @. v.UσVσ = real(v.Uσ*conj(v.Vσ) + conj(v.Uσ)*v.Vσ)
+
+  A_mul_B!(v.Juuh,  g.rfftplan, v.Juu)
+  A_mul_B!(v.Jvvh,  g.rfftplan, v.Jvv)
+  A_mul_B!(v.Juvh,  g.rfftplan, v.Juv)
+  A_mul_B!(v.Uσ2h,  g.rfftplan, v.Uσ2)
+  A_mul_B!(v.Vσ2h,  g.rfftplan, v.Vσ2)
+  A_mul_B!(v.UσVσh, g.rfftplan, v.UσVσ)
+
+  @. v.Qwh = -2.0/p.σ*(v.Juuh + v.Jvvh) - p.f/p.σ^2.0*(
+       v.Juvh - g.Kr2*v.Uσ2h - g.Lr2*v.Vσ2h - g.KLr*v.UσVσh)
+  
+  @. v.ULh =  im*g.Lr*g.invKKrsq*(v.Qh - v.Qwh)
+  @. v.VLh = -im*g.Kr*g.invKKrsq*(v.Qh - v.Qwh)
+
+  v.ULh[1, 1] += p.Us*g.nx*g.ny
+  v.VLh[1, 1] += p.Vs*g.nx*g.ny
+
+  # Calculate nonlinear term.
+  A_mul_B!(v.Q, g.irfftplan, v.ULh) 
+  A_mul_B!(v.UL, g.irfftplan, v.ULh) 
+  A_mul_B!(v.VL, g.irfftplan, v.VLh) 
+
+  v.UL, v.VL
+end
+
+
 
 
 
@@ -1050,8 +1107,11 @@ function set_Z!(v::PassiveAPVVars, p::PassiveAPVParams, g::TwoDGrid, Z)
   A_mul_B!(v.Zh, g.rfftplan, Z)
   @views @. v.solr[:, :, 1] = v.Zh
 
-  v.Q = mode0apv(v, p, g)
-  v.solr[:, :, 2] = rfft(v.Q)
+  Q = mode0apv(v, p, g)
+  Qh = rfft(Q)
+
+  @. v.Q = Q
+  @views @. v.solr[:, :, 2] = Qh
 
   updatevars!(v, p, g)
   nothing
@@ -1095,8 +1155,11 @@ function set_uvp!(vs::PassiveAPVVars, pr::PassiveAPVParams, g::TwoDGrid,
   vs.solc[:, :, 2] .= vh
   vs.solc[:, :, 3] .= ph
 
-  vs.Q = mode0apv(vs, pr, g)
-  vs.solr[:, :, 2] = rfft(vs.Q)
+  Q = mode0apv(vs, pr, g)
+  Qh = rfft(Q)
+
+  @. v.Q = Q
+  @views @. vs.solr[:, :, 2] = Qh
 
   updatevars!(vs, pr, g)
   nothing
