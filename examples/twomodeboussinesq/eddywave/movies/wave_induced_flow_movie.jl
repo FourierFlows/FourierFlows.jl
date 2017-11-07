@@ -7,7 +7,7 @@ import FourierFlows.TwoModeBoussinesq
 import FourierFlows.TwoModeBoussinesq: mode0apv, mode1apv, mode1speed, mode1w, 
   wave_induced_speed, wave_induced_psi, wave_induced_uv, lagrangian_mean_uv,
   calc_chi, calc_chi_uv, totalenergy, mode0energy, mode1energy, CFL,
-  lagrangian_mean_psi
+  lagrangian_mean_psi, apv_induced_psi
 
 @pyimport mpl_toolkits.axes_grid1 as pltgrid
 
@@ -15,11 +15,13 @@ simname = "nk32_nu1e+32_122f_n512_ep20_Ro05_nkw32"
 plotname = "./plots/wif"
 filename = "../data/$simname.jld2"
 
-# Plot parameters
-eddylim = 10
-Ro0 = 0.04
-w0  = 0.08
-sp0 = 1.0
+# -- Plot parameters --
+  eddylim = 10
+      Ro0 = 0.04
+       w0 = 0.08
+      sp0 = 1.0
+ncontours = 10
+
 
 # Recreate problem
 jldopen(filename, "r") do file
@@ -67,43 +69,41 @@ jldopen(filename, "r") do file
     
     w = mode1w(prob)
     Q = mode0apv(prob)
-    sp = wave_induced_speed(σ, prob)/Umax
-    psiw = wave_induced_psi(σ, prob)
-    psiL = lagrangian_mean_psi(σ, prob)
-    uL, vL = lagrangian_mean_uv(σ, prob)
+    PsiQ = apv_induced_psi(prob)
+
+    Chi  = calc_chi(prob)
+    uc, vc = calc_chi_uv(prob)
+    spc = sqrt.(uc.^2.0+vc.^2.0)/Umax
 
     println(step)
+
 
     close("all")
     fig, axs = subplots(ncols=3, nrows=1, sharex=true, sharey=true, 
       figsize=(12, 5))
 
+
     axes(axs[1]); axis("equal")
-    Zplot = pcolormesh(x, y, Q/f, 
+    plot1 = pcolormesh(x, y, Q/f, 
       cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
+    contour(x, y, PsiQ, ncontours, colors="k", linewidths=0.5, alpha=0.3)
 
-    contour(x, y, psiL, 20, colors="k", linewidths=0.2, alpha=0.5)
-
-    nquiv = 32
-    iquiv = floor(Int, prob.grid.nx/nquiv)
-    quiverplot = quiver(
-      x[1:iquiv:end, 1:iquiv:end], y[1:iquiv:end, 1:iquiv:end],
-      uL[1:iquiv:end, 1:iquiv:end], vL[1:iquiv:end, 1:iquiv:end], 
-      units="x", alpha=0.2, scale=2.0, scale_units="x")
 
 
     axes(axs[2]); axis("equal")
-    Qplot = pcolormesh(x, y, sp, 
+    plot2 = pcolormesh(x, y, spc, 
       cmap="YlGnBu_r", vmin=0.0, vmax=sp0)
+    contour(x, y, Chi, ncontours, colors="w", linewidths=0.5, alpha=0.3)
 
-    contour(x, y, psiw, 20, colors="w", linewidths=0.2, alpha=0.5)
+
 
     axes(axs[3]); axis("equal")
-    wplot = pcolormesh(x, y, w, 
+    plot3 = pcolormesh(x, y, w, 
       cmap="RdBu_r", vmin=-w0, vmax=w0)
 
 
-    plots = [Zplot, wplot, Qplot]
+
+    plots = [plot1, plot2, plot3]
     cbs = []
     for (i, ax) in enumerate(axs)
       ax[:set_adjustable]("box-forced")
@@ -129,11 +129,11 @@ jldopen(filename, "r") do file
     axs[1][:set_ylabel](L"y/R")
 
     cbs[1][:set_ticks]([-Ro0, 0.0, Ro0])
-    cbs[2][:set_ticks]([-Ro0, 0.0, Ro0])
+    cbs[2][:set_ticks]([0.0, sp0])
     cbs[3][:set_ticks]([-w0, 0.0, w0])
 
-    cbs[1][:set_label](L"Q/f", labelpad=12.0)
-    cbs[2][:set_label](L"| \nabla \Psi^w |^2", labelpad=12.0)
+    cbs[1][:set_label]("\$Q/f\$ and \$\\Phi\$", labelpad=12.0)
+    cbs[2][:set_label]("\$| \\nabla \\chi |\$ and \$\\chi\$", labelpad=12.0)
     cbs[3][:set_label](L"\hat w(z=0) = w + w^*", labelpad=12.0)
 
     msg = @sprintf("\$t = %02d\$ wave periods", t/tσ)
@@ -141,10 +141,10 @@ jldopen(filename, "r") do file
 
     tight_layout(rect=(0.00, 0.00, 0.95, 0.90), h_pad=0.05)
 
-    pause(0.1)
+    #pause(0.1)
     
-    #savename = @sprintf("%s_%06d.png", plotname, istep)
-    #savefig(savename, dpi=240)
+    savename = @sprintf("%s_%06d.png", plotname, istep)
+    savefig(savename, dpi=240)
   end
 
 end
