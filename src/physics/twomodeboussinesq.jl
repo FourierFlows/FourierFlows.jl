@@ -877,12 +877,15 @@ function calcNL!(
   # Calculate passive APV advection... 
 
   # Time-derivatives of u, v
-  @views @. v.uth = -p.ν1*g.KKsq^(0.5*p.nν1)*solc[:, :, 1] + NLc[:, :, 1]
-  @views @. v.vth = -p.ν1*g.KKsq^(0.5*p.nν1)*solc[:, :, 2] + NLc[:, :, 2]
+  #@views @. v.uth = -p.ν1*g.KKsq^(0.5*p.nν1)*solc[:, :, 1] + NLc[:, :, 1]
+  #@views @. v.vth = -p.ν1*g.KKsq^(0.5*p.nν1)*solc[:, :, 2] + NLc[:, :, 2]
 
   # Asymptotic approximation
-  @views @. v.Uσh = exp(im*p.σ*v.t) * (solc[:, :, 1] + im/p.σ*v.uth)
-  @views @. v.Vσh = exp(im*p.σ*v.t) * (solc[:, :, 2] + im/p.σ*v.vth)
+  #@views @. v.Uσh = exp(im*p.σ*v.t) * (solc[:, :, 1] + im/p.σ*v.uth)
+  #@views @. v.Vσh = exp(im*p.σ*v.t) * (solc[:, :, 2] + im/p.σ*v.vth)
+
+  @views @. v.Uσh = exp(im*p.σ*v.t) * solc[:, :, 1]
+  @views @. v.Vσh = exp(im*p.σ*v.t) * solc[:, :, 2]
 
   # Calculate Qwh
   A_mul_B!(v.Uσ, g.ifftplan, v.Uσh)
@@ -1447,6 +1450,7 @@ end
 
 
 
+#=
 """ Calculate usig and vsig, the complex, sigm-ified amplitudes 
 of u_1 and v_1. """
 function calc_usigvsig(sig, Zh, v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
@@ -1522,6 +1526,16 @@ function calc_usigvsig(sig, Zh, v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   vsig = exp(im*sig*v.t) * (v.v + im/sig*vt)
 
   return usig, vsig
+end
+=#
+function calc_usigvsig(sig, Zh, v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
+  @views @. v.uh = v.solc[:, :, 1]
+  @views @. v.vh = v.solc[:, :, 2]
+  A_mul_B!(v.u,  g.ifftplan, v.uh)
+  A_mul_B!(v.v,  g.ifftplan, v.vh)
+  usig = exp(im*sig*v.t) * v.u
+  vsig = exp(im*sig*v.t) * v.v
+  usig, vsig
 end
 
 function calc_usigvsig(sig, v::Vars, p::TwoModeParams, g::TwoDGrid)
@@ -1602,18 +1616,21 @@ end
 
 
 """ Return the Lagrangian-mean streamfunction. """
-function lagrangian_mean_psih(sig, vs::AbstractVars, pr::AbstractParams, 
+function lagrangian_mean_psih(σ, vs::AbstractVars, pr::AbstractParams, 
   g::AbstractGrid)
   q  = mode0apv(vs, pr, g)
-  qw = calc_qw(sig, vs, pr, g)
-
+  qw = calc_qw(σ, vs, pr, g)
   -g.invKKrsq.*rfft(q-qw)
+end
+
+function lagrangian_mean_psih(σ, prob::AbstractProblem)
+  lagrangian_mean_psih(σ, prob.vars, prob.params, prob.grid)
 end
 
 
 
 
-""" Calculate the Courant-Freidrich-Levant number. """
+""" Calculate the Courant-Freidrichs-Lewy number. """
 function CFL(prob, dt)
   dx = minimum([prob.grid.dx, prob.grid.dy])
   U = maximum([
