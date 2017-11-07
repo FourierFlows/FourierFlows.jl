@@ -97,10 +97,18 @@ end
 
 
 
-function eddywavesetup(n, ew::EddyWave; perturbwavefield=false)
-  prob = TwoModeBoussinesq.InitialValueProblem(
-    nx=n, Lx=ew.L, ν0=ew.ν0, nν0=ew.nν0, ν1=ew.ν1, nν1=ew.nν1, 
-    f=ew.f, N=ew.N, m=ew.m, dt=ew.dt)
+function eddywavesetup(n, ew::EddyWave; perturbwavefield=false, 
+  passiveapv=false)
+
+  if passiveapv
+    prob = TwoModeBoussinesq.PassiveAPVInitialValueProblem(
+      nx=n, Lx=ew.L, ν0=ew.ν0, nν0=ew.nν0, ν1=ew.ν1, nν1=ew.nν1, 
+      f=ew.f, N=ew.N, m=ew.m, dt=ew.dt, σ=ew.σ)
+  else
+    prob = TwoModeBoussinesq.InitialValueProblem(
+      nx=n, Lx=ew.L, ν0=ew.ν0, nν0=ew.nν0, ν1=ew.ν1, nν1=ew.nν1, 
+      f=ew.f, N=ew.N, m=ew.m, dt=ew.dt)
+  end
 
   # Initial condition
   x, y = prob.grid.X, prob.grid.Y
@@ -183,12 +191,12 @@ function makefourplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
   #contour(x, y, psiw, 10, colors="k", linewidths=0.2, alpha=0.5)
 
 
-  nquiv = 16
-  iquiv = floor(Int, prob.grid.nx/nquiv)
-  quiverplot = quiver(
-    x[1:iquiv:end, 1:iquiv:end], y[1:iquiv:end, 1:iquiv:end],
-    uL[1:iquiv:end, 1:iquiv:end], vL[1:iquiv:end, 1:iquiv:end], 
-    units="x", alpha=0.2, scale=2.0, scale_units="x")
+  #nquiv = 16
+  #iquiv = floor(Int, prob.grid.nx/nquiv)
+  #quiverplot = quiver(
+  #  x[1:iquiv:end, 1:iquiv:end], y[1:iquiv:end, 1:iquiv:end],
+  #  uL[1:iquiv:end, 1:iquiv:end], vL[1:iquiv:end, 1:iquiv:end], 
+  #  units="x", alpha=0.2, scale=2.0, scale_units="x")
 
 
   axes(axs[2, 2])
