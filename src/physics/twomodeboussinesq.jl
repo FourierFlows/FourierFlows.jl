@@ -1693,6 +1693,13 @@ end
 
 
 
+function lagrangian_mean_psi(σ, prob::AbstractProblem)
+  irfft(lagrangian_mean_psih(σ, prob), prob.grid.nx)
+end
+
+
+
+
 """ Calculate the Courant-Freidrichs-Lewy number. """
 function CFL(prob, dt)
   dx = minimum([prob.grid.dx, prob.grid.dy])
