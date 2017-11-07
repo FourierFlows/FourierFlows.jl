@@ -150,7 +150,7 @@ end
 
 """ Plot the mode-0 available potential vorticity and vertical velocity. """
 function makefourplot!(axs, prob, ew, x, y, savename; eddylim=nothing, 
-  message=nothing, save=false, show=false)
+  message=nothing, save=false, show=false, passiveapv=false)
 
   if eddylim == nothing
     eddylim = maximum(x)
@@ -177,7 +177,7 @@ function makefourplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
 
   axes(axs[1, 1])
   axis("equal")
-  pcolormesh(x, y, prob.vars.Z/ew.f, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
+  pcolormesh(x, y, Q, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
     
 
   axes(axs[1, 2])
@@ -187,7 +187,11 @@ function makefourplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
 
   axes(axs[2, 1])
   axis("equal")
-  pcolormesh(x, y, Q, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
+  if passiveapv
+    pcolormesh(x, y, prob.vars.Q/ew.f, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
+  else
+    pcolormesh(x, y, prob.vars.Z/ew.f, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
+  end
   #contour(x, y, psiw, 10, colors="k", linewidths=0.2, alpha=0.5)
 
 
