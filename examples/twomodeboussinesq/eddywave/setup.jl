@@ -18,6 +18,7 @@ import FourierFlows.TwoModeBoussinesq: mode0apv, mode1apv, mode1speed, mode1w,
 
 """ The EddyWave type organizes parameters in the eddy/wave simulation."""
 struct EddyWave
+  name
   L
   f
   N
@@ -46,21 +47,7 @@ end
 
 
 
-function saveeddywave(ew::EddyWave, filename::String)
-  jldopen(filename, "a+") do file
-      names = fieldnames(ew)
-      for name in names
-        field = getfield(ew, name)
-        file["eddywaveparams/$name"] = field
-      end
-  end
-
-  nothing
-end
-
-
-
-function EddyWave(L, α, ε, Ro, Reddy;
+function EddyWave(name, L, α, ε, Ro, Reddy;
   f=1e-4, N=5e-3, nkw=16, nν0=8, nν1=8, dtfrac=5e-2, ν0frac=1e-1, 
   ν1frac=1e-1, ν0=nothing, ν1=nothing, nperiods=400, nsubperiods=1)
 
@@ -84,17 +71,31 @@ function EddyWave(L, α, ε, Ro, Reddy;
   msg *= @sprintf("% 12s: %.3f \n",       "σ/f",      σ/f           )
   msg *= @sprintf("% 12s: %.1e s^-1\n",   "f",        f             )
   msg *= @sprintf("% 12s: %.1e s^-1\n",   "N",        N             )
-  msg *= @sprintf("% 12s: %.2e km\n",     "m^-1",     1e-3/m        )
+  msg *= @sprintf("% 12s: %.1f m\n",      "m^-1",     1/m           )
   msg *= @sprintf("% 12s: %.2e km\n",     "N/fm",     1e-3*N/(f*m)  )
   msg *= @sprintf("% 12s: %.2e (n=%d)\n", "ν0",       ν0, nν0       )
   msg *= @sprintf("% 12s: %.2e (n=%d)\n", "ν1",       ν1, nν1       )
 
   println(msg)
 
-  EddyWave(L, f, N, nkw, α, ε, Ro, Reddy, σ, kw, m, twave, 
+  EddyWave(name, L, f, N, nkw, α, ε, Ro, Reddy, σ, kw, m, twave, 
     nν0, nν1, dtfrac, ν0frac, ν1frac, dt, ν0, ν1, uw, nsteps, nsubs)
 end
  
+
+
+
+""" Save EddyWave parameters. """
+function saveeddywave(ew::EddyWave, filename::String)
+  jldopen(filename, "a+") do file
+      for name in fieldnames(ew)
+        field = getfield(ew, name)
+        file["eddywaveparams/$name"] = field
+      end
+  end
+  nothing
+end
+
 
 
 
@@ -142,16 +143,42 @@ function eddywavesetup(n, ew::EddyWave; perturbwavefield=false,
   e0   = Diagnostic(mode0energy, prob; nsteps=ew.nsteps)
   e1   = Diagnostic(mode1energy, prob; nsteps=ew.nsteps) 
   diags = [etot, e0, e1]
-  
-  prob, diags
+
+# Output
+  fileprefix = @sprintf("./data/%s_nu%.0e, %df_n%d_ep%02d_Ro%02d_nkw%02d",
+    ew.name, ew.ν0, 100*ew.σ/ew.f, n, 100ε, 100Ro, ew.nkw)
+
+  i, testprefix = 0, fileprefix
+  while isfile(testprefix*".jld2"); i+=1; testprefix=fileprefix*"-$i"; end
+  filename = testprefix * ".jld2"
+
+  saveproblem(prob, filename)
+  saveeddywave(ew, filename)
+
+  getsolr(prob) = prob.vars.solr
+  getsolc(prob) = prob.vars.solc
+
+  output = Output(prob, filename, (:solr, getsolr), (:solc, getsolc))
+    
+  prob, diags, output
 end
 
 
 
 
 """ Plot the mode-0 available potential vorticity and vertical velocity. """
-function makefourplot!(axs, prob, ew, x, y, savename; eddylim=nothing, 
+function makefourplot(prob, ew; eddylim=nothing, 
   message=nothing, save=false, show=false, passiveapv=false)
+
+  plotpath = "./plots"
+  savename = @sprintf("%s_nu%.0e_n%d_%02df_ep%02d_Ro%02d_%06d.png", 
+    joinpath(plotpath, ew.name), ew.ν0, prob.grid.nx, floor(Int, 100ew.σ/ew.f), 
+    floor(Int, 100*ew.ε), floor(Int, 100*ew.Ro), prob.step)
+
+  close("all")
+  fig, axs = subplots(ncols=2, nrows=2, figsize=(8, 8)) 
+
+  x, y = prob.grid.X/ew.Reddy, prob.grid.Y/ew.Reddy
 
   if eddylim == nothing
     eddylim = maximum(x)
@@ -172,12 +199,6 @@ function makefourplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
   PsiL   = irfft(PsiLh, prob.grid.nx)
 
   # Plot
-  axs[1, 1][:cla]()
-  axs[1, 2][:cla]()
-  axs[2, 1][:cla]()
-  axs[2, 2][:cla]()
-
-
   axes(axs[1, 1])
   axis("equal")
   pcolormesh(x, y, Q, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
@@ -205,16 +226,11 @@ function makefourplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
     pcolormesh(x, y, prob.vars.Z/ew.f, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
   end
 
-  #contour(x, y, psiw, 10, colors="k", linewidths=0.2, alpha=0.5)
-
-
 
   axes(axs[2, 2])
   axis("equal")
   pcolormesh(x, y, spw, cmap="YlGnBu_r", vmin=0.0, vmax=U00)
   contour(x, y, psiw, 10, colors="w", linewidths=0.2, alpha=0.5)
-
-
 
 
   for ax in axs
@@ -242,13 +258,8 @@ function makefourplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
 
   tight_layout(rect=(0.05, 0.05, 0.95, 0.95))
 
-  if show
-    pause(0.1)
-  end
-
-  if save
-    savefig(savename, dpi=240)
-  end
+  if show; pause(0.1); end
+  if save; savefig(savename, dpi=240); end
 
   nothing
 end
@@ -296,7 +307,7 @@ function makethreeplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
 
   axes(axs[2])
   axis("equal")
-  wplot = pcolormesh(x, y, w, cmap="RdBu_r", vmin=-4w00, vmax=4w00)
+  wplot = pcolormesh(x, y, w, cmap="RdBu_r", vmin=-6w00, vmax=6w00)
 
 
   axes(axs[3])
