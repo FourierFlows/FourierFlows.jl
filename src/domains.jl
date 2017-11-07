@@ -49,11 +49,14 @@ type TwoDGrid <: AbstractGrid
   # Convenience arrays
   K2::Array{Complex{Float64}, 2}
   L2::Array{Complex{Float64}, 2}
+  Kr2::Array{Complex{Float64}, 2}
+  Lr2::Array{Complex{Float64}, 2}
 
   # k^2 + l^2 and 1/(k^2+l^2) with zero wavenumber omitted
   KKsq::Array{Complex{Float64}, 2}
   invKKsq::Array{Complex{Float64}, 2}
   KL::Array{Complex{Float64}, 2}
+  KLr::Array{Complex{Float64}, 2}
 
   KKrsq::Array{Complex{Float64}, 2}
   invKKrsq::Array{Complex{Float64}, 2}
@@ -106,10 +109,13 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
 
   K2 = Array{Complex{Float64}}(nk, nl)
   L2 = Array{Complex{Float64}}(nk, nl)
+  Kr2 = Array{Complex{Float64}}(nkr, nl)
+  Lr2 = Array{Complex{Float64}}(nkr, nl)
 
   KKsq    = Array{Complex{Float64}}(nk, nl)
   invKKsq = Array{Complex{Float64}}(nk, nl)
   KL      = Array{Complex{Float64}}(nk, nl)
+  KLr     = Array{Complex{Float64}}(nkr, nl)
 
   KKrsq    = Array{Complex{Float64}}(nkr, nl)
   invKKrsq = Array{Complex{Float64}}(nkr, nl)
@@ -151,9 +157,12 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
 
   K2 = K.^2.0
   L2 = L.^2.0
+  Kr2 = Kr.^2.0
+  Lr2 = Lr.^2.0
 
   KKsq  = K.^2.0 + L.^2.0
   KL   = K.*L
+  KLr  = Kr.*Lr
   invKKsq = 1.0./KKsq
   invKKsq[1, 1] = 0.0
 
@@ -183,7 +192,7 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
   return TwoDGrid(nx, ny, Lx, Ly, nk, nl, nkr, dx, dy, x, y,
           ialias, iralias, jalias, 
           k, l, kr, ksq, lsq, krsq, ik, il, ikr, X, Y, K, L, Kr, Lr,
-          K2, L2, KKsq, invKKsq, KL, KKrsq, invKKrsq,
+          K2, L2, Kr2, Lr2, KKsq, invKKsq, KL, KLr, KKrsq, invKKrsq,
           fftplan, ifftplan, rfftplan, irfftplan)
 end
 
