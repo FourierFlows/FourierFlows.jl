@@ -1020,18 +1020,17 @@ end
 
 
 # Helper functions ------------------------------------------------------------ 
-function updatevars!(v::Vars, p::TwoModeParams, g::TwoDGrid)
-
-  v.Zh .= v.solr
-
+function updatevars!(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid, 
+  Zh::AbstractArray)
   # We don't use A_mul_B here because irfft destroys its input.
-  v.Z = irfft(v.Zh, g.nx)
+  v.Z = irfft(Zh, g.nx)
 
   @. v.Psih =         -g.invKKrsq*v.Zh
   @. v.Uh   =  im*g.Lr*g.invKKrsq*v.Zh
   @. v.Vh   = -im*g.Kr*g.invKKrsq*v.Zh
  
   # We don't use A_mul_B here because irfft destroys its input.
+  v.Psi = irfft(v.Psih, g.nx)
   v.U = irfft(v.Uh, g.nx)
   v.V = irfft(v.Vh, g.nx)
 
@@ -1049,36 +1048,17 @@ function updatevars!(v::Vars, p::TwoModeParams, g::TwoDGrid)
   nothing
 end
 
-function updatevars!(v::PassiveAPVVars, p::PassiveAPVParams, g::TwoDGrid)
+function updatevars!(v::Vars, p::TwoModeParams, g::TwoDGrid)
+  v.Zh .= v.solr
+  updatevars!(v, p, g, v.Zh)
+end
 
+function updatevars!(v::PassiveAPVVars, p::PassiveAPVParams, g::TwoDGrid)
   @views @. v.Zh = v.solr[:, :, 1]
   @views @. v.Qh = v.solr[:, :, 2]
-
-  # We don't use A_mul_B here because irfft destroys its input.
-  v.Z = irfft(v.Zh, g.nx)
   v.Q = irfft(v.Qh, g.nx)
-
-  @. v.Psih =         -g.invKKrsq*v.Zh
-  @. v.Uh   =  im*g.Lr*g.invKKrsq*v.Zh
-  @. v.Vh   = -im*g.Kr*g.invKKrsq*v.Zh
- 
-  # We don't use A_mul_B here because irfft destroys its input.
-  v.U = irfft(v.Uh, g.nx)
-  v.V = irfft(v.Vh, g.nx)
-
-  @views v.uh .= v.solc[:, :, 1]
-  @views v.vh .= v.solc[:, :, 2]
-  @views v.ph .= v.solc[:, :, 3]
-
-  @. v.wh = -1.0/p.m*(g.K*v.uh + g.L*v.vh)
-
-  A_mul_B!(v.u, g.ifftplan, v.uh)
-  A_mul_B!(v.v, g.ifftplan, v.vh)
-  A_mul_B!(v.p, g.ifftplan, v.ph)
-  A_mul_B!(v.w, g.ifftplan, v.wh)
-
+  updatevars!(v, p, g, v.Zh)
   v.UL, v.VL = lagrangian_mean_uv(p.σ, v, p, g)
-
   nothing
 end
 
@@ -1649,14 +1629,37 @@ function wave_induced_v(prob::AbstractProblem)
 end
 
 
-""" Return the speed of the flow induced by the available potential 
-vorticity field. """
+
+
+""" 
+Returns the APV-induced streamfunction.
+"""
+function apv_induced_psi(Q, g::TwoDGrid)
+  PsiQh = -g.invKKrsq.*rfft(Q)
+  irfft(PsiQh, g.nx)
+end
+
+function apv_induced_psi(v, p, g)
+  apv_induced_psi(mode0apv(v, p, g), g)
+end
+
+function apv_induced_psi(prob::AbstractProblem)
+  apv_induced_psi(prob.vars, prob.params, prob.grid)
+end
+  
+
+
+
+""" 
+Returns the speed of the flow induced by the available potential 
+vorticity field. 
+"""
 function apv_induced_speed(vs, pr, g)
-  q = mode0apv(vs, pr, g)
-  Psiqh = -g.invKKrsq.*rfft(q)
-  uq = irfft(-im*g.Lr.*Psiqh, g.nx)
-  vq = irfft( im*g.Kr.*Psiqh, g.nx)
-  return sqrt.(uq.^2.0+vq.^2.0)
+  Q = mode0apv(vs, pr, g)
+  PsiQh = -g.invKKrsq.*rfft(Q)
+  uQ = irfft(-im*g.Lr.*PsiQh, g.nx)
+  vQ = irfft( im*g.Kr.*PsiQh, g.nx)
+  return sqrt.(uQ.^2.0+vQ.^2.0)
 end
 
 function apv_induced_speed(prob::AbstractProblem)
@@ -1664,7 +1667,9 @@ function apv_induced_speed(prob::AbstractProblem)
 end
 
 
-""" Return the total Lagrangian-mean flow. """
+""" 
+Return the total Lagrangian-mean flow. 
+"""
 function lagrangian_mean_uv(sig, vs::AbstractVars, pr::AbstractParams, 
   g::AbstractGrid)
   PsiLh = lagrangian_mean_psih(sig, vs, pr, g)
@@ -1681,9 +1686,9 @@ end
 """ Return the Lagrangian-mean streamfunction. """
 function lagrangian_mean_psih(σ, vs::AbstractVars, pr::AbstractParams, 
   g::AbstractGrid)
-  q  = mode0apv(vs, pr, g)
-  qw = calc_qw(σ, vs, pr, g)
-  -g.invKKrsq.*rfft(q-qw)
+  Q  = mode0apv(vs, pr, g)
+  Qw = calc_qw(σ, vs, pr, g)
+  -g.invKKrsq.*rfft(Q-Qw)
 end
 
 function lagrangian_mean_psih(σ, prob::AbstractProblem)
@@ -1770,8 +1775,7 @@ function calc_chi_uv(prob::AbstractProblem)
   calc_chi_uv(prob.vars, prob.params, prob.grid)
 end
 
-
-  
+ 
 
 
 # End module
