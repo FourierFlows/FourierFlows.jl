@@ -1,19 +1,19 @@
 include("./setup.jl")
 
 # -- Parameters --
-  nkw = 16
+  nkw = 4
     n = 512
     L = 2π*100e3*nkw
-    α = 1               # Frequency parameter
-    ε = 1e-1            # Wave amplitude
+    α = 0.2             # Frequency parameter
+    ε = 2e-1            # Wave amplitude
    Ro = 1e-1            # Eddy Rossby number
  name = "turbwave"
 
 
 # Setup
 tw, prob, diags, outs = turbwavesetup(name, n, L, α, ε, Ro; nkw=nkw,
-  dtfrac=1e-2, nsubperiods=4, nν0=8, nν1=8, ν0=1e32, ν1=1e24,
-  k0turb=256)
+  dtfrac=1e-2, nsubperiods=2, nν0=8, nν1=8, ν0=1e32, ν1=1e24,
+  k0turb=512)
 
 etot, e0, e1 = diags[1], diags[2], diags[3]
 
