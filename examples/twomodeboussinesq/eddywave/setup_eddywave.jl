@@ -8,7 +8,8 @@ import FourierFlows.TwoModeBoussinesq
 
 import FourierFlows.TwoModeBoussinesq: mode0apv, mode1apv, mode1speed, mode1w, 
   wave_induced_speed, wave_induced_psi, wave_induced_uv, lagrangian_mean_uv,
-  calc_chi, calc_chi_uv, totalenergy, mode0energy, mode1energy, CFL
+  calc_chi, calc_chi_uv, totalenergy, mode0energy, mode1energy, CFL,
+  lagrangian_mean_psih
 
 @pyimport mpl_toolkits.axes_grid1 as pltgrid
 
@@ -166,7 +167,9 @@ function makefourplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
   w      = mode1w(prob)
   spw    = wave_induced_speed(ew.σ, prob)
   psiw   = wave_induced_psi(ew.σ, prob)
-  uL, vL = wave_induced_uv(ew.σ, prob)
+  uL, vL = lagrangian_mean_uv(ew.σ, prob)
+  PsiLh  = lagrangian_mean_psih(ew.σ, prob)
+  PsiL   = irfft(PsiLh, prob.grid.nx)
 
   # Plot
   axs[1, 1][:cla]()
@@ -189,18 +192,21 @@ function makefourplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
   axis("equal")
   if passiveapv
     pcolormesh(x, y, prob.vars.Q/ew.f, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
+
+    contour(x, y, psiL, 20, colors="k", linewidths=0.2, alpha=0.5)
+
+    nquiv = 32
+    iquiv = floor(Int, prob.grid.nx/nquiv)
+    quiverplot = quiver(
+      x[1:iquiv:end, 1:iquiv:end], y[1:iquiv:end, 1:iquiv:end],
+      uL[1:iquiv:end, 1:iquiv:end], vL[1:iquiv:end, 1:iquiv:end], 
+      units="x", alpha=0.2, scale=2.0, scale_units="x")
   else
     pcolormesh(x, y, prob.vars.Z/ew.f, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
   end
+
   #contour(x, y, psiw, 10, colors="k", linewidths=0.2, alpha=0.5)
 
-
-  #nquiv = 16
-  #iquiv = floor(Int, prob.grid.nx/nquiv)
-  #quiverplot = quiver(
-  #  x[1:iquiv:end, 1:iquiv:end], y[1:iquiv:end, 1:iquiv:end],
-  #  uL[1:iquiv:end, 1:iquiv:end], vL[1:iquiv:end, 1:iquiv:end], 
-  #  units="x", alpha=0.2, scale=2.0, scale_units="x")
 
 
   axes(axs[2, 2])
