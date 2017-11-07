@@ -5,7 +5,7 @@ include("./setup.jl")
 # -- Parameters --
   nkw = 16    
     n = 256 
-    L = 2π*100e3*nkw
+    L = 2π*1600e3
     α = 0.02            # Frequency parameter
     ε = 5e-2            # Wave amplitude
    Ro = 1e-1            # Eddy Rossby number
