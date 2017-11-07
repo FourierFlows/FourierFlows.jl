@@ -165,7 +165,7 @@ function PassiveAPVEquation(p::PassiveAPVParams, g::TwoDGrid)
   LCc = zeros(g.nk, g.nl, 3)
   LCc[:, :, 1] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
   LCc[:, :, 2] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
-  LCc[:, :, 3] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
+  #LCc[:, :, 3] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
 
   PassiveAPVEquation(LCc, LCr, calcNL!)
 end
@@ -368,11 +368,19 @@ type PassiveAPVVars <: TwoModeVars
   vzeta::Array{Float64, 2}
   Psi::Array{Float64, 2}
 
-  q::Array{Float64, 2}
-  ul::Array{Float64, 2}
-  vl::Array{Float64, 2}
-  ulq::Array{Float64, 2}
-  vlq::Array{Float64, 2}
+  Q::Array{Float64, 2}
+  UL::Array{Float64, 2}
+  VL::Array{Float64, 2}
+  ULQ::Array{Float64, 2}
+  VLQ::Array{Float64, 2}
+  Uσ2::Array{Float64, 2}
+  Vσ2::Array{Float64, 2}
+  UσVσ::Array{Float64, 2}
+  Juu::Array{Float64, 2}
+  Jvv::Array{Float64, 2}
+  Juv::Array{Float64, 2}
+  up::Array{Float64, 2}
+  vp::Array{Float64, 2}
 
   # Auxiliary first-mode vars
   u::Array{Complex{Float64}, 2}
@@ -395,6 +403,13 @@ type PassiveAPVVars <: TwoModeVars
   vUy::Array{Complex{Float64}, 2}
   vVy::Array{Complex{Float64}, 2}
 
+  Uσ::Array{Complex{Float64}, 2}
+  Vσ::Array{Complex{Float64}, 2}
+  Uσx::Array{Complex{Float64}, 2}
+  Vσx::Array{Complex{Float64}, 2}
+  Uσy::Array{Complex{Float64}, 2}
+  Vσy::Array{Complex{Float64}, 2}
+
   # Zeroth-mode transforms
   Zh::Array{Complex{Float64}, 2}
   Uh::Array{Complex{Float64}, 2}
@@ -411,9 +426,20 @@ type PassiveAPVVars <: TwoModeVars
   vzetah::Array{Complex{Float64}, 2}
   Psih::Array{Complex{Float64}, 2}
 
-  qh::Array{Complex{Float64}, 2}
-  ulqh::Array{Complex{Float64}, 2}
-  vlqh::Array{Complex{Float64}, 2}
+  Qh::Array{Complex{Float64}, 2}
+  Qwh::Array{Complex{Float64}, 2}
+  ULh::Array{Complex{Float64}, 2}
+  VLh::Array{Complex{Float64}, 2}
+  ULQh::Array{Complex{Float64}, 2}
+  VLQh::Array{Complex{Float64}, 2}
+  Uσ2h::Array{Complex{Float64}, 2}
+  Vσ2h::Array{Complex{Float64}, 2}
+  UσVσh::Array{Complex{Float64}, 2}
+  Juuh::Array{Complex{Float64}, 2}
+  Jvvh::Array{Complex{Float64}, 2}
+  Juvh::Array{Complex{Float64}, 2}
+  uph::Array{Complex{Float64}, 2}
+  vph::Array{Complex{Float64}, 2}
 
   # First-mode transforms
   uh::Array{Complex{Float64}, 2}
@@ -434,6 +460,15 @@ type PassiveAPVVars <: TwoModeVars
   uVxh::Array{Complex{Float64}, 2}
   vUyh::Array{Complex{Float64}, 2}
   vVyh::Array{Complex{Float64}, 2}
+
+  uth::Array{Complex{Float64}, 2}
+  vth::Array{Complex{Float64}, 2}
+  Uσh::Array{Complex{Float64}, 2}
+  Vσh::Array{Complex{Float64}, 2}
+  Uσxh::Array{Complex{Float64}, 2}
+  Vσxh::Array{Complex{Float64}, 2}
+  Uσyh::Array{Complex{Float64}, 2}
+  Vσyh::Array{Complex{Float64}, 2}
 end
 
 function PassiveAPVVars(g::TwoDGrid)
@@ -458,12 +493,20 @@ function PassiveAPVVars(g::TwoDGrid)
   vzeta  = zeros(Float64, g.nx, g.ny)
   Psi    = zeros(Float64, g.nx, g.ny)
 
-  q      = zeros(Float64, g.nx, g.ny)
-  ul     = zeros(Float64, g.nx, g.ny)
-  vl     = zeros(Float64, g.nx, g.ny)
-  ulq    = zeros(Float64, g.nx, g.ny)
-  vlq    = zeros(Float64, g.nx, g.ny)
-  
+  Q      = zeros(Float64, g.nx, g.ny)
+  UL     = zeros(Float64, g.nx, g.ny)
+  VL     = zeros(Float64, g.nx, g.ny)
+  ULQ    = zeros(Float64, g.nx, g.ny)
+  VLQ    = zeros(Float64, g.nx, g.ny)
+  Uσ2    = zeros(Float64, g.nx, g.ny)
+  Vσ2    = zeros(Float64, g.nx, g.ny)
+  UσVσ   = zeros(Float64, g.nx, g.ny)
+  Juu    = zeros(Float64, g.nx, g.ny)
+  Jvv    = zeros(Float64, g.nx, g.ny)
+  Juv    = zeros(Float64, g.nx, g.ny)
+  up     = zeros(Float64, g.nx, g.ny)
+  vp     = zeros(Float64, g.nx, g.ny)
+
   # Auxiliary first-mode vars
   u      = zeros(Complex{Float64}, g.nx, g.ny)
   v      = zeros(Complex{Float64}, g.nx, g.ny)
@@ -485,6 +528,13 @@ function PassiveAPVVars(g::TwoDGrid)
   vUy    = zeros(Complex{Float64}, g.nx, g.ny)
   vVy    = zeros(Complex{Float64}, g.nx, g.ny)
 
+  Uσ     = zeros(Complex{Float64}, g.nx, g.ny)
+  Vσ     = zeros(Complex{Float64}, g.nx, g.ny)
+  Uσx    = zeros(Complex{Float64}, g.nx, g.ny)
+  Vσx    = zeros(Complex{Float64}, g.nx, g.ny)
+  Uσy    = zeros(Complex{Float64}, g.nx, g.ny)
+  Vσy    = zeros(Complex{Float64}, g.nx, g.ny)
+
   # Transforms
   Zh     = zeros(Complex{Float64}, g.nkr, g.nl)
   Uh     = zeros(Complex{Float64}, g.nkr, g.nl)
@@ -501,9 +551,21 @@ function PassiveAPVVars(g::TwoDGrid)
   vzetah = zeros(Complex{Float64}, g.nkr, g.ny)
   Psih   = zeros(Complex{Float64}, g.nkr, g.nl)
 
-  qh     = zeros(Complex{Float64}, g.nkr, g.nl)
-  ulqh   = zeros(Complex{Float64}, g.nkr, g.nl)
-  vlqh   = zeros(Complex{Float64}, g.nkr, g.nl)
+  Qh     = zeros(Complex{Float64}, g.nkr, g.nl)
+  Qwh    = zeros(Complex{Float64}, g.nkr, g.nl)
+  ULh    = zeros(Complex{Float64}, g.nkr, g.nl)
+  VLh    = zeros(Complex{Float64}, g.nkr, g.nl)
+  ULQh   = zeros(Complex{Float64}, g.nkr, g.nl)
+  VLQh   = zeros(Complex{Float64}, g.nkr, g.nl)
+
+  Uσ2h   = zeros(Complex{Float64}, g.nkr, g.nl)
+  Vσ2h   = zeros(Complex{Float64}, g.nkr, g.nl)
+  UσVσh  = zeros(Complex{Float64}, g.nkr, g.nl)
+  Juuh   = zeros(Complex{Float64}, g.nkr, g.nl)
+  Jvvh   = zeros(Complex{Float64}, g.nkr, g.nl)
+  Juvh   = zeros(Complex{Float64}, g.nkr, g.nl)
+  uph    = zeros(Complex{Float64}, g.nkr, g.ny)
+  vph    = zeros(Complex{Float64}, g.nkr, g.ny)
 
   uh     = zeros(Complex{Float64}, g.nk, g.nl)
   vh     = zeros(Complex{Float64}, g.nk, g.nl)
@@ -524,14 +586,26 @@ function PassiveAPVVars(g::TwoDGrid)
   vUyh   = zeros(Complex{Float64}, g.nk, g.nl)
   vVyh   = zeros(Complex{Float64}, g.nk, g.nl)
 
+  uth    = zeros(Complex{Float64}, g.nk, g.ny)
+  vth    = zeros(Complex{Float64}, g.nk, g.ny)
+  Uσh    = zeros(Complex{Float64}, g.nk, g.ny)
+  Vσh    = zeros(Complex{Float64}, g.nk, g.ny)
+  Uσxh   = zeros(Complex{Float64}, g.nk, g.ny)
+  Vσxh   = zeros(Complex{Float64}, g.nk, g.ny)
+  Uσyh   = zeros(Complex{Float64}, g.nk, g.ny)
+  Vσyh   = zeros(Complex{Float64}, g.nk, g.ny)
+
+
   PassiveAPVVars(t, solr, solc, 
     Z, U, V, UZ, VZ, Ux, Uy, Vx, Vy, uw, vw, uzeta, vzeta, Psi,
-    q, ul, vl, ulq, vlq, 
+    Q, UL, VL, ULQ, VLQ, Uσ2, Vσ2, UσVσ, Juu, Jvv, Juv, up, vp,
     u, v, w, p, vx, uy, zeta, Uu, Uv, Up, Vu, Vv, Vp, uUx, uVx, vUy, vVy,
+    Uσ, Vσ, Uσx, Vσx, Uσy, Vσy, 
     Zh, Uh, Vh, UZh, VZh, Uxh, Uyh, Vxh, Vyh, uwh, vwh, uzetah, vzetah, Psih, 
-    qh, ulqh, vlqh,
+    Qh, Qwh, ULh, VLh, ULQh, VLQh, Uσ2h, Vσ2h, UσVσh, Juuh, Jvvh, Juvh, uph, vph,
     uh, vh, wh, ph, vxh, uyh, Uuh, Uvh, Uph, Vuh, Vvh, Vph, uUxh, uVxh, vUyh, 
     vVyh,
+    uth, vth, Uσh, Vσh, Uσxh, Vσxh, Uσyh, Vσyh
     )
 end
 
@@ -685,7 +759,7 @@ function calcNL!(
   # This copy is necessary because calling A_mul_B(v.Z, g.irfftplan, sol) 
   # a few lines below destroys sol when using Julia's FFTW.
   @views @. v.Zh = solr[:, :, 1]
-  @views @. v.qh = solr[:, :, 2]
+  @views @. v.Qh = solr[:, :, 2]
 
   @. v.Psih = -g.invKKrsq*v.Zh
 
@@ -706,12 +780,10 @@ function calcNL!(
 
  
   # Inverse transforms
-  A_mul_B!(v.q, g.irfftplan, v.qh)
+  A_mul_B!(v.Q, g.irfftplan, v.Qh)
   A_mul_B!(v.Z, g.irfftplan, v.Zh)
   A_mul_B!(v.U, g.irfftplan, v.Uh)
   A_mul_B!(v.V, g.irfftplan, v.Vh)
-
-  v.ul, v.vl = lagrangian_mean_uv(p.σ, v, p, g)
 
   A_mul_B!(v.Ux, g.irfftplan, v.Uxh)
   A_mul_B!(v.Uy, g.irfftplan, v.Uyh)
@@ -730,9 +802,6 @@ function calcNL!(
   # Multiplies
   @. v.UZ = v.U * v.Z
   @. v.VZ = v.V * v.Z
-
-  @. v.ulq = v.ul * v.q
-  @. v.vlq = v.vl * v.q
 
   @. v.uw = real(im*p.m*v.u*conj(v.w) - im*p.m*conj(v.u)*v.w )
   @. v.vw = real(im*p.m*v.v*conj(v.w) - im*p.m*conj(v.v)*v.w )
@@ -761,8 +830,8 @@ function calcNL!(
   A_mul_B!(v.uwh, g.rfftplan, v.uw)
   A_mul_B!(v.vwh, g.rfftplan, v.vw)
 
-  A_mul_B!(v.ulqh, g.rfftplan, v.ulq)
-  A_mul_B!(v.vlqh, g.rfftplan, v.vlq)
+  #A_mul_B!(v.ULQh, g.rfftplan, v.ULQ)
+  #A_mul_B!(v.VLQh, g.rfftplan, v.VLQ)
 
   A_mul_B!(v.uzetah, g.rfftplan, v.uzeta)
   A_mul_B!(v.vzetah, g.rfftplan, v.vzeta)
@@ -787,7 +856,6 @@ function calcNL!(
              + im*g.Lr*v.uwh - im*g.Kr*v.vwh
   )
 
-  @views @. NLr[:, :, 2] = -im*g.Kr*v.ulqh - im*g.Lr*v.vlqh
 
   # First-mode nonlinear terms:
   # u
@@ -804,6 +872,85 @@ function calcNL!(
   @views @. NLc[:, :, 3] = ( im*p.N^2.0/p.m*v.wh
     - im*g.K*v.Uph - im*g.L*v.Vph
   )
+
+
+  # Calculate passive APV advection... 
+
+  # Time-derivatives of u, v
+  @views @. v.uth = -p.ν1*g.KKsq^(0.5*p.nν1)*solc[:, :, 1] + NLc[:, :, 1]
+  @views @. v.vth = -p.ν1*g.KKsq^(0.5*p.nν1)*solc[:, :, 2] + NLc[:, :, 2]
+
+  # Asymptotic approximation
+  @views @. v.Uσh = exp(im*p.σ*v.t) * (solc[:, :, 1] + im/p.σ*v.uth)
+  @views @. v.Vσh = exp(im*p.σ*v.t) * (solc[:, :, 2] + im/p.σ*v.vth)
+
+  # Calculate Qwh
+  A_mul_B!(v.Uσ, g.ifftplan, v.Uσh)
+  A_mul_B!(v.Vσ, g.ifftplan, v.Vσh)
+
+  @. v.Uσxh = im*g.K*v.Uσh
+  @. v.Vσxh = im*g.K*v.Vσh
+  @. v.Uσyh = im*g.L*v.Uσh
+  @. v.Vσyh = im*g.L*v.Vσh
+
+  A_mul_B!(v.Uσx, g.ifftplan, v.Uσxh)
+  A_mul_B!(v.Vσx, g.ifftplan, v.Vσxh)
+  A_mul_B!(v.Uσy, g.ifftplan, v.Uσyh)
+  A_mul_B!(v.Vσy, g.ifftplan, v.Vσyh)
+
+  @. v.Juu = real(im*conj(v.Uσx)*v.Uσy - im*conj(v.Uσy)*v.Uσx)
+  @. v.Jvv = real(im*conj(v.Vσx)*v.Vσy - im*conj(v.Vσy)*v.Vσx)
+
+  @. v.Juv = real(
+    conj(v.Vσx)*v.Uσy - conj(v.Vσy)*v.Uσx + 
+    v.Vσx*conj(v.Uσy) - v.Vσy*conj(v.Uσx)
+  )
+
+  # Non-Jacobian terms
+  @. v.Uσ2 = abs2(v.Uσ)
+  @. v.Vσ2 = abs2(v.Vσ)
+  @. v.UσVσ = real(v.Uσ*conj(v.Vσ) + conj(v.Uσ)*v.Vσ)
+
+  A_mul_B!(v.Juuh,  g.rfftplan, v.Juu)
+  A_mul_B!(v.Jvvh,  g.rfftplan, v.Jvv)
+  A_mul_B!(v.Juvh,  g.rfftplan, v.Juv)
+  A_mul_B!(v.Uσ2h,  g.rfftplan, v.Uσ2)
+  A_mul_B!(v.Vσ2h,  g.rfftplan, v.Vσ2)
+  A_mul_B!(v.UσVσh, g.rfftplan, v.UσVσ)
+
+  @. v.Qwh = -2.0/p.σ*(v.Juuh + v.Jvvh) - p.f/p.σ^2.0*(
+       v.Juvh - g.Kr2*v.Uσ2h - g.Lr2*v.Vσ2h - g.KLr*v.UσVσh)
+  
+  # Calculate Q
+  @. v.up = real(v.u*conj(v.p) + conj(v.u)*v.p) 
+  @. v.vp = real(v.v*conj(v.p) + conj(v.v)*v.p) 
+  
+  A_mul_B!(v.uph, g.rfftplan, v.up)
+  A_mul_B!(v.vph, g.rfftplan, v.vp)
+
+  # Z - curl(Uw)
+  @views @. v.Qh = solr[:, :, 1] + p.m^2.0/p.N^2.0*(
+    im*g.Lr*v.uph - im*g.Kr*v.vph)
+
+  @. v.ULh =  im*g.Lr*g.invKKrsq*(v.Qh - v.Qwh)
+  @. v.VLh = -im*g.Kr*g.invKKrsq*(v.Qh - v.Qwh)
+
+
+  # Calculate nonlinear term.
+  A_mul_B!(v.UL, g.irfftplan, v.ULh) 
+  A_mul_B!(v.VL, g.irfftplan, v.VLh) 
+
+  @. v.ULQ = v.UL * v.Q
+  @. v.ULQ = v.VL * v.Q
+
+  A_mul_B!(v.ULQh, g.rfftplan, v.ULQ)
+  A_mul_B!(v.VLQh, g.rfftplan, v.VLQ)
+
+  @views @. NLr[:, :, 2] = -im*g.Kr*v.ULQh - im*g.Lr*v.VLQh
+
+
+  dealias!(NLr, g)
+  dealias!(NLc, g)
 
   nothing
 end
@@ -846,12 +993,12 @@ end
 function updatevars!(v::PassiveAPVVars, p::PassiveAPVParams, g::TwoDGrid)
 
   @views @. v.Zh = v.solr[:, :, 1]
-  @views @. v.qh = v.solr[:, :, 2]
+  @views @. v.Qh = v.solr[:, :, 2]
 
   # We don't use A_mul_B here because irfft destroys its input.
   # A_mul_B!(v.Z, g.irfftplan, v.Zh)
   v.Z = irfft(v.Zh, g.nx)
-  v.q = irfft(v.qh, g.nx)
+  v.Q = irfft(v.Qh, g.nx)
 
   @. v.Psih =         -g.invKKrsq*v.Zh
   @. v.Uh   =  im*g.Lr*g.invKKrsq*v.Zh
@@ -872,7 +1019,7 @@ function updatevars!(v::PassiveAPVVars, p::PassiveAPVParams, g::TwoDGrid)
   A_mul_B!(v.p, g.ifftplan, v.ph)
   A_mul_B!(v.w, g.ifftplan, v.wh)
 
-  v.ul, v.vl = lagrangian_mean_uv(p.σ, v, p, g)
+  v.UL, v.VL = lagrangian_mean_uv(p.σ, v, p, g)
 
   nothing
 end
@@ -902,8 +1049,8 @@ function set_Z!(v::PassiveAPVVars, p::PassiveAPVParams, g::TwoDGrid, Z)
   A_mul_B!(v.Zh, g.rfftplan, Z)
   @views @. v.solr[:, :, 1] = v.Zh
 
-  v.q = mode0apv(v, p, g)
-  v.solr[:, :, 2] = rfft(v.q)
+  v.Q = mode0apv(v, p, g)
+  v.solr[:, :, 2] = rfft(v.Q)
 
   updatevars!(v, p, g)
   nothing
@@ -947,8 +1094,8 @@ function set_uvp!(vs::PassiveAPVVars, pr::PassiveAPVParams, g::TwoDGrid,
   vs.solc[:, :, 2] .= vh
   vs.solc[:, :, 3] .= ph
 
-  vs.q = mode0apv(vs, pr, g)
-  vs.solr[:, :, 2] = rfft(vs.q)
+  vs.Q = mode0apv(vs, pr, g)
+  vs.solr[:, :, 2] = rfft(vs.Q)
 
   updatevars!(vs, pr, g)
   nothing
