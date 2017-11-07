@@ -3,23 +3,26 @@ include("./setup_eddywave.jl")
 
 
 # -- Parameters --
-  nkw = 16
-    n = 1024
+  nkw = 32    
+    n = 512 
     L = 2π*100e3*nkw
     α = 0.5             # Frequency parameter
     ε = 2e-1            # Wave amplitude
    Ro = 5e-2            # Eddy Rossby number
-Reddy = L/20           # Eddy radius
+Reddy = L/40           # Eddy radius
+
+passiveapv = true
 
 
 # Setup
-ew = EddyWave(L, α, ε, Ro, Reddy; nkw=nkw, dtfrac=2e-2, nsubperiods=1,
-  nν0=8, nν1=6, ν0=1e30, ν1=1e6) 
+ew = EddyWave(L, α, ε, Ro, Reddy; nkw=nkw, dtfrac=1e-2, nsubperiods=1,
+  nν0=8, nν1=8, ν0=1e32, ν1=1e16) 
 
 plotpath = "./plots"
-plotname = @sprintf("nu0_%.0e", ew.ν0)
+plotname = @sprintf("nk32_nu%.0e", ew.ν0)
   
-prob, diags = eddywavesetup(n, ew, perturbwavefield=false)
+prob, diags = eddywavesetup(n, ew, perturbwavefield=false, 
+  passiveapv=passiveapv)
 etot, e0, e1 = diags[1], diags[2], diags[3]
 
 
@@ -34,25 +37,12 @@ filename = testprefix * ".jld2"
 saveproblem(prob, filename)
 saveeddywave(ew, filename)
 
-getZ(prob)    = prob.vars.Z
 getsolr(prob) = prob.vars.solr
 getsolc(prob) = prob.vars.solc
-getpsiw(prob) = wave_induced_psi(ew.σ, prob)
-getuw(prob)   = wave_induced_uv(ew.σ, prob)[1]
-getvw(prob)   = wave_induced_uv(ew.σ, prob)[2]
 
-#outs = [
-#  Output("Z",    getZ,     prob, filename),
-#  Output("solr", getsolr,  prob, filename),
-#  Output("solc", getsolc,  prob, filename),
-#  Output("Q",    mode0apv, prob, filename),
-#  Output("w",    mode1w,   prob, filename),
-#  Output("uw",   getuw,    prob, filename),
-#  Output("vw",   getvw,    prob, filename)
-#]
 outs = [
-  Output("solr", getsolr,  prob, filename),
-  Output("solc", getsolc,  prob, filename),
+  Output("solr", getsolr, prob, filename),
+  Output("solc", getsolc, prob, filename),
 ]
 
 
@@ -98,6 +88,7 @@ while prob.step < ew.nsteps
   close("all")
   fig, axs = subplots(ncols=2, nrows=2, figsize=(8, 8)) 
   makefourplot!(axs, prob, ew, xr, yr, savename; 
-    message=plotmsg1*plotmsg2, save=true, eddylim=nothing, show=false)
+    message=plotmsg1*plotmsg2, save=true, eddylim=nothing, show=false,
+    passiveapv=passiveapv)
 
 end
