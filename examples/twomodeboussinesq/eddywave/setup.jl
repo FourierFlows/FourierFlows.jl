@@ -171,9 +171,11 @@ function makefourplot(prob, ew; eddylim=nothing,
   message=nothing, save=false, show=false, passiveapv=false,
   plotpath="./plots")
 
-  savename = @sprintf("%s_nu%.0e_n%d_%02df_ep%02d_Ro%02d_%06d.png", 
-    joinpath(plotpath, ew.name), ew.ν0, prob.grid.nx, floor(Int, 100ew.σ/ew.f), 
-    floor(Int, 100*ew.ε), floor(Int, 100*ew.Ro), prob.step)
+  savename = @sprintf("%s_nu%.0e_n%d_%04df_ep%02d_Ro%02d_nkw%d_%06d.png", 
+    joinpath(plotpath, ew.name), ew.ν0, prob.grid.nx, 
+    floor(Int, 1000ew.σ/ew.f), round(Int, 100*ew.ε), floor(Int, 100*ew.Ro), 
+    ew.nkw, prob.step)
+    
 
   close("all")
   fig, axs = subplots(ncols=2, nrows=2, figsize=(8, 8)) 
@@ -358,13 +360,8 @@ function makethreeplot!(axs, prob, ew, x, y, savename; eddylim=nothing,
 
   tight_layout(rect=(0.00, 0.05, 1.00, 0.90))
 
-  if show
-    pause(0.1)
-  end
-
-  if save
-    savefig(savename, dpi=240)
-  end
+  if show; pause(0.1); end
+  if save; savefig(savename, dpi=240); end
 
   cbs, msg
 end
