@@ -35,21 +35,28 @@ struct TurbWave
   nsubs
   twave
 end
-  
+
+
+
 
 
 
 function turbwavesetup(name, n, L, α, ε, Ro;
   f=1e-4, N=5e-3, nkw=16, nν0=8, nν1=8, dtfrac=5e-2, ν0frac=1e-1, 
   ν1frac=1e-1, ν0=nothing, ν1=nothing, nperiods=400, nsubperiods=1, 
-  k0turb=n/2)
+  k0turb=n/2, m=32N/(f*L))
 
 
   # Initialize problem
   σ = f*sqrt(1+α)
   kw = 2π*nkw/L
-  m = N*kw/(f*sqrt(α))
   twave = 2π/σ                      
+
+  if α == 0.0 # NIW case
+    nkw = 0 
+  else
+    m = N*kw/(f*sqrt(α))
+  end
 
   dt = dtfrac * twave
   if ν0 == nothing; ν0 = ν0frac/(dt*(0.65π*n/L)^nν0); end
@@ -137,7 +144,7 @@ function turbwavesetup(name, n, L, α, ε, Ro;
   msg *= @sprintf("% 12s: %.3f \n",       "σ/f",      σ/f           )
   msg *= @sprintf("% 12s: %.1e s^-1\n",   "f",        f             )
   msg *= @sprintf("% 12s: %.1e s^-1\n",   "N",        N             )
-  msg *= @sprintf("% 12s: %.2e km\n",     "m^-1",     1e-3/m        )
+  msg *= @sprintf("% 12s: %.1f m\n",      "m^-1",     1/m           )
   msg *= @sprintf("% 12s: %.2e km\n",     "N/fm",     1e-3*N/(f*m)  )
   msg *= @sprintf("% 12s: %.2e (n=%d)\n", "ν0",       ν0, nν0       )
   msg *= @sprintf("% 12s: %.2e (n=%d)\n", "ν1",       ν1, nν1       )
