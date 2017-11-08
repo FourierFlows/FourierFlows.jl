@@ -9,7 +9,7 @@ import FourierFlows.TwoDTurb
 
 import FourierFlows.TwoModeBoussinesq: mode0apv, mode1apv, mode1speed, mode1w, 
   wave_induced_speed, wave_induced_psi, wave_induced_uv, lagrangian_mean_uv,
-  calc_chi, calc_chi_uv, totalenergy, mode0energy, mode1energy, CFL
+  calc_chi, calc_chi_uv, totalenergy, mode0energy, mode1energy, CFL, mode1u 
 
 @pyimport mpl_toolkits.axes_grid1 as pltgrid
 
@@ -49,13 +49,14 @@ function turbwavesetup(name, n, L, α, ε, Ro;
 
   # Initialize problem
   σ = f*sqrt(1+α)
-  kw = 2π*nkw/L
   twave = 2π/σ                      
 
   if α == 0.0 # NIW case
     nkw = 0 
+    kw = (f*m/N)^2
   else
     m = N*kw/(f*sqrt(α))
+    kw = 2π*nkw/L
   end
 
   dt = dtfrac * twave
@@ -194,13 +195,14 @@ function makefourplot(prob, tw; eddylim=nothing,
   w00 = tw.uw*tw.kw/(2*tw.m)
   U00 = tw.uw*tw.Ro/tw.ε
   Ro0 = 0.8*tw.Ro
+  u00 = 2*tw.uw
 
   # Quantities to plot
   Q      = mode0apv(prob)/tw.f
-  w      = mode1w(prob)
-  spw    = wave_induced_speed(tw.σ, prob)
-  psiw   = wave_induced_psi(tw.σ, prob)
-  uL, vL = wave_induced_uv(tw.σ, prob)
+  sp     = mode1speed(prob)
+  chi    = calc_chi(prob)
+  uc, vc = calc_chi_uv(prob)
+  spc    = sqrt.(uc.^2+vc.^2)
 
 
   # Plot
@@ -211,26 +213,17 @@ function makefourplot(prob, tw; eddylim=nothing,
 
   axes(axs[1, 2])
   axis("equal")
-  pcolormesh(x, y, w, cmap="RdBu_r", vmin=-6w00, vmax=6w00)
+  pcolormesh(x, y, sp, cmap="YlGnBu_r", vmin=-2u00, vmax=2u00)
 
 
   axes(axs[2, 1])
   axis("equal")
   pcolormesh(x, y, Q, cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
-  #contour(x, y, psiw, 10, colors="k", linewidths=0.2, alpha=0.5)
-
-  #nquiv = 32
-  #iquiv = floor(Int, prob.grid.nx/nquiv)
-  #quiverplot = quiver(
-  #  x[1:iquiv:end, 1:iquiv:end], y[1:iquiv:end, 1:iquiv:end],
-  #  uL[1:iquiv:end, 1:iquiv:end], vL[1:iquiv:end, 1:iquiv:end], 
-  #  units="x", alpha=0.2, scale=2.0, scale_units="x")
-
 
   axes(axs[2, 2])
   axis("equal")
-  pcolormesh(x, y, spw, cmap="YlGnBu_r", vmin=0.0, vmax=U00)
-  contour(x, y, psiw, 10, colors="w", linewidths=0.5, alpha=0.5)
+  pcolormesh(x, y, spc, cmap="YlGnBu_r", vmin=0.0, vmax=U00)
+  contour(x, y, chi, 10, colors="w", linewidths=0.5, alpha=0.5)
 
 
 

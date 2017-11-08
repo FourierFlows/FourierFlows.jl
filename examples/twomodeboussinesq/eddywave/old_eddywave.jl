@@ -4,14 +4,14 @@ include("./setup_eddywave.jl")
 
 # -- Parameters --
   nkw = 32    
-    n = 512 
+    n = 1024
     L = 2π*100e3*nkw
     α = 0.5             # Frequency parameter
     ε = 2e-1            # Wave amplitude
    Ro = 5e-2            # Eddy Rossby number
 Reddy = L/40           # Eddy radius
 
-passiveapv = true
+passiveapv = false
 
 
 # Setup

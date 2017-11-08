@@ -7,7 +7,7 @@ import FourierFlows.TwoModeBoussinesq: mode0apv, mode1apv, mode1w, mode1u
 
 @pyimport mpl_toolkits.axes_grid1 as pltgrid
 
-plotname = "./plots/firstglanceAPV"
+plotname = "./plots/miniAPVwithbox"
 filename = "../data/example_nk64_nu2e+32_122f_n1024_ep20_Ro05_nkw64.jld2"
 
 # Plot parameters
@@ -43,7 +43,6 @@ jldopen(filename, "r") do file
 
   x, y = prob.grid.X/Re, prob.grid.Y/Re
 
-  iscolorbar = false
   for (istep, step) in enumerate(steps)
     t = file["timeseries/t/$step"]
     Zh = file["timeseries/solr/$step"]
@@ -66,57 +65,30 @@ jldopen(filename, "r") do file
     println(step)
 
     close("all")
-    fig, axs = subplots(ncols=3, nrows=1, sharex=true, sharey=true, 
-      figsize=(12, 5))
+    fig, axs = subplots(ncols=1, nrows=3, sharex=true, sharey=true, 
+      figsize=(5, 12))
 
     axes(axs[1]); axis("equal")
     Zplot = pcolormesh(x, y, Z/f, cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
 
     axes(axs[2]); axis("equal")
-    Qplot = pcolormesh(x, y, Q/f, cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
+    uplot = pcolormesh(x, y, u, cmap="RdBu_r", vmin=-u0, vmax=u0)
 
     axes(axs[3]); axis("equal")
-    uplot = pcolormesh(x, y, u, cmap="RdBu_r", vmin=-u0, vmax=u0)
+    Qplot = pcolormesh(x, y, Q/f, cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
 
 
     plots = [Zplot, Qplot, uplot]
-    cbs = []
     for (i, ax) in enumerate(axs)
       ax[:set_adjustable]("box-forced")
       ax[:set_xlim](-eddylim, eddylim)
       ax[:set_ylim](-eddylim, eddylim)
       ax[:tick_params](axis="both", which="both", length=0)
+      ax[:xaxis][:set_ticks]([])
+      ax[:yaxis][:set_ticks]([])
+   end
 
-      divider = pltgrid.make_axes_locatable(ax)
-      cax = divider[:append_axes]("top", size="5%", pad="5%")
-      cb = colorbar(plots[i], cax=cax, orientation="horizontal")
-
-      cb[:ax][:xaxis][:set_ticks_position]("top")
-      cb[:ax][:xaxis][:set_label_position]("top")
-      cb[:ax][:tick_params](axis="x", which="both", length=0)
-
-      push!(cbs, cb)
-      iscolorbar = true
-    end
-
-    axs[1][:set_xlabel](L"x/R")
-    axs[2][:set_xlabel](L"x/R")
-    axs[3][:set_xlabel](L"x/R")
-    axs[1][:set_ylabel](L"y/R")
-
-    cbs[1][:set_ticks]([-Ro0, 0.0, Ro0])
-    cbs[2][:set_ticks]([-Ro0, 0.0, Ro0])
-    cbs[3][:set_ticks]([-u0, 0.0, u0])
-
-    cbs[1][:set_label](L"Z/f", labelpad=12.0)
-    cbs[2][:set_label]("`APV' \$= Q/f\$", labelpad=12.0)
-    cbs[2][:set_label]("normalized \$\\hat u(z=0) = (u + u^*)/\\max(U)\$", 
-      labelpad=12.0)
-
-    msg = @sprintf("\$t = %02d\$ wave periods", t/tσ)
-    figtext(0.51, 0.92, msg, horizontalalignment="center", fontsize=14)
-
-    tight_layout(rect=(0.00, 0.00, 0.95, 0.90), h_pad=0.05)
+    tight_layout(rect=(0.00, 0.00, 1.0, 1.00))
 
     savename = @sprintf("%s_%06d.png", plotname, istep)
     savefig(savename, dpi=240)
