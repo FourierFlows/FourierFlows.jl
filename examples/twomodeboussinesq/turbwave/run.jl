@@ -5,7 +5,7 @@ include("./setup.jl")
     n = 384
     L = 2π*100e3*nkw
     α = 1.0             # Frequency parameter
-    ε = 1e-2            # Wave amplitude
+    ε = 2e-1            # Wave amplitude
    Ro = 1e-1            # Eddy Rossby number
  name = "turbwave"
 
