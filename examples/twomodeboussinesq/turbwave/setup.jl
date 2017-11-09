@@ -8,8 +8,7 @@ import FourierFlows.TwoModeBoussinesq
 import FourierFlows.TwoDTurb
 
 import FourierFlows.TwoModeBoussinesq: mode0apv, mode1apv, mode1speed, mode1w, 
-  wave_induced_speed, wave_induced_psi, wave_induced_uv, lagrangian_mean_uv,
-  calc_chi, calc_chi_uv, totalenergy, mode0energy, mode1energy, CFL, mode1u 
+  chi, UVchi, totalenergy, mode0energy, mode1energy, CFL, mode1u, get_Z
 
 @pyimport mpl_toolkits.axes_grid1 as pltgrid
 
@@ -44,7 +43,7 @@ end
 function turbwavesetup(name, n, L, α, ε, Ro;
   f=1e-4, N=5e-3, nkw=16, nν0=8, nν1=8, dtfrac=5e-2, ν0frac=1e-1, 
   ν1frac=1e-1, ν0=nothing, ν1=nothing, nperiods=400, nsubperiods=1, 
-  k0turb=n/2, m=32N/(f*L))
+  k0turb=n/2, m=32N/(f*L), wavecubics=true)
 
 
   # Initialize problem
@@ -55,8 +54,8 @@ function turbwavesetup(name, n, L, α, ε, Ro;
     nkw = 0 
     kw = (f*m/N)^2
   else
-    m = N*kw/(f*sqrt(α))
     kw = 2π*nkw/L
+    m = N*kw/(f*sqrt(α))
   end
 
   dt = dtfrac * twave
@@ -66,8 +65,9 @@ function turbwavesetup(name, n, L, α, ε, Ro;
   nsteps = round(Int, nperiods*twave/dt)
   nsubs = round(Int, nsubperiods*twave/dt)
 
-  prob = TwoModeBoussinesq.InitialValueProblem(nx=n, Lx=L, 
-    ν0=ν0, nν0=nν0, ν1=ν1, nν1=nν1, f=f, N=N, m=m, dt=dt)
+  prob = TwoModeBoussinesq.PrognosticAPVInitialValueProblem(nx=n, Lx=L, 
+    ν0=ν0, nν0=nν0, ν1=ν1, nν1=nν1, f=f, N=N, m=m, dt=dt,
+    wavecubics=wavecubics)
 
 
   # Generate initial turbulence field
@@ -97,7 +97,7 @@ function turbwavesetup(name, n, L, α, ε, Ro;
     @load savename Z
   end
 
-  TwoModeBoussinesq.set_Z!(prob, Z)
+  TwoModeBoussinesq.set_Q!(prob, Z)
 
 
   # Initial wave field  
@@ -178,6 +178,8 @@ end
 function makefourplot(prob, tw; eddylim=nothing, 
   message=nothing, save=false, show=false)
 
+  TwoModeBoussinesq.updatevars!(prob)
+
   close("all")
   fig, axs = subplots(ncols=2, nrows=2, figsize=(8, 8)) 
 
@@ -198,32 +200,33 @@ function makefourplot(prob, tw; eddylim=nothing,
   u00 = 2*tw.uw
 
   # Quantities to plot
-  Q      = mode0apv(prob)/tw.f
+  #Q      = mode0apv(prob)/tw.f
+  Z      = get_Z(prob)/tw.f
   sp     = mode1speed(prob)
-  chi    = calc_chi(prob)
-  uc, vc = calc_chi_uv(prob)
+  Chi    = chi(prob)
+  uc, vc = UVchi(prob)
   spc    = sqrt.(uc.^2+vc.^2)
 
 
   # Plot
   axes(axs[1, 1])
   axis("equal")
-  pcolormesh(x, y, prob.vars.Z/tw.f, cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
+  pcolormesh(x, y, Z, cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
     
 
   axes(axs[1, 2])
   axis("equal")
-  pcolormesh(x, y, sp, cmap="YlGnBu_r", vmin=-2u00, vmax=2u00)
+  pcolormesh(x, y, sp, cmap="YlGnBu_r", vmin=0.0, vmax=2u00)
 
 
   axes(axs[2, 1])
   axis("equal")
-  pcolormesh(x, y, Q, cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
+  pcolormesh(x, y, prob.vars.Q/tw.f, cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
 
   axes(axs[2, 2])
   axis("equal")
   pcolormesh(x, y, spc, cmap="YlGnBu_r", vmin=0.0, vmax=U00)
-  contour(x, y, chi, 10, colors="w", linewidths=0.5, alpha=0.5)
+  contour(x, y, Chi, 10, colors="w", linewidths=0.5, alpha=0.5)
 
 
 

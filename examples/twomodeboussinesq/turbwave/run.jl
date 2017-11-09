@@ -2,9 +2,9 @@ include("./setup.jl")
 
 # -- Parameters --
   nkw = 16 
-    n = 512
+    n = 256
     L = 2π*1600e3
-    α = 0.0             # Frequency parameter
+    α = 1.0             # Frequency parameter
     ε = 1e-1            # Wave amplitude
    Ro = 1e-1            # Eddy Rossby number
     m = 500/2π
@@ -13,8 +13,9 @@ include("./setup.jl")
 
 # Setup
 tw, prob, diags, outs = turbwavesetup(name, n, L, α, ε, Ro; nkw=nkw,
-  dtfrac=5e-3, nsubperiods=2, nν0=8, nν1=8, ν0=2e32, ν1=1e24, m=m,
-  k0turb=floor(Int, 2n/3))
+  dtfrac = 5e-2, nsubperiods = 1, k0turb = floor(Int, 2n/3), 
+  nν0 = 6, nν1 = 6, ν0 = 1e20, ν1 = 1e20, wavecubics = false
+)
 
 etot, e0, e1 = diags[1], diags[2], diags[3]
 
@@ -24,30 +25,24 @@ startwalltime = time()
 while prob.step < tw.nsteps
 
   stepforward!(prob, diags; nsteps=tw.nsubs)
-  TwoModeBoussinesq.updatevars!(prob)
   saveoutput(outs)
 
-  log1 = @sprintf(
-    "step: %04d, t: %d, max Ro: %.4f, ", 
-    prob.step, prob.t/tw.twave, maximum(abs.(prob.vars.Z))/tw.f)
-
-  log2 = @sprintf(
-    "ΔE: %.3f, Δe: %.3f, Δ(E+e): %.6f, τ: %.2f min",
+  log1 = @sprintf("step: %04d, t: %d, ", prob.step, prob.t/tw.twave)
+  log2 = @sprintf("ΔE: %.3f, Δe: %.3f, Δ(E+e): %.6f, τ: %.2f min",
     e0.value/e0.data[1], e1.value/e1.data[1], etot.value/etot.data[1],
     (time()-startwalltime)/60)
 
   println(log1*log2)
 
-  plotmsg1 = @sprintf(
-    "\$t=% 3d\$ wave periods, \$\\Delta E=%.3f\$, ",
+  plotmsg1 = @sprintf("\$t=% 3d\$ wave periods, \$\\Delta E=%.3f\$, ",
     round(Int, prob.t/tw.twave), e0.value/e0.data[1])
-    
-  plotmsg2 = @sprintf(
-    "\$\\Delta e=%.3f\$, \$\\Delta (E+e)=%.6f\$",
+  plotmsg2 = @sprintf("\$\\Delta e=%.3f\$, \$\\Delta (E+e)=%.6f\$",
     e1.value/e1.data[1], etot.value/etot.data[1])
 
   plotmsg = plotmsg1*plotmsg2
 
-  makefourplot(prob, tw; save=true, message=plotmsg)
+  if prob.step % 1000 == 0.0
+    makefourplot(prob, tw; save=true, message=plotmsg)
+  end
 
 end
