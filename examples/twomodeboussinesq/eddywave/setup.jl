@@ -7,9 +7,7 @@ using FourierFlows, PyPlot, PyCall, JLD2
 import FourierFlows.TwoModeBoussinesq
 
 import FourierFlows.TwoModeBoussinesq: mode0apv, mode1apv, mode1speed, mode1w, 
-  wave_induced_speed, wave_induced_psi, wave_induced_uv, lagrangian_mean_uv,
-  calc_chi, calc_chi_uv, totalenergy, mode0energy, mode1energy, CFL,
-  lagrangian_mean_psih
+  chi, UVchi, totalenergy, mode0energy, mode1energy, CFL, get_Z
 
 @pyimport mpl_toolkits.axes_grid1 as pltgrid
 
@@ -102,20 +100,14 @@ end
 function eddywavesetup(n, ew::EddyWave; perturbwavefield=false, 
   passiveapv=false)
 
-  if passiveapv
-    prob = TwoModeBoussinesq.PassiveAPVInitialValueProblem(
-      nx=n, Lx=ew.L, ν0=ew.ν0, nν0=ew.nν0, ν1=ew.ν1, nν1=ew.nν1, 
-      f=ew.f, N=ew.N, m=ew.m, dt=ew.dt, σ=ew.σ)
-  else
-    prob = TwoModeBoussinesq.InitialValueProblem(
-      nx=n, Lx=ew.L, ν0=ew.ν0, nν0=ew.nν0, ν1=ew.ν1, nν1=ew.nν1, 
-      f=ew.f, N=ew.N, m=ew.m, dt=ew.dt)
-  end
+  prob = TwoModeBoussinesq.PrognosticAPVInitialValueProblem(
+    nx=n, Lx=ew.L, ν0=ew.ν0, nν0=ew.nν0, ν1=ew.ν1, nν1=ew.nν1, 
+    f=ew.f, N=ew.N, m=ew.m, dt=ew.dt)
 
   # Initial condition
   x, y = prob.grid.X, prob.grid.Y
-  Z0 = ew.f*ew.Ro * exp.(-(x.^2+y.^2)/(2*ew.Reddy^2))
-  TwoModeBoussinesq.set_Z!(prob, Z0)
+  Q0 = ew.f*ew.Ro * exp.(-(x.^2+y.^2)/(2*ew.Reddy^2))
+  TwoModeBoussinesq.set_Q!(prob, Q0)
 
   # ε = U/(Reddy*σ) or U*kw/σ
   TwoModeBoussinesq.set_planewave!(prob, ew.uw, ew.nkw)
@@ -187,23 +179,20 @@ function makefourplot(prob, ew; eddylim=nothing,
   end
 
   # Some limits
-  Z00 = ew.Ro*ew.f
+  Q00 = ew.Ro*ew.f
   w00 = ew.uw*ew.kw/(2*ew.m)
   U00 = ew.Ro*ew.Reddy*ew.f
 
   # Quantities to plot
-  Q      = mode0apv(prob)/ew.f
-  w      = mode1w(prob)
-  spw    = wave_induced_speed(ew.σ, prob)
-  psiw   = wave_induced_psi(ew.σ, prob)
-  uL, vL = lagrangian_mean_uv(ew.σ, prob)
-  PsiLh  = lagrangian_mean_psih(ew.σ, prob)
-  PsiL   = irfft(PsiLh, prob.grid.nx)
+  Z = get_Z(prob)
+  w = mode1w(prob.vars, prob.params, prob.grid)
+  Uc, Vc = UVchi(prob)
+  Spc = sqrt.(Uc.^2.0 + Vc.^2.0)
 
   # Plot
   axes(axs[1, 1])
   axis("equal")
-  pcolormesh(x, y, Q, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
+  pcolormesh(x, y, prob.vars.Q/ew.f, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
     
 
   axes(axs[1, 2])
@@ -213,26 +202,13 @@ function makefourplot(prob, ew; eddylim=nothing,
 
   axes(axs[2, 1])
   axis("equal")
-  if passiveapv
-    pcolormesh(x, y, prob.vars.Q/ew.f, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
-
-    contour(x, y, PsiL, 20, colors="k", linewidths=0.2, alpha=0.5)
-
-    nquiv = 32
-    iquiv = floor(Int, prob.grid.nx/nquiv)
-    quiverplot = quiver(
-      x[1:iquiv:end, 1:iquiv:end], y[1:iquiv:end, 1:iquiv:end],
-      uL[1:iquiv:end, 1:iquiv:end], vL[1:iquiv:end, 1:iquiv:end], 
-      units="x", alpha=0.2, scale=2.0, scale_units="x")
-  else
-    pcolormesh(x, y, prob.vars.Z/ew.f, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
-  end
+  pcolormesh(x, y, Z/ew.f, cmap="RdBu_r", vmin=-ew.Ro, vmax=ew.Ro)
 
 
   axes(axs[2, 2])
   axis("equal")
-  pcolormesh(x, y, spw, cmap="YlGnBu_r", vmin=0.0, vmax=U00)
-  contour(x, y, psiw, 10, colors="w", linewidths=0.2, alpha=0.5)
+  pcolormesh(x, y, Spc, cmap="YlGnBu_r", vmin=0.0, vmax=U00)
+  contour(x, y, chi(prob), 10, colors="w", linewidths=0.2, alpha=0.5)
 
 
   for ax in axs
