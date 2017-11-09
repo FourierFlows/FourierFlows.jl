@@ -62,7 +62,8 @@ function PrognosticAPVInitialValueProblem(;
   m    = 40.0,
   Us   = 0.0,
   Vs   = 0.0,
-  dt   = 0.01
+  dt   = 0.01,
+  wavecubics = true
   )
 
   if Ly == nothing; Ly = Lx; end
@@ -73,7 +74,13 @@ function PrognosticAPVInitialValueProblem(;
   g  = TwoDGrid(nx, Lx)
   pr = TwoModeBoussinesq.PrognosticAPVParams(ν0, nν0, ν1, nν1, f, N, m)
   vs = TwoModeBoussinesq.PrognosticAPVVars(g)
-  eq = TwoModeBoussinesq.Equation(pr, g)
+
+  if wavecubics
+    eq = TwoModeBoussinesq.Equation(pr, g)
+  else
+    eq = TwoModeBoussinesq.NoWaveCubicsEquation(pr, g)
+  end
+
   ts = ETDRK4TimeStepper(dt, eq.LCc, eq.LCr)
 
   FourierFlows.Problem(g, vs, pr, eq, ts)
@@ -202,6 +209,18 @@ function Equation(p::TwoModeParams, g::TwoDGrid)
 
   Equation(LCc, LCr, calcNL!)
 end
+
+function NoWaveCubicsEquation(p::PrognosticAPVParams, g::TwoDGrid)
+  LCr = -p.ν0 * g.KKrsq.^(0.5*p.nν0)
+
+  LCc = zeros(g.nk, g.nl, 3)
+  LCc[:, :, 1] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
+  LCc[:, :, 2] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
+
+  Equation(LCc, LCr, calcNL_nowavecubics!)
+end
+
+
 
 
 
@@ -935,6 +954,107 @@ function calcNL!(
 
   nothing
 end
+
+function calcNL_nowavecubics!(
+  NLc::Array{Complex{Float64}, 3},  NLr::Array{Complex{Float64}, 2}, 
+  solc::Array{Complex{Float64}, 3}, solr::Array{Complex{Float64}, 2}, 
+  t::Float64, v::PrognosticAPVVars, p::PrognosticAPVParams, g::TwoDGrid)
+
+  # APV advection
+  calcPsih!(v, p, g, solc, solr)
+
+  @. v.Uh = -im*g.Lr*v.Psih
+  @. v.Vh =  im*g.Kr*v.Psih
+
+  v.Uh[1, 1] += p.Us*g.nx*g.ny
+  v.Vh[1, 1] += p.Vs*g.nx*g.ny
+
+  v.Qh .= solr
+  A_mul_B!(v.Q, g.irfftplan, v.Qh)
+  A_mul_B!(v.U, g.irfftplan, v.Uh)
+  A_mul_B!(v.V, g.irfftplan, v.Vh)
+
+  @. v.UQ = v.U * v.Q
+  @. v.VQ = v.V * v.Q
+
+  A_mul_B!(v.UQh, g.rfftplan, v.UQ)
+  A_mul_B!(v.VQh, g.rfftplan, v.VQ)
+
+  @. NLr = - im*g.Kr*v.UQh - im*g.Lr*v.VQh
+
+
+  # Wave terms, redefining Psi and neglecting waves
+  @. v.Psih = -g.invKKrsq*solr
+
+  A_mul_B!(v.U, g.irfftplan, v.Uh)
+  A_mul_B!(v.V, g.irfftplan, v.Vh)
+
+  @. v.Uh = -im*g.Lr*v.Psih
+  @. v.Vh =  im*g.Kr*v.Psih
+
+  v.Uh[1, 1] += p.Us*g.nx*g.ny
+  v.Vh[1, 1] += p.Vs*g.nx*g.ny
+
+  @. v.Uxh = im*g.Kr*v.Uh
+  @. v.Vxh = im*g.Kr*v.Vh
+  @. v.Uyh = im*g.Lr*v.Uh
+  @. v.Vyh = im*g.Lr*v.Vh
+
+  A_mul_B!(v.Ux, g.irfftplan, v.Uxh)
+  A_mul_B!(v.Uy, g.irfftplan, v.Uyh)
+  A_mul_B!(v.Vx, g.irfftplan, v.Vxh)
+  A_mul_B!(v.Vy, g.irfftplan, v.Vyh)
+
+  @. v.Uu = v.U * v.u
+  @. v.Vu = v.V * v.u
+  @. v.Uv = v.U * v.v
+  @. v.Vv = v.V * v.v
+  @. v.Up = v.U * v.p
+  @. v.Vp = v.V * v.p
+
+  @. v.uUxvUy = v.u*v.Ux + v.v*v.Uy
+  @. v.uVxvVy = v.u*v.Vx + v.v*v.Vy
+
+  # Forward transforms
+  A_mul_B!(v.Uuh, g.fftplan, v.Uu)
+  A_mul_B!(v.Uvh, g.fftplan, v.Uv)
+  A_mul_B!(v.Vuh, g.fftplan, v.Vu)
+  A_mul_B!(v.Vvh, g.fftplan, v.Vv)
+  A_mul_B!(v.Uph, g.fftplan, v.Up)
+  A_mul_B!(v.Vph, g.fftplan, v.Vp)
+
+  A_mul_B!(v.uUxvUyh, g.fftplan, v.uUxvUy)
+  A_mul_B!(v.uVxvVyh, g.fftplan, v.uVxvVy)
+
+
+  # ---------------------------------------------------------------------------   
+  # Zeroth-mode nonlinear term
+
+  # First-mode nonlinear terms:
+  # u
+  @views @. NLc[:, :, 1] = ( p.f*solc[:, :, 2] 
+    - im*(g.K*(solc[:, :, 3] + v.Uuh) + g.L*v.Vuh) - v.uUxvUyh
+  )
+
+  # v
+  @views @. NLc[:, :, 2] = ( -p.f*solc[:, :, 1] 
+      - im*(g.L*(solc[:, :, 3] + v.Vvh) + g.K*v.Uvh) - v.uVxvVyh
+  )
+
+  # p
+  @views @. NLc[:, :, 3] = -im*( 
+     g.K*(p.N^2.0/p.m^2.0*solc[:, :, 1] + v.Uph)
+   + g.L*(p.N^2.0/p.m^2.0*solc[:, :, 2] + v.Vph)
+  )
+
+  dealias!(NLr, g)
+  dealias!(NLc, g)
+
+  nothing
+end
+
+
+
 
 
 """ Calculate the nonlinear right side for the two-mode Boussinesq equations
