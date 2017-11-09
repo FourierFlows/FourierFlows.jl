@@ -6,20 +6,13 @@ module TwoModeBoussinesq
 
 using FourierFlows
 
-export Params,
-       Vars,
-       Equation
-
-export set_Z!, updatevars!
-
-
 # Problem --------------------------------------------------------------------- 
 """ 
 Construct a TwoModeBoussinesq initial value problem.
 """
 function InitialValueProblem(;
   nx   = 128, 
-  Lx   = 2pi, 
+  Lx   = 2π, 
   ny   = nothing,
   Ly   = nothing,
   ν0   = nothing, 
@@ -36,8 +29,8 @@ function InitialValueProblem(;
 
   if Ly == nothing; Ly = Lx; end
   if ny == nothing; ny = nx; end
-  if ν0 == nothing; ν0 = 1e-1/(dt*(0.65*pi*nx/Lx)^nν0); end
-  if ν1 == nothing; ν1 = 1e-1/(dt*(0.65*pi*nx/Lx)^nν1); end
+  if ν0 == nothing; ν0 = 1e-1/(dt*(0.65π*nx/Lx)^nν0); end
+  if ν1 == nothing; ν1 = 1e-1/(dt*(0.65π*nx/Lx)^nν1); end
 
   g  = TwoDGrid(nx, Lx)
   pr = TwoModeBoussinesq.Params(ν0, nν0, ν1, nν1, f, N, m)
@@ -57,7 +50,7 @@ instead of vorticity as the barotropic prognostic variable.
 """
 function PrognosticAPVInitialValueProblem(;
   nx   = 128, 
-  Lx   = 2pi, 
+  Lx   = 2π, 
   ny   = nothing,
   Ly   = nothing,
   ν0   = nothing, 
@@ -74,8 +67,8 @@ function PrognosticAPVInitialValueProblem(;
 
   if Ly == nothing; Ly = Lx; end
   if ny == nothing; ny = nx; end
-  if ν0 == nothing; ν0 = 1e-1/(dt*(0.65*pi*nx/Lx)^nν0); end
-  if ν1 == nothing; ν1 = 1e-1/(dt*(0.65*pi*nx/Lx)^nν1); end
+  if ν0 == nothing; ν0 = 1e-1/(dt*(0.65π*nx/Lx)^nν0); end
+  if ν1 == nothing; ν1 = 1e-1/(dt*(0.65π*nx/Lx)^nν1); end
 
   g  = TwoDGrid(nx, Lx)
   pr = TwoModeBoussinesq.PrognosticAPVParams(ν0, nν0, ν1, nν1, f, N, m)
@@ -91,7 +84,7 @@ end
 
 function PassiveAPVInitialValueProblem(;
   nx  = 128, 
-  Lx  = 2pi, 
+  Lx  = 2π, 
   ny  = nothing,
   Ly  = nothing,
   ν0  = nothing, 
@@ -109,8 +102,8 @@ function PassiveAPVInitialValueProblem(;
 
   if Ly == nothing; Ly = Lx; end
   if ny == nothing; ny = nx; end
-  if ν0 == nothing; ν0 = 1e-1/(dt*(0.65*pi*nx/Lx)^nν0); end
-  if ν1 == nothing; ν1 = 1e-1/(dt*(0.65*pi*nx/Lx)^nν1); end
+  if ν0 == nothing; ν0 = 1e-1/(dt*(0.65π*nx/Lx)^nν0); end
+  if ν1 == nothing; ν1 = 1e-1/(dt*(0.65π*nx/Lx)^nν1); end
 
   g  = TwoDGrid(nx, Lx)
   pr = TwoModeBoussinesq.PassiveAPVParams(
@@ -846,6 +839,11 @@ function calcPsih!(
   nothing
 end
 
+function calcPsih!(v::PrognosticAPVVars, p::PrognosticAPVParams, g::TwoDGrid)
+  calcPsih!(v, p, g, v.solc, v.solr)
+end
+  
+
 
 
 
@@ -1029,16 +1027,13 @@ end
 
 
 
-
-
-
 # Helper functions ------------------------------------------------------------ 
 function updatevars!(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid, 
   Zh::AbstractArray)
   # We don't use A_mul_B here because irfft destroys its input.
   v.Z = irfft(Zh, g.nx)
 
-  @. v.Psih =         -g.invKKrsq*v.Zh
+  @. v.Psih = -g.invKKrsq*v.Zh
   @. v.Uh   = -im*g.Lr*v.Psih
   @. v.Vh   =  im*g.Kr*v.Psih
  
@@ -1142,20 +1137,13 @@ end
 
 
 
-
-
 """ 
 Set first mode u, v, and p and update vars.
 """
 function set_uvp!(vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid, u, v, p)
-  uh = fft(u)
-  vh = fft(v)
-  ph = fft(p)
-
-  vs.solc[:, :, 1] .= uh
-  vs.solc[:, :, 2] .= vh
-  vs.solc[:, :, 3] .= ph
-
+  @views A_mul_B!(vs.solc[:, :, 1], g.fftplan, u)
+  @views A_mul_B!(vs.solc[:, :, 2], g.fftplan, v)
+  @views A_mul_B!(vs.solc[:, :, 3], g.fftplan, p)
   updatevars!(vs, pr, g)
   nothing
 end
@@ -1163,13 +1151,9 @@ end
 function set_uvp!(vs::PassiveAPVVars, pr::PassiveAPVParams, g::TwoDGrid, 
   u, v, p)
 
-  uh = fft(u)
-  vh = fft(v)
-  ph = fft(p)
-
-  vs.solc[:, :, 1] .= uh
-  vs.solc[:, :, 2] .= vh
-  vs.solc[:, :, 3] .= ph
+  @views A_mul_B!(vs.solc[:, :, 1], g.fftplan, u)
+  @views A_mul_B!(vs.solc[:, :, 2], g.fftplan, v)
+  @views A_mul_B!(vs.solc[:, :, 3], g.fftplan, p)
 
   Q = mode0apv(vs, pr, g)
   Qh = rfft(Q)
@@ -1386,38 +1370,31 @@ function mode1apv(prob::AbstractProblem)
   mode1apv(prob.vars, prob.params, prob.grid)
 end
 
-mode0speed(prob) = sqrt.(prob.vars.U.^2.0 + prob.vars.V.^2.0)
+
 mode1u(v::AbstractVars) = real.(v.u + conj.(v.u))
 mode1v(v::AbstractVars) = real.(v.v + conj.(v.v))
 mode1w(v::AbstractVars) = real.(v.w + conj.(v.w))
 mode1p(v::AbstractVars) = real.(v.p + conj.(v.p))
+
 mode1u(prob::AbstractProblem) = mode1u(prob.vars)
 mode1v(prob::AbstractProblem) = mode1v(prob.vars)
 mode1w(prob::AbstractProblem) = mode1w(prob.vars)
 mode1p(prob::AbstractProblem) = mode1p(prob.vars)
+
 mode1speed(v::AbstractVars) = sqrt.(mode1u(v).^2.0 + mode1v(v).^2.0)
 mode1speed(prob::AbstractProblem) = mode1speed(prob.vars)
+mode0speed(prob) = sqrt.(prob.vars.U.^2.0 + prob.vars.V.^2.0)
+
 mode1buoyancy(v, p) = real.(im*p.m*v.p - im*p.m*conj.(v.p))
 mode1buoyancy(prob::AbstractProblem) = mode1buoyancy(prob.vars, prob.params)
 
-
-""" 
-Returns the transform of the Jacobian of two fields a, b on the grid g.
-"""
-function jacobianh(a, b, g::TwoDGrid)
-  # J(a, b) = dx(a b_y) - dy(a b_x)
-  bh = fft(b)
-  bx = ifft(im*g.K.*bh)
-  by = ifft(im*g.L.*bh)
-  im*g.K.*fft(a.*bx) - im*g.L.*fft(a.*by)
+function mode1w(v::PrognosticAPVVars, p::PrognosticAPVParams, g::TwoDGrid)
+  @views w = -1.0./p.m.*ifft(g.K.*v.solc[:, :, 1] .+ g.L.*v.solc[:, :, 2])
+  real.(w + conj.(w))
 end
 
-""" 
-Returns the Jacobian of two fields a, b on the grid g.
-"""
-function jacobian(a, b, g::TwoDGrid)
-  ifft(jacobianh(a, b, g))
-end
+
+
 
 """ 
 Returns the Courant-Freidrichs-Lewy number. 
@@ -1446,11 +1423,26 @@ function Qchi(u, v, p, pr::TwoModeParams, g::TwoDGrid)
     .- im.*g.Lr .* rfft(real.(u.*conj.(p) .+ conj.(u).*p)), g.nx)
 end
 
-function Qchi(v::Vars, p::TwoModeParams, g::TwoDGrid)
+function Qchi(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   @views A_mul_B!(v.u, g.ifftplan, v.solc[:, :, 1])
   @views A_mul_B!(v.v, g.ifftplan, v.solc[:, :, 2])
   @views A_mul_B!(v.p, g.ifftplan, v.solc[:, :, 3])
+
   Qchi(v.u, v.v, v.p, p, g)
+end
+
+function Qchi(v::PrognosticAPVVars, p::PrognosticAPVParams, g::TwoDGrid)
+  @views A_mul_B!(v.u, g.ifftplan, v.solc[:, :, 1])
+  @views A_mul_B!(v.v, g.ifftplan, v.solc[:, :, 2])
+  @views A_mul_B!(v.p, g.ifftplan, v.solc[:, :, 3])
+
+  @. v.up = real(v.u*conj(v.p) + conj(v.u)*v.p)
+  @. v.vp = real(v.v*conj(v.p) + conj(v.v)*v.p)
+
+  A_mul_B!(v.uph, g.rfftplan, v.up)
+  A_mul_B!(v.vph, g.rfftplan, v.vp)
+
+  irfft(p.m^2.0./p.N^2.0.*im.*(g.Kr.*v.vph .- g.Lr.*v.uph), g.nx)
 end
 
 function Qchi(prob::AbstractProblem)
@@ -1463,11 +1455,11 @@ end
 """ 
 Returns chi, the "mode-1-induced" barotropic streamfunction.
 """
-function chi(qchi, g::TwoDGrid)
-  -irfft(g.invKKrsq.*rfft(qchi), g.nx)
+function chi(Qchi, g::TwoDGrid)
+  -irfft(g.invKKrsq.*rfft(Qchi), g.nx)
 end
 
-function chi(v::Vars, p::TwoModeParams, g::TwoDGrid)
+function chi(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   chi(Qchi(v, p, g), g)
 end
 
@@ -1483,12 +1475,12 @@ Returns the velocity field associated with the "mode-1-induced" barotropic
 streamfunction. 
 """
 function UVchi(Qchi::AbstractArray, g::TwoDGrid)
-  uchi =  irfft(im.*g.Lr.*g.invKKrsq.*rfft(Qchi), g.nx)
-  vchi = -irfft(im.*g.Kr.*g.invKKrsq.*rfft(Qchi), g.nx)
-  uchi, vchi
+  Uchi =  irfft(im.*g.Lr.*g.invKKrsq.*rfft(Qchi), g.nx)
+  Vchi = -irfft(im.*g.Kr.*g.invKKrsq.*rfft(Qchi), g.nx)
+  Uchi, Vchi
 end
 
-function UVchi(v::Vars, p::TwoModeParams, g::TwoDGrid)
+function UVchi(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   UVchi(Qchi(v, p, g), g)
 end
 
@@ -1496,8 +1488,21 @@ function UVchi(prob::AbstractProblem)
   UVchi(prob.vars, prob.params, prob.grid)
 end
 
- 
 
+
+
+""" 
+Returns the barotropic vorticity, Z.
+"""
+function get_Z(v::PrognosticAPVVars, p::PrognosticAPVParams, g::TwoDGrid)
+  calcPsih!(v, p, g)
+  -irfft(g.KKrsq.*v.Psih, g.nx)
+end
+
+function get_Z(prob::AbstractProblem)
+  get_Z(prob.vars, prob.params, prob.grid)
+end
+ 
 
 
 
@@ -1560,9 +1565,11 @@ function calc_qw(sig::Real, v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   # Assemble contributions
   qw = -real.( 
        2.0*im/sig * (
-        jacobian(conj.(usig), usig, g) + jacobian(conj.(vsig), vsig, g))
+        FourierFlows.jacobian(conj.(usig), usig, g) 
+      + FourierFlows.jacobian(conj.(vsig), vsig, g))
     + p.f/sig^2.0 * (
-        jacobian(conj.(vsig), usig, g) + jacobian(vsig, conj.(usig), g))
+        FourierFlows.jacobian(conj.(vsig), usig, g) 
+      + FourierFlows.jacobian(vsig, conj.(usig), g))
     + p.f/sig^2.0 * (usig2xx + vsig2yy + usigvsigxy)
   )
 
@@ -1586,9 +1593,11 @@ function calc_qw(usig::AbstractArray, vsig::AbstractArray, sig::Real,
   # Assemble contributionsCalulate
   qw = -real.( 
        2.0*im/sig * (
-        jacobian(conj.(usig), usig, g) + jacobian(conj.(vsig), vsig, g))
+        FourierFlows.jacobian(conj.(usig), usig, g) 
+      + FourierFlows.jacobian(conj.(vsig), vsig, g))
     + p.f/sig^2.0 * (
-        jacobian(conj.(vsig), usig, g) + jacobian(vsig, conj.(usig), g))
+        FourierFlows.jacobian(conj.(vsig), usig, g) 
+      + FourierFlows.jacobian(vsig, conj.(usig), g))
     + p.f/sig^2.0 * (usig2xx + vsig2yy + usigvsigxy)
   )
 
@@ -1625,7 +1634,7 @@ Returns the wave-induced speed.
 function wave_induced_speed(sig, vs::AbstractVars, pr::AbstractParams, 
   g::AbstractGrid)
   uw, vw = wave_induced_uv(sig, vs, pr, g)
-  return sqrt.(uw.^2.0 + vw.^2.0)
+  sqrt.(uw.^2.0 + vw.^2.0)
 end
 
 function wave_induced_speed(sig, prob::AbstractProblem)
@@ -1651,7 +1660,7 @@ function wave_induced_v(vs, pr, g)
   wave_induced_uv(sig, vs, pr, g)[2]
 end
 
-wave_induced_v(prob::AbstractProblem)
+function wave_induced_v(prob::AbstractProblem)
   wave_induced_v(prob.vars, prob.params, prob.grid)
 end
 
@@ -1680,7 +1689,7 @@ function apv_induced_speed(vs, pr, g)
   PsiQh = -g.invKKrsq.*rfft(Q)
   uQ = irfft(-im*g.Lr.*PsiQh, g.nx)
   vQ = irfft( im*g.Kr.*PsiQh, g.nx)
-  return sqrt.(uQ.^2.0+vQ.^2.0)
+  sqrt.(uQ.^2.0+vQ.^2.0)
 end
 
 function apv_induced_speed(prob::AbstractProblem)
