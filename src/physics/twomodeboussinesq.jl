@@ -14,7 +14,9 @@ export set_Z!, updatevars!
 
 
 # Problem --------------------------------------------------------------------- 
-""" Construct a FourierFlows Problem. """
+""" 
+Construct a TwoModeBoussinesq initial value problem.
+"""
 function InitialValueProblem(;
   nx   = 128, 
   Lx   = 2pi, 
@@ -763,7 +765,9 @@ end
 
 
 
-""" Set zeroth mode vorticity, zeta, and update vars. """
+"""
+Set zeroth mode vorticity, zeta, and update vars. 
+"""
 function set_Z!(v::Vars, p::TwoModeParams, g::TwoDGrid, Z)
   A_mul_B!(v.solr, g.rfftplan, Z)
   updatevars!(v, p, g)
@@ -773,9 +777,6 @@ end
 function set_Z!(prob::AbstractProblem, Z)
   set_Z!(prob.vars, prob.params, prob.grid, Z)
 end
-
-
-
 
 function set_Z!(v::PassiveAPVVars, p::PassiveAPVParams, g::TwoDGrid, Z)
   A_mul_B!(v.Zh, g.rfftplan, Z)
@@ -794,11 +795,9 @@ end
 
 
 
-
-
-
-
-""" Set first mode u, v, and p and update vars."""
+""" 
+Set first mode u, v, and p and update vars.
+"""
 function set_uvp!(vs::Vars, pr::TwoModeParams, g::TwoDGrid, u, v, p)
   uh = fft(u)
   vh = fft(v)
@@ -811,12 +810,6 @@ function set_uvp!(vs::Vars, pr::TwoModeParams, g::TwoDGrid, u, v, p)
   updatevars!(vs, pr, g)
   nothing
 end
-
-function set_uvp!(prob::AbstractProblem, u, v, p)
-  set_uvp!(prob.vars, prob.params, prob.grid, u, v, p)
-end
-
-
 
 function set_uvp!(vs::PassiveAPVVars, pr::PassiveAPVParams, g::TwoDGrid, 
   u, v, p)
@@ -839,10 +832,17 @@ function set_uvp!(vs::PassiveAPVVars, pr::PassiveAPVParams, g::TwoDGrid,
   nothing
 end
 
+function set_uvp!(prob::AbstractProblem, u, v, p)
+  set_uvp!(prob.vars, prob.params, prob.grid, u, v, p)
+end
 
 
-""" Set a plane wave solution with initial speed uw and non-dimensional wave
-number nkw. The dimensional wavenumber will be 2π*nkw/Lx. """
+
+
+""" 
+Set a plane wave solution with initial speed uw and non-dimensional wave
+number nkw. The dimensional wavenumber will be 2π*nkw/Lx. 
+"""
 function set_planewave!(vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid,
   uw::Real, nkw::Int)
 
@@ -852,16 +852,6 @@ function set_planewave!(vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid,
   kw = 2π*nkw/g.Lx
   σ = sqrt(pr.f^2 + pr.N^2*kw^2/pr.m^2)
   alpha = pr.N^2*kw^2/(pr.f^2*pr.m^2) # also (sig^2-f^2)/f^2
-
-  # Component amplitudes
-  #u0 = uw * σ/(sqrt(2)*sqrt(alpha+2)*pr.f)
-  #v0 = pr.f/σ * u0
-  #p0 = 2*u0*alpha*pr.f^2 / (σ*kw)
-
-  ## Initial conditions
-  #u = u0     * exp.(im*kw*x)    # u = 2*u0*cos(phi)
-  #v = -im*v0 * exp.(im*kw*x)    # v = 2*v0*sin(phi)
-  #p = p0     * exp.(im*kw*x)    # p = 2*p0*cos(phi)
 
   u0 = uw/2
   v0 = -uw * im*pr.f/2σ
@@ -882,7 +872,9 @@ end
 
 
 
-""" Calculate the zeroth mode energy. """
+""" 
+Returns the integrated energy in the zeroth mode energy. 
+"""
 function mode0energy(v::Vars, p::TwoModeParams, g::TwoDGrid)
   0.5*FourierFlows.parsevalsum(real.(g.invKKrsq).*abs2.(v.solr), g)
 end
@@ -898,8 +890,10 @@ end
 
 
 
-""" Calculate the projection of the first mode kinetic energy onto the
-zeroth mode. """
+""" 
+Returns the projection of the integrated first mode kinetic energy
+onto the zeroth mode.
+"""
 function mode1ke(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   (FourierFlows.parsevalsum2(v.solc[:, :, 1], g) 
     + FourierFlows.parsevalsum2(v.solc[:, :, 2], g))
@@ -912,8 +906,10 @@ end
 
 
 
-""" Calculate the projection of the first mode potential energy onto the
-zeroth mode. """
+""" 
+Returns the projection of the integrated first mode potential energy onto the
+zeroth mode. 
+"""
 function mode1pe(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   p.m^2/p.N^2*FourierFlows.parsevalsum2(v.solc[:, :, 3], g)
 end
@@ -925,7 +921,10 @@ end
 
 
 
-""" Calculate the first mode energy. """
+""" 
+Returns the projection of the total integrated first mode energy onto the
+zeroth mode.
+"""
 function mode1energy(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   mode1ke(v, p, g) + mode1pe(v, p, g)
 end
@@ -938,7 +937,7 @@ end
 
 
 """ 
-Calculate the total energy projected onto the zeroth mode. 
+Returns the total energy projected onto the zeroth mode.
 """
 function totalenergy(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   mode0energy(v, p, g) + mode1energy(v, p, g)
@@ -952,20 +951,8 @@ end
 
 
 """ 
-Return the zeroth and first mode energy as a tuple. 
+Returns kinetic energy dissipation of the zeroth mode. 
 """
-function twoenergies(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
-  mode0energy(v, p, g), mode1energy(v, p, g)
-end
-
-function twoenergies(prob::AbstractProblem)
-  twoenergies(prob.vars, prob.params, prob.grid)
-end
-
-
-
-
-""" Return kinetic energy dissipation of the zeroth mode. """
 function mode0dissipation(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   delzeta = irfft(
     (-1.0)^(p.nν0/2) .* g.KKrsq.^(p.nν0/2) .* vs.solr, g.nx)
@@ -975,7 +962,10 @@ end
 
 
 
-""" Calculate the projection of APV onto the zeroth mode. """
+""" 
+Returns the projection of available potential vorticity onto the 
+zeroth mode.
+"""
 function mode0apv(Z, u, v, p, pr::TwoModeParams, g::TwoDGrid)
   (Z .+ irfft( pr.m^2.0./pr.N^2.0 .* (
       im.*g.Lr.*rfft(real.(u.*conj.(p) .+ conj.(u).*p)) 
@@ -1010,7 +1000,9 @@ end
 
 
 
-""" Calculating the projection of APV onto the first mode. """
+""" 
+Returns the projection of available potential energy onto the first mode.
+"""
 function mode1apv(Z, zeta, p, pr::TwoModeParams, g::TwoDGrid)
   zeta .- pr.m.^2.0./pr.N.^2.0 .* (pr.f .+ Z) .* p
 end
@@ -1040,32 +1032,24 @@ function mode1apv(prob::AbstractProblem)
   mode1apv(prob.vars, prob.params, prob.grid)
 end
 
-
-  
-
-
-
-
 mode0speed(prob) = sqrt.(prob.vars.U.^2.0 + prob.vars.V.^2.0)
-
 mode1u(v::AbstractVars) = real.(v.u + conj.(v.u))
 mode1v(v::AbstractVars) = real.(v.v + conj.(v.v))
 mode1w(v::AbstractVars) = real.(v.w + conj.(v.w))
 mode1p(v::AbstractVars) = real.(v.p + conj.(v.p))
-
 mode1u(prob::AbstractProblem) = mode1u(prob.vars)
 mode1v(prob::AbstractProblem) = mode1v(prob.vars)
 mode1w(prob::AbstractProblem) = mode1w(prob.vars)
 mode1p(prob::AbstractProblem) = mode1p(prob.vars)
-
 mode1speed(v::AbstractVars) = sqrt.(mode1u(v).^2.0 + mode1v(v).^2.0)
 mode1speed(prob::AbstractProblem) = mode1speed(prob.vars)
-
 mode1buoyancy(v, p) = real.(im*p.m*v.p - im*p.m*conj.(v.p))
 mode1buoyancy(prob::AbstractProblem) = mode1buoyancy(prob.vars, prob.params)
 
 
-""" Compute the transform of the Jacobian of two fields a, b on a grid g. """
+""" 
+Returns the transform of the Jacobian of two fields a, b on the grid g.
+"""
 function jacobianh(a, b, g::TwoDGrid)
   # J(a, b) = dx(a b_y) - dy(a b_x)
   bh = fft(b)
@@ -1074,21 +1058,99 @@ function jacobianh(a, b, g::TwoDGrid)
   im*g.K.*fft(a.*bx) - im*g.L.*fft(a.*by)
 end
 
-""" Compute the Jacobian of two fields a, b on a grid g. """
+""" 
+Returns the Jacobian of two fields a, b on the grid g.
+"""
 function jacobian(a, b, g::TwoDGrid)
   ifft(jacobianh(a, b, g))
+end
+
+""" 
+Returns the Courant-Freidrichs-Lewy number. 
+"""
+function CFL(prob, dt)
+  dx = minimum([prob.grid.dx, prob.grid.dy])
+  U = maximum([
+    maximum(abs.(prob.vars.U)), 
+    maximum(abs.(prob.vars.V)),
+    maximum(abs.(prob.vars.u)),
+    maximum(abs.(prob.vars.v))])
+
+  U*dt/dx
+end
+
+
+
+  
+""" 
+Returns Q^chi, the quadratic mode-1 contribution to barotropic 
+available potential vorticity. 
+"""
+function Qchi(u, v, p, pr::TwoModeParams, g::TwoDGrid)
+  pr.m.^2.0./pr.N.^2.0 .* irfft(
+       im.*g.Kr .* rfft(real.(v.*conj.(p) .+ conj.(v).*p))
+    .- im.*g.Lr .* rfft(real.(u.*conj.(p) .+ conj.(u).*p)), g.nx)
+end
+
+function Qchi(v::Vars, p::TwoModeParams, g::TwoDGrid)
+  @views A_mul_B!(v.u, g.ifftplan, v.solc[:, :, 1])
+  @views A_mul_B!(v.v, g.ifftplan, v.solc[:, :, 2])
+  @views A_mul_B!(v.p, g.ifftplan, v.solc[:, :, 3])
+  Qchi(v.u, v.v, v.p, p, g)
+end
+
+function Qchi(prob::AbstractProblem)
+  Qchi(prob.vars, prob.params, prob.grid)
 end
 
 
 
 
+""" 
+Returns chi, the "mode-1-induced" barotropic streamfunction.
+"""
+function chi(qchi, g::TwoDGrid)
+  -irfft(g.invKKrsq.*rfft(qchi), g.nx)
+end
 
+function chi(v::Vars, p::TwoModeParams, g::TwoDGrid)
+  chi(Qchi(v, p, g), g)
+end
+
+function chi(prob::AbstractProblem)
+  chi(prob.vars, prob.params, prob.grid)
+end
+
+
+
+
+""" 
+Returns the velocity field associated with the "mode-1-induced" barotropic 
+streamfunction. 
+"""
+function UVchi(Qchi::AbstractArray, g::TwoDGrid)
+  uchi =  irfft(im.*g.Lr.*g.invKKrsq.*rfft(Qchi), g.nx)
+  vchi = -irfft(im.*g.Kr.*g.invKKrsq.*rfft(Qchi), g.nx)
+  uchi, vchi
+end
+
+function UVchi(v::Vars, p::TwoModeParams, g::TwoDGrid)
+  UVchi(Qchi(v, p, g), g)
+end
+
+function UVchi(prob::AbstractProblem)
+  UVchi(prob.vars, prob.params, prob.grid)
+end
+
+ 
 
 
 
 
 # Wave-induced flow and potential vorticity ----------------------------------- 
-""" Calculate the wave-induced streamfunction and velocity fields. """
+""" 
+Calculate the wave-induced streamfunction and velocity fields.
+"""
 function wave_induced_uv(qw, g::TwoDGrid)
 
   qwh = rfft(qw)
@@ -1113,8 +1175,9 @@ function wave_induced_uv(sig, prob::AbstractProblem)
   wave_induced_uv(sig, prob.vars, prob.params, prob.grid)
 end
 
-
-""" Returns the wave-induced streamfunction. """
+""" 
+Returns the wave-induced streamfunction.
+"""
 function wave_induced_psi(qw, g::TwoDGrid)
   irfft(g.invKKrsq.*rfft(qw), g.nx)
 end
@@ -1128,10 +1191,9 @@ function wave_induced_psi(sig, prob::AbstractProblem)
   wave_induced_psi(sig, prob.vars, prob.params, prob.grid)
 end
 
-
-
-
-""" Calculate the wave contribution to PV, qw. """
+""" 
+Calculate the wave contribution to PV, qw.
+"""
 function calc_qw(sig::Real, v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
 
   usig, vsig = calc_usigvsig(sig, v, p, g)
@@ -1153,7 +1215,9 @@ function calc_qw(sig::Real, v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   qw
 end
 
-""" Calculate the wave contribution to PV, qw. """
+""" 
+Calculate the wave contribution to PV, qw.
+"""
 function calc_qw(usig::AbstractArray, vsig::AbstractArray, sig::Real, 
   p::TwoModeParams, g::TwoDGrid)
 
@@ -1181,9 +1245,6 @@ function calc_qw(sig::Real, prob::AbstractProblem)
   calc_qw(sig, prob.vars, prob.params, prob.grid)
 end
 
-
-
-
 function calc_usigvsig(sig, Zh, v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   @views @. v.uh = v.solc[:, :, 1]
   @views @. v.vh = v.solc[:, :, 2]
@@ -1204,10 +1265,9 @@ function calc_usigvsig(sig, v::PassiveAPVVars, p::TwoModeParams, g::TwoDGrid)
   calc_usigvsig(sig, v.Zh, v, p, g)
 end
 
-
-
-
-""" Returns the wave-induced speed. """
+""" 
+Returns the wave-induced speed.
+"""
 function wave_induced_speed(sig, vs::AbstractVars, pr::AbstractParams, 
   g::AbstractGrid)
   uw, vw = wave_induced_uv(sig, vs, pr, g)
@@ -1218,8 +1278,9 @@ function wave_induced_speed(sig, prob::AbstractProblem)
   wave_induced_speed(sig, prob.vars, prob.params, prob.grid)
 end
 
-
-""" Returns the wave-induced x-velocity. """
+""" 
+Returns the wave-induced x-velocity. 
+"""
 function wave_induced_u(sig, vs::AbstractVars, pr::AbstractParams, 
   g::AbstractGrid)
   uw, vw = wave_induced_uv(sig, vs, pr, g)
@@ -1230,8 +1291,9 @@ function wave_induced_u(sig, prob::AbstractProblem)
   wave_induced_u(prob.vars, prob.params, prob.grid)
 end
 
-
-""" Returns the wave-induced y-velocity. """
+""" 
+Returns the wave-induced y-velocity. 
+"""
 function wave_induced_v(vs, pr, g)
   uw, vw = wave_induced_uv(sig, vs, pr, g)
   return vw
@@ -1240,9 +1302,6 @@ end
 function wave_induced_v(prob::AbstractProblem)
   wave_induced_v(prob.vars, prob.params, prob.grid)
 end
-
-
-
 
 """ 
 Returns the APV-induced streamfunction.
@@ -1259,9 +1318,6 @@ end
 function apv_induced_psi(prob::AbstractProblem)
   apv_induced_psi(prob.vars, prob.params, prob.grid)
 end
-  
-
-
 
 """ 
 Returns the speed of the flow induced by the available potential 
@@ -1279,7 +1335,6 @@ function apv_induced_speed(prob::AbstractProblem)
   apv_induced_speed(prob.vars, prob.params, prob.grid)
 end
 
-
 """ 
 Return the total Lagrangian-mean flow. 
 """
@@ -1295,7 +1350,6 @@ function lagrangian_mean_uv(sig, prob::AbstractProblem)
   lagrangian_mean_uv(sig, prob.vars, prob.params, prob.grid)
 end
 
-
 """ Return the Lagrangian-mean streamfunction. """
 function lagrangian_mean_psih(σ, vs::AbstractVars, pr::AbstractParams, 
   g::AbstractGrid)
@@ -1308,87 +1362,10 @@ function lagrangian_mean_psih(σ, prob::AbstractProblem)
   lagrangian_mean_psih(σ, prob.vars, prob.params, prob.grid)
 end
 
-
-
-
 function lagrangian_mean_psi(σ, prob::AbstractProblem)
   irfft(lagrangian_mean_psih(σ, prob), prob.grid.nx)
 end
 
-
-
-
-""" Calculate the Courant-Freidrichs-Lewy number. """
-function CFL(prob, dt)
-  dx = minimum([prob.grid.dx, prob.grid.dy])
-  U = maximum([
-    maximum(abs.(prob.vars.U)), 
-    maximum(abs.(prob.vars.V)),
-    maximum(abs.(prob.vars.u)),
-    maximum(abs.(prob.vars.v))])
-
-  U*dt/dx
-end
-
-
-
-  
-""" Calculate q^chi, the unaveraged, quadratic mode-1 contribution to
-available potential vorticity. """
-function calc_qchi(u, v, p, pr::TwoModeParams, g::TwoDGrid)
-  pr.m.^2.0./pr.N.^2.0 .* irfft(
-       im.*g.Kr .* rfft(real.(v.*conj.(p) .+ conj.(v).*p))
-    .- im.*g.Lr .* rfft(real.(u.*conj.(p) .+ conj.(u).*p)), g.nx)
-end
-
-function calc_qchi(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  @views A_mul_B!(v.u, g.ifftplan, v.solc[:, :, 1])
-  @views A_mul_B!(v.v, g.ifftplan, v.solc[:, :, 2])
-  @views A_mul_B!(v.p, g.ifftplan, v.solc[:, :, 3])
-  calc_qchi(v.u, v.v, v.p, p, g)
-end
-
-function calc_qchi(prob::AbstractProblem)
-  calc_qchi(prob.vars, prob.params, prob.grid)
-end
-
-
-
-
-""" Calculate chi, the unaveraged "mode-1-induced" barotropic 
-streamfunction. """
-function calc_chi(qchi, g::TwoDGrid)
-  -irfft(g.invKKrsq.*rfft(qchi), g.nx)
-end
-
-function calc_chi(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  calc_chi(calc_qchi(v, p, g), g)
-end
-
-function calc_chi(prob::AbstractProblem)
-  calc_chi(prob.vars, prob.params, prob.grid)
-end
-
-
-
-
-""" Calculate the velocity field associated with the unaveraged 
-"mode-1-induced" barotropic streamfunction. """
-function calc_chi_uv(qchi, g::TwoDGrid)
-  uchi =  irfft(im.*g.Lr.*g.invKKrsq.*rfft(qchi), g.nx)
-  vchi = -irfft(im.*g.Kr.*g.invKKrsq.*rfft(qchi), g.nx)
-  uchi, vchi
-end
-
-function calc_chi_uv(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  calc_chi_uv(calc_qchi(v, p, g), g)
-end
-
-function calc_chi_uv(prob::AbstractProblem)
-  calc_chi_uv(prob.vars, prob.params, prob.grid)
-end
-
- 
 
 
 # End module
