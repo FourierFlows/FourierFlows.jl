@@ -1326,6 +1326,63 @@ end
 
 
 """ 
+Generate an isotropic spectrum of waves.
+"""
+function set_randomwavefield!(
+  vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid, amplitude::Function; KE=1.0)
+
+  # For clarity
+  f, N, m = pr.f, pr.N, pr.m
+
+  # Initialize
+  phase = zeros(Complex{Float64}, g.nx, g.ny)
+  u0 = zeros(Complex{Float64}, g.nx, g.ny)
+  v0 = zeros(Complex{Float64}, g.nx, g.ny)
+  p0 = zeros(Complex{Float64}, g.nx, g.ny)
+
+  # Sum Fourier components
+  for k in real.(g.k), l in real.(g.l)
+   
+    # Dispersion relation
+    σ = sqrt(f^2 + N^2/m^2*(k^2 + l^2))
+
+    # Random phases
+    phase .= k*g.X .+ l*g.Y .+ 2π*rand()
+
+    # Polarization
+    u0 .+= amplitude(k, l)*exp.(im*phase)
+    v0 .+= -u0*(im*f/σ - k*l*N^2/(σ*m)^2)/(1 - (l*N)^2/(σ*m)^2)
+    p0 .+= N^2/(σ*m^2) * (k*u0 .+ l*v0)
+
+
+  end
+
+  # Normalize by kinetic energy
+  uh, vh = fft(u0), fft(v0)
+  ke = mode1ke(uh, vh, g)
+
+  norm = sqrt(KE/(g.Lx*g.Ly)^2)/sqrt(ke)
+
+  u0 .*= norm
+  v0 .*= norm
+  p0 .*= norm
+   
+  set_uvp!(vs, pr, g, u0, v0, p0)
+
+  nothing
+end
+
+function set_randomwavefield!(
+  vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid; KE=1.0)
+  amplitude(k, l) = 1.0
+  set_randomwavefield!(vs, pr, g, amplitude; KE=1.0)
+end
+ 
+
+
+
+
+""" 
 Returns the integrated energy in the zeroth mode energy. 
 """
 function mode0energy(v::Vars, p::TwoModeParams, g::TwoDGrid)
@@ -1352,9 +1409,12 @@ end
 Returns the projection of the integrated first mode kinetic energy
 onto the zeroth mode.
 """
+function mode1ke(uh, vh, g)
+  FourierFlows.parsevalsum2(uh, g) + FourierFlows.parsevalsum2(vh, g)
+end
+
 function mode1ke(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
-  (FourierFlows.parsevalsum2(v.solc[:, :, 1], g) 
-    + FourierFlows.parsevalsum2(v.solc[:, :, 2], g))
+  @views mode1ke(v.solc[:, :, 1], v.solc[:, :, 2], g)
 end
 
 function mode1ke(prob::AbstractProblem)
