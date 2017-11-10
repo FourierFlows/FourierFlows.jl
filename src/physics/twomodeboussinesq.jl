@@ -63,7 +63,8 @@ function PrognosticAPVInitialValueProblem(;
   Us   = 0.0,
   Vs   = 0.0,
   dt   = 0.01,
-  wavecubics = true
+  wavecubics = true,
+  linearwaves = false
   )
 
   if Ly == nothing; Ly = Lx; end
@@ -75,10 +76,12 @@ function PrognosticAPVInitialValueProblem(;
   pr = TwoModeBoussinesq.PrognosticAPVParams(ν0, nν0, ν1, nν1, f, N, m)
   vs = TwoModeBoussinesq.PrognosticAPVVars(g)
 
-  if wavecubics
-    eq = TwoModeBoussinesq.Equation(pr, g)
-  else
+  if !wavecubics
     eq = TwoModeBoussinesq.NoWaveCubicsEquation(pr, g)
+  elseif linearwaves
+    eq = TwoModeBoussinesq.LinearWavesEquation(pr, g)
+  else
+    eq = TwoModeBoussinesq.Equation(pr, g)
   end
 
   ts = ETDRK4TimeStepper(dt, eq.LCc, eq.LCr)
@@ -201,23 +204,29 @@ type Equation <: AbstractEquation
 end
 
 function Equation(p::TwoModeParams, g::TwoDGrid)
-  LCr = -p.ν0 * g.KKrsq.^(0.5*p.nν0)
-
-  LCc = zeros(g.nk, g.nl, 3)
-  LCc[:, :, 1] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
-  LCc[:, :, 2] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
-
+  LCc, LCr = getlinearcoefficients(p, g)
   Equation(LCc, LCr, calcNL!)
 end
 
 function NoWaveCubicsEquation(p::PrognosticAPVParams, g::TwoDGrid)
+  LCc, LCr = getlinearcoefficients(p, g)
+  Equation(LCc, LCr, calcNL_nowavecubics!)
+end
+
+function LinearWavesEquation!(p::PrognosticAPVParams, g::TwoDGrid)
+  LCc, LCr = getlinearcoefficients(p, g)
+  Equation(LCc, LCr, calcNL_linearwaves!)
+end
+
+
+function getlinearcoefficients(p::TwoModeParams, g::TwoDGrid)
   LCr = -p.ν0 * g.KKrsq.^(0.5*p.nν0)
 
   LCc = zeros(g.nk, g.nl, 3)
   LCc[:, :, 1] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
   LCc[:, :, 2] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
 
-  Equation(LCc, LCr, calcNL_nowavecubics!)
+  LCc, LCr
 end
 
 
@@ -239,7 +248,6 @@ function PassiveAPVEquation(p::PassiveAPVParams, g::TwoDGrid)
   LCc = zeros(g.nk, g.nl, 3)
   LCc[:, :, 1] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
   LCc[:, :, 2] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
-  #LCc[:, :, 3] = -p.ν1 * g.KKsq.^(0.5*p.nν1)
 
   PassiveAPVEquation(LCc, LCr, calcNL!)
 end
@@ -950,7 +958,7 @@ function calcNL!(
   )
 
   dealias!(NLr, g)
-  dealias!(NLc, g)
+  cubicdealias!(NLc, g)
 
   nothing
 end
@@ -1053,6 +1061,47 @@ function calcNL_nowavecubics!(
   nothing
 end
 
+function calcNL_linearwaves!(
+  NLc::Array{Complex{Float64}, 3},  NLr::Array{Complex{Float64}, 2}, 
+  solc::Array{Complex{Float64}, 3}, solr::Array{Complex{Float64}, 2}, 
+  t::Float64, v::PrognosticAPVVars, p::PrognosticAPVParams, g::TwoDGrid)
+
+  calcPsih!(v, p, g, solc, solr)
+
+  @. v.Uh = -im*g.Lr*v.Psih
+  @. v.Vh =  im*g.Kr*v.Psih
+
+  v.Uh[1, 1] += p.Us*g.nx*g.ny
+  v.Vh[1, 1] += p.Vs*g.nx*g.ny
+
+  # Inverse transforms
+  v.Qh .= solr
+  A_mul_B!(v.Q, g.irfftplan, v.Qh)
+  A_mul_B!(v.U, g.irfftplan, v.Uh)
+  A_mul_B!(v.V, g.irfftplan, v.Vh)
+
+  @. v.UQ = v.U * v.Q
+  @. v.VQ = v.V * v.Q
+
+  # Forward transforms
+  A_mul_B!(v.UQh, g.rfftplan, v.UQ)
+  A_mul_B!(v.VQh, g.rfftplan, v.VQ)
+  
+  # ---------------------------------------------------------------------------   
+  # Zeroth-mode nonlinear term
+  @. NLr = - im*g.Kr*v.UQh - im*g.Lr*v.VQh
+
+  # First-mode nonlinear terms:
+  # u
+  @views @. NLc[:, :, 1] = p.f*solc[:, :, 2] - im*g.K*solc[:, :, 3]
+  @views @. NLc[:, :, 2] = -p.f*solc[:, :, 1] - im*g.L*solc[:, :, 3]
+  @views @. NLc[:, :, 3] = -im*( 
+     p.N^2.0/p.m^2.0*(g.K*solc[:, :, 1]  + g.L*solc[:, :, 2]))
+
+  dealias!(NLr, g)
+
+  nothing
+end
 
 
 
@@ -1329,7 +1378,8 @@ end
 Generate an isotropic spectrum of waves.
 """
 function set_randomwavefield!(
-  vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid, amplitude::Function; KE=1.0)
+  vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid, amplitude::Function; KE=1.0,
+  maxspeed=nothing)
 
   # For clarity
   f, N, m = pr.f, pr.N, pr.m
@@ -1342,26 +1392,30 @@ function set_randomwavefield!(
 
   # Sum Fourier components
   for k in real.(g.k), l in real.(g.l)
-   
-    # Dispersion relation
-    σ = sqrt(f^2 + N^2/m^2*(k^2 + l^2))
+    if amplitude(k, l) > 1e-15
+     
+      # Dispersion relation
+      σ = sqrt(f^2 + N^2/m^2*(k^2 + l^2))
 
-    # Random phases
-    phase .= k*g.X .+ l*g.Y .+ 2π*rand()
+      # Random phases
+      phase .= k*g.X .+ l*g.Y .+ 2π*rand()
 
-    # Polarization
-    u0 .+= amplitude(k, l)*exp.(im*phase)
-    v0 .+= -u0*(im*f/σ - k*l*N^2/(σ*m)^2)/(1 - (l*N)^2/(σ*m)^2)
-    p0 .+= N^2/(σ*m^2) * (k*u0 .+ l*v0)
-
-
+      # Polarization
+      u0 .+= amplitude(k, l)*exp.(im*phase)
+      v0 .+= -u0*(im*f/σ - k*l*N^2/(σ*m)^2)/(1 - (l*N)^2/(σ*m)^2)
+      p0 .+= N^2/(σ*m^2) * (k*u0 .+ l*v0)
+    end
   end
 
-  # Normalize by kinetic energy
-  uh, vh = fft(u0), fft(v0)
-  ke = mode1ke(uh, vh, g)
-
-  norm = sqrt(KE/(g.Lx*g.Ly)^2)/sqrt(ke)
+  
+  if maxspeed == nothing # Normalize by kinetic energy
+    uh, vh = fft(u0), fft(v0)
+    ke = mode1ke(uh, vh, g)
+    norm = sqrt(KE)/sqrt(ke/(g.Lx*g.Ly))
+  else
+    norm = maxspeed / maximum(
+      sqrt.(real.(u0+conj.(u0)).^2 + real.(v0+conj.(v0)).^2))
+  end
 
   u0 .*= norm
   v0 .*= norm
