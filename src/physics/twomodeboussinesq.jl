@@ -1435,7 +1435,8 @@ end
 
 function set_isotropicwavefield!(prob::AbstractProblem, amplitude::Function;
   kwargs...)
-  set_isotropicwavefield!(prob.vars, prob.params, prob.grid, amplitude; kwargs...)
+  set_isotropicwavefield!(prob.vars, prob.params, prob.grid, amplitude; 
+    kwargs...)
 end
 
 
