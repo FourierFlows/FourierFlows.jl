@@ -44,7 +44,7 @@ end
 function turbwavesetup(name, n, L, α, ε, Ro;
   f=1e-4, N=5e-3, nkw=16, dkw=1, nν0=8, nν1=8, dtfrac=5e-2, ν0frac=1e-1, 
   ν1frac=1e-1, ν0=nothing, ν1=nothing, nperiods=400, nsubperiods=1, 
-  k0turb=n/2, m=32N/(f*L), wavecubics=true, wavefield="planar")
+  k0turb=n/2, m=32N/(f*L), nowavecubics=true, wavefield="planar")
 
 
   # Initialize problem
@@ -66,16 +66,13 @@ function turbwavesetup(name, n, L, α, ε, Ro;
   nsteps = round(Int, nperiods*tσ/dt)
   nsubs = round(Int, nsubperiods*tσ/dt)
 
-  prob = TwoModeBoussinesq.PrognosticAPVInitialValueProblem(nx=n, Lx=L, 
-    ν0=ν0, nν0=nν0, ν1=ν1, nν1=nν1, f=f, N=N, m=m, dt=dt,
-    wavecubics=wavecubics)
-
-
-  # Generate initial turbulence field
   savename = @sprintf("./data/twodturb_n%d_Ro%02d_nnu%d_nu%.0e.jld2", 
     n, 100Ro, nν0, ν0)
-    
-  if !isfile(savename) 
+
+  # Generate initial turbulence field
+  if isfile(savename) 
+    @load savename Z
+  else
     qf = f*Ro
     Z = TwoDTurb.makematureturb(n, L; nnu=nν0, nu=ν0, k0=k0turb, 
       qf=qf, q0=1.2*qf, tf=40/qf)
@@ -94,12 +91,13 @@ function turbwavesetup(name, n, L, α, ε, Ro;
     println("data: ", savename, "\n")
 
     @save savename Z
-  else
-    @load savename Z
   end
 
-  TwoModeBoussinesq.set_Q!(prob, Z)
+  prob = TwoModeBoussinesq.PrognosticAPVInitialValueProblem(nx=n, Lx=L, 
+    ν0=ν0, nν0=nν0, ν1=ν1, nν1=nν1, f=f, N=N, m=m, dt=dt,
+    nowavecubics=nowavecubics)
 
+  TwoModeBoussinesq.set_Q!(prob, Z)
 
   # Initial wave field  
   # ε = U/(Reddy*σ) or U*kw/σ
@@ -123,15 +121,15 @@ function turbwavesetup(name, n, L, α, ε, Ro;
     amplitude(K) = (abs(K) >= kin && abs(K) <= kout) ? 1.0 : 0.0
 
     TwoModeBoussinesq.set_isotropicwavefield!(prob, amplitude; maxspeed=uw)
+  else
+    throw("""Wavefield must be "planar" or "isotropic", not $wavefield.""")
   end
-
 
   # Diagnostics
   etot = Diagnostic(totalenergy, prob; nsteps=nsteps)
   e0   = Diagnostic(mode0energy, prob; nsteps=nsteps)
   e1   = Diagnostic(mode1energy, prob; nsteps=nsteps) 
   diags = [etot, e0, e1]
-
 
   # Prepare output
   fileprefix = @sprintf("./data/%s_%df_n%d_ep%02d_Ro%02d_nk%02d_nnu%d_nu%.0e",
@@ -241,8 +239,9 @@ function makefourplot(prob, tw; eddylim=nothing,
 
   axes(axs[2, 2])
   axis("equal")
-  pcolormesh(x, y, spc, cmap="YlGnBu_r", vmin=0.0, vmax=U00)
-  contour(x, y, Chi, 10, colors="w", linewidths=0.5, alpha=0.5)
+  #pcolormesh(x, y, spc, cmap="YlGnBu_r", vmin=0.0, vmax=U00)
+  #contour(x, y, Chi, 10, colors="w", linewidths=0.5, alpha=0.5)
+  pcolormesh(x, y, uc, cmap="RdBu_r", vmin=-U00, vmax=U00)
 
 
 
