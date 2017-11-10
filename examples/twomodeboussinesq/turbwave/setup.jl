@@ -33,6 +33,7 @@ struct TurbWave
   nsteps
   nsubs
   tσ
+  initialwavefield
 end
 
 
@@ -110,7 +111,7 @@ function turbwavesetup(name, n, L, α, ε, Ro;
   uw = Umax*ε/Romax
 
   tw = TurbWave(name, n, L, f, N, m, ε, uw, kw, α, σ, Ro, Lturb, 
-    dt, nsteps, nsubs, tσ)
+    dt, nsteps, nsubs, tσ, wavefield)
 
   if wavefield == "planar"
     TwoModeBoussinesq.set_planewave!(prob, uw, nkw)
@@ -210,7 +211,9 @@ function makefourplot(prob, tw; eddylim=nothing,
   w00 = tw.uw*tw.kw/(2*tw.m)
   U00 = tw.uw*tw.Ro/tw.ε
   Ro0 = 0.8*tw.Ro
-  u00 = 2*tw.uw
+  if     tw.initialwavefield == "planar";    u00 = 2.0*tw.uw
+  elseif tw.initialwavefield == "isotropic"; u00 = tw.uw
+  end
 
   # Quantities to plot
   #Q      = mode0apv(prob)/tw.f
