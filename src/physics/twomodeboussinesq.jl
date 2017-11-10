@@ -1246,6 +1246,7 @@ function updatevars!(v::PrognosticAPVVars, p::TwoModeParams, g::TwoDGrid)
   @. v.Vh =  im*g.Kr*v.Psih
  
   # Update vars destroys Psih, Uh, Vh, Qh
+  v.Qh .= v.solr
   A_mul_B!(v.Psi, g.irfftplan, v.Psih)
   A_mul_B!(v.U, g.irfftplan, v.Uh)
   A_mul_B!(v.V, g.irfftplan, v.Vh)
@@ -1377,7 +1378,7 @@ end
 """ 
 Generate an isotropic spectrum of waves.
 """
-function set_randomwavefield!(
+function set_isotropicwavefield!(
   vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid, amplitude::Function; KE=1.0,
   maxspeed=nothing)
 
@@ -1426,11 +1427,18 @@ function set_randomwavefield!(
   nothing
 end
 
-function set_randomwavefield!(
-  vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid; KE=1.0)
+function set_isotropicwavefield!(
+  vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid; kwargs...)
   amplitude(k, l) = 1.0
-  set_randomwavefield!(vs, pr, g, amplitude; KE=1.0)
+  set_isotropicwavefield!(vs, pr, g, amplitude; kwargs...)
 end
+
+function set_isotropicwavefield!(prob::AbstractProblem, amplitude::Function;
+  kwargs...)
+  set_isotropicwavefield!(prob.vars, prob.params, prob.grid, amplitude; kwargs...)
+end
+
+
  
 
 
