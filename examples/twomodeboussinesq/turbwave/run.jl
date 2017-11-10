@@ -14,8 +14,7 @@ include("./setup.jl")
 # Setup
 tw, prob, diags, outs = turbwavesetup(name, n, L, α, ε, Ro; nkw=nkw,
   dtfrac = 5e-2, nsubperiods = 1, k0turb = floor(Int, 2n/3), 
-  nν0 = 6, nν1 = 6, ν0 = 1e20, ν1 = 1e20, wavecubics = false
-)
+  nν0 = 6, nν1 = 6, ν0 = 1e20, ν1 = 1e20, nowavecubics = true)
 
 etot, e0, e1 = diags[1], diags[2], diags[3]
 
