@@ -32,7 +32,7 @@ struct TurbWave
   dt
   nsteps
   nsubs
-  twave
+  tσ
 end
 
 
@@ -48,7 +48,7 @@ function turbwavesetup(name, n, L, α, ε, Ro;
 
   # Initialize problem
   σ = f*sqrt(1+α)
-  twave = 2π/σ                      
+  tσ = 2π/σ                      
 
   if α == 0.0 # NIW case
     nkw = 0 
@@ -58,12 +58,12 @@ function turbwavesetup(name, n, L, α, ε, Ro;
     m = N*kw/(f*sqrt(α))
   end
 
-  dt = dtfrac * twave
+  dt = dtfrac * tσ
   if ν0 == nothing; ν0 = ν0frac/(dt*(0.65π*n/L)^nν0); end
   if ν1 == nothing; ν1 = ν1frac/(dt*(0.65π*n/L)^nν1); end   
 
-  nsteps = round(Int, nperiods*twave/dt)
-  nsubs = round(Int, nsubperiods*twave/dt)
+  nsteps = round(Int, nperiods*tσ/dt)
+  nsubs = round(Int, nsubperiods*tσ/dt)
 
   prob = TwoModeBoussinesq.PrognosticAPVInitialValueProblem(nx=n, Lx=L, 
     ν0=ν0, nν0=nν0, ν1=ν1, nν1=nν1, f=f, N=N, m=m, dt=dt,
@@ -107,7 +107,7 @@ function turbwavesetup(name, n, L, α, ε, Ro;
   uw = Umax*ε/Ro
   #uw = ε*σ*Lturb #minimum([ε*σ/kw, ε*Lturb*σ])
   tw = TurbWave(name, n, L, f, N, m, ε, uw, kw, α, σ, Ro, Lturb, 
-    dt, nsteps, nsubs, twave)
+    dt, nsteps, nsubs, tσ)
 
   TwoModeBoussinesq.set_planewave!(prob, uw, nkw)
 
