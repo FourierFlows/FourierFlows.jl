@@ -27,7 +27,7 @@ while prob.step < tw.nsteps
   stepforward!(prob, diags; nsteps=tw.nsubs)
   saveoutput(outs)
 
-  log1 = @sprintf("step: %04d, t: %d, ", prob.step, prob.t/tw.twave)
+  log1 = @sprintf("step: %04d, t: %d, ", prob.step, prob.t/tw.tσ)
   log2 = @sprintf("ΔE: %.3f, Δe: %.3f, Δ(E+e): %.6f, τ: %.2f min",
     e0.value/e0.data[1], e1.value/e1.data[1], etot.value/etot.data[1],
     (time()-startwalltime)/60)
@@ -35,7 +35,7 @@ while prob.step < tw.nsteps
   println(log1*log2)
 
   plotmsg1 = @sprintf("\$t=% 3d\$ wave periods, \$\\Delta E=%.3f\$, ",
-    round(Int, prob.t/tw.twave), e0.value/e0.data[1])
+    round(Int, prob.t/tw.tσ), e0.value/e0.data[1])
   plotmsg2 = @sprintf("\$\\Delta e=%.3f\$, \$\\Delta (E+e)=%.6f\$",
     e1.value/e1.data[1], etot.value/etot.data[1])
 
