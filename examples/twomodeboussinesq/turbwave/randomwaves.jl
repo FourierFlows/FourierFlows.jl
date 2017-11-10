@@ -16,37 +16,11 @@ import FourierFlows.TwoModeBoussinesq: mode1speed
 # Setup
 tw, prob, diags, outs = turbwavesetup(name, n, L, α, ε, Ro; nkw=nkw,
   dtfrac = 2e-2, nsubperiods = 1, k0turb = floor(Int, 2n/3), 
-  nν0 = 6, nν1 = 6, ν0 = 1e20, ν1 = 1e20, wavecubics = false
+  nν0 = 6, nν1 = 6, ν0 = 1e20, ν1 = 1e20, wavecubics = false,
+  wavefield = "isotropic"
 )
 
-# Spectral shape
-k0, dk = 16*2π/L, 1.0*2π/L; 
-kin, kout = k0-dk/2, k0+dk/2
-
-amplitude(k, l) = amplitude(sqrt(k^2+l^2))
-amplitude(K) = (abs(K) >= kin && abs(K) <= kout) ? 1.0 : 0.0
-
-# Normalization by initial wavefield kinetic energy
-maxQ = maximum(abs.(prob.vars.Q))
-maxU = maximum(sqrt.(prob.vars.U.^2.0 + prob.vars.V.^2.0))
-σ = sqrt(prob.params.f^2 + prob.params.N^2*k0^2/prob.params.m^2)
-KE = (ε*σ/k0)^2
-maxspeed = ε*maxU*prob.params.f/maxQ
-println("max Q: ", maxQ)
-println("max U: ", maxU)
-println("max speed: ", maxspeed)
-
-TwoModeBoussinesq.set_randomwavefield!(prob.vars, prob.params, prob.grid,
-  amplitude; KE=KE, maxspeed=maxspeed)
-update!(diags)
-
-fig, axs = subplots()
-imshow(real.(prob.vars.u))
-println(mean(mode1speed(prob)*k0/σ))
-show()
- 
 etot, e0, e1 = diags[1], diags[2], diags[3]
-
 
 # Run
 startwalltime = time()
