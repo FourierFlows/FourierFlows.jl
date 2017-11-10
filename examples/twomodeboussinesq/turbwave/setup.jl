@@ -41,9 +41,9 @@ end
 
 
 function turbwavesetup(name, n, L, α, ε, Ro;
-  f=1e-4, N=5e-3, nkw=16, nν0=8, nν1=8, dtfrac=5e-2, ν0frac=1e-1, 
+  f=1e-4, N=5e-3, nkw=16, dkw=1, nν0=8, nν1=8, dtfrac=5e-2, ν0frac=1e-1, 
   ν1frac=1e-1, ν0=nothing, ν1=nothing, nperiods=400, nsubperiods=1, 
-  k0turb=n/2, m=32N/(f*L), wavecubics=true)
+  k0turb=n/2, m=32N/(f*L), wavecubics=true, wavefield="planar")
 
 
   # Initialize problem
@@ -103,13 +103,26 @@ function turbwavesetup(name, n, L, α, ε, Ro;
   # Initial wave field  
   # ε = U/(Reddy*σ) or U*kw/σ
   Lturb = maximum(sqrt.(prob.vars.U.^2+prob.vars.V.^2)/f)
-  Umax = maximum(sqrt.(prob.vars.U.^2+prob.vars.V.^2))
-  uw = Umax*ε/Ro
-  #uw = ε*σ*Lturb #minimum([ε*σ/kw, ε*Lturb*σ])
+
+  Umax  = maximum(sqrt.(prob.vars.U.^2+prob.vars.V.^2))
+  Romax = maximum(abs.(prob.vars.Q))/f
+
+  uw = Umax*ε/Romax
+
   tw = TurbWave(name, n, L, f, N, m, ε, uw, kw, α, σ, Ro, Lturb, 
     dt, nsteps, nsubs, tσ)
 
-  TwoModeBoussinesq.set_planewave!(prob, uw, nkw)
+  if wavefield == "planar"
+    TwoModeBoussinesq.set_planewave!(prob, uw, nkw)
+  elseif wavefield == "isotropic"
+    kin  = (nkw - dkw/2)*2π/L
+    kout = (nkw + dkw/2)*2π/L
+
+    amplitude(k, l) = amplitude(sqrt(k^2+l^2))
+    amplitude(K) = (abs(K) >= kin && abs(K) <= kout) ? 1.0 : 0.0
+
+    TwoModeBoussinesq.set_isotropicwavefield!(prob, amplitude; maxspeed=uw)
+  end
 
 
   # Diagnostics
