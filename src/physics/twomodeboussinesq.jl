@@ -63,9 +63,15 @@ function PrognosticAPVInitialValueProblem(;
   Us   = 0.0,
   Vs   = 0.0,
   dt   = 0.01,
-  wavecubics = true,
+  nowavecubics = false,
+  nowaveinducedflow = false,
   linearwaves = false
   )
+
+  if sum([nowavecubics, nowaveinducedflow, linearwaves]) > 1
+    throw("Only one type of equation may be seleted by nowavecubics, "*
+            "nowaveinducedflow, or linearwaves.")
+  end
 
   if Ly == nothing; Ly = Lx; end
   if ny == nothing; ny = nx; end
@@ -76,8 +82,10 @@ function PrognosticAPVInitialValueProblem(;
   pr = TwoModeBoussinesq.PrognosticAPVParams(ν0, nν0, ν1, nν1, f, N, m)
   vs = TwoModeBoussinesq.PrognosticAPVVars(g)
 
-  if !wavecubics
+  if nowavecubics
     eq = TwoModeBoussinesq.NoWaveCubicsEquation(pr, g)
+  elseif nowaveinducedflow
+    eq = TwoModeBoussinesq.NoWaveInducedFlowEquation(pr, g)
   elseif linearwaves
     eq = TwoModeBoussinesq.LinearWavesEquation(pr, g)
   else
@@ -92,6 +100,12 @@ end
 
 
 
+"""
+Returns a TwoModeBoussinesq problem in which APV is advected as a passive
+scalar by an diagnosed Lagrangian-mean flow simultaneous to the evoution of
+the wave field and barotropic vorticity field. The Lagrangian-mean flow can
+be diagnosed when one wave frequency, σ, is present and known.
+"""
 function PassiveAPVInitialValueProblem(;
   nx  = 128, 
   Lx  = 2π, 
@@ -211,6 +225,11 @@ end
 function NoWaveCubicsEquation(p::PrognosticAPVParams, g::TwoDGrid)
   LCc, LCr = getlinearcoefficients(p, g)
   Equation(LCc, LCr, calcNL_nowavecubics!)
+end
+
+function NoWaveInducedFlowEquation(p::PrognosticAPVParams, g::TwoDGrid)
+  LCc, LCr = getlinearcoefficients(p, g)
+  Equation(LCc, LCr, calcNL_nowaveinducedflow!)
 end
 
 function LinearWavesEquation!(p::PrognosticAPVParams, g::TwoDGrid)
@@ -936,7 +955,6 @@ function calcNL!(
   A_mul_B!(v.uVxvVyh, g.fftplan, v.uVxvVy)
 
 
-  # ---------------------------------------------------------------------------   
   # Zeroth-mode nonlinear term
   @. NLr = - im*g.Kr*v.UQh - im*g.Lr*v.VQh
 
@@ -1060,6 +1078,93 @@ function calcNL_nowavecubics!(
 
   nothing
 end
+
+
+
+
+function calcNL_nowaveinducedflow!(
+  NLc::Array{Complex{Float64}, 3},  NLr::Array{Complex{Float64}, 2}, 
+  solc::Array{Complex{Float64}, 3}, solr::Array{Complex{Float64}, 2}, 
+  t::Float64, v::PrognosticAPVVars, p::PrognosticAPVParams, g::TwoDGrid)
+
+
+  # APV-induced flow; no wave-induced flow
+  @. v.Psih = -g.invKKrsq*solr
+
+  v.Qh .= solr
+  A_mul_B!(v.Q, g.irfftplan, v.Qh)
+  A_mul_B!(v.U, g.irfftplan, v.Uh)
+  A_mul_B!(v.V, g.irfftplan, v.Vh)
+
+  @. v.Uh = -im*g.Lr*v.Psih
+  @. v.Vh =  im*g.Kr*v.Psih
+
+  v.Uh[1, 1] += p.Us*g.nx*g.ny
+  v.Vh[1, 1] += p.Vs*g.nx*g.ny
+
+  @. v.Uxh = im*g.Kr*v.Uh
+  @. v.Vxh = im*g.Kr*v.Vh
+  @. v.Uyh = im*g.Lr*v.Uh
+  @. v.Vyh = im*g.Lr*v.Vh
+
+  A_mul_B!(v.Ux, g.irfftplan, v.Uxh)
+  A_mul_B!(v.Uy, g.irfftplan, v.Uyh)
+  A_mul_B!(v.Vx, g.irfftplan, v.Vxh)
+  A_mul_B!(v.Vy, g.irfftplan, v.Vyh)
+
+  @. v.UQ = v.U * v.Q
+  @. v.VQ = v.V * v.Q
+  @. v.Uu = v.U * v.u
+  @. v.Vu = v.V * v.u
+  @. v.Uv = v.U * v.v
+  @. v.Vv = v.V * v.v
+  @. v.Up = v.U * v.p
+  @. v.Vp = v.V * v.p
+
+  @. v.uUxvUy = v.u*v.Ux + v.v*v.Uy
+  @. v.uVxvVy = v.u*v.Vx + v.v*v.Vy
+
+  # Forward transforms
+  A_mul_B!(v.UQh, g.rfftplan, v.UQ)
+  A_mul_B!(v.VQh, g.rfftplan, v.VQ)
+  A_mul_B!(v.Uuh, g.fftplan, v.Uu)
+  A_mul_B!(v.Uvh, g.fftplan, v.Uv)
+  A_mul_B!(v.Vuh, g.fftplan, v.Vu)
+  A_mul_B!(v.Vvh, g.fftplan, v.Vv)
+  A_mul_B!(v.Uph, g.fftplan, v.Up)
+  A_mul_B!(v.Vph, g.fftplan, v.Vp)
+
+  A_mul_B!(v.uUxvUyh, g.fftplan, v.uUxvUy)
+  A_mul_B!(v.uVxvVyh, g.fftplan, v.uVxvVy)
+
+
+  # Zeroth-mode nonlinear term
+  @. NLr = - im*g.Kr*v.UQh - im*g.Lr*v.VQh
+
+
+  # First-mode nonlinear terms:
+  # u
+  @views @. NLc[:, :, 1] = ( p.f*solc[:, :, 2] 
+    - im*(g.K*(solc[:, :, 3] + v.Uuh) + g.L*v.Vuh) - v.uUxvUyh
+  )
+
+  # v
+  @views @. NLc[:, :, 2] = ( -p.f*solc[:, :, 1] 
+      - im*(g.L*(solc[:, :, 3] + v.Vvh) + g.K*v.Uvh) - v.uVxvVyh
+  )
+
+  # p
+  @views @. NLc[:, :, 3] = -im*( 
+     g.K*(p.N^2.0/p.m^2.0*solc[:, :, 1] + v.Uph)
+   + g.L*(p.N^2.0/p.m^2.0*solc[:, :, 2] + v.Vph)
+  )
+
+  dealias!(NLr, g)
+  dealias!(NLc, g)
+
+  nothing
+end
+
 
 function calcNL_linearwaves!(
   NLc::Array{Complex{Float64}, 3},  NLr::Array{Complex{Float64}, 2}, 
