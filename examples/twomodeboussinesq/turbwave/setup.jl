@@ -207,7 +207,7 @@ function makefourplot(prob, tw; eddylim=nothing,
   # Color limits
   Z00 = tw.Ro*tw.f
   w00 = tw.uw*tw.kw/(2*tw.m)
-  U00 = tw.uw*tw.Ro/tw.ε
+  U00 = 2*tw.uw*tw.ε
   Ro0 = 0.8*tw.Ro
   if     tw.initialwavefield == "planar";    u00 = 2.0*tw.uw
   elseif tw.initialwavefield == "isotropic"; u00 = tw.uw
