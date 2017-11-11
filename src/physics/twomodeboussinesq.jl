@@ -833,9 +833,9 @@ function calcNL!(
   A_mul_B!(v.uVxvVyh, g.fftplan, v.uVxvVy)
 
 
-  # ---------------------------------------------------------------------------   
   # Zeroth-mode nonlinear term
   @. NLr = - im*g.Kr*v.UZuzh - im*g.Lr*v.VZvzh
+
 
   # First-mode nonlinear terms:
   # u
