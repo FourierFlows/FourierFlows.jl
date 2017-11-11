@@ -32,7 +32,7 @@ function InitialValueProblem(;
   if ν0 == nothing; ν0 = 1e-1/(dt*(0.65π*nx/Lx)^nν0); end
   if ν1 == nothing; ν1 = 1e-1/(dt*(0.65π*nx/Lx)^nν1); end
 
-  g  = TwoDGrid(nx, Lx)
+  g  = TwoDGrid(nx, Lx, ny, Ly)
   pr = TwoModeBoussinesq.Params(ν0, nν0, ν1, nν1, f, N, m)
   vs = TwoModeBoussinesq.Vars(g)
   eq = TwoModeBoussinesq.Equation(pr, g)
