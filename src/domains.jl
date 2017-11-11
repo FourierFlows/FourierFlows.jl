@@ -1,6 +1,6 @@
 __precompile__()
 
-export TwoDGrid, dealias!
+export TwoDGrid, dealias!, cubicdealias!
 
 # Grid types and constructors
 
