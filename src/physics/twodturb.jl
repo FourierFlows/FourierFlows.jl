@@ -13,6 +13,30 @@ export set_q!, updatevars!
 
 
 # Problem --------------------------------------------------------------------- 
+function InitialValueProblem(;
+  nx = 128,
+  Lx = 2π,
+  ny = nothing,
+  Ly = nothing,
+  ν  = nothing, 
+  nν = 2, 
+  dt = 0.01
+  )
+
+  if Ly == nothing; Ly = Lx; end
+  if ny == nothing; ny = nx; end
+  if ν  == nothing; ν = 1e-1/(dt*(0.65π*nx/Lx)^nν); end
+  
+  g  = TwoDGrid(nx, Lx, ny, Ly)
+  pr = TwoDTurb.Params(ν, nν)
+  vs = TwoDTurb.Vars(g)
+  eq = TwoDTurb.Equation(pr, g)
+  ts = ETDRK4TimeStepper(dt, eq.LC)
+
+  FourierFlows.Problem(g, vs, pr, eq, ts)
+end
+
+
 
 
 # P A R A M S
@@ -153,6 +177,10 @@ function updatevars!(v::Vars, p::Params, g::TwoDGrid)
   updatevars!(v, g)
 end
 
+function updatevars!(prob::AbstractProblem)
+  updatevars!(prob.vars, prob.grid)
+end
+
 
 
 """ Set the vorticity field. """
@@ -163,6 +191,10 @@ end
 
 function set_q!(v::Vars, p::Params, g::TwoDGrid, q::Array{Float64, 2})
   set_q!(v, g, q)
+end
+
+function set_q!(prob::AbstractProblem, q)
+  set_q!(prob.vars, prob.grid, q)
 end
 
 
