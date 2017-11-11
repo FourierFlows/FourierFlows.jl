@@ -12,12 +12,13 @@ export Params,
 export set_q!, updatevars!
 
 
+# Problem --------------------------------------------------------------------- 
 
 
 # P A R A M S
 type Params <: AbstractParams
-  nu::Float64                     # Vorticity viscosity
-  nun::Int                        # Vorticity hyperviscous order
+  ν::Float64                     # Vorticity viscosity
+  nν::Int                        # Vorticity hyperviscous order
 end
 
 
@@ -31,7 +32,7 @@ end
 
 function Equation(p::Params, g::TwoDGrid)
   # Function calcNL! is defined below.
-  LC = -p.nu * g.KKrsq.^(0.5*p.nun)
+  LC = -p.ν * g.KKrsq.^(0.5*p.nν)
   Equation(LC, calcNL!)
 end
 
@@ -183,11 +184,11 @@ end
     Lx: grid extent
     qf: final maximum vorticity
     q0: initial maximum vorticity
-    nnu: order of hyperviscosity
-    maxsteps: maximum number of steps to take
+    nν: order of hyperviscosity
+    maxsteps: maximum νmber of steps to take
     dt: time step
-    nu: hyperviscosity
-    k0: initial wavenumber
+    ν: hyperviscosity
+    k0: initial waveνmber
     E0: initial energy
     tf: final time
     plots: whether or not to plot field evolution
@@ -195,8 +196,8 @@ end
   Returns
     q: The vorticity field
 """
-function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nnu=4, 
-  maxsteps=10000, dt=nothing, nu=nothing, k0=nx/2, 
+function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nν=4, 
+  maxsteps=10000, dt=nothing, ν=nothing, k0=nx/2, 
   E0=nothing, tf=nothing, plots=false, loginterval=5)
 
   g  = TwoDGrid(nx, Lx)
@@ -234,14 +235,14 @@ function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nnu=4,
   maxq = q0 = maximum(abs.(vs.q))
 
   # Defaults
-  if dt == nothing; dt = 0.1*g.dx/maximum([vs.U; vs.V]);    end
-  if nu == nothing; nu = 0.1/(dt*(0.65*nx/Lx)^nnu);         end
-  if tf != nothing; maxsteps = ceil(Int, tf/dt); qf=0.0     end
+  if dt == nothing; dt = 0.1*g.dx/maximum([vs.U; vs.V]);  end
+  if ν == nothing; ν = 0.1/(dt*(0.65*nx/Lx)^nν);          end
+  if tf != nothing; maxsteps = ceil(Int, tf/dt); qf=0.0   end
 
   # Number of substeps between vorticity-checking
   substeps = ceil(Int, loginterval/(maxq*dt))
 
-  pr = TwoDTurb.Params(nu, nnu)
+  pr = TwoDTurb.Params(ν, nν)
   eq = TwoDTurb.Equation(pr, g)
   ts = ETDRK4TimeStepper(dt, eq.LC)
 
