@@ -9,16 +9,16 @@ import FourierFlows.TwoDTurb: energy, enstrophy
  n = 256
  L = 2π
 nν = 4
- ν = 1e-4
+ ν = 1e-8
 
 # Time-stepping
-dt = 1e-2
+dt = 1e-1
 nsteps = 10000
-nsubs  = 500
+nsubs  = 100
 
 # Files
 plotprefix = "./plots/testplots"
-filename = "./data/testdata.jld2"
+filename = "./testdata.jld2"
 if isfile(filename); rm(filename); end
 
 # Initialize with random numbers
@@ -83,8 +83,8 @@ while prob.step < nsteps
     xlabel(L"t")
     ylabel(L"\Delta E, \, \Delta Z")
 
-    step = prob.step
-    savefig("$plotprefix-$step.png", dpi=240)
+    savename = @sprintf("%s_%09d.png", plotprefix, prob.step)
+    savefig(savename, dpi=240)
   end
 
 end
