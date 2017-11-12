@@ -240,8 +240,6 @@ end
 
 
 
-
-
 function stepforward!(v::AbstractVars, ts::ETDRK4TimeStepper,
   eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
 
@@ -266,51 +264,16 @@ function stepforward!(v::AbstractVars, ts::ETDRK4TimeStepper,
   v.sol .= (ts.expLCdt.*v.sol .+      ts.alph .* ts.NL1
                               .+ 2.0.*ts.beta .* (ts.NL2 .+ ts.NL3)
                               .+      ts.gamm .* ts.NL4 )
+  v.sol = v.sol .* g.filterr
+  if ts.step==1
+      println("Navid added a filter in timestepper.jl")
+  end
   v.t   += ts.dt
   ts.step += 1
 
 end
 
 
-function stepforward!(v::AbstractVars,
-  tsc::ETDRK4TimeStepper, tsr::ETDRK4TimeStepper,
-  eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
-
-  # ---------------------------------------------------------------------------
-  # Substep 1
-  eq.calcNL!(tsc.NL1, tsr.NL1, v.solc, v.solr, v.t, v, p, g)
-  tsc.sol1 .= tsc.expLCdt2.*v.solc .+ tsc.zeta.*tsc.NL1
-  tsr.sol1 .= tsr.expLCdt2.*v.solr .+ tsr.zeta.*tsr.NL1
-
-  # Substep 2
-  tsc.ti = v.t + 0.5*tsc.dt
-  eq.calcNL!(tsc.NL2, tsr.NL2, tsc.sol1, tsr.sol1, tsc.ti, v, p, g)
-  tsc.sol2 .= tsc.expLCdt2.*v.solc .+ tsc.zeta.*tsc.NL2
-  tsr.sol2 .= tsr.expLCdt2.*v.solr .+ tsr.zeta.*tsr.NL2
-
-  # Substep 3
-  eq.calcNL!(tsc.NL3, tsr.NL3, tsc.sol2, tsr.sol2, tsc.ti, v, p, g)
-  tsc.sol2 .= tsc.expLCdt2.*tsc.sol1 .+ tsc.zeta.*(2.0.*tsc.NL3 .- tsc.NL1)
-  tsr.sol2 .= tsr.expLCdt2.*tsr.sol1 .+ tsr.zeta.*(2.0.*tsr.NL3 .- tsr.NL1)
-
-  # Substep 4
-  tsc.ti = v.t + tsc.dt
-  eq.calcNL!(tsc.NL4, tsr.NL4, tsc.sol2, tsr.sol2, tsc.ti, v, p, g)
-
-  # Update
-  v.solc .= (tsc.expLCdt.*v.solc .+      tsc.alph .* tsc.NL1
-                                 .+ 2.0.*tsc.beta .* (tsc.NL2 .+ tsc.NL3)
-                                 .+      tsc.gamm .* tsc.NL4 )
-
-  v.solr .= (tsr.expLCdt.*v.solc .+      tsr.alph .* tsr.NL1
-                                 .+ 2.0.*tsr.beta .* (tsr.NL2 .+ tsr.NL3)
-                                 .+      tsr.gamm .* tsr.NL4 )
-
-  v.t   += tsc.dt
-  tsc.step += 1
-  tsr.step += 1
-
-end
 
 
 
