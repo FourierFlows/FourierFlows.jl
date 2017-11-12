@@ -206,8 +206,10 @@ end
 
 """ Calculate the domain integrated kinetic energy. """
 function energy(v::Vars, g::TwoDGrid)
-  0.5*(FourierFlows.parsevalsum2(im*g.Kr.*v.psih, g)
-        + FourierFlows.parsevalsum2(im*g.Lr.*v.psih, g))
+#  0.5*(FourierFlows.parsevalsum2(im*g.Kr.*v.psih, g)
+#        + FourierFlows.parsevalsum2(im*g.Lr.*v.psih, g))
+  0.5*(FourierFlows.parsevalsum2(g.Kr.*g.invKKrsq.*v.sol, g)
+        + FourierFlows.parsevalsum2(g.Lr.*g.invKKrsq.*v.sol, g))
 end
 
 function energy(prob::AbstractProblem)
