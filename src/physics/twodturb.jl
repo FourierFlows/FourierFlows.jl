@@ -36,6 +36,10 @@ function InitialValueProblem(;
   FourierFlows.Problem(g, vs, pr, eq, ts)
 end
 
+function InitialValueProblem(n, L, ν, nν, dt)
+  InitialValueProblem(nx=n, Lx=L, ν=ν, nν=nν, dt=dt)
+end
+
 
 
 
@@ -204,6 +208,24 @@ end
 function energy(v::Vars, g::TwoDGrid)
   0.5*(FourierFlows.parsevalsum2(im*g.Kr.*v.psih, g)
         + FourierFlows.parsevalsum2(im*g.Lr.*v.psih, g))
+end
+
+function energy(prob::AbstractProblem)
+  energy(prob.vars, prob.grid)
+end
+
+
+
+
+"""
+Returns the domain-integrated enstrophy.
+"""
+function enstrophy(v::Vars, g::TwoDGrid)
+  0.5*FourierFlows.parsevalsum2(v.sol, g)
+end
+
+function enstrophy(prob)
+  enstrophy(prob.vars, prob.grid)
 end
 
 
