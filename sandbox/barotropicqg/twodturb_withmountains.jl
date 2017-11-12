@@ -34,8 +34,7 @@ fig = figure()
 test_plot(g, v)
 
 for i = 1:nloops
-  @time stepforward!(v, ts, eq, p, g, nsteps)
-  BarotropicQG.updatevars!(v, p, g) 
+  @time stepforward!(v, ts, eq, p, g; nsteps=nsteps)
+  BarotropicQG.updatevars!(v, p, g)
   test_plot(g, v)
 end
-

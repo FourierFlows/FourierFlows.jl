@@ -12,12 +12,37 @@ export Params,
 export set_q!, updatevars!
 
 
+# Problem --------------------------------------------------------------------- 
+function InitialValueProblem(;
+  nx = 128,
+  Lx = 2π,
+  ny = nothing,
+  Ly = nothing,
+  ν  = nothing, 
+  nν = 2, 
+  dt = 0.01
+  )
+
+  if Ly == nothing; Ly = Lx; end
+  if ny == nothing; ny = nx; end
+  if ν  == nothing; ν = 1e-1/(dt*(0.65π*nx/Lx)^nν); end
+  
+  g  = TwoDGrid(nx, Lx, ny, Ly)
+  pr = TwoDTurb.Params(ν, nν)
+  vs = TwoDTurb.Vars(g)
+  eq = TwoDTurb.Equation(pr, g)
+  ts = ETDRK4TimeStepper(dt, eq.LC)
+
+  FourierFlows.Problem(g, vs, pr, eq, ts)
+end
+
+
 
 
 # P A R A M S
 type Params <: AbstractParams
-  nu::Float64                     # Vorticity viscosity
-  nun::Int                        # Vorticity hyperviscous order
+  ν::Float64                     # Vorticity viscosity
+  nν::Int                        # Vorticity hyperviscous order
 end
 
 
@@ -31,7 +56,7 @@ end
 
 function Equation(p::Params, g::TwoDGrid)
   # Function calcNL! is defined below.
-  LC = -p.nu * g.KKrsq.^(0.5*p.nun)
+  LC = -p.ν * g.KKrsq.^(0.5*p.nν)
   Equation(LC, calcNL!)
 end
 
@@ -152,6 +177,10 @@ function updatevars!(v::Vars, p::Params, g::TwoDGrid)
   updatevars!(v, g)
 end
 
+function updatevars!(prob::AbstractProblem)
+  updatevars!(prob.vars, prob.grid)
+end
+
 
 
 """ Set the vorticity field. """
@@ -162,6 +191,10 @@ end
 
 function set_q!(v::Vars, p::Params, g::TwoDGrid, q::Array{Float64, 2})
   set_q!(v, g, q)
+end
+
+function set_q!(prob::AbstractProblem, q)
+  set_q!(prob.vars, prob.grid, q)
 end
 
 
@@ -183,11 +216,11 @@ end
     Lx: grid extent
     qf: final maximum vorticity
     q0: initial maximum vorticity
-    nnu: order of hyperviscosity
-    maxsteps: maximum number of steps to take
+    nν: order of hyperviscosity
+    maxsteps: maximum νmber of steps to take
     dt: time step
-    nu: hyperviscosity
-    k0: initial wavenumber
+    ν: hyperviscosity
+    k0: initial waveνmber
     E0: initial energy
     tf: final time
     plots: whether or not to plot field evolution
@@ -195,9 +228,9 @@ end
   Returns
     q: The vorticity field
 """
-function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nnu=4, 
-  maxsteps=10000, dt=nothing, nu=nothing, k0=nx/2, 
-  E0=nothing, tf=nothing, plots=false)
+function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nν=4, 
+  maxsteps=10000, dt=nothing, ν=nothing, k0=nx/2, 
+  E0=nothing, tf=nothing, plots=false, loginterval=5)
 
   g  = TwoDGrid(nx, Lx)
   vs = TwoDTurb.Vars(g)
@@ -223,7 +256,7 @@ function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nnu=4,
     psih = rfft(psi)
     qi = -irfft(g.KKrsq.*psih, g.nx)
     set_q!(vs, g, qi)
-    E0 = FourierFlows.parsevalsum2(g.KKrsq.*abs2.(psih), g)
+    E0 = FourierFlows.parsevalsum(g.KKrsq.*abs2.(psih), g)
 
   else
     qi = FourierFlows.peaked_isotropic_spectrum(nx, k0; maxval=q0)
@@ -234,14 +267,14 @@ function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nnu=4,
   maxq = q0 = maximum(abs.(vs.q))
 
   # Defaults
-  if dt == nothing; dt = 0.2*g.dx/maximum([vs.U; vs.V]);    end
-  if nu == nothing; nu = 0.1/(dt*(0.65*nx/Lx)^nnu);         end
-  if tf != nothing; maxsteps = ceil(Int, tf/dt); qf = 0.0;  end
+  if dt == nothing; dt = 0.1*g.dx/maximum([vs.U; vs.V]);  end
+  if ν == nothing; ν = 0.1/(dt*(0.65*nx/Lx)^nν);          end
+  if tf != nothing; maxsteps = ceil(Int, tf/dt); qf=0.0   end
 
   # Number of substeps between vorticity-checking
-  substeps = 10*ceil(Int, 1/(maxq*dt))
+  substeps = ceil(Int, loginterval/(maxq*dt))
 
-  pr = TwoDTurb.Params(nu, nnu)
+  pr = TwoDTurb.Params(ν, nν)
   eq = TwoDTurb.Equation(pr, g)
   ts = ETDRK4TimeStepper(dt, eq.LC)
 
@@ -254,6 +287,7 @@ function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nnu=4,
   @printf("\nMaking a mature turbulence field...\n")
   starttime = time()
   while maxq > qf && ts.step < maxsteps
+
     stepforward!(vs, ts, eq, pr, g; nsteps=substeps)
     TwoDTurb.updatevars!(vs, g)
     maxq = maximum(abs.(vs.q))
@@ -263,10 +297,14 @@ function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nnu=4,
       pause(0.01)
     end
 
-    @printf("  wall time: %.3f s, step: %d, t*q0: %.2e, 
-               max q: %.3e, delta E: %.3f, CFL: %.3f\n", 
-      time()-starttime, ts.step, vs.t*q0, 
-      maxq, energy(vs, g)/E0, maximum([vs.U; vs.V])*ts.dt/g.dx)
+    log1 = @sprintf("τ: %.3f s, step: %d, t*q0: %.1e, max q: %.3e, ",
+      time()-starttime, ts.step, vs.t*q0, maxq)
+      
+    log2 = @sprintf("ΔE: %.3f, CFL: %.3f", 
+      energy(vs, g)/E0, maximum([vs.U; vs.V])*ts.dt/g.dx)
+
+    println(log1*log2)
+
   end
 
   @printf("... done.")

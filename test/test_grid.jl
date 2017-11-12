@@ -28,8 +28,9 @@ end
 # -----------------------------------------------------------------------------
 # Test that K, L, Kr, Lr grids are created in the correct order
 
-test = 0;
-for i in g.krange
+test = 0
+
+for i in 1:g.nk
   test += abs(maximum(abs.(g.K[i,:]))-minimum(abs.(g.K[i,:])));
   #the inner abs's are needed bedcause Greg defined K as Complex128
 end
@@ -40,7 +41,7 @@ else
 end
 
 test = 0;
-for i in g.lrange
+for i in 1:g.nl
   test += abs(maximum(abs.(g.L[:,i]))-minimum(abs.(g.L[:,i])));
   #the inner abs's are needed because Greg defined L as Complex128
 end
@@ -52,7 +53,7 @@ end
 
 
 test = 0;
-for i in g.krrange
+for i in 1:g.nkr
   test += abs(maximum(abs.(g.Kr[i,:]))-minimum(abs.(g.Kr[i,:])));
   #the inner abs's are needed because Greg defined Kr as Complex128
 end
@@ -87,7 +88,7 @@ if nx/2>=4
   f1h_th   = zeros(size(f1h));  f2h_th   = zeros(size(f2h));
   f1hr_th  = zeros(size(f1hr)); f2hr_th  = zeros(size(f2hr));
 
-  for i in g.krange, j in g.lrange
+  for i in 1:g.nk, j in 1:g.nl
     if ( abs(real(g.K[i,j])) == m*real(g.k[2]) && abs(real(g.L[i,j])) == n*real(g.l[2]) )
       f1h_th[i,j] = - g.nx*g.ny/4;
     end
@@ -100,7 +101,7 @@ if nx/2>=4
   f2h_th = -im*f2h_th;
 
 
-  for j in g.lrange, i in g.krrange
+  for j in g.nl, i in g.nkr
     if ( abs(g.Kr[i,j])==m*real(g.k[2]) && abs(g.L[i,j])==n*real(g.l[2]) )
       f1hr_th[i,j] = - g.nx*g.ny/4;
     end

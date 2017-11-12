@@ -157,11 +157,28 @@ function parsevalsum(uh, g::TwoDGrid)
 end
 
 
-""" Return the Jacobian of a and b. """
+
+
+""" 
+Returns the transform of the Jacobian of two fields a, b on the grid g.
+"""
+function jacobianh(a, b, g::TwoDGrid)
+  # J(a, b) = dx(a b_y) - dy(a b_x)
+  bh = fft(b)
+  bx = ifft(im*g.K.*bh)
+  by = ifft(im*g.L.*bh)
+  im*g.K.*fft(a.*bx) - im*g.L.*fft(a.*by)
+end
+
+
+
+""" 
+Returns the Jacobian of a and b. 
+"""
 function jacobian(a, b, g::TwoDGrid)
   ax = ifft(im*g.K.*fft(a))
   ay = ifft(im*g.L.*fft(a))
-  ifft(im.*g.L.*fft(ax.*b) .- im.*g.K.*fft(ay.*b))
+ ifft(jacobianh(a, b, g))
 end
 
 
