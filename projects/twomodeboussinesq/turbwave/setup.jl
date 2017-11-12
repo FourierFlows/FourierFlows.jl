@@ -74,8 +74,8 @@ function turbwavesetup(name, n, L, α, ε, Ro;
     @load savename Z
   else
     qf = f*Ro
-    Z = TwoDTurb.makematureturb(n, L; nnu=nν0, nu=ν0, k0=k0turb, 
-      qf=qf, q0=1.2*qf, tf=40/qf)
+    Z = TwoDTurb.makematureturb(n, L; nν=nν0, ν=ν0, k0=k0turb, 
+      qf=qf, q0=1.2*qf, tf=100/qf)
     titlname = @sprintf("twodturb: \$n=%d\$, \$n_{\\nu}=%d\$, max(Z)=%.2e", 
       n, nν0, maximum(Z))
     plotname = @sprintf("./turbplots/twodturb_n%04d_Ro%02d_nnu%d_nu%.0e.png", 

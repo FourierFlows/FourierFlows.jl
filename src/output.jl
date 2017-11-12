@@ -1,7 +1,11 @@
 __precompile__()
 
 using JLD2
+<<<<<<< HEAD
+      # HDF5
+=======
 # using HDF5
+>>>>>>> master
 
 import Base: getindex, setindex!, push!, append!, fieldnames
 
@@ -77,6 +81,9 @@ function saveoutput(out::Output)
 
   nothing
 end
+
+
+
 
 """ Save attributes of the Problem associated with the given Output. """
 function saveproblem(out::Output)

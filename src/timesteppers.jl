@@ -36,8 +36,8 @@ function stepforward!(prob::Problem, diags::AbstractArray;
 
   # Initialize diagnostics for speed
   for diag in diags
-    newnum = ceil(Int, (diag.count+nsteps)/diag.freq) 
-    if newnum > diag.num 
+    newnum = ceil(Int, (diag.count+nsteps)/diag.freq)
+    if newnum > diag.num
       resize!(diag, newnum)
     end
   end
@@ -94,6 +94,10 @@ function stepforward!(v::AbstractVars, ts::ForwardEulerTimeStepper,
   eq.calcNL!(ts.NL, v.sol, v.t, v, p, g)
 
   v.sol .+= ts.dt .* (ts.NL .+ eq.LC.*v.sol)
+  v.sol = v.sol .* g.filterr
+  if ts.step==1
+      println("Navid added a filter in timestepper.jl")
+  end
   v.t    += ts.dt
 
   ts.step += 1
@@ -150,7 +154,7 @@ function ETDRK4TimeStepper(dt::Float64, LC::AbstractArray)
   NL3  = zeros(LC)
   NL4  = zeros(LC)
 
-  ETDRK4TimeStepper{ndims(LC)}(0, dt, LC, zeta, alph, beta, gamm, expLCdt, 
+  ETDRK4TimeStepper{ndims(LC)}(0, dt, LC, zeta, alph, beta, gamm, expLCdt,
     expLCdt2, ti, sol1, sol2, NL1, NL2, NL3, NL4)
 end
 
@@ -268,11 +272,11 @@ function stepforward!(v::AbstractVars, ts::ETDRK4TimeStepper,
 end
 
 
-function stepforward!(v::AbstractVars, 
+function stepforward!(v::AbstractVars,
   tsc::ETDRK4TimeStepper, tsr::ETDRK4TimeStepper,
   eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
 
-  # --------------------------------------------------------------------------- 
+  # ---------------------------------------------------------------------------
   # Substep 1
   eq.calcNL!(tsc.NL1, tsr.NL1, v.solc, v.solr, v.t, v, p, g)
   tsc.sol1 .= tsc.expLCdt2.*v.solc .+ tsc.zeta.*tsc.NL1
@@ -313,7 +317,7 @@ end
 function stepforward!(v::AbstractVars, ts::DualETDRK4TimeStepper,
   eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
 
-  # --------------------------------------------------------------------------- 
+  # ---------------------------------------------------------------------------
   # Substep 1
   eq.calcNL!(ts.c.NL1, ts.r.NL1, v.solc, v.solr, v.t, v, p, g)
   ts.c.sol1 .= ts.c.expLCdt2.*v.solc .+ ts.c.zeta.*ts.c.NL1
@@ -327,9 +331,9 @@ function stepforward!(v::AbstractVars, ts::DualETDRK4TimeStepper,
 
   # Substep 3
   eq.calcNL!(ts.c.NL3, ts.r.NL3, ts.c.sol2, ts.r.sol2, ts.c.ti, v, p, g)
-  ts.c.sol2 .= (ts.c.expLCdt2.*ts.c.sol1 
+  ts.c.sol2 .= (ts.c.expLCdt2.*ts.c.sol1
     .+ ts.c.zeta.*(2.0.*ts.c.NL3 .- ts.c.NL1))
-  ts.r.sol2 .= (ts.r.expLCdt2.*ts.r.sol1 
+  ts.r.sol2 .= (ts.r.expLCdt2.*ts.r.sol1
     .+ ts.r.zeta.*(2.0.*ts.r.NL3 .- ts.r.NL1))
 
   # Substep 4

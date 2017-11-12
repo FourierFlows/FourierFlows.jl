@@ -161,7 +161,7 @@ end
 """ Plot the mode-0 available potential vorticity and vertical velocity. """
 function makefourplot(prob, ew; eddylim=nothing, 
   message=nothing, save=false, show=false, passiveapv=false,
-  plotpath="./plots")
+  plotpath="./snapshots_run")
 
   savename = @sprintf("%s_nu%.0e_n%d_%04df_ep%02d_Ro%02d_nkw%d_%06d.png", 
     joinpath(plotpath, ew.name), ew.ν0, prob.grid.nx, 

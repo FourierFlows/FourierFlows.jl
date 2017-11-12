@@ -39,7 +39,7 @@ function rungallerysimulation(α, nkw;
       e1.value/e1.data[1], etot.value/etot.data[1])
 
     makefourplot(prob, ew; message=plotmsg1*plotmsg2, save=true,
-      plotpath="./wifgallery") 
+      plotpath="./snapshots_wifgallery") 
   end
 
   nothing
