@@ -17,9 +17,14 @@ nsteps = 10000
 nsubs  = 100
 
 # Files
-plotprefix = "./plots/testplots"
-filename = "./testdata.jld2"
+filepath = "."
+plotpath = "./plots"
+plotname = "testplots"
+filename = joinpath(filepath, "testdata.jld2")
+
+# File management
 if isfile(filename); rm(filename); end
+if !isdir(plotpath); mkdir(plotpath); end
 
 # Initialize with random numbers
 prob = TwoDTurb.InitialValueProblem(n, L, ν, nν, dt)
@@ -83,7 +88,7 @@ while prob.step < nsteps
     xlabel(L"t")
     ylabel(L"\Delta E, \, \Delta Z")
 
-    savename = @sprintf("%s_%09d.png", plotprefix, prob.step)
+    savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), prob.step)
     savefig(savename, dpi=240)
   end
 
