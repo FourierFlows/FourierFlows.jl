@@ -1,6 +1,7 @@
 __precompile__()
 
-using JLD2, HDF5
+using JLD2
+# using HDF5
 
 import Base: getindex, setindex!, push!, append!, fieldnames
 
@@ -33,14 +34,14 @@ function Output(prob::Problem, filename::String, fieldtuples...)
       [(symfld[1], symfld[2]) for symfld in fieldtuples]
     ), prob, filename)
 end
-  
+
 """ Get the current output field. """
 function getindex(out::Output, key)
-  out.fields[key](out.prob)  
+  out.fields[key](out.prob)
 end
 
 function setindex!(out::Output, calcfield::Function, fieldname::Symbol)
-  out.fields[fieldname] = calcfield  
+  out.fields[fieldname] = calcfield
 end
 
 """ Add output name, calculator pairs when supplied as tupled arguments. """
@@ -121,7 +122,7 @@ function saveoutput(outs::AbstractArray)
 
   jldopen(outs[1].filename, "a+") do file
     file["$groupname/t/$step"] = outs[1].prob.t # save timestamp
-    for out in outs # save output data 
+    for out in outs # save output data
       name = out.name
       file["$groupname/$name/$step"] = out.calc(out.prob)
     end
@@ -145,7 +146,7 @@ end
 
 """ Save certain aspects of a Problem. Entire problems cannot be saved
 in general, because functions cannot be saved (and functions may use
-arbitrary numbers of global variables that cannot be included in a saved 
+arbitrary numbers of global variables that cannot be included in a saved
 object). """
 function saveproblem(prob::AbstractProblem, filename::String)
 
