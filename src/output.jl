@@ -1,7 +1,11 @@
 __precompile__()
 
 using JLD2
+<<<<<<< HEAD
       # HDF5
+=======
+# using HDF5
+>>>>>>> master
 
 import Base: getindex, setindex!, push!, append!, fieldnames
 
