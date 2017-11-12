@@ -37,11 +37,11 @@ close(file)
 u = ifft(solc[:, :, 1])
 v = ifft(solc[:, :, 2])
 p = ifft(solc[:, :, 3])
-Q = irfft(solr, n)
+Q = irfft(Qh, n)
 TwoModeBoussinesq.set_Q!(prob, Q)
 TwoModeBoussinesq.set_uvp!(prob, u, v, p)
-prob.t = t
-prob.step = step
+prob.vars.t = t
+prob.ts.step = step
 
 update!(diags)
 
@@ -49,7 +49,6 @@ getsolr(prob) = prob.vars.solr
 getsolc(prob) = prob.vars.solc
 
 outs = Output(prob, filename, (:solr, getsolr), (:solc, getsolc))
-
 
 
 # Run

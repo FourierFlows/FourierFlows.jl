@@ -22,7 +22,7 @@ nsubperiods = 1
 nsteps = ceil(Int, nperiods*tσ/dt)
 nsubs  = ceil(Int, nsubperiods*tσ/dt)
 
-savename = "./data/twodturb_n512_Ro20_nnu6_nu1e+20.jld2"
+savename = "twodturb_n512_Ro20_nnu4_nu1e+12.jld2"
 
 @load savename Z
 
