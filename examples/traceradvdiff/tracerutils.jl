@@ -1,4 +1,5 @@
-using JLD2, HDF5
+using JLD2
+      #HDF5
 using PyPlot, PyCall, NullableArrays
 
 @pyimport numpy.ma as ma
@@ -45,14 +46,14 @@ function Model(name::String, prob::Problem)
 end
 
 """ Model Constructor. """
-function Model(name::String, prob::Problem, diags, outputs; 
+function Model(name::String, prob::Problem, diags, outputs;
   diagfreq=0, outputfreq=0)
   Model(name, prob, prob.grid, prob.vars, prob.params, prob.eqn, prob.ts,
     prob.t, prob.step, diags, outputs, diagfreq, outputfreq)
 end
- 
+
 """ Model Constructor. """
-function Model(name::String, prob::Problem; 
+function Model(name::String, prob::Problem;
   diags=nothing, outputs=nothing, diagfreq=0, outputfreq=0)
 
   if !(typeof(diags) <: AbstractArray);  diags   = [diags];   end
@@ -61,7 +62,7 @@ function Model(name::String, prob::Problem;
   Model(name, prob, prob.grid, prob.vars, prob.params, prob.eqn, prob.ts,
     prob.t, prob.step, diags, outputs, diagfreq, outputfreq)
 end
-  
+
 
 
 
@@ -156,7 +157,7 @@ function saveoutput!(outs::AbstractArray)
 
   jldopen(outs[1].filename, "a+") do file
     file["$groupname/t/$step"] = outs[1].prob.t # save timestamp
-    for out in outs # save output data 
+    for out in outs # save output data
       name = out.name
       file["$groupname/$name/$step"] = out.calc(out.prob)
     end

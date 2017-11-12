@@ -1,6 +1,6 @@
 __precompile__()
 
-export TwoDGrid, dealias!
+export TwoDGrid, dealias!, cubicdealias!
 
 # Grid types and constructors
 
@@ -26,6 +26,10 @@ type TwoDGrid <: AbstractGrid
   iralias::UnitRange{Int64}
   jalias::UnitRange{Int64}
 
+  ialias3::UnitRange{Int64}
+  iralias3::UnitRange{Int64}
+  jalias3::UnitRange{Int64}
+
   k::Array{Complex{Float64}, 1}
   l::Array{Complex{Float64}, 1}
   kr::Array{Complex{Float64}, 1}
@@ -49,11 +53,14 @@ type TwoDGrid <: AbstractGrid
   # Convenience arrays
   K2::Array{Complex{Float64}, 2}
   L2::Array{Complex{Float64}, 2}
+  Kr2::Array{Complex{Float64}, 2}
+  Lr2::Array{Complex{Float64}, 2}
 
   # k^2 + l^2 and 1/(k^2+l^2) with zero wavenumber omitted
   KKsq::Array{Complex{Float64}, 2}
   invKKsq::Array{Complex{Float64}, 2}
   KL::Array{Complex{Float64}, 2}
+  KLr::Array{Complex{Float64}, 2}
 
   KKrsq::Array{Complex{Float64}, 2}
   invKKrsq::Array{Complex{Float64}, 2}
@@ -106,10 +113,13 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
 
   K2 = Array{Complex{Float64}}(nk, nl)
   L2 = Array{Complex{Float64}}(nk, nl)
+  Kr2 = Array{Complex{Float64}}(nkr, nl)
+  Lr2 = Array{Complex{Float64}}(nkr, nl)
 
   KKsq    = Array{Complex{Float64}}(nk, nl)
   invKKsq = Array{Complex{Float64}}(nk, nl)
   KL      = Array{Complex{Float64}}(nk, nl)
+  KLr     = Array{Complex{Float64}}(nkr, nl)
 
   KKrsq    = Array{Complex{Float64}}(nkr, nl)
   invKKrsq = Array{Complex{Float64}}(nkr, nl)
@@ -151,9 +161,12 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
 
   K2 = K.^2.0
   L2 = L.^2.0
+  Kr2 = Kr.^2.0
+  Lr2 = Lr.^2.0
 
   KKsq  = K.^2.0 + L.^2.0
   KL   = K.*L
+  KLr  = Kr.*Lr
   invKKsq = 1.0./KKsq
   invKKsq[1, 1] = 0.0
 
@@ -169,6 +182,13 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
   iralias = iaL:nkr
   jalias  = iaL:iaR
 
+  ia3L, ia3R = Int(floor(nk/4))+1, 2*Int(ceil(nk/4))-1
+  ja3L, ja3R = Int(floor(nl/4))+1, 2*Int(ceil(nl/4))-1
+
+  ialias3 = ia3L:ia3R
+  iralias3 = ia3L:nkr
+  jalias3 = ja3L:ja3R
+
 
   # FFT plans; use grid vars.
   FFTW.set_num_threads(nthreads)
@@ -181,9 +201,9 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
   irfftplan = plan_irfft(Array{Complex{Float64},2}(nkr, nl), nx; flags=effort)
 
   return TwoDGrid(nx, ny, Lx, Ly, nk, nl, nkr, dx, dy, x, y,
-          ialias, iralias, jalias, 
+          ialias, iralias, jalias, ialias3, iralias3, jalias3, 
           k, l, kr, ksq, lsq, krsq, ik, il, ikr, X, Y, K, L, Kr, Lr,
-          K2, L2, KKsq, invKKsq, KL, KKrsq, invKKrsq,
+          K2, L2, Kr2, Lr2, KKsq, invKKsq, KL, KLr, KKrsq, invKKrsq,
           fftplan, ifftplan, rfftplan, irfftplan)
 end
 
@@ -209,6 +229,25 @@ function dealias!(a::Array{Complex{Float64}, 3}, g)
     @views @. a[g.iralias, g.jalias, :] = 0im
   else
     @views @. a[g.ialias, g.jalias, :] = 0im
+  end
+  nothing
+end
+
+
+function cubicdealias!(a::Array{Complex{Float64}, 2}, g)
+  if size(a)[1] == g.nkr
+    a[g.iralias3, g.jalias3] = 0im
+  else
+    a[g.ialias3, g.jalias3] = 0im
+  end
+  nothing
+end
+
+function cubicdealias!(a::Array{Complex{Float64}, 3}, g)
+  if size(a)[1] == g.nkr
+    @views @. a[g.iralias3, g.jalias3, :] = 0im
+  else
+    @views @. a[g.ialias3, g.jalias3, :] = 0im
   end
   nothing
 end
