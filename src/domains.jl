@@ -30,6 +30,9 @@ type TwoDGrid <: AbstractGrid
   iralias3::UnitRange{Int64}
   jalias3::UnitRange{Int64}
 
+  filter::Array{Float64, 2}
+  filterr::Array{Float64, 2}
+
   k::Array{Complex{Float64}, 1}
   l::Array{Complex{Float64}, 1}
   kr::Array{Complex{Float64}, 1}
@@ -128,6 +131,9 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
   il  = Array{Complex{Float64}}(nk, nl)
   ikr = Array{Complex{Float64}}(nkr, nl)
 
+  filter = Array{Float64,2}(nk, nl)
+  filterr = Array{Float64,2}(nkr, nl)
+
   # 1D pre-constructors
   x = linspace(x0, x0+Lx-dx, nx)
   y = linspace(y0, y0+Ly-dy, ny)
@@ -137,7 +143,7 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
 
   j1 = 0:1:Int(ny/2)
   j2 = Int(-ny/2+1):1:-1
-  
+
   k  = 2π/Lx * cat(1, i1, i2)
   kr = 2π/Lx * cat(1, i1)
   l  = 2π/Ly * cat(1, j1, j2)
@@ -190,6 +196,26 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
   jalias3 = ja3L:ja3R
 
 
+
+  cphi=0.65π;
+  filterfac=23.6;
+
+  wv = sqrt.((K*dx).^2 + (L*dy).^2)
+  wvr = sqrt.((Kr*dx).^2 + (Lr*dy).^2)
+
+  filter = exp.(-filterfac*(wv-cphi).^4);
+  filterr = exp.(-filterfac*(wvr-cphi).^4);
+  for i=1:nk, j=1:nl
+      if wv[i,j]<cphi
+          filter[i,j]=1
+      end
+  end
+  for i=1:nkr, j=1:nl
+      if wvr[i,j]<cphi
+          filterr[i,j]=1
+      end
+  end
+
   # FFT plans; use grid vars.
   FFTW.set_num_threads(nthreads)
   effort = FFTW.MEASURE
@@ -201,7 +227,7 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
   irfftplan = plan_irfft(Array{Complex{Float64},2}(nkr, nl), nx; flags=effort)
 
   return TwoDGrid(nx, ny, Lx, Ly, nk, nl, nkr, dx, dy, x, y,
-          ialias, iralias, jalias, ialias3, iralias3, jalias3, 
+          ialias, iralias, jalias, ialias3, iralias3, jalias3, filter, filterr,
           k, l, kr, ksq, lsq, krsq, ik, il, ikr, X, Y, K, L, Kr, Lr,
           K2, L2, Kr2, Lr2, KKsq, invKKsq, KL, KLr, KKrsq, invKKrsq,
           fftplan, ifftplan, rfftplan, irfftplan)
