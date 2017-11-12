@@ -7,7 +7,7 @@ import FourierFlows.TwoModeBoussinesq: mode0apv, mode1apv, mode1w, mode1u
 
 @pyimport mpl_toolkits.axes_grid1 as pltgrid
 
-plotname = "./plots/miniAPVwithbox"
+plotname = "./plots/miniAPV"
 filename = "../data/example_nk64_nu2e+32_122f_n1024_ep20_Ro05_nkw64.jld2"
 
 # Plot parameters
@@ -68,18 +68,20 @@ jldopen(filename, "r") do file
     fig, axs = subplots(ncols=1, nrows=3, sharex=true, sharey=true, 
       figsize=(5, 12))
 
+
     axes(axs[1]); axis("equal")
-    Zplot = pcolormesh(x, y, Z/f, cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
+    Qplot = pcolormesh(x, y, Q/f, cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
 
     axes(axs[2]); axis("equal")
     uplot = pcolormesh(x, y, u, cmap="RdBu_r", vmin=-u0, vmax=u0)
 
     axes(axs[3]); axis("equal")
-    Qplot = pcolormesh(x, y, Q/f, cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
+    Zplot = pcolormesh(x, y, Z/f, cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
 
 
     plots = [Zplot, Qplot, uplot]
     for (i, ax) in enumerate(axs)
+      ax[:axis]("off")
       ax[:set_adjustable]("box-forced")
       ax[:set_xlim](-eddylim, eddylim)
       ax[:set_ylim](-eddylim, eddylim)
