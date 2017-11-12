@@ -1,11 +1,10 @@
-include("../../src/physics/barotropicqg.jl")
-include("../../src/physics/twodturb.jl")
+include("../../src/fourierflows.jl")
 
-using PyPlot
+using FourierFlows,
+      PyPlot
 
-import TimeSteppers
-import TwoDTurb, TwoDTurbProblems
-import BarotropicQG, BarotropicQGProblems
+import FourierFlows.TwoDTurb
+import FourierFlows.BarotropicQG, BarotropicQGProblems
 
 nx  = 128
 dt  = 1e-2
@@ -22,7 +21,7 @@ function test_plot(axs, g, v1, v2)
   # Make a plot that compared two-dimensional turbulence solved by
   # the TwoDTurb and BarotropicQG modules.
 
-  #clf() 
+  #clf()
 
   axes(axs[1]); cla()
   pcolormesh(g.x, g.y, v1.q);
@@ -46,9 +45,8 @@ for i = 1:nloops
   #@time TimeSteppers.stepforward!(v1, nsteps, ts1, eq1, p1, g)
   @time BarotropicQG.stepforward!(v2, nsteps, ts2, eq2, p2, g)
 
-  updatevars!(v1, p1, g) 
-  updatevars!(v2, p2, g) 
+  updatevars!(v1, p1, g)
+  updatevars!(v2, p2, g)
 
   test_plot(axs, g, v1, v2)
 end
-
