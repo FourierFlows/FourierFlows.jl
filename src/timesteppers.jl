@@ -266,7 +266,7 @@ function stepforward!(v::AbstractVars, ts::ETDRK4TimeStepper,
                               .+      ts.gamm .* ts.NL4 )
   v.sol = v.sol .* g.filterr
   if ts.step==1
-      println("Navid added a filter in timestepper.jl")
+      println("Navid added a filter in ETDRK4 timestepper.jl")
   end
   v.t   += ts.dt
   ts.step += 1
