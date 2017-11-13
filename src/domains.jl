@@ -1,7 +1,6 @@
 __precompile__()
 
 export TwoDGrid, dealias!, cubicdealias!
-
 # Grid types and constructors
 
 type TwoDGrid <: AbstractGrid
@@ -195,26 +194,27 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
   iralias3 = ia3L:nkr
   jalias3 = ja3L:ja3R
 
-
-
-  cphi=0.65π;
-  filterfac=23.6;
+  # High-wavenumber filter for K, L and Kr, Lr wavenumber grids
+  cphi=0.65π
+  filterfac=23.6
 
   wv = sqrt.((K*dx).^2 + (L*dy).^2)
   wvr = sqrt.((Kr*dx).^2 + (Lr*dy).^2)
 
   filter = exp.(-filterfac*(wv-cphi).^4);
   filterr = exp.(-filterfac*(wvr-cphi).^4);
-  for i=1:nk, j=1:nl
-      if wv[i,j]<cphi
-          filter[i,j]=1
+
+  for i = 1:nk, j = 1:nl
+      if wv[i, j] < cphi
+          filter[i, j] = 1
       end
   end
-  for i=1:nkr, j=1:nl
-      if wvr[i,j]<cphi
-          filterr[i,j]=1
+  for i = 1:nkr, j=1:nl
+      if wvr[i, j] < cphi
+          filterr[i, j] = 1
       end
   end
+
 
   # FFT plans; use grid vars.
   FFTW.set_num_threads(nthreads)
