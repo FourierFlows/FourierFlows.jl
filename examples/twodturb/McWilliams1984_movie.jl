@@ -14,7 +14,7 @@ import FourierFlows.TwoDTurb: energy, enstrophy
 # Time-stepping
 dt = 5e-3
 nsteps = 8000
-nsubs  = 200
+nsubs  = 20
 
 # Files
 filepath = "."
@@ -48,6 +48,7 @@ E0 = FourierFlows.parsevalsum(prob.grid.KKrsq.*abs2.(psih), prob.grid)
 
 TwoDTurb.set_q!(prob, qi)
 
+
 # Create Diagnostic -- "energy" is a function imported at the top.
 E = Diagnostic(energy, prob; nsteps=nsteps)
 Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
@@ -68,6 +69,27 @@ end
 # One way to create an Output type.
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 
+close("all")
+TwoDTurb.updatevars!(prob)
+fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
+
+figure(1)
+axes(axs[1])
+pcolormesh(prob.grid.x, prob.grid.y, qi)
+axis("equal")
+clim(-40, 40)
+colorbar()
+axs[1][:axis]("off")
+
+axes(axs[2])
+plot(E.time[1:E.prob.step], E.data[1:prob.step]/E.data[1])
+plot(Z.time[1:E.prob.step], Z.data[1:prob.step]/Z.data[1])
+xlabel(L"t")
+ylabel(L"\Delta E, \, \Delta Z")
+ylim(0, 1)
+xlim(0, nsteps*dt)
+savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), prob.step)
+savefig(savename, dpi=240)
 
 # Step forward
 startwalltime = time()
@@ -89,6 +111,27 @@ while prob.step < nsteps
 
     saveoutput(out) # saves output to out.filename
 
+    close("all")
+    TwoDTurb.updatevars!(prob)
+    fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
+
+    figure(1)
+    axes(axs[1])
+    pcolormesh(prob.grid.x, prob.grid.y, prob.vars.q)
+    axis("equal")
+    colorbar()
+    clim(-40, 40)
+    axs[1][:axis]("off")
+
+    axes(axs[2])
+    plot(E.time[1:E.prob.step], E.data[1:prob.step]/E.data[1])
+    plot(Z.time[1:E.prob.step], Z.data[1:prob.step]/Z.data[1])
+    xlabel(L"t")
+    ylabel(L"\Delta E, \, \Delta Z")
+    ylim(0, 1)
+    xlim(0, nsteps*dt)
+    savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), prob.step)
+    savefig(savename, dpi=240)
   end
 
 end
@@ -107,6 +150,8 @@ axs[1][:axis]("off")
 axes(axs[2])
 plot(E.time[1:E.prob.step], E.data[1:prob.step]/E.data[1])
 plot(Z.time[1:E.prob.step], Z.data[1:prob.step]/Z.data[1])
+ylim(0, 1)
+xlim(0, nsteps*dt)
 xlabel(L"t")
 ylabel(L"\Delta E, \, \Delta Z")
 
