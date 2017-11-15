@@ -15,7 +15,7 @@ end
 
 # Initialize random number generator
 srand(123)
-testnthreads = 1:Sys.CPU_CORES
+testnthreads = 2.^(0:Int(log2(Sys.CPU_CORES)))
 testns = 2.^(5:11)
 effort = FFTW.MEASURE
 inplace = false
