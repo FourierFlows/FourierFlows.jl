@@ -80,7 +80,7 @@ end
 
 # Initializer for rectangular grids
 function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
-  x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU_CORES)
+  x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU_CORES, effort=FFTW.MEASURE)
 
   # Size attributes
   dx = Lx/nx
@@ -192,7 +192,6 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
 
   # FFT plans; use grid vars.
   FFTW.set_num_threads(nthreads)
-  effort = FFTW.MEASURE
 
   fftplan   = plan_fft(Array{Float64,2}(nx, ny); flags=effort)
   ifftplan  = plan_ifft(Array{Complex{Float64},2}(nk, nl); flags=effort)
