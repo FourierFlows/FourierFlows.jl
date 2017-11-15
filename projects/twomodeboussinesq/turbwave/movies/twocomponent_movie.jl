@@ -7,20 +7,16 @@ import FourierFlows.TwoModeBoussinesq: mode1u, mode1w
 
 @pyimport mpl_toolkits.axes_grid1 as pltgrid
 
-
-plotpath = "./plots"
-plotname = "turbwave_141f"
-filename = "plane_example_141f_n512_ep10_Ro20_nk16_nnu4_nu1e+12.jld2"
-filepath = "../data"
-fullfilename = joinpath(filepath, filename)
+plotname = "./plots/introduction"
+filename = "../data/example_nk64_nu2e+32_122f_n1024_ep20_Ro05_nkw64.jld2"
 
 # Plot parameters
-Ro0 = 0.1 
-ε0  = 1.0
-
+eddylim = 10
+Ro0 = 0.04
+u0  = 4.00
 
 # Recreate problem
-jldopen(fullfilename, "r") do file
+jldopen(filename, "r") do file
 
   ν0, nν0 = file["params"]["ν0"], file["params"]["nν0"]
   ν1, nν1 = file["params"]["ν1"], file["params"]["nν1"]
@@ -34,41 +30,36 @@ jldopen(fullfilename, "r") do file
 
   steps = parse.(Int, keys(file["timeseries/t"]))
 
-  prob = TwoModeBoussinesq.PrognosticAPVInitialValueProblem(
+  prob = TwoModeBoussinesq.InitialValueProblem(
     nx=n, Lx=L, ν0=ν0, nν0=nν0, ν1=ν1, nν1=nν1, f=f, N=N, m=m, dt=dt)
 
   # Non-retrievable parameters
-  nkw = 16
+  nkw = 64
    kw = 2π*nkw/L
     α = (N*kw)^2/(f*m)^2
     σ = f*sqrt(1+α)
    tσ = 2π/σ
-   Lk = 2π/kw
+   Re = L/80
 
-  x, y = kw*prob.grid.X, kw*prob.grid.Y
-
-  lim = maximum(x)
+  x, y = prob.grid.X/Re, prob.grid.Y/Re
 
   iscolorbar = false
   for (istep, step) in enumerate(steps)
     t = file["timeseries/t/$step"]
-    Qh = file["timeseries/solr/$step"]
+    Zh = file["timeseries/solr/$step"]
     solc = file["timeseries/solc/$step"]
 
-    Q = irfft(Qh, prob.grid.nx) 
+    Z = irfft(Zh, prob.grid.nx) 
     u = ifft(solc[:, :, 1])
     v = ifft(solc[:, :, 2])
     p = ifft(solc[:, :, 3])
 
-    TwoModeBoussinesq.set_Q!(prob, Q)
+    TwoModeBoussinesq.set_Z!(prob, Z)
     TwoModeBoussinesq.set_uvp!(prob, u, v, p)
     
     Umax = maximum(sqrt.(prob.vars.U.^2.0+prob.vars.V.^2.0))
 
-    #u = mode1u(prob)/Umax
-    Ro = Q/f
-     #ε = mode1u(prob)*kw/σ
-     ε = mode1u(prob)/Umax
+    u = mode1u(prob)/Umax
 
 
     close("all")
@@ -76,18 +67,18 @@ jldopen(fullfilename, "r") do file
       figsize=(8, 5))
 
     axes(axs[1]); axis("equal")
-    plot_Ro = pcolormesh(x, y, Ro, cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
+    Zplot = pcolormesh(x, y, Z/f, cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
 
     axes(axs[2]); axis("equal")
-    plot_ε = pcolormesh(x, y, ε, cmap="RdBu_r", vmin=-ε0, vmax=ε0)
+    uplot = pcolormesh(x, y, u, cmap="RdBu_r", vmin=-u0, vmax=u0)
 
 
-    plots = [plot_Ro, plot_ε]
+    plots = [Zplot, uplot]
     cbs = []
     for (i, ax) in enumerate(axs)
       ax[:set_adjustable]("box-forced")
-      ax[:set_xlim](-lim, lim)
-      ax[:set_ylim](-lim, lim)
+      ax[:set_xlim](-eddylim, eddylim)
+      ax[:set_ylim](-eddylim, eddylim)
       ax[:tick_params](axis="both", which="both", length=0)
 
       divider = pltgrid.make_axes_locatable(ax)
@@ -102,11 +93,11 @@ jldopen(fullfilename, "r") do file
       iscolorbar = true
     end
 
-    axs[1][:set_xlabel](L"kx")
-    axs[2][:set_xlabel](L"kx")
-    axs[1][:set_ylabel](L"ky")
+    axs[1][:set_xlabel](L"x/R")
+    axs[2][:set_xlabel](L"x/R")
+    axs[1][:set_ylabel](L"y/R")
 
-    ticks = [-40, -20, 0, 20, 40]
+    ticks = [-8, -4, 0, 4, 8]
     axs[1][:xaxis][:set_ticks](ticks)
     axs[1][:yaxis][:set_ticks](ticks)
     axs[2][:xaxis][:set_ticks](ticks)
@@ -115,11 +106,11 @@ jldopen(fullfilename, "r") do file
     cbs[1][:ax][:xaxis][:set_label_position]("top")
 
     cbs[1][:set_ticks]([-Ro0, 0.0, Ro0])
-    cbs[2][:set_ticks]([-ε0, 0.0, ε0])
+    cbs[2][:set_ticks]([-u0, 0.0, u0])
 
     labelpad = 16.0
-    cbs[1][:set_label]("Barotropic PV \$= Q/f\$", labelpad=labelpad)
-    cbs[2][:set_label]("Normalized \$\\hat u(z=0) = (u + u^*)/\\max(U)\$",
+    cbs[1][:set_label]("Barotropic vorticity \$= Z/f\$", labelpad=labelpad)
+    cbs[2][:set_label]("Normalized \$\\hat u(z=0) = (u + u^*)/\\max(U)\$", 
       labelpad=labelpad)
 
     msg = @sprintf("\$t = %02d\$ wave periods", t/tσ)
@@ -127,7 +118,7 @@ jldopen(fullfilename, "r") do file
 
     tight_layout(rect=(0.00, 0.00, 0.95, 0.90), h_pad=0.05)
 
-    savename = @sprintf("%s_%06d.png", joinpath("./plots", plotname), istep)
+    savename = @sprintf("%s_%06d.png", plotname, istep)
     println(savename)
     savefig(savename, dpi=240)
   end

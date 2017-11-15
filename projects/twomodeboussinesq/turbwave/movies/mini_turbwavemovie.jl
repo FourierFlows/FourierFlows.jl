@@ -16,7 +16,7 @@ fullfilename = joinpath(filepath, filename)
 
 # Plot parameters
 Ro0 = 0.1 
-ε0  = 1.0
+ε0  = 2.0
 
 
 # Recreate problem
@@ -72,8 +72,8 @@ jldopen(fullfilename, "r") do file
 
 
     close("all")
-    fig, axs = subplots(ncols=2, nrows=1, sharex=true, sharey=true, 
-      figsize=(8, 5))
+    fig, axs = subplots(ncols=1, nrows=2, sharex=true, sharey=true, 
+      figsize=(5, 10))
 
     axes(axs[1]); axis("equal")
     plot_Ro = pcolormesh(x, y, Ro, cmap="RdBu_r", vmin=-Ro0, vmax=Ro0)
@@ -88,44 +88,10 @@ jldopen(fullfilename, "r") do file
       ax[:set_adjustable]("box-forced")
       ax[:set_xlim](-lim, lim)
       ax[:set_ylim](-lim, lim)
-      ax[:tick_params](axis="both", which="both", length=0)
-
-      divider = pltgrid.make_axes_locatable(ax)
-      cax = divider[:append_axes]("top", size="5%", pad="8%")
-      cb = colorbar(plots[i], cax=cax, orientation="horizontal")
-
-      cb[:ax][:xaxis][:set_ticks_position]("top")
-      cb[:ax][:xaxis][:set_label_position]("top")
-      cb[:ax][:tick_params](axis="x", which="both", length=0)
-
-      push!(cbs, cb)
-      iscolorbar = true
+      ax[:axis]("off")
     end
 
-    axs[1][:set_xlabel](L"kx")
-    axs[2][:set_xlabel](L"kx")
-    axs[1][:set_ylabel](L"ky")
-
-    ticks = [-40, -20, 0, 20, 40]
-    axs[1][:xaxis][:set_ticks](ticks)
-    axs[1][:yaxis][:set_ticks](ticks)
-    axs[2][:xaxis][:set_ticks](ticks)
-
-    cbs[1][:ax][:xaxis][:set_ticks_position]("top")
-    cbs[1][:ax][:xaxis][:set_label_position]("top")
-
-    cbs[1][:set_ticks]([-Ro0, 0.0, Ro0])
-    cbs[2][:set_ticks]([-ε0, 0.0, ε0])
-
-    labelpad = 16.0
-    cbs[1][:set_label]("Barotropic PV \$= Q/f\$", labelpad=labelpad)
-    cbs[2][:set_label]("Normalized \$\\hat u(z=0) = (u + u^*)/\\max(U)\$",
-      labelpad=labelpad)
-
-    msg = @sprintf("\$t = %02d\$ wave periods", t/tσ)
-    figtext(0.51, 0.95, msg, horizontalalignment="center", fontsize=14)
-
-    tight_layout(rect=(0.00, 0.00, 0.95, 0.90), h_pad=0.05)
+    tight_layout()
 
     savename = @sprintf("%s_%06d.png", joinpath("./plots", plotname), istep)
     println(savename)
