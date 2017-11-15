@@ -22,7 +22,7 @@ nsubperiods = 1
 nsteps = ceil(Int, nperiods*tσ/dt)
 nsubs  = ceil(Int, nsubperiods*tσ/dt)
 
-savename = "twodturb_n512_Ro20_nnu4_nu1e+12.jld2"
+savename = "./data/twodturb_n512_Ro20_nnu4_nu1e+12.jld2"
 
 @load savename Z
 
@@ -33,8 +33,8 @@ TwoDTurb.set_q!(prob, Z)
 E = Diagnostic(energy, prob; nsteps=nsteps)
 
 # Prepare output
-fileprefix = savename[1:end-5] * "_viscous"
-plotprefix = savename[8:end-5] * "_viscous"
+fileprefix = savename[1:end-5] * "_fwd"
+plotprefix = savename[8:end-5] * "_fwd"
 
 i, testprefix = 1, fileprefix
 while isfile(testprefix*".jld2"); i+=1; testprefix=fileprefix*"-$i"; end
