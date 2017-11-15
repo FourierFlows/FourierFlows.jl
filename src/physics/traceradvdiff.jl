@@ -18,26 +18,26 @@ export set_c!, updatevars!
 abstract type AbstractTracerParams <: AbstractParams end
 
 type ConstDiffParams <: AbstractTracerParams
-  eta::Float64                   # Constant isotropic horizontal diffusivity
-  kap::Float64                   # Constant isotropic vertical diffusivity
+  η::Float64                   # Constant isotropic horizontal diffusivity
+  κ::Float64                   # Constant isotropic vertical diffusivity
   u::Function                    # Advecting x-velocity
   v::Function                    # Advecting y-velocity
 end
 
-function ConstDiffParams(eta::Real, kap::Real, u::Real, v::Real)
+function ConstDiffParams(η::Real, κ::Real, u::Real, v::Real)
   ufunc(x, y, t) = u
   vfunc(x, y, t) = v
-  ConstDiffParams(eta, kap, ufunc, vfunc)
+  ConstDiffParams(η, κ, ufunc, vfunc)
 end
 
-function ConstDiffParams(kap::Real, u::Function, v::Function)
-  ConstDiffParams(kap, kap, u, v)
+function ConstDiffParams(κ::Real, u::Function, v::Function)
+  ConstDiffParams(κ, κ, u, v)
 end
 
-function ConstDiffParams(kap::Real, u::Real, v::Real)
+function ConstDiffParams(κ::Real, u::Real, v::Real)
   ufunc(x::Float64, y::Float64, t::Float64) = u
   vfunc(x::Float64, y::Float64, t::Float64) = v
-  ConstDiffParams(kap, ufunc, vfunc)
+  ConstDiffParams(κ, ufunc, vfunc)
 end
 
 
@@ -52,7 +52,7 @@ end
 """ Initialize an equation with constant diffusivity problem parameters p
 and on a grid g. """
 function Equation(p::ConstDiffParams, g::TwoDGrid)
-  LC = -p.kap.*g.Kr.^2.0 - p.eta.*g.Lr.^2.0
+  LC = -p.κ.*g.Kr.^2.0 - p.η.*g.Lr.^2.0
   Equation(LC, calcNL!)
 end
 
