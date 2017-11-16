@@ -15,30 +15,44 @@ export set_c!, updatevars!
 
 
 # Problems -------------------------------------------------------------------- 
-function ConstDiffProblem(nx, Lx, ny=nx, Ly=Lx, η::Real, κ=η, u::Function, 
-  v::Function)
-  g  = TwoDGrid(nx, Lx, ny, Ly)
-  vs = Vars(g)
-  pr = ConstDiffParams(η, κ, u, v)
-  eq = Equation(pr, g)
+function ConstDiffSteadyFlowProblem(;
+  grid = nothing,
+  nx = 128,
+  Lx = 2π,
+  ny = nothing,
+  Ly = nothing,
+  κ = 1.0,
+  η = nothing,
+  u = nothing,
+  v = nothing
+  )
+
+  # Defaults
+  if ny == nothing; ny = nx;            end
+  if Ly == nothing; Ly = Lx;            end
+  if  η == nothing; η = κ;              end
+
+  if u == nothing; uin(x, y) = 0.0
+  else;            uin = u
+  end
+
+  if v == nothing; vin(x, y) = 0.0
+  else;            vin = v
+  end
+    
+  if grid == nothing; 
+    grid = TwoDGrid(nx, Lx, ny, Ly)
+  end
+    
+  vs = Vars(grid)
+  pr = ConstDiffSteadyFlowParams(η, κ, uin, vin, grid) 
+  eq = Equation(pr, grid)
   ts = RK4TimeStepper(dt, eq.LC)
 
-  FourierFlows.Problem(g, vs, pr, eq, ts)
+  FourierFlows.Problem(grid, vs, pr, eq, ts)
 end
 
 
-
-
-function ConstDiffSteadyFlowProblem(nx::Int, Lx, ny=nx, Ly=Lx, η::Real, 
-  κ=η, u, v)
-  g  = TwoDGrid(nx, Lx, ny, Ly)
-  vs = Vars(g)
-  pr = ConstDiffSteadyFlowParams(η, κ, u, v)
-  eq = Equation(pr, g)
-  ts = RK4TimeStepper(dt, eq.LC)
-
-  FourierFlows.Problem(g, vs, pr, eq, ts)
-end
 
 
 
@@ -52,7 +66,7 @@ type ConstDiffParams <: AbstractTracerParams
   v::Function                    # Advecting y-velocity
 end
 
-function ConstDiffParams(η::Real, κ=η, u::Real, v::Real)
+function ConstDiffParams(η::Real, κ::Real, u::Real, v::Real)
   ufunc(x, y, t) = u
   vfunc(x, y, t) = v
   ConstDiffParams(η, κ, ufunc, vfunc)
@@ -68,12 +82,19 @@ type ConstDiffSteadyFlowParams
   v::Array{Float64, 2}         # Advecting y-velocity
 end
 
-function ConstDiffSteadyFlowParams(η, κ=η, u::Function, v::Function, 
+function ConstDiffSteadyFlowParams(η, κ, u::Function, v::Function, 
   g::TwoDGrid)
   ugrid = u.(g.X, g.Y)
   vgrid = v.(g.X, g.Y)
   ConstDiffSteadyFlowParams(η, κ, ugrid, vgrid)
 end
+
+function ConstDiffSteadyFlowParams(η, κ, u::AbstractArray, v::AbstractArray, 
+  g::TwoDGrid)
+  ConstDiffSteadyFlowParams(η, κ, u, v)
+end
+
+
 
 
 
