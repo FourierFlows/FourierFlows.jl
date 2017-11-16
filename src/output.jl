@@ -14,26 +14,35 @@ gridfieldstosave = [:nx, :ny, :Lx, :Ly, :X, :Y]
 
 """ Output type for FourierFlows problems. """
 type Output
-  fields::Dict{Symbol, Function}
   prob::Problem
   filename::String
+  fields::Dict{Symbol, Function}
+  init::Bool
+end
+
+function Output(prob::Problem, filename::String, 
+  fields::Dict{Symbol, Function})
+  saveproblem(prob, filename)
+  Output(prob, filename, fields, true)
 end
 
 """ Constructor for Outputs with no fields. """
 function Output(prob::Problem, filename::String)
   fields = Dict{Symbol, Function}()
-  saveproblem(prob, filename)
-  Output(fields, prob, filename)
+  Output(prob, filename, fields)
 end
 
 """ Constructor for Outputs in which the name, field pairs are passed as
 tupled arguments."""
 function Output(prob::Problem, filename::String, fieldtuples...)
-  Output(Dict{Symbol, Function}(
-      [(symfld[1], symfld[2]) for symfld in fieldtuples]
-    ), prob, filename)
+  Output(prob, filename,
+    Dict{Symbol, Function}([(symfld[1], symfld[2]) for symfld in fieldtuples]))
 end
   
+
+
+
+
 """ Get the current output field. """
 function getindex(out::Output, key)
   out.fields[key](out.prob)  
