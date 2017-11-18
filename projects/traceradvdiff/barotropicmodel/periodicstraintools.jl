@@ -47,7 +47,7 @@ function wavybarotropicrun(ε;
   Δt = tf/totsteps
 
   # Sinsuidal topography and barotropic velocity
-  u, v = wavychannelbarotropicflow(ε, H, L)
+  u, v = wavychannelbarotropicflow(ε, H, L, U)
   #u, v = leewaveflow(U, ε, 2π/L, 2π/H; evanescent=false) 
   
   # Initial condition
@@ -55,7 +55,7 @@ function wavybarotropicrun(ε;
   ci(x, y) = exp( -(x-x₀)^2/(2*δx^2) - (y-y₀)^2/(2*δy^2) ) / (2π*δx*δy)
 
   # Initialize the problem
-  g = FourierFlows.TwoDGrid(n, L, n, H+ε; y0=-H-ε)
+  g = FourierFlows.TwoDGrid(n, L, n, H+ε; y0=-H-ε, effort=FFTW.PATIENT)
   prob = TracerAdvDiff.ConstDiffSteadyFlowProblem(grid=g, κ=κ, η=η, u=u, v=v) 
   TracerAdvDiff.set_c!(prob, ci)
 
@@ -71,11 +71,8 @@ function wavybarotropicrun(ε;
 
   # Plotting
   fig, ax = subplots(figsize=(8, 4))
-  mask = Array{Bool}(n, n)
-  for j=1:n, i=1:n;
-    mask[i, j] = g.y[j] < -h(g.x[i]) ? true : false 
-  end
-
+  mask = wavychannelmask(ε, H, L, prob.grid)
+  
   # Integrate
   startwalltime = time()
   println("Running with ε = $ε, n = $n...")
@@ -123,7 +120,7 @@ end
 Returns u, v functions that define barotropic flow in a wavy channel with 
 wave height ε, channel height H, and length L.
 """
-function wavychannelbarotropicflow(ε, H, L) 
+function wavychannelbarotropicflow(ε, H, L, U) 
   k₁ = 2π/L      
 
    h(x) = H*(1 - ε*sin(k₁*x))       # Topography
@@ -133,6 +130,22 @@ function wavychannelbarotropicflow(ε, H, L)
   v(x, y) = y*u(x, y)*∂h(x)/h(x)   # Topography-following z-velocity
 
   u, v
+end
+
+
+
+
+function wavychannelmask(ε, H, L, grid)
+
+  k₁ = 2π/L      
+  h(x) = H*(1 - ε*sin(k₁*x))       # Topography
+
+  mask = Array{Bool}(grid.nx, grid.ny)
+  for j=1:grid.ny, i=1:grid.nx;
+    mask[i, j] = grid.y[j] < -h(grid.x[i]) ? true : false 
+  end
+
+  mask
 end
 
 

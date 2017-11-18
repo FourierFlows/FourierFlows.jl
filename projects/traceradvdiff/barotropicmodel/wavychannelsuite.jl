@@ -1,8 +1,9 @@
 include("./periodicstraintools.jl")
 
 name = "try_1"
- κ = 1e-4
- η = 1e-5
+ n = 1024
+ κ = 2e-4
+ η = 1e-4
 δx = 0.02
 δy = 0.04
 
