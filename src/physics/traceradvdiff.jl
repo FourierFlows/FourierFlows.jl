@@ -24,7 +24,9 @@ function ConstDiffSteadyFlowProblem(;
   κ = 1.0,
   η = nothing,
   u = nothing,
-  v = nothing
+  v = nothing,
+  dt = 0.01,
+  timestepper = "RK4"
   )
 
   # Defaults
@@ -45,9 +47,14 @@ function ConstDiffSteadyFlowProblem(;
   end
     
   vs = Vars(grid)
-  pr = ConstDiffSteadyFlowParams(η, κ, uin, vin, grid) 
+  pr = ConstDiffSteadyFlowParams(η, κ, uin, vin, grid)
   eq = Equation(pr, grid)
-  ts = RK4TimeStepper(dt, eq.LC)
+
+  if timestepper == "RK4"
+    ts = ETDRK4TimeStepper(dt, eq.LC)
+  elseif timestepper == "ETDRK4"
+    ts = RK4TimeStepper(dt, eq.LC)
+  end
 
   FourierFlows.Problem(grid, vs, pr, eq, ts)
 end
@@ -75,7 +82,7 @@ end
 
 
 
-type ConstDiffSteadyFlowParams
+type ConstDiffSteadyFlowParams <: AbstractTracerParams
   η::Float64                   # Constant isotropic horizontal diffusivity
   κ::Float64                   # Constant isotropic vertical diffusivity
   u::Array{Float64, 2}         # Advecting x-velocity
@@ -181,7 +188,7 @@ end
 
 function calcNL_steadyflow!(NL::Array{Complex{Float64}, 2}, 
   sol::Array{Complex{Float64}, 2}, 
-  t::Float64, v::Vars, p::ConstDiffParams, g::TwoDGrid)
+  t::Float64, v::Vars, p::ConstDiffSteadyFlowParams, g::TwoDGrid)
   
   # Calculate the advective terms for a tracer equation with constant
   # diffusivity and time-constant flow.
@@ -190,8 +197,8 @@ function calcNL_steadyflow!(NL::Array{Complex{Float64}, 2},
   v.ch .= sol
   A_mul_B!(v.c, g.irfftplan, v.ch)
 
-  @. v.cu .= v.u*v.c
-  @. v.cv .= v.v*v.c
+  @. v.cu = p.u*v.c
+  @. v.cv = p.v*v.c
 
   A_mul_B!(v.cuh, g.rfftplan, v.cu)
   A_mul_B!(v.cvh, g.rfftplan, v.cv)

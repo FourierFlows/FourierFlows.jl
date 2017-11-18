@@ -186,6 +186,20 @@ end
 
 
 # Moments and cumulants
+domainaverage(c, g) = g.dx*g.dy*sum(c)
+moment_x(c, g, n) = g.dx*g.dy*sum(g.X.^n.*c) 
+moment_y(c, g, n) = g.dx*g.dy*sum(g.Y.^n.*c) 
+
+cumulant_1x(c, g) = g.dx*g.dy*sum(g.X.*c) / domainaverage(c, g)
+cumulant_1y(c, g) = g.dx*g.dy*sum(g.Y.*c) / domainaverage(c, g)
+
+cumulant_2x(c, g) = (g.dx*g.dy*sum((g.X-cumulant_1x(c, g)).^2.0.*c) 
+  / domainaverage(c, g))
+cumulant_2y(c, g) = (g.dx*g.dy*sum((g.Y-cumulant_1y(c, g)).^2.0.*c)
+  / domainaverage(c, g))
+
+
+#=
 M0(c, g)     = g.dx*g.dy*sum(c)
 Mxn(c, g, n) = g.dx*g.dy*sum(g.X.^n.*c)
 Myn(c, g, n) = g.dx*g.dy*sum(g.Y.^n.*c) 
@@ -193,8 +207,6 @@ Myn(c, g, n) = g.dx*g.dy*sum(g.Y.^n.*c)
 Cx1(c, g) = g.dx*g.dy*sum(g.X.*c) / M0(c, g)
 Cy1(c, g) = g.dx*g.dy*sum(g.Y.*c) / M0(c, g)
 
-Cx2(c, g) = g.dx*g.dy*sum((g.X-Cx1(c, g)).^2.0.*c) / M0(c, g)
-Cy2(c, g) = g.dx*g.dy*sum((g.Y-Cy1(c, g)).^2.0.*c) / M0(c, g)
 
 Cx3(c, g) = g.dx*g.dy*sum((g.X-Cx1(c, g)).^3.0.*c) / M0(c, g)
 Cy3(c, g) = g.dx*g.dy*sum((g.Y-Cy1(c, g)).^3.0.*c) / M0(c, g)
@@ -210,3 +222,4 @@ cy1(c, g) = g.dy*sum(g.Y.*c) ./ myn(c, g, 0)
 
 delyc1(c, g) = g.Y - broadcast(*, cy1(c, g), ones(g.nx, g.ny))
 cy2(c, g) = g.dy * sum(delyc1(c, g).*c, 2)./myn(c, g, 0)
+=#
