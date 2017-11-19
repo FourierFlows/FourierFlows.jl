@@ -94,10 +94,6 @@ function stepforward!(v::AbstractVars, ts::ForwardEulerTimeStepper,
   eq.calcNL!(ts.NL, v.sol, v.t, v, p, g)
 
   v.sol .+= ts.dt .* (ts.NL .+ eq.LC.*v.sol)
-  v.sol = v.sol .* g.filterr
-  if ts.step==1
-      println("Navid added a filter in timestepper.jl")
-  end
   v.t    += ts.dt
 
   ts.step += 1
@@ -264,10 +260,6 @@ function stepforward!(v::AbstractVars, ts::ETDRK4TimeStepper,
   v.sol .= (ts.expLCdt.*v.sol .+      ts.alph .* ts.NL1
                               .+ 2.0.*ts.beta .* (ts.NL2 .+ ts.NL3)
                               .+      ts.gamm .* ts.NL4 )
-  v.sol = v.sol .* g.filterr
-  if ts.step==1
-      println("Navid added a filter in ETDRK4 timestepper.jl")
-  end
   v.t   += ts.dt
   ts.step += 1
 
