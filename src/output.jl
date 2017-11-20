@@ -4,7 +4,7 @@ using JLD2, HDF5
 
 import Base: getindex, setindex!, push!, append!, fieldnames
 
-export Output, saveoutput, saveproblem, groupsize
+export Output, saveoutput, saveproblem, groupsize, savediagnostic
 
 
 
@@ -155,10 +155,12 @@ end
 
 
 
-""" Save certain aspects of a Problem. Entire problems cannot be saved
+""" 
+Save certain aspects of a Problem. Entire problems cannot be saved
 in general, because functions cannot be saved (and functions may use
 arbitrary numbers of global variables that cannot be included in a saved 
-object). """
+object). 
+"""
 function saveproblem(prob::AbstractProblem, filename::String)
 
   jldopen(filename, "a+") do file
@@ -173,6 +175,23 @@ function saveproblem(prob::AbstractProblem, filename::String)
           file["params/$name"] = field
         end
       end
+  end
+
+  nothing
+end
+
+
+
+
+"""
+Save diagnostics to file.
+"""
+function savediagnostic(diag::AbstractDiagnostic, diagname::String,
+  filename::String) 
+
+  jldopen(filename, "a+") do file
+    file["diags/$diagname/time"] = diag.time
+    file["diags/$diagname/data"] = diag.data
   end
 
   nothing
