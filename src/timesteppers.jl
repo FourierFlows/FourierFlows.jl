@@ -144,7 +144,8 @@ function stepforward!(v::AbstractVars, ts::FilteredForwardEulerTimeStepper,
 
   eq.calcNL!(ts.NL, v.sol, v.t, v, p, g)
 
-  @. v.sol += ts.filter * ts.dt*(ts.NL + eq.LC.*v.sol)
+  @. v.sol += ts.dt*(ts.NL + eq.LC.*v.sol)
+  @. v.sol *= ts.filter
   v.t += ts.dt 
   ts.step += 1
 end
