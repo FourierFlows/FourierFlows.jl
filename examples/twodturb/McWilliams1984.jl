@@ -10,7 +10,6 @@ import FourierFlows.TwoDTurb: energy, enstrophy
  L = 2π
  nν = 4
   ν = 0e-8
- dofilter = true
 
 # Time-stepping
 dt = 1e-4
