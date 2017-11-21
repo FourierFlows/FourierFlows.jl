@@ -200,7 +200,7 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
   irfftplan = plan_irfft(Array{Complex{Float64},2}(nkr, nl), nx; flags=effort)
 
   return TwoDGrid(nx, ny, Lx, Ly, nk, nl, nkr, dx, dy, x, y,
-          ialias, iralias, jalias, ialias3, iralias3, jalias3, filter, filterr,
+          ialias, iralias, jalias, ialias3, iralias3, jalias3,
           k, l, kr, ksq, lsq, krsq, ik, il, ikr, X, Y, K, L, Kr, Lr,
           K2, L2, Kr2, Lr2, KKsq, invKKsq, KL, KLr, KKrsq, invKKrsq,
           fftplan, ifftplan, rfftplan, irfftplan)
