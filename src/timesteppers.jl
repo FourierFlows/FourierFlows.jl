@@ -3,7 +3,7 @@ __precompile__()
 
 
 
-export ForwardEulerTimeStepper,
+export ForwardEulerTimeStepper, FilteredForwardEulerTimeStepper,
        AB3TimeStepper,
        RK4TimeStepper,
        ETDRK4TimeStepper
@@ -94,6 +94,48 @@ function stepforward!(v::AbstractVars, ts::ForwardEulerTimeStepper,
   eq.calcNL!(ts.NL, v.sol, v.t, v, p, g)
 
   v.sol .+= ts.dt .* (ts.NL .+ eq.LC.*v.sol)
+  v.t    += ts.dt
+
+  ts.step += 1
+end
+
+
+
+
+
+
+
+
+# Filtered Forward Euler ---------------------------------------------------------------
+# The simplest time-stepping method in the books. Explicit and 1st-order
+# accurate.
+
+type FilteredForwardEulerTimeStepper{dim} <: AbstractTimeStepper
+  step::Int
+  dt::Float64
+  NL::Array{Complex{Float64}, dim}    # Nonlinear term
+end
+
+function FilteredForwardEulerTimeStepper(dt::Float64, v::AbstractVars)
+  NL = zeros(v.sol)
+  FilteredForwardEulerTimeStepper{ndims(NL)}(0, dt, NL)
+end
+
+function FilteredForwardEulerTimeStepper(dt::Float64, LC::Array{Complex{Float64}, 2})
+  NL = zeros(LC)
+  FilteredForwardEulerTimeStepper{ndims(LC)}(0, dt, NL)
+end
+
+
+
+
+function stepforward!(v::AbstractVars, ts::FilteredForwardEulerTimeStepper,
+  eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
+
+  eq.calcNL!(ts.NL, v.sol, v.t, v, p, g)
+
+  v.sol .+= ts.dt .* (ts.NL .+ eq.LC.*v.sol)
+  v.sol .= v.sol.*g.filterr
   v.t    += ts.dt
 
   ts.step += 1
@@ -260,6 +302,7 @@ function stepforward!(v::AbstractVars, ts::ETDRK4TimeStepper,
   v.sol .= (ts.expLCdt.*v.sol .+      ts.alph .* ts.NL1
                               .+ 2.0.*ts.beta .* (ts.NL2 .+ ts.NL3)
                               .+      ts.gamm .* ts.NL4 )
+
   v.t   += ts.dt
   ts.step += 1
 

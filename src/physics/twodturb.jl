@@ -2,7 +2,7 @@ __precompile__()
 
 module TwoDTurb
 
-using FourierFlows, 
+using FourierFlows,
       PyPlot
 
 export Params,
@@ -12,26 +12,28 @@ export Params,
 export set_q!, updatevars!
 
 
-# Problem --------------------------------------------------------------------- 
+# Problem ---------------------------------------------------------------------
 function InitialValueProblem(;
-  nx = 128,
+  nx = 256,
   Lx = 2π,
   ny = nothing,
   Ly = nothing,
-  ν  = nothing, 
-  nν = 2, 
+  ν  = nothing,
+  nν = 2,
   dt = 0.01
   )
 
   if Ly == nothing; Ly = Lx; end
   if ny == nothing; ny = nx; end
   if ν  == nothing; ν = 1e-1/(dt*(0.65π*nx/Lx)^nν); end
-  
+
   g  = TwoDGrid(nx, Lx, ny, Ly)
   pr = TwoDTurb.Params(ν, nν)
   vs = TwoDTurb.Vars(g)
   eq = TwoDTurb.Equation(pr, g)
-  ts = ETDRK4TimeStepper(dt, eq.LC)
+  # ts = ETDRK4TimeStepper(dt, eq.LC)
+  # ts = ForwardEulerTimeStepper(dt, eq.LC)
+  ts = FilteredForwardEulerTimeStepper(dt, eq.LC)
 
   FourierFlows.Problem(g, vs, pr, eq, ts)
 end
@@ -124,7 +126,7 @@ end
 function calcNL!(NL::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
   t::Float64, v::Vars, p::Params, g::TwoDGrid)
 
-  # This copy is necessary because calling A_mul_B(v.q, g.irfftplan, sol) 
+  # This copy is necessary because calling A_mul_B(v.q, g.irfftplan, sol)
   # a few lines below destroys sol when using Julia's FFTW.
   v.qh .= sol
 
@@ -132,7 +134,7 @@ function calcNL!(NL::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2}
 
   v.Uh .=    im .* g.Lr .* g.invKKrsq .* sol
   v.Vh .= (-im) .* g.Kr .* g.invKKrsq .* sol
- 
+
   A_mul_B!(v.U, g.irfftplan, v.Uh)
   A_mul_B!(v.V, g.irfftplan, v.Vh)
 
@@ -162,7 +164,7 @@ function updatevars!(v::Vars, g::TwoDGrid)
 
   @. v.Uh =    im * g.Lr * g.invKKrsq * v.qh
   @. v.Vh = (-im) * g.Kr * g.invKKrsq * v.qh
- 
+
   # We don't use A_mul_B here because irfft destroys its input.
   #A_mul_B!(v.U, g.irfftplan, v.Uh)
   #A_mul_B!(v.V, g.irfftplan, v.Vh)
@@ -252,8 +254,8 @@ end
   Returns
     q: The vorticity field
 """
-function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nν=4, 
-  maxsteps=10000, dt=nothing, ν=nothing, k0=nx/2, 
+function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nν=4,
+  maxsteps=10000, dt=nothing, ν=nothing, k0=nx/2,
   E0=nothing, tf=nothing, plots=false, loginterval=5)
 
   g  = TwoDGrid(nx, Lx)
@@ -323,8 +325,8 @@ function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nν=4,
 
     log1 = @sprintf("τ: %.3f s, step: %d, t*q0: %.1e, max q: %.3e, ",
       time()-starttime, ts.step, vs.t*q0, maxq)
-      
-    log2 = @sprintf("ΔE: %.3f, CFL: %.3f", 
+
+    log2 = @sprintf("ΔE: %.3f, CFL: %.3f",
       energy(vs, g)/E0, maximum([vs.U; vs.V])*ts.dt/g.dx)
 
     println(log1*log2)
@@ -343,4 +345,4 @@ end
 
 
 end
-# E N D   T W O D T U R B >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> 
+# E N D   T W O D T U R B >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

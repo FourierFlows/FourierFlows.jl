@@ -6,15 +6,17 @@ import FourierFlows.TwoDTurb
 import FourierFlows.TwoDTurb: energy, enstrophy
 
 # Physical parameters
- n = 256
+ n = 128
  L = 2π
  nν = 4
   ν = 0e-8
+ dofilter = true
 
 # Time-stepping
-dt = 5e-3
+dt = 1e-4
 nsteps = 8000
-nsubs  = 200
+nsteps = 1000000
+nsubs  = 50000
 
 # Files
 filepath = "."
@@ -27,7 +29,7 @@ if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
 
 # Initialize with random numbers
-prob = TwoDTurb.InitialValueProblem(n, L, ν, nν, dt)
+prob = TwoDTurb.InitialValueProblem(n, L, ν, nν, dofilter, dt)
 
 
 # Initial condition closely following pyqg barotropic example
@@ -71,7 +73,16 @@ out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 
 # Step forward
 startwalltime = time()
+
+fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
+
 while prob.step < nsteps
+
+  # axes(axs[1])
+  # pcolormesh(abs.(prob.vars.sol))
+  # # colorbar()
+  # show()
+  # draw()
 
   # Step forward
   stepforward!(prob, diags; nsteps=nsubs)
@@ -83,11 +94,22 @@ while prob.step < nsteps
 
   println(log)
 
+  # axes(axs[2])
+  # pcolormesh(abs.(prob.vars.sol))
+  # # colorbar()
+  # show()
+  # draw()
+
 
   # Plot and save output
   if prob.step/nsubs % 1 == 0.0
 
-    saveoutput(out) # saves output to out.filename
+    # TwoDTurb.updatevars!(prob)
+    # saveoutput(out) # saves output to out.filename
+    # figure(1)
+    # pcolormesh(abs.(prob.ts.NL))
+    # show()
+    # draw()
 
   end
 
