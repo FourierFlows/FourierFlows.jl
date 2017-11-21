@@ -8,13 +8,13 @@ import FourierFlows.TwoDTurb: energy, enstrophy
 # Physical parameters
  n = 256
  L = 2π
-nν = 8
- ν = nothing
+ nν = 4
+  ν = 0e-8
 
 # Time-stepping
-dt = 0.001
-nsteps = 40000
-nsubs  = 500
+dt = 5e-3
+nsteps = 8000
+nsubs  = 20
 
 # Files
 filepath = "."
@@ -30,28 +30,23 @@ if !isdir(plotpath); mkdir(plotpath); end
 prob = TwoDTurb.InitialValueProblem(n, L, ν, nν, dt)
 
 
-k0, E0 = 6, 0.5
-# Closely following the formulation in Rocha, Wagner, Young
-modk = sqrt.(prob.grid.KKrsq)
+# Initial condition closely following pyqg barotropic example
+# that reproduces the results of the paper by McWilliams (1984)
 
+k0, E0 = 6, 0.5
+modk = sqrt.(prob.grid.KKrsq)
 psik = zeros(prob.grid.nk, prob.grid.nl)
 psik =  (modk.^2 .* (1 + (modk/k0).^4)).^(-0.5)
 psik[1, 1] = 0.0
-C = real(sqrt(E0/sum(prob.grid.KKrsq.*abs2.(psik))))
-
 psih = (randn(prob.grid.nkr, prob.grid.nl)+im*randn(prob.grid.nkr, prob.grid.nl)).*psik
+psih = psih.*prob.grid.filterr
+Ein = real(sum(prob.grid.KKrsq.*abs2.(psih)/(prob.grid.nx*prob.grid.ny)^2))
+psih = psih*sqrt(E0/Ein)
 qi = -irfft(prob.grid.KKrsq.*psih, prob.grid.nx)
-
-# E0 = FourierFlows.parsevalsum(prob.grid.KKrsq.*abs2.(psih), prob.grid)
-
+E0 = FourierFlows.parsevalsum(prob.grid.KKrsq.*abs2.(psih), prob.grid)
 
 
-# q = rand(n, n)
-# q = FourierFlows.peaked_isotropic_spectrum(prob.grid.nx, 6; maxval=40)
 TwoDTurb.set_q!(prob, qi)
-
-pcolormesh(prob.grid.x, prob.grid.y, prob.vars.q)
-
 
 
 # Create Diagnostic -- "energy" is a function imported at the top.
@@ -74,6 +69,27 @@ end
 # One way to create an Output type.
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 
+close("all")
+TwoDTurb.updatevars!(prob)
+fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
+
+figure(1)
+axes(axs[1])
+pcolormesh(prob.grid.x, prob.grid.y, qi)
+axis("equal")
+clim(-40, 40)
+colorbar()
+axs[1][:axis]("off")
+
+axes(axs[2])
+plot(E.time[1:E.prob.step], E.data[1:prob.step]/E.data[1])
+plot(Z.time[1:E.prob.step], Z.data[1:prob.step]/Z.data[1])
+xlabel(L"t")
+ylabel(L"\Delta E, \, \Delta Z")
+ylim(0, 1)
+xlim(0, nsteps*dt)
+savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), prob.step)
+savefig(savename, dpi=240)
 
 # Step forward
 startwalltime = time()
@@ -89,8 +105,9 @@ while prob.step < nsteps
 
   println(log)
 
+
   # Plot and save output
-  if prob.step/nsubs % 2 == 0.0
+  if prob.step/nsubs % 1 == 0.0
 
     saveoutput(out) # saves output to out.filename
 
@@ -98,9 +115,12 @@ while prob.step < nsteps
     TwoDTurb.updatevars!(prob)
     fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
 
+    figure(1)
     axes(axs[1])
     pcolormesh(prob.grid.x, prob.grid.y, prob.vars.q)
     axis("equal")
+    colorbar()
+    clim(-40, 40)
     axs[1][:axis]("off")
 
     axes(axs[2])
@@ -108,9 +128,32 @@ while prob.step < nsteps
     plot(Z.time[1:E.prob.step], Z.data[1:prob.step]/Z.data[1])
     xlabel(L"t")
     ylabel(L"\Delta E, \, \Delta Z")
-
+    ylim(0, 1)
+    xlim(0, nsteps*dt)
     savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), prob.step)
     savefig(savename, dpi=240)
   end
 
 end
+
+TwoDTurb.updatevars!(prob)
+fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
+
+figure(1)
+axes(axs[1])
+pcolormesh(prob.grid.x, prob.grid.y, prob.vars.q)
+axis("equal")
+colorbar()
+clim(-40, 40)
+axs[1][:axis]("off")
+
+axes(axs[2])
+plot(E.time[1:E.prob.step], E.data[1:prob.step]/E.data[1])
+plot(Z.time[1:E.prob.step], Z.data[1:prob.step]/Z.data[1])
+ylim(0, 1)
+xlim(0, nsteps*dt)
+xlabel(L"t")
+ylabel(L"\Delta E, \, \Delta Z")
+
+savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), prob.step)
+savefig(savename, dpi=240)
