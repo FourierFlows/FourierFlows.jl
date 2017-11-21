@@ -10,8 +10,8 @@ import FourierFlows.TwoModeBoussinesq: totalenergy, mode0energy, mode1energy
   L = 2π           # Domain size
 nν0 = 4            # Hyperviscosity for 0th mode
 nν1 = 4
- ν0 = 1e-2
- ν1 = 1e-2
+ ν0 = 1e-4
+ ν1 = 1e-4
   f = 1.0
   N = 20
   α = 1.0
