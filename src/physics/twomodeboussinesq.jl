@@ -6,6 +6,9 @@ module TwoModeBoussinesq
 
 using FourierFlows
 
+
+
+
 # Problem --------------------------------------------------------------------- 
 """ 
 Construct a TwoModeBoussinesq initial value problem.
@@ -383,6 +386,7 @@ end
 
 
 
+
 """
 Set zeroth mode vorticity and update vars. 
 """
@@ -517,23 +521,11 @@ end
 
  
 
-
-
-
 """ 
 Returns the integrated energy in the zeroth mode energy. 
 """
 function mode0energy(v::Vars, p::TwoModeParams, g::TwoDGrid)
   0.5*FourierFlows.parsevalsum(real.(g.invKKrsq).*abs2.(v.solr), g)
-end
-
-function mode0energy(v::PassiveAPVVars, p::TwoModeParams, g::TwoDGrid)
-  0.5*FourierFlows.parsevalsum(real.(g.invKKrsq).*abs2.(v.solr[:, :, 1]), g)
-end
-
-function mode0energy(v::PrognosticAPVVars, p::PrognosticAPVParams, g::TwoDGrid)
-  calcPsih!(v, p, g, v.solc, v.solr)
-  0.5*FourierFlows.parsevalsum(real.(g.KKrsq).*abs2.(v.Psih), g)
 end
 
 function mode0energy(prob::AbstractProblem)
@@ -662,32 +654,80 @@ function mode1apv(Z, v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
 end
 
 
+
+
+"""
+Return the apv associated with mode-1.
+"""
+
 function mode1apv(v::Vars, p::TwoModeParams, g::TwoDGrid)
   v.Z = irfft(v.solr, g.nx)
   mode1apv(v.Z, v, p, g)
 end
 
-function mode1apv(prob::AbstractProblem)
-  mode1apv(prob.vars, prob.params, prob.grid)
-end
+mode1apv(prob::AbstractProblem) = mode1apv(prob.vars, prob.params, prob.grid) 
 
 
-mode1u(v::AbstractVars) = real.(v.u + conj.(v.u))
-mode1v(v::AbstractVars) = real.(v.v + conj.(v.v))
-mode1w(v::AbstractVars) = real.(v.w + conj.(v.w))
-mode1p(v::AbstractVars) = real.(v.p + conj.(v.p))
 
+
+"""
+Return the x-velocity associated with mode-1 at z=0.
+"""
+mode1u(v::AbstractVars) = real.(v.u .+ conj.(v.u))
 mode1u(prob::AbstractProblem) = mode1u(prob.vars)
+
+
+
+
+"""
+Return the y-velocity associated with mode-1 at z=0.
+"""
+mode1v(v::AbstractVars) = real.(v.v .+ conj.(v.v))
 mode1v(prob::AbstractProblem) = mode1v(prob.vars)
+
+
+
+
+"""
+Return the z-velocity associated with mode-1 at z=0.
+"""
+mode1w(v::AbstractVars) = real.(v.w .+ conj.(v.w))
 mode1w(prob::AbstractProblem) = mode1w(prob.vars)
+
+
+
+
+"""
+Return the pressure associated with mode-1 at z=0.
+"""
+mode1p(v::AbstractVars) = real.(v.p .+ conj.(v.p))
 mode1p(prob::AbstractProblem) = mode1p(prob.vars)
 
-mode1speed(v::AbstractVars) = sqrt.(mode1u(v).^2.0 + mode1v(v).^2.0)
-mode1speed(prob::AbstractProblem) = mode1speed(prob.vars)
-mode0speed(prob) = sqrt.(prob.vars.U.^2.0 + prob.vars.V.^2.0)
 
-mode1buoyancy(v, p) = real.(im*p.m*v.p - im*p.m*conj.(v.p))
+
+
+"""
+Return the buoyancy associated with mode-1 at z=0.
+"""
+mode1buoyancy(v, p) = real.(im.*p.m.*v.p .- im.*p.m.*conj.(v.p))
 mode1buoyancy(prob::AbstractProblem) = mode1buoyancy(prob.vars, prob.params)
+
+
+
+
+"""
+Return the speed associated with mode-1 at z=0.
+"""
+mode1speed(v::AbstractVars) = sqrt.(mode1u(v).^2.0 .+ mode1v(v).^2.0)
+mode1speed(prob::AbstractProblem) = mode1speed(prob.vars)
+
+
+
+
+"""
+Return the speed associated with mode-0.
+"""
+mode0speed(prob) = sqrt.(prob.vars.U.^2.0 .+ prob.vars.V.^2.0)
 
 
 
@@ -706,71 +746,7 @@ function CFL(prob, dt)
   U*dt/dx
 end
 
-
-
-  
-""" 
-Returns Q^chi, the quadratic mode-1 contribution to barotropic 
-available potential vorticity. 
-"""
-function Qchi(u, v, p, pr::TwoModeParams, g::TwoDGrid)
-  pr.m.^2.0./pr.N.^2.0 .* irfft(
-       im.*g.Kr .* rfft(real.(v.*conj.(p) .+ conj.(v).*p))
-    .- im.*g.Lr .* rfft(real.(u.*conj.(p) .+ conj.(u).*p)), g.nx)
-end
-
-function Qchi(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
-  @views A_mul_B!(v.u, g.ifftplan, v.solc[:, :, 1])
-  @views A_mul_B!(v.v, g.ifftplan, v.solc[:, :, 2])
-  @views A_mul_B!(v.p, g.ifftplan, v.solc[:, :, 3])
-
-  Qchi(v.u, v.v, v.p, p, g)
-end
-
-function Qchi(prob::AbstractProblem)
-  Qchi(prob.vars, prob.params, prob.grid)
-end
-
-
-
-
-""" 
-Returns chi, the "mode-1-induced" barotropic streamfunction.
-"""
-function chi(Qchi, g::TwoDGrid)
-  -irfft(g.invKKrsq.*rfft(Qchi), g.nx)
-end
-
-function chi(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
-  chi(Qchi(v, p, g), g)
-end
-
-function chi(prob::AbstractProblem)
-  chi(prob.vars, prob.params, prob.grid)
-end
-
-
-
-
-""" 
-Returns the velocity field associated with the "mode-1-induced" barotropic 
-streamfunction. 
-"""
-function UVchi(Qchi::AbstractArray, g::TwoDGrid)
-  Uchi =  irfft(im.*g.Lr.*g.invKKrsq.*rfft(Qchi), g.nx)
-  Vchi = -irfft(im.*g.Kr.*g.invKKrsq.*rfft(Qchi), g.nx)
-  Uchi, Vchi
-end
-
-function UVchi(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
-  UVchi(Qchi(v, p, g), g)
-end
-
-function UVchi(prob::AbstractProblem)
-  UVchi(prob.vars, prob.params, prob.grid)
-end
-
-
+ 
 
 
 # End module
