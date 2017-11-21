@@ -106,24 +106,34 @@ end
 
 
 
-# Filtered Forward Euler ---------------------------------------------------------------
+# Filtered Forward Euler ------------------------------------------------------
 # The simplest time-stepping method in the books. Explicit and 1st-order
 # accurate.
 
 type FilteredForwardEulerTimeStepper{dim} <: AbstractTimeStepper
   step::Int
   dt::Float64
-  NL::Array{Complex{Float64}, dim}    # Nonlinear term
+  NL::Array{Complex{Float64}, dim}        # Nonlinear term
+  filter::Array{Complex{Float64}, dim}    # Filter for solution
 end
 
-function FilteredForwardEulerTimeStepper(dt::Float64, v::AbstractVars)
+function FilteredForwardEulerTimeStepper(dt::Float64, g::AbstractGrid, 
+  v::AbstractVars; filterorder=4.0, innerfilterK=0.65, outerfilterK=0.95)
   NL = zeros(v.sol)
-  FilteredForwardEulerTimeStepper{ndims(NL)}(0, dt, NL)
-end
 
-function FilteredForwardEulerTimeStepper(dt::Float64, LC::Array{Complex{Float64}, 2})
-  NL = zeros(LC)
-  FilteredForwardEulerTimeStepper{ndims(LC)}(0, dt, NL)
+  if size(v.sol)[1] == g.nkr
+    realvars = true
+  else
+    realvars = false
+  end
+
+  filter = makefilter(g; order=filterorder, innerK=innerfilterK, 
+    outerK=outerfilterK, realvars=realvars)
+
+  # Broadcast to correct size
+  filter = ones(v.sol) .* filter
+
+  FilteredForwardEulerTimeStepper{ndims(NL)}(0, dt, NL, filter)
 end
 
 
@@ -134,10 +144,8 @@ function stepforward!(v::AbstractVars, ts::FilteredForwardEulerTimeStepper,
 
   eq.calcNL!(ts.NL, v.sol, v.t, v, p, g)
 
-  v.sol .+= ts.dt .* (ts.NL .+ eq.LC.*v.sol)
-  v.sol .= v.sol.*g.filterr
-  v.t    += ts.dt
-
+  @. v.sol += ts.filter * ts.dt*(ts.NL + eq.LC.*v.sol)
+  v.t += ts.dt 
   ts.step += 1
 end
 
