@@ -118,8 +118,9 @@ type FilteredForwardEulerTimeStepper{dim} <: AbstractTimeStepper
 end
 
 function FilteredForwardEulerTimeStepper(dt::Float64, g::AbstractGrid, 
-  v::AbstractVars; filterorder=4.0, innerfilterK=0.65, outerfilterK=0.95)
-  NL = zeros(v.sol)
+  sol::AbstractArray; filterorder=4.0, innerfilterK=0.65, outerfilterK=0.95)
+
+  NL = zeros(sol)
 
   if size(v.sol)[1] == g.nkr
     realvars = true
@@ -131,11 +132,17 @@ function FilteredForwardEulerTimeStepper(dt::Float64, g::AbstractGrid,
     outerK=outerfilterK, realvars=realvars)
 
   # Broadcast to correct size
-  filter = ones(v.sol) .* filter
+  filter = ones(sol) .* filter
 
   FilteredForwardEulerTimeStepper{ndims(NL)}(0, dt, NL, filter)
 end
 
+function FilteredForwardEulerTimeStepper(dt::Float64, g::AbstractGrid, 
+  v::AbstractVars; filterorder=4.0, innerfilterK=0.65, outerfilterK=0.95)
+
+  FilteredForwardEulerTimeStepper(dt, g, v.sol; filterorder=filterorder,
+    innerfilterK=innerfilterK, outerfilterK=outerfilterK)
+end
 
 
 
@@ -144,8 +151,7 @@ function stepforward!(v::AbstractVars, ts::FilteredForwardEulerTimeStepper,
 
   eq.calcNL!(ts.NL, v.sol, v.t, v, p, g)
 
-  @. v.sol += ts.dt*(ts.NL + eq.LC.*v.sol)
-  @. v.sol *= ts.filter
+  @. v.sol = ts.filter * ( v.sol + ts.dt*(ts.NL + eq.LC.*v.sol) )
   v.t += ts.dt 
   ts.step += 1
 end
