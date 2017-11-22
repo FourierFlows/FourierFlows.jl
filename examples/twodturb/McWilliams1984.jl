@@ -6,7 +6,7 @@ import FourierFlows.TwoDTurb
 import FourierFlows.TwoDTurb: energy, enstrophy
 
 # Physical parameters
- n = 256
+ n = 128
  L = 2π
  nν = 4
   ν = 0e-8
@@ -33,7 +33,7 @@ prob = TwoDTurb.InitialValueProblem(n, L, ν, nν, dt, withfilter)
 
 # Initial condition closely following pyqg barotropic example
 # that reproduces the results of the paper by McWilliams (1984)
-
+srand(1234)
 k0, E0 = 6, 0.5
 modk = sqrt.(prob.grid.KKrsq)
 psik = zeros(prob.grid.nk, prob.grid.nl)
