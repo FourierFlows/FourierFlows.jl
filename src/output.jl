@@ -5,7 +5,7 @@ using JLD2
 
 import Base: getindex, setindex!, push!, append!, fieldnames
 
-export Output, saveoutput, saveproblem, groupsize
+export Output, saveoutput, saveproblem, groupsize, savediagnostic
 
 
 
@@ -15,24 +15,29 @@ gridfieldstosave = [:nx, :ny, :Lx, :Ly, :X, :Y]
 
 """ Output type for FourierFlows problems. """
 type Output
-  fields::Dict{Symbol, Function}
   prob::Problem
   filename::String
+  fields::Dict{Symbol, Function}
+  init::Bool
+end
+
+function Output(prob::Problem, filename::String, 
+  fields::Dict{Symbol, Function})
+  saveproblem(prob, filename)
+  Output(prob, filename, fields, true)
 end
 
 """ Constructor for Outputs with no fields. """
 function Output(prob::Problem, filename::String)
   fields = Dict{Symbol, Function}()
-  saveproblem(prob, filename)
-  Output(fields, prob, filename)
+  Output(prob, filename, fields)
 end
 
 """ Constructor for Outputs in which the name, field pairs are passed as
 tupled arguments."""
 function Output(prob::Problem, filename::String, fieldtuples...)
-  Output(Dict{Symbol, Function}(
-      [(symfld[1], symfld[2]) for symfld in fieldtuples]
-    ), prob, filename)
+  Output(prob, filename,
+    Dict{Symbol, Function}([(symfld[1], symfld[2]) for symfld in fieldtuples]))
 end
 
 """ Get the current output field. """
@@ -147,10 +152,12 @@ end
 
 
 
-""" Save certain aspects of a Problem. Entire problems cannot be saved
+""" 
+Save certain aspects of a Problem. Entire problems cannot be saved
 in general, because functions cannot be saved (and functions may use
-arbitrary numbers of global variables that cannot be included in a saved
-object). """
+arbitrary numbers of global variables that cannot be included in a saved 
+object). 
+"""
 function saveproblem(prob::AbstractProblem, filename::String)
 
   jldopen(filename, "a+") do file
@@ -165,6 +172,23 @@ function saveproblem(prob::AbstractProblem, filename::String)
           file["params/$name"] = field
         end
       end
+  end
+
+  nothing
+end
+
+
+
+
+"""
+Save diagnostics to file.
+"""
+function savediagnostic(diag::AbstractDiagnostic, diagname::String,
+  filename::String) 
+
+  jldopen(filename, "a+") do file
+    file["diags/$diagname/time"] = diag.time
+    file["diags/$diagname/data"] = diag.data
   end
 
   nothing

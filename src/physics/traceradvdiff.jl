@@ -14,36 +14,99 @@ export set_c!, updatevars!
 
 
 
-# Params
+# Problems -------------------------------------------------------------------- 
+function ConstDiffSteadyFlowProblem(;
+  grid = nothing,
+  nx = 128,
+  Lx = 2π,
+  ny = nothing,
+  Ly = nothing,
+  κ = 1.0,
+  η = nothing,
+  u = nothing,
+  v = nothing,
+  dt = 0.01,
+  timestepper = "RK4"
+  )
+
+  # Defaults
+  if ny == nothing; ny = nx;            end
+  if Ly == nothing; Ly = Lx;            end
+  if  η == nothing; η = κ;              end
+
+  if u == nothing; uin(x, y) = 0.0
+  else;            uin = u
+  end
+
+  if v == nothing; vin(x, y) = 0.0
+  else;            vin = v
+  end
+    
+  if grid == nothing; 
+    grid = TwoDGrid(nx, Lx, ny, Ly)
+  end
+    
+  vs = Vars(grid)
+  pr = ConstDiffSteadyFlowParams(η, κ, uin, vin, grid)
+  eq = Equation(pr, grid)
+
+  if timestepper == "RK4"
+    ts = ETDRK4TimeStepper(dt, eq.LC)
+  elseif timestepper == "ETDRK4"
+    ts = RK4TimeStepper(dt, eq.LC)
+  end
+
+  FourierFlows.Problem(grid, vs, pr, eq, ts)
+end
+
+
+
+
+
+# Params ---------------------------------------------------------------------- 
 abstract type AbstractTracerParams <: AbstractParams end
 
 type ConstDiffParams <: AbstractTracerParams
-  eta::Float64                   # Constant isotropic horizontal diffusivity
-  kap::Float64                   # Constant isotropic vertical diffusivity
+  η::Float64                   # Constant isotropic horizontal diffusivity
+  κ::Float64                   # Constant isotropic vertical diffusivity
   u::Function                    # Advecting x-velocity
   v::Function                    # Advecting y-velocity
 end
 
-function ConstDiffParams(eta::Real, kap::Real, u::Real, v::Real)
+function ConstDiffParams(η::Real, κ::Real, u::Real, v::Real)
   ufunc(x, y, t) = u
   vfunc(x, y, t) = v
-  ConstDiffParams(eta, kap, ufunc, vfunc)
-end
-
-function ConstDiffParams(kap::Real, u::Function, v::Function)
-  ConstDiffParams(kap, kap, u, v)
-end
-
-function ConstDiffParams(kap::Real, u::Real, v::Real)
-  ufunc(x::Float64, y::Float64, t::Float64) = u
-  vfunc(x::Float64, y::Float64, t::Float64) = v
-  ConstDiffParams(kap, ufunc, vfunc)
+  ConstDiffParams(η, κ, ufunc, vfunc)
 end
 
 
 
 
-# Equations
+type ConstDiffSteadyFlowParams <: AbstractTracerParams
+  η::Float64                   # Constant isotropic horizontal diffusivity
+  κ::Float64                   # Constant isotropic vertical diffusivity
+  u::Array{Float64, 2}         # Advecting x-velocity
+  v::Array{Float64, 2}         # Advecting y-velocity
+end
+
+function ConstDiffSteadyFlowParams(η, κ, u::Function, v::Function, 
+  g::TwoDGrid)
+  ugrid = u.(g.X, g.Y)
+  vgrid = v.(g.X, g.Y)
+  ConstDiffSteadyFlowParams(η, κ, ugrid, vgrid)
+end
+
+function ConstDiffSteadyFlowParams(η, κ, u::AbstractArray, v::AbstractArray, 
+  g::TwoDGrid)
+  ConstDiffSteadyFlowParams(η, κ, u, v)
+end
+
+
+
+
+
+
+# Equations ------------------------------------------------------------------- 
 type Equation <: AbstractEquation
   LC::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's linear part
   calcNL!::Function               # Function to calculate eqn's nonlinear part
@@ -52,8 +115,13 @@ end
 """ Initialize an equation with constant diffusivity problem parameters p
 and on a grid g. """
 function Equation(p::ConstDiffParams, g::TwoDGrid)
-  LC = -p.kap.*g.Kr.^2.0 - p.eta.*g.Lr.^2.0
+  LC = -p.κ.*g.Kr.^2.0 - p.η.*g.Lr.^2.0
   Equation(LC, calcNL!)
+end
+
+function Equation(p::ConstDiffSteadyFlowParams, g::TwoDGrid)
+  LC = -p.κ.*g.Kr.^2.0 - p.η.*g.Lr.^2.0
+  Equation(LC, calcNL_steadyflow!)
 end
 
 
@@ -90,7 +158,7 @@ end
 
 
 
-# Solvers
+# Solvers --------------------------------------------------------------------- 
 function calcNL!(NL::Array{Complex{Float64}, 2}, 
   sol::Array{Complex{Float64}, 2}, 
   t::Float64, v::Vars, p::ConstDiffParams, g::TwoDGrid)
@@ -118,8 +186,35 @@ end
 
 
 
-# Helper functions
+function calcNL_steadyflow!(NL::Array{Complex{Float64}, 2}, 
+  sol::Array{Complex{Float64}, 2}, 
+  t::Float64, v::Vars, p::ConstDiffSteadyFlowParams, g::TwoDGrid)
+  
+  # Calculate the advective terms for a tracer equation with constant
+  # diffusivity and time-constant flow.
 
+  # This copy is necessary because FFTW's irfft destroys its input.
+  v.ch .= sol
+  A_mul_B!(v.c, g.irfftplan, v.ch)
+
+  @. v.cu = p.u*v.c
+  @. v.cv = p.v*v.c
+
+  A_mul_B!(v.cuh, g.rfftplan, v.cu)
+  A_mul_B!(v.cvh, g.rfftplan, v.cv)
+
+  @. NL = -im*g.Kr*v.cuh - im*g.Lr*v.cvh
+
+end
+
+
+
+
+
+
+
+
+# Helper functions ------------------------------------------------------------ 
 """ Update state variables. """
 function updatevars!(v::AbstractVars, p::AbstractTracerParams, g::TwoDGrid)
   v.ch  .= v.sol

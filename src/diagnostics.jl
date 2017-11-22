@@ -1,5 +1,7 @@
 __precompile__()
 
+import Base: resize!
+
 export AbstractDiagnostic, Diagnostic
 export resize!, update!, increment!
 
