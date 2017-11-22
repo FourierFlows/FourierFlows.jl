@@ -83,22 +83,28 @@ end
 
 
 type ConstDiffSteadyFlowParams <: AbstractTracerParams
-  η::Float64                   # Constant isotropic horizontal diffusivity
-  κ::Float64                   # Constant isotropic vertical diffusivity
+  η::Float64                   # Constant horizontal diffusivity
+  κ::Float64                   # Constant vertical diffusivity
+  κh::Float64                  # Constant isotropic hyperdiffusivity
+  nκh::Float64                 # Constant isotropic hyperdiffusivity order
   u::Array{Float64, 2}         # Advecting x-velocity
   v::Array{Float64, 2}         # Advecting y-velocity
 end
 
-function ConstDiffSteadyFlowParams(η, κ, u::Function, v::Function, 
-  g::TwoDGrid)
+function ConstDiffSteadyFlowParams(η, κ, κh, nκh, 
+  u::Function, v::Function, g::TwoDGrid)
   ugrid = u.(g.X, g.Y)
   vgrid = v.(g.X, g.Y)
-  ConstDiffSteadyFlowParams(η, κ, ugrid, vgrid)
+  ConstDiffSteadyFlowParams(η, κ, κh, nκh, ugrid, vgrid)
+end
+
+function ConstDiffSteadyFlowParams(η, κ, u::Function, v::Function, g::TwoDGrid)
+  ConstDiffSteadyFlowParams(η, κ, 0, 0, u, v, g)
 end
 
 function ConstDiffSteadyFlowParams(η, κ, u::AbstractArray, v::AbstractArray, 
   g::TwoDGrid)
-  ConstDiffSteadyFlowParams(η, κ, u, v)
+  ConstDiffSteadyFlowParams(η, κ, 0, 0, u, v)
 end
 
 
@@ -115,12 +121,12 @@ end
 """ Initialize an equation with constant diffusivity problem parameters p
 and on a grid g. """
 function Equation(p::ConstDiffParams, g::TwoDGrid)
-  LC = -p.κ.*g.Kr.^2.0 - p.η.*g.Lr.^2.0
+  LC = -p.η.*g.Kr.^2.0 - p.κ.*g.Lr.^2.0
   Equation(LC, calcNL!)
 end
 
 function Equation(p::ConstDiffSteadyFlowParams, g::TwoDGrid)
-  LC = -p.κ.*g.Kr.^2.0 - p.η.*g.Lr.^2.0
+  LC = -p.η.*g.Kr.^2.0 .- p.κ.*g.Lr.^2.0 .- p.κh*g.KKrsq.^p.nκh
   Equation(LC, calcNL_steadyflow!)
 end
 
