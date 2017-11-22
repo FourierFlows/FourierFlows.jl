@@ -117,18 +117,18 @@ type FilteredForwardEulerTimeStepper{dim} <: AbstractTimeStepper
   filter::Array{Complex{Float64}, dim}    # Filter for solution
 end
 
-function FilteredForwardEulerTimeStepper(dt::Float64, g::AbstractGrid, 
+function FilteredForwardEulerTimeStepper(dt::Float64, g::AbstractGrid,
   sol::AbstractArray; filterorder=4.0, innerfilterK=0.65, outerfilterK=0.95)
 
   NL = zeros(sol)
 
-  if size(v.sol)[1] == g.nkr
+  if size(sol)[1] == g.nkr
     realvars = true
   else
     realvars = false
   end
 
-  filter = makefilter(g; order=filterorder, innerK=innerfilterK, 
+  filter = makefilter(g; order=filterorder, innerK=innerfilterK,
     outerK=outerfilterK, realvars=realvars)
 
   # Broadcast to correct size
@@ -137,7 +137,7 @@ function FilteredForwardEulerTimeStepper(dt::Float64, g::AbstractGrid,
   FilteredForwardEulerTimeStepper{ndims(NL)}(0, dt, NL, filter)
 end
 
-function FilteredForwardEulerTimeStepper(dt::Float64, g::AbstractGrid, 
+function FilteredForwardEulerTimeStepper(dt::Float64, g::AbstractGrid,
   v::AbstractVars; filterorder=4.0, innerfilterK=0.65, outerfilterK=0.95)
 
   FilteredForwardEulerTimeStepper(dt, g, v.sol; filterorder=filterorder,
@@ -152,7 +152,7 @@ function stepforward!(v::AbstractVars, ts::FilteredForwardEulerTimeStepper,
   eq.calcNL!(ts.NL, v.sol, v.t, v, p, g)
 
   @. v.sol = ts.filter * ( v.sol + ts.dt*(ts.NL + eq.LC.*v.sol) )
-  v.t += ts.dt 
+  v.t += ts.dt
   ts.step += 1
 end
 

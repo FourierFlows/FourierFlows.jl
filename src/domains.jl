@@ -188,7 +188,7 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
   iralias3 = ia3L:nkr
   jalias3 = ja3L:ja3R
 
-  
+
   # FFT plans; use grid vars.
   FFTW.set_num_threads(nthreads)
   effort = FFTW.MEASURE
@@ -258,18 +258,23 @@ end
 Returns an filter with an exponentially-decaying profile that, when multiplied
 removes high-wavenumber content from a spectrum.
 """
-function makefilter(g::TwoDGrid; order=4.0, innerK=0.65, outerK=0.95, 
-  realvars=true) 
-  
+function makefilter(g::TwoDGrid; order=4.0, innerK=0.65, outerK=1.0,
+  realvars=true)
+
   # Get decay rate for filter
   decay = 15.0*log(10.0) / (outerK-innerK)^order
 
   # Non-dimensional square wavenumbers
   if realvars
-    KK = sqrt.( (g.Kr*g.dx/π)^2 + (g.Lr*g.dy/π)^2 )
+    KK = sqrt.( (g.Kr*g.dx/π).^2 + (g.Lr*g.dy/π).^2 )
   else
-    KK = sqrt.( (g.K*g.dx/π)^2  + (g.L*g.dy/π)^2  )
+    KK = sqrt.( (g.K*g.dx/π).^2  + (g.L*g.dy/π).^2  )
   end
 
-  exp.( -decay*(KK-innerK).^order )
+  filt = exp.( -decay*(KK-innerK).^order )
+
+  filt[ real.(KK) .< innerK ] = 1
+
+  return filt
+
 end
