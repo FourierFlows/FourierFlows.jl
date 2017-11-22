@@ -20,26 +20,32 @@ function InitialValueProblem(;
   Ly = nothing,
   ν  = nothing,
   nν = 2,
-  dt = 0.01
+  dt = 0.01,
+  withfilter = true
   )
 
   if Ly == nothing; Ly = Lx; end
   if ny == nothing; ny = nx; end
   if ν  == nothing; ν = 1e-1/(dt*(0.65π*nx/Lx)^nν); end
+  if ν  ==  0; withfilter = true; end
 
   g  = TwoDGrid(nx, Lx, ny, Ly)
   pr = TwoDTurb.Params(ν, nν)
   vs = TwoDTurb.Vars(g)
   eq = TwoDTurb.Equation(pr, g)
-  # ts = ETDRK4TimeStepper(dt, eq.LC)
-  # ts = ForwardEulerTimeStepper(dt, eq.LC)
-  ts = FilteredForwardEulerTimeStepper(dt, eq.LC)
+  if withfilter
+      # ts = ForwardEulerTimeStepper(dt, g, vs)
+      ts = FilteredETDRK4TimeStepper(dt, eq.LC, g)
+  else
+      # ts = ETDRK4TimeStepper(dt, eq.LC)
+      ts = ETDRK4TimeStepper(dt, eq.LC)
+  end
 
   FourierFlows.Problem(g, vs, pr, eq, ts)
 end
 
-function InitialValueProblem(n, L, ν, nν, dt)
-  InitialValueProblem(nx=n, Lx=L, ν=ν, nν=nν, dt=dt)
+function InitialValueProblem(n, L, ν, nν, dt, withfilter)
+  InitialValueProblem(nx=n, Lx=L, ν=ν, nν=nν, dt=dt, withfilter=withfilter)
 end
 
 
@@ -208,8 +214,6 @@ end
 
 """ Calculate the domain integrated kinetic energy. """
 function energy(v::Vars, g::TwoDGrid)
-#  0.5*(FourierFlows.parsevalsum2(im*g.Kr.*v.psih, g)
-#        + FourierFlows.parsevalsum2(im*g.Lr.*v.psih, g))
   0.5*(FourierFlows.parsevalsum2(g.Kr.*g.invKKrsq.*v.sol, g)
         + FourierFlows.parsevalsum2(g.Lr.*g.invKKrsq.*v.sol, g))
 end

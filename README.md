@@ -4,8 +4,8 @@
 
 This software provides solvers for partial differential equations on
 doubly-periodic domains using Fourier-based pseudospectral methods.
-A central intent of the software's design is also to provide a framework 
-for writing new, fast solvers for new physical problems. 
+A central intent of the software's design is also to provide a framework
+for writing new, fast solvers for new physical problems.
 The code is written in [Julia][].
 
 ## Examples
@@ -26,39 +26,40 @@ Here's an overview of the code structure:
 - ``/src/``
     - ``fourierflows.jl``
         - Defines supertyping AbstractParams, AbstractGrid, etc.
-        - Defines a ``Problem`` type to organize the grid, vars, params, 
+        - Defines a ``Problem`` type to organize the grid, vars, params,
             equation, and timestepper into a single structure.
         - Includes all sources files and physics files.
-   - ``timesteppers.jl``: *defines modules and ``stepforward!`` routines for 
+   - ``timesteppers.jl``: *defines modules and ``stepforward!`` routines for
         various time-steppers. Current implemented time-steppers are:*
-        - Forward Euler
+        - Forward Euler (+ Filtered Forward Euler)
         - 3rd-order Adams-Bashforth (AB3)
         - 4th-order Runge-Kutta (RK4)
         - 4th-order Runge-Kutta Exponential Time Differencing (ETDRK4)
+        (+ Filtered ETDRK4)
     - ``physics/``
-        - ``twodturb.jl``: *Defines a ``TwoDTurb`` module that provides a 
+        - ``twodturb.jl``: *Defines a ``TwoDTurb`` module that provides a
                 solver for the two-dimensional vorticity equation.*
-        - ``barotropicqg.jl``: *Defines a ``BarotropicQG`` module that provides 
-                several solvers for the barotropic QG model that permit beta, 
+        - ``barotropicqg.jl``: *Defines a ``BarotropicQG`` module that provides
+                several solvers for the barotropic QG model that permit beta,
                 topography, beta + topography, and forcing.*
         - ``twomodeboussinesq.jl``: *Defines a ``TwoModeBoussinesq`` module
-                that provides solvers for a two-mode truncation of the 
-                rotating, stratified Boussinesq equation.
+                that provides solvers for a two-mode truncation of the
+                rotating, stratified Boussinesq equation.*
         - ``niwqg.jl``: *Defines a ``NIWQG`` module that provides a solver
-                for the vertical-plane-wave model for the interaction of 
-                a near-inertial wave field and quasi-geostrophic flow.
+                for the vertical-plane-wave model for the interaction of
+                a near-inertial wave field and quasi-geostrophic flow.*
         - ``traceradvdiff.jl``: *Defines a ``TracerAdvDiff`` module that
                 provides a solver for a two-dimensional and periodic tracer
                 field in a given 2D flow (u, w), which can be an arbitrary
-                function of x, z, and t.
+                function of x, z, and t.*
 
 
 ## Writing fast solvers
 
-The performance-intensive part of the code involves just two functions: the 
-timestepping scheme ``stepforward!``, and the function ``calcNL!`` that 
-calculates the nonlinear part of the given equation's right-hand side. 
-Optimization of these two functions for a given problem will produce the 
+The performance-intensive part of the code involves just two functions: the
+timestepping scheme ``stepforward!``, and the function ``calcNL!`` that
+calculates the nonlinear part of the given equation's right-hand side.
+Optimization of these two functions for a given problem will produce the
 fastest possible code.
 
 
