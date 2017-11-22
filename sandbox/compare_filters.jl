@@ -53,13 +53,7 @@ function makefilter(g::TwoDGrid; order=4.0, innerK=0.65, outerK=1.0,
   end
 
   filt = exp.( -decay*(KK-innerK).^order )
-
-  filt [ real.(KK) .< innerK ] = 1
-  # for i = 1:size(KK)[1], j = 1:size(KK)[2]
-  # 	if real(KK[i, j]) < innerK
-  # 		filt[i, j] = 1
-  # 	end
-  # end
+  filt[ real.(KK).<innerK ] = 1
 
   return filt
 end
