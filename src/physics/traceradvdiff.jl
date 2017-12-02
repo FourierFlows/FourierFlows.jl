@@ -54,6 +54,8 @@ function ConstDiffSteadyFlowProblem(;
     ts = ETDRK4TimeStepper(dt, eq.LC)
   elseif timestepper == "ETDRK4"
     ts = RK4TimeStepper(dt, eq.LC)
+  elseif timestepper == "ForwardEuler"
+    ts = ForwardEulerTimeStepper(dt, eq.LC)
   end
 
   FourierFlows.Problem(grid, vs, pr, eq, ts)
