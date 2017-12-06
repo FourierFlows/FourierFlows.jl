@@ -241,11 +241,7 @@ function calcNL!(
   solc::Array{Complex{Float64}, 3}, solr::Array{Complex{Float64}, 2}, 
   t::Float64, v::Vars, p::TwoModeParams, g::TwoDGrid)
   
-  # Spectral-space calculations
-  @views @. v.wh = -1.0/p.m*(g.K*solc[:, :, 1] + g.L*solc[:, :, 2])
-
-  # This copy is necessary because calling A_mul_B(v.Z, g.irfftplan, sol) 
-  # a few lines below destroys sol when using Julia's FFTW.
+  # Spectral space calculations
   v.Zh .= solr
 
   @. v.Psih = -g.invKKrsq*v.Zh
@@ -262,8 +258,6 @@ function calcNL!(
   v.Uh[1, 1] += p.Us*g.nx*g.ny
   v.Vh[1, 1] += p.Vs*g.nx*g.ny
 
-  @views @. v.zetah = im*g.K*solc[:, :, 2] - im*g.L*solc[:, :, 1]
- 
   # Inverse transforms
   A_mul_B!(v.Z, g.irfftplan, v.Zh)
   A_mul_B!(v.U, g.irfftplan, v.Uh)
@@ -278,8 +272,11 @@ function calcNL!(
   @views A_mul_B!(v.v, g.ifftplan, solc[:, :, 2])
   @views A_mul_B!(v.p, g.ifftplan, solc[:, :, 3])
 
-  A_mul_B!(v.zeta,  g.ifftplan, v.zetah)
+  @views @. v.zetah = im*g.K*solc[:, :, 2] - im*g.L*solc[:, :, 1]
+  @views @. v.wh = -(g.K*solc[:, :, 1] + g.L*solc[:, :, 2]) / p.m
+
   A_mul_B!(v.w,  g.ifftplan, v.wh)
+  A_mul_B!(v.zeta,  g.ifftplan, v.zetah)
 
   # Multiplies
   @. v.UZuz = (v.U * v.Z
@@ -407,9 +404,14 @@ end
 Set first mode u, v, and p and update vars.
 """
 function set_uvp!(vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid, u, v, p)
-  @views A_mul_B!(vs.solc[:, :, 1], g.fftplan, u)
-  @views A_mul_B!(vs.solc[:, :, 2], g.fftplan, v)
-  @views A_mul_B!(vs.solc[:, :, 3], g.fftplan, p)
+  uh = fft(u)
+  vh = fft(v)
+  ph = fft(p)
+
+  @. vs.solc[:, :, 1] = uh
+  @. vs.solc[:, :, 2] = vh
+  @. vs.solc[:, :, 3] = ph
+
   updatevars!(vs, pr, g)
   nothing
 end
