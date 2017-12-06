@@ -80,7 +80,7 @@ function ForwardEulerTimeStepper(dt::Float64, v::AbstractVars)
   ForwardEulerTimeStepper{ndims(NL)}(0, dt, NL)
 end
 
-function ForwardEulerTimeStepper(dt::Float64, LC::Array{Complex{Float64}, 2})
+function ForwardEulerTimeStepper(dt::Float64, LC::AbstractArray)
   NL = zeros(LC)
   ForwardEulerTimeStepper{ndims(LC)}(0, dt, NL)
 end
@@ -519,7 +519,7 @@ function RK4TimeStepper(dt::Float64, v::AbstractVars)
   RK4TimeStepper(0, dt, ti, sol1, RHS1, RHS2, RHS3, RHS4)
 end
 
-function RK4TimeStepper(dt::Float64, LC::Array{Complex{Float64}, 2})
+function RK4TimeStepper(dt::Float64, LC::AbstractArray)
   ti = 0.0
   sol1 = zeros(LC)
   RHS1 = zeros(LC)
