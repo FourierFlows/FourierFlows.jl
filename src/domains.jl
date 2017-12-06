@@ -3,6 +3,12 @@ __precompile__()
 export TwoDGrid, dealias!, cubicdealias!
 # Grid types and constructors
 
+
+type ZeroDGrid <: AbstractGrid
+  nvars::Int
+end
+
+
 type TwoDGrid <: AbstractGrid
   nx::Int
   ny::Int
