@@ -47,8 +47,8 @@ end
 
 # Params ---------------------------------------------------------------------- 
 type AnalyticFlowParams <: AbstractTracerParams
-  κ::Float64
-  η::Float64
+  κ::Function
+  η::Function
   u::Function
   v::Function
   ux::Function
@@ -56,9 +56,27 @@ type AnalyticFlowParams <: AbstractTracerParams
   vx::Function
 end
 
-function AnalyticFlowParams(κ, u, v, ux, uy, vx)
+function AnalyticFlowParams(κ::Float64, u, v, ux, uy, vx)
   AnalyticFlowParams(κ, κ, u, v, ux, uy, vx)
 end
+
+function AnalyticFlowParams(κ::Float64, η::Float64, u, v, ux, uy, vx)
+  κf(x) = κ
+  ηf(y) = η
+  AnalyticFlowParams(κf, ηf, u, v, ux, uy, vx)
+end
+
+function AnalyticFlowParams(κ::Function, η::Float64, u, v, ux, uy, vx)
+  ηf(y) = η
+  AnalyticFlowParams(κ, ηf, u, v, ux, uy, vx)
+end
+
+function AnalyticFlowParams(κ::Float64, η::Function, u, v, ux, uy, vx)
+  κf(x) = κ
+  AnalyticFlowParams(κf, η, u, v, ux, uy, vx)
+end
+
+
 
 
 # Equation -------------------------------------------------------------------- 
@@ -106,7 +124,7 @@ function calcNL!(NL::Array{Float64, 1}, sol::Array{Float64, 1}, t::Float64,
 
   # ∂t m₁₁ = 2η + 2m₁₁dα + 2m₁₂dβ
   NL[3] = (
-    2.0*p.η
+    2.0*p.η(sol[2])
     + 2.0*sol[3]*p.ux(sol[1], sol[2], t) 
     + 2.0*sol[4]*p.uy(sol[1], sol[2], t)
   )
@@ -116,7 +134,7 @@ function calcNL!(NL::Array{Float64, 1}, sol::Array{Float64, 1}, t::Float64,
 
   # ∂t m₂₂ = 2κ - 2m₂₂dα + 2m₁₂dγ
   NL[5] = (
-    2.0*p.κ
+    2.0*p.κ(sol[1])
     - 2.0*sol[5]*p.ux(sol[1], sol[2], t)
     + 2.0*sol[4]*p.vx(sol[1], sol[2], t)
   )
@@ -139,6 +157,11 @@ end
 function set_sol!(prob::AbstractProblem, sol)
   prob.vars.sol = sol
   nothing
+end
+
+function get_c(x, y, m₁₁, m₁₂, m₂₂)
+  det = m₁₁*m₂₂ - m₁₂^2
+  exp(-(x^2*m₂₂ + y^2*m₁₁ - 2*x*y*m₁₂)/2det) / (2π*sqrt(det))
 end
 
 
