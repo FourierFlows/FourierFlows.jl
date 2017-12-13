@@ -174,8 +174,8 @@ function Vars(g::TwoDGrid)
   Z      = zeros(Float64, g.nx, g.ny)
   U      = zeros(Float64, g.nx, g.ny)
   V      = zeros(Float64, g.nx, g.ny)
-  UZuzvw   = zeros(Float64, g.nx, g.ny)
-  VZvzuw   = zeros(Float64, g.nx, g.ny)
+  UZuzvw = zeros(Float64, g.nx, g.ny)
+  VZvzuw = zeros(Float64, g.nx, g.ny)
   Ux     = zeros(Float64, g.nx, g.ny)
   Uy     = zeros(Float64, g.nx, g.ny)
   Vx     = zeros(Float64, g.nx, g.ny)
@@ -200,29 +200,29 @@ function Vars(g::TwoDGrid)
   uVxvVy = zeros(Complex{Float64}, g.nx, g.ny)
 
   # Transforms
-  Zh     = zeros(Complex{Float64}, g.nkr, g.nl)
-  Uh     = zeros(Complex{Float64}, g.nkr, g.nl)
-  Vh     = zeros(Complex{Float64}, g.nkr, g.nl)
-  UZuzvwh  = zeros(Complex{Float64}, g.nkr, g.nl)
-  VZvzuwh  = zeros(Complex{Float64}, g.nkr, g.nl)
-  Uxh    = zeros(Complex{Float64}, g.nkr, g.nl)
-  Uyh    = zeros(Complex{Float64}, g.nkr, g.nl)
-  Vxh    = zeros(Complex{Float64}, g.nkr, g.nl)
-  Vyh    = zeros(Complex{Float64}, g.nkr, g.nl)
-  Psih   = zeros(Complex{Float64}, g.nkr, g.nl)
+  Zh      = zeros(Complex{Float64}, g.nkr, g.nl)
+  Uh      = zeros(Complex{Float64}, g.nkr, g.nl)
+  Vh      = zeros(Complex{Float64}, g.nkr, g.nl)
+  UZuzvwh = zeros(Complex{Float64}, g.nkr, g.nl)
+  VZvzuwh = zeros(Complex{Float64}, g.nkr, g.nl)
+  Uxh     = zeros(Complex{Float64}, g.nkr, g.nl)
+  Uyh     = zeros(Complex{Float64}, g.nkr, g.nl)
+  Vxh     = zeros(Complex{Float64}, g.nkr, g.nl)
+  Vyh     = zeros(Complex{Float64}, g.nkr, g.nl)
+  Psih    = zeros(Complex{Float64}, g.nkr, g.nl)
 
-  uh     = zeros(Complex{Float64}, g.nk, g.nl)
-  vh     = zeros(Complex{Float64}, g.nk, g.nl)
-  wh     = zeros(Complex{Float64}, g.nk, g.nl)
-  ph     = zeros(Complex{Float64}, g.nk, g.nl)
-  zetah  = zeros(Complex{Float64}, g.nk, g.nl)
+  uh      = zeros(Complex{Float64}, g.nk, g.nl)
+  vh      = zeros(Complex{Float64}, g.nk, g.nl)
+  wh      = zeros(Complex{Float64}, g.nk, g.nl)
+  ph      = zeros(Complex{Float64}, g.nk, g.nl)
+  zetah   = zeros(Complex{Float64}, g.nk, g.nl)
   
-  Uuh    = zeros(Complex{Float64}, g.nk, g.nl)
-  Uvh    = zeros(Complex{Float64}, g.nk, g.nl)
-  Uph    = zeros(Complex{Float64}, g.nk, g.nl)
-  Vuh    = zeros(Complex{Float64}, g.nk, g.nl)
-  Vvh    = zeros(Complex{Float64}, g.nk, g.nl)
-  Vph    = zeros(Complex{Float64}, g.nk, g.nl)
+  Uuh     = zeros(Complex{Float64}, g.nk, g.nl)
+  Uvh     = zeros(Complex{Float64}, g.nk, g.nl)
+  Uph     = zeros(Complex{Float64}, g.nk, g.nl)
+  Vuh     = zeros(Complex{Float64}, g.nk, g.nl)
+  Vvh     = zeros(Complex{Float64}, g.nk, g.nl)
+  Vph     = zeros(Complex{Float64}, g.nk, g.nl)
 
   uUxvUyh= zeros(Complex{Float64}, g.nk, g.nl)
   uVxvVyh= zeros(Complex{Float64}, g.nk, g.nl)
@@ -248,23 +248,20 @@ function calcNL!(
 
   @. v.Psih = -g.invKKrsq*v.Zh
 
-  @. v.Uh = -im*g.l*v.Psih
-  @. v.Vh =  im*g.kr*v.Psih
-
-  @. v.Uxh = im*g.kr*v.Uh
-  @. v.Vxh = im*g.kr*v.Vh
-
-  @. v.Uyh = im*g.l*v.Uh
-  @. v.Vyh = im*g.l*v.Vh
+  @. v.Uh  = -im*g.l  * v.Psih
+  @. v.Vh  =  im*g.kr * v.Psih
+  @. v.Uxh =  im*g.kr * v.Uh
+  @. v.Uyh =  im*g.l  * v.Uh
+  @. v.Vxh =  im*g.kr * v.Vh
+  @. v.Vyh =  im*g.l  * v.Vh
 
   v.Uh[1, 1] += p.Us*g.nx*g.ny
   v.Vh[1, 1] += p.Vs*g.nx*g.ny
 
   # Inverse transforms
-  A_mul_B!(v.Z, g.irfftplan, v.Zh)
-  A_mul_B!(v.U, g.irfftplan, v.Uh)
-  A_mul_B!(v.V, g.irfftplan, v.Vh)
-
+  A_mul_B!(v.Z,  g.irfftplan, v.Zh)
+  A_mul_B!(v.U,  g.irfftplan, v.Uh)
+  A_mul_B!(v.V,  g.irfftplan, v.Vh)
   A_mul_B!(v.Ux, g.irfftplan, v.Uxh)
   A_mul_B!(v.Uy, g.irfftplan, v.Uyh)
   A_mul_B!(v.Vx, g.irfftplan, v.Vxh)
@@ -277,8 +274,8 @@ function calcNL!(
   @views @. v.zetah = im*g.k*solc[:, :, 2] - im*g.l*solc[:, :, 1]
   @views @. v.wh = -(g.k*solc[:, :, 1] + g.l*solc[:, :, 2]) / p.m
 
-  A_mul_B!(v.w,  g.ifftplan, v.wh)
-  A_mul_B!(v.zeta,  g.ifftplan, v.zetah)
+  A_mul_B!(v.w, g.ifftplan, v.wh)
+  A_mul_B!(v.zeta, g.ifftplan, v.zetah)
 
   # Multiplies
   @. v.UZuzvw = (v.U * v.Z
@@ -318,7 +315,7 @@ function calcNL!(
 
   # First-mode nonlinear terms:
   # u
-  @views @. NLc[:, :, 1] = ( p.f*solc[:, :, 2] - im*g.k*solc[:, :, 3]
+  @views @. NLc[:, :, 1] = (  p.f*solc[:, :, 2] - im*g.k*solc[:, :, 3]
     - im*g.k*v.Uuh - im*g.l*v.Vuh - v.uUxvUyh )
 
   # v
