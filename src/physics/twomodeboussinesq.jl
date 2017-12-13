@@ -6,9 +6,6 @@ module TwoModeBoussinesq
 
 using FourierFlows
 
-
-
-
 # Problem --------------------------------------------------------------------- 
 """ 
 Construct a TwoModeBoussinesq initial value problem.
@@ -27,7 +24,8 @@ function InitialValueProblem(;
   m    = 40.0,
   Us   = 0.0,
   Vs   = 0.0,
-  dt   = 0.01
+  dt   = 0.01,
+  withfilter = false
   )
 
   if Ly == nothing; Ly = Lx; end
@@ -39,7 +37,12 @@ function InitialValueProblem(;
   pr = TwoModeBoussinesq.Params(ν0, nν0, ν1, nν1, f, N, m)
   vs = TwoModeBoussinesq.Vars(g)
   eq = TwoModeBoussinesq.Equation(pr, g)
-  ts = ETDRK4TimeStepper(dt, eq.LCc, eq.LCr)
+
+  if withfilter
+    ts = FilteredETDRK4TimeStepper(dt, eq.LCc, eq.LCr)
+  else
+    ts = ETDRK4TimeStepper(dt, eq.LCc, eq.LCr)
+  end
 
   FourierFlows.Problem(g, vs, pr, eq, ts)
 end
@@ -106,8 +109,8 @@ type Vars <: TwoModeVars
   Z::Array{Float64, 2}
   U::Array{Float64, 2}
   V::Array{Float64, 2}
-  UZuz::Array{Float64, 2}
-  VZvz::Array{Float64, 2}
+  UZuzvw::Array{Float64, 2}
+  VZvzuw::Array{Float64, 2}
   Ux::Array{Float64, 2}
   Uy::Array{Float64, 2}
   Vx::Array{Float64, 2}
@@ -135,8 +138,8 @@ type Vars <: TwoModeVars
   Zh::Array{Complex{Float64}, 2}
   Uh::Array{Complex{Float64}, 2}
   Vh::Array{Complex{Float64}, 2}
-  UZuzh::Array{Complex{Float64}, 2}
-  VZvzh::Array{Complex{Float64}, 2}
+  UZuzvwh::Array{Complex{Float64}, 2}
+  VZvzuwh::Array{Complex{Float64}, 2}
   Uxh::Array{Complex{Float64}, 2}
   Uyh::Array{Complex{Float64}, 2}
   Vxh::Array{Complex{Float64}, 2}
@@ -171,8 +174,8 @@ function Vars(g::TwoDGrid)
   Z      = zeros(Float64, g.nx, g.ny)
   U      = zeros(Float64, g.nx, g.ny)
   V      = zeros(Float64, g.nx, g.ny)
-  UZuz   = zeros(Float64, g.nx, g.ny)
-  VZvz   = zeros(Float64, g.nx, g.ny)
+  UZuzvw   = zeros(Float64, g.nx, g.ny)
+  VZvzuw   = zeros(Float64, g.nx, g.ny)
   Ux     = zeros(Float64, g.nx, g.ny)
   Uy     = zeros(Float64, g.nx, g.ny)
   Vx     = zeros(Float64, g.nx, g.ny)
@@ -200,8 +203,8 @@ function Vars(g::TwoDGrid)
   Zh     = zeros(Complex{Float64}, g.nkr, g.nl)
   Uh     = zeros(Complex{Float64}, g.nkr, g.nl)
   Vh     = zeros(Complex{Float64}, g.nkr, g.nl)
-  UZuzh  = zeros(Complex{Float64}, g.nkr, g.nl)
-  VZvzh  = zeros(Complex{Float64}, g.nkr, g.nl)
+  UZuzvwh  = zeros(Complex{Float64}, g.nkr, g.nl)
+  VZvzuwh  = zeros(Complex{Float64}, g.nkr, g.nl)
   Uxh    = zeros(Complex{Float64}, g.nkr, g.nl)
   Uyh    = zeros(Complex{Float64}, g.nkr, g.nl)
   Vxh    = zeros(Complex{Float64}, g.nkr, g.nl)
@@ -225,9 +228,9 @@ function Vars(g::TwoDGrid)
   uVxvVyh= zeros(Complex{Float64}, g.nk, g.nl)
 
   return Vars(t, solr, solc, 
-    Z, U, V, UZuz, VZvz, Ux, Uy, Vx, Vy, Psi, 
+    Z, U, V, UZuzvw, VZvzuw, Ux, Uy, Vx, Vy, Psi, 
     u, v, w, p, zeta, Uu, Uv, Up, Vu, Vv, Vp, uUxvUy, uVxvVy,
-    Zh, Uh, Vh, UZuzh, VZvzh, Uxh, Uyh, Vxh, Vyh, Psih, 
+    Zh, Uh, Vh, UZuzvwh, VZvzuwh, Uxh, Uyh, Vxh, Vyh, Psih, 
     uh, vh, wh, ph, zetah, Uuh, Uvh, Uph, Vuh, Vvh, Vph, uUxvUyh, uVxvVyh,
     )
 end
@@ -272,21 +275,19 @@ function calcNL!(
   @views A_mul_B!(v.p, g.ifftplan, solc[:, :, 3])
 
   @views @. v.zetah = im*g.k*solc[:, :, 2] - im*g.l*solc[:, :, 1]
-  @views @. v.wh = -(g.k*solc[:, :, 1] + g.k*solc[:, :, 2]) / p.m
+  @views @. v.wh = -(g.k*solc[:, :, 1] + g.l*solc[:, :, 2]) / p.m
 
   A_mul_B!(v.w,  g.ifftplan, v.wh)
   A_mul_B!(v.zeta,  g.ifftplan, v.zetah)
 
   # Multiplies
-  @. v.UZuz = (v.U * v.Z
-    + real(v.u*conj(v.zeta) + conj(v.u)*v.zeta)
-    + real(im*p.m*v.v*conj(v.w) - im*p.m*conj(v.v)*v.w)
-  )
+  @. v.UZuzvw = (v.U * v.Z
+    + real(   v.u*conj(v.zeta)  +  im*p.m*v.v*conj(v.w) 
+            + conj(v.u)*v.zeta  -  im*p.m*conj(v.v)*v.w   ))
 
-  @. v.VZvz = (v.V * v.Z
-    + real(v.v*conj(v.zeta) + conj(v.v)*v.zeta)
-    - real(im*p.m*v.u*conj(v.w) - im*p.m*conj(v.u)*v.w )
-  )
+  @. v.VZvzuw = (v.V * v.Z 
+    + real(   v.v*conj(v.zeta)  -  im*p.m*v.u*conj(v.w) 
+            + conj(v.v)*v.zeta  +  im*p.m*conj(v.u)*v.w   ))
 
   @. v.Uu = v.U * v.u
   @. v.Vu = v.V * v.u
@@ -299,8 +300,8 @@ function calcNL!(
   @. v.uVxvVy = v.u*v.Vx + v.v*v.Vy
 
   # Forward transforms
-  A_mul_B!(v.UZuzh, g.rfftplan, v.UZuz)
-  A_mul_B!(v.VZvzh, g.rfftplan, v.VZvz)
+  A_mul_B!(v.UZuzvwh, g.rfftplan, v.UZuzvw)
+  A_mul_B!(v.VZvzuwh, g.rfftplan, v.VZvzuw)
 
   A_mul_B!(v.Uuh, g.fftplan, v.Uu)
   A_mul_B!(v.Uvh, g.fftplan, v.Uv)
@@ -312,29 +313,24 @@ function calcNL!(
   A_mul_B!(v.uUxvUyh, g.fftplan, v.uUxvUy)
   A_mul_B!(v.uVxvVyh, g.fftplan, v.uVxvVy)
 
-
   # Zeroth-mode nonlinear term
-  @. NLr = - im*g.kr*v.UZuzh - im*g.l*v.VZvzh
-
+  @. NLr = - im*g.kr*v.UZuzvwh - im*g.l*v.VZvzuwh
 
   # First-mode nonlinear terms:
   # u
   @views @. NLc[:, :, 1] = ( p.f*solc[:, :, 2] - im*g.k*solc[:, :, 3]
-    - im*g.k*v.Uuh - im*g.l*v.Vuh - v.uUxvUyh
-  )
+    - im*g.k*v.Uuh - im*g.l*v.Vuh - v.uUxvUyh )
 
   # v
   @views @. NLc[:, :, 2] = ( -p.f*solc[:, :, 1] - im*g.l*solc[:, :, 3]
-    - im*g.k*v.Uvh - im*g.l*v.Vvh - v.uVxvVyh
-  )
+    - im*g.k*v.Uvh - im*g.l*v.Vvh - v.uVxvVyh )
 
   # p
   @views @. NLc[:, :, 3] = ( im*p.N^2.0/p.m*v.wh
-    - im*g.k*v.Uph - im*g.l*v.Vph
-  )
+    - im*g.k*v.Uph - im*g.l*v.Vph )
 
-  dealias!(NLr, g)
-  dealias!(NLc, g)
+  #dealias!(NLr, g)
+  #dealias!(NLc, g)
 
   nothing
 end
