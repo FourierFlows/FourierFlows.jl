@@ -10,7 +10,6 @@ import FourierFlows.TwoDTurb: energy, enstrophy
  L = 2π
  nν = 4
   ν = 0e-8
-withfilter = true
 
 # Time-stepping
 dt = 5e-3
@@ -28,62 +27,42 @@ if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
 
 # Initialize with random numbers
-prob = TwoDTurb.InitialValueProblem(n, L, ν, nν, dt, withfilter)
+prob = TwoDTurb.InitialValueProblem(nx=n, Lx=L, ν=ν, nν=nν, dt=dt, 
+  withfilter=true)
+g = prob.grid
 
 
 # Initial condition closely following pyqg barotropic example
 # that reproduces the results of the paper by McWilliams (1984)
 srand(1234)
 k0, E0 = 6, 0.5
-modk = sqrt.(prob.grid.KKrsq)
-psik = zeros(prob.grid.nk, prob.grid.nl)
+modk = sqrt.(g.KKrsq)
+psik = zeros(g.nk, g.nl)
 psik =  (modk.^2 .* (1 + (modk/k0).^4)).^(-0.5)
 psik[1, 1] = 0.0
-psih = (randn(prob.grid.nkr, prob.grid.nl)+im*randn(prob.grid.nkr, prob.grid.nl)).*psik
+psih = (randn(g.nkr, g.nl)+im*randn(g.nkr, g.nl)).*psik
 psih = psih.*prob.ts.filter
-Ein = real(sum(prob.grid.KKrsq.*abs2.(psih)/(prob.grid.nx*prob.grid.ny)^2))
+Ein = real(sum(g.KKrsq.*abs2.(psih)/(g.nx*g.ny)^2))
 psih = psih*sqrt(E0/Ein)
-qi = -irfft(prob.grid.KKrsq.*psih, prob.grid.nx)
-E0 = FourierFlows.parsevalsum(prob.grid.KKrsq.*abs2.(psih), prob.grid)
-
+qi = -irfft(g.KKrsq.*psih, g.nx)
+E0 = FourierFlows.parsevalsum(g.KKrsq.*abs2.(psih), g)
 
 TwoDTurb.set_q!(prob, qi)
 
 # Create Diagnostic -- "energy" is a function imported at the top.
 E = Diagnostic(energy, prob; nsteps=nsteps)
 Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
-diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will
-# be updated every timestep. They should be efficient to calculate and
-# have a small memory footprint. (For example, the domain-integrated kinetic
-# energy is just a single number for each timestep). See the file in
-# src/diagnostics.jl and the stepforward! function in timesteppers.jl.
-
+diags = [E, Z]
 
 # Create Output
 get_sol(prob) = prob.vars.sol # extracts the Fourier-transformed solution
-
-function get_u(prob) # extracts the physics-space x-velocity.
-  irfft(im*prob.grid.Lr.*prob.grid.invKKrsq.*prob.vars.sol, prob.grid.nx)
-end
-
-# One way to create an Output type.
+get_u(prob) = irfft(im*g.Lr.*g.invKKrsq.*prob.vars.sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
-
 
 # Step forward
 startwalltime = time()
 
-fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
-
 while prob.step < nsteps
-
-  # axes(axs[1])
-  # pcolormesh(abs.(prob.vars.sol))
-  # # colorbar()
-  # show()
-  # draw()
-
-  # Step forward
   stepforward!(prob, diags; nsteps=nsubs)
 
   # Message
@@ -92,34 +71,13 @@ while prob.step < nsteps
     (time()-startwalltime)/60)
 
   println(log)
-
-  # axes(axs[2])
-  # pcolormesh(abs.(prob.vars.sol))
-  # # colorbar()
-  # show()
-  # draw()
-
-
-  # Plot and save output
-  if prob.step/nsubs % 1 == 0.0
-
-    # TwoDTurb.updatevars!(prob)
-    # saveoutput(out) # saves output to out.filename
-    # figure(1)
-    # pcolormesh(prob.vars.q)
-    # show()
-    # draw()
-
-  end
-
 end
 
 TwoDTurb.updatevars!(prob)
 fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
 
-figure(1)
 axes(axs[1])
-pcolormesh(prob.grid.x, prob.grid.y, prob.vars.q)
+pcolormesh(g.X, g.Y, prob.vars.q)
 axis("equal")
 colorbar()
 clim(-40, 40)

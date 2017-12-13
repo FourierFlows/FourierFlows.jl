@@ -29,7 +29,9 @@ function InitialValueProblem(;
   if  ny == nothing; ny = nx;  end
 
   if ν == nothing
-    ν = 1e-1/(dt*(0.65π*nx/Lx)^nν)
+    if withfilter; ν = 0.0
+    else;          ν = 1e-1/(dt*(0.65π*nx/Lx)^nν)
+    end
   end
 
   g  = TwoDGrid(nx, Lx, ny, Ly)
