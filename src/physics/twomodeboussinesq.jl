@@ -241,19 +241,18 @@ function calcNL!(
   solc::Array{Complex{Float64}, 3}, solr::Array{Complex{Float64}, 2}, 
   t::Float64, v::Vars, p::TwoModeParams, g::TwoDGrid)
   
-  # Spectral space calculations
   v.Zh .= solr
 
   @. v.Psih = -g.invKKrsq*v.Zh
 
-  @. v.Uh = -im*g.Lr*v.Psih
-  @. v.Vh =  im*g.Kr*v.Psih
+  @. v.Uh = -im*g.l*v.Psih
+  @. v.Vh =  im*g.kr*v.Psih
 
-  @. v.Uxh = im*g.Kr*v.Uh
-  @. v.Vxh = im*g.Kr*v.Vh
+  @. v.Uxh = im*g.kr*v.Uh
+  @. v.Vxh = im*g.kr*v.Vh
 
-  @. v.Uyh = im*g.Lr*v.Uh
-  @. v.Vyh = im*g.Lr*v.Vh
+  @. v.Uyh = im*g.l*v.Uh
+  @. v.Vyh = im*g.l*v.Vh
 
   v.Uh[1, 1] += p.Us*g.nx*g.ny
   v.Vh[1, 1] += p.Vs*g.nx*g.ny
@@ -272,8 +271,8 @@ function calcNL!(
   @views A_mul_B!(v.v, g.ifftplan, solc[:, :, 2])
   @views A_mul_B!(v.p, g.ifftplan, solc[:, :, 3])
 
-  @views @. v.zetah = im*g.K*solc[:, :, 2] - im*g.L*solc[:, :, 1]
-  @views @. v.wh = -(g.K*solc[:, :, 1] + g.L*solc[:, :, 2]) / p.m
+  @views @. v.zetah = im*g.k*solc[:, :, 2] - im*g.l*solc[:, :, 1]
+  @views @. v.wh = -(g.k*solc[:, :, 1] + g.k*solc[:, :, 2]) / p.m
 
   A_mul_B!(v.w,  g.ifftplan, v.wh)
   A_mul_B!(v.zeta,  g.ifftplan, v.zetah)
@@ -315,23 +314,23 @@ function calcNL!(
 
 
   # Zeroth-mode nonlinear term
-  @. NLr = - im*g.Kr*v.UZuzh - im*g.Lr*v.VZvzh
+  @. NLr = - im*g.kr*v.UZuzh - im*g.l*v.VZvzh
 
 
   # First-mode nonlinear terms:
   # u
-  @views @. NLc[:, :, 1] = ( p.f*solc[:, :, 2] - im*g.K*solc[:, :, 3]
-    - im*g.K*v.Uuh - im*g.L*v.Vuh - v.uUxvUyh
+  @views @. NLc[:, :, 1] = ( p.f*solc[:, :, 2] - im*g.k*solc[:, :, 3]
+    - im*g.k*v.Uuh - im*g.l*v.Vuh - v.uUxvUyh
   )
 
   # v
-  @views @. NLc[:, :, 2] = ( -p.f*solc[:, :, 1] - im*g.L*solc[:, :, 3]
-    - im*g.K*v.Uvh - im*g.L*v.Vvh - v.uVxvVyh
+  @views @. NLc[:, :, 2] = ( -p.f*solc[:, :, 1] - im*g.l*solc[:, :, 3]
+    - im*g.k*v.Uvh - im*g.l*v.Vvh - v.uVxvVyh
   )
 
   # p
   @views @. NLc[:, :, 3] = ( im*p.N^2.0/p.m*v.wh
-    - im*g.K*v.Uph - im*g.L*v.Vph
+    - im*g.k*v.Uph - im*g.l*v.Vph
   )
 
   dealias!(NLr, g)
@@ -350,8 +349,8 @@ function updatevars!(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid,
   v.Z = irfft(Zh, g.nx)
 
   @. v.Psih = -g.invKKrsq*v.Zh
-  @. v.Uh   = -im*g.Lr*v.Psih
-  @. v.Vh   =  im*g.Kr*v.Psih
+  @. v.Uh   = -im*g.l*v.Psih
+  @. v.Vh   =  im*g.kr*v.Psih
  
   # We don't use A_mul_B here because irfft destroys its input.
   v.Psi = irfft(v.Psih, g.nx)
@@ -362,7 +361,7 @@ function updatevars!(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid,
   @views v.vh .= v.solc[:, :, 2]
   @views v.ph .= v.solc[:, :, 3]
 
-  @. v.wh = -1.0/p.m*(g.K*v.uh + g.L*v.vh)
+  @. v.wh = -1.0/p.m*(g.k*v.uh + g.l*v.vh)
 
   A_mul_B!(v.u, g.ifftplan, v.uh)
   A_mul_B!(v.v, g.ifftplan, v.vh)
@@ -618,8 +617,8 @@ zeroth mode.
 """
 function mode0apv(Z, u, v, p, pr::TwoModeParams, g::TwoDGrid)
   (Z .+ irfft( pr.m^2.0./pr.N^2.0 .* (
-      im.*g.Lr.*rfft(real.(u.*conj.(p) .+ conj.(u).*p)) 
-    - im.*g.Kr.*rfft(real.(v.*conj.(p) .+ conj.(v).*p))
+      im.*g.l.*rfft(real.(u.*conj.(p) .+ conj.(u).*p)) 
+    - im.*g.kr.*rfft(real.(v.*conj.(p) .+ conj.(v).*p))
   ), g.nx))
 end
 
@@ -647,7 +646,7 @@ end
 
 function mode1apv(Z, v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   @views @. v.ph = v.solc[:, :, 3]
-  @views @. v.zetah = im*g.K*v.solc[:, :, 2] - im*g.L*v.solc[:, :, 1]
+  @views @. v.zetah = im*g.k*v.solc[:, :, 2] - im*g.l*v.solc[:, :, 1]
 
   A_mul_B!(v.p,  g.ifftplan, v.ph)
   A_mul_B!(v.zeta,  g.ifftplan, v.zetah)

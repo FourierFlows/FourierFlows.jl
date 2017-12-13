@@ -65,5 +65,6 @@ include("physics/barotropicqg.jl")
 include("physics/twomodeboussinesq.jl")
 include("physics/niwqg.jl")
 include("physics/traceradvdiff.jl")
+include("physics/tracerpatcheqn.jl")
 
 end

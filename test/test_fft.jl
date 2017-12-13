@@ -7,7 +7,7 @@ module FFTTests
 """ Test how the real forward transform affect input. """
 function test_input_rfft(grid)
   A = rand(grid.nx, grid.ny)
-  B = zeros(grid.Kr)
+  B = zeros(Complex{Float64}, grid.nkr, grid.nl)
 
   Acopy = deepcopy(A)
   A_mul_B!(B, grid.rfftplan, A)
@@ -19,8 +19,7 @@ end
 """ Test how the real forward transform affect input. """
 function test_input_irfft(grid)
   A = rand(grid.nx, grid.ny)
-
-  B = zeros(grid.Kr)
+  B = zeros(Complex{Float64}, grid.nkr, grid.nl)
   Acopy = deepcopy(A)
 
   A_mul_B!(B, grid.rfftplan, Acopy)
@@ -35,9 +34,8 @@ end
 """ Test how the real forward transform affect input. """
 function test_copying_irfft(grid)
   A = rand(grid.nx, grid.ny)
-
-  B1 = zeros(grid.Kr)
-  B2 = zeros(grid.Kr)
+  B1 = zeros(Complex{Float64}, grid.nkr, grid.nl)
+  B2 = zeros(Complex{Float64}, grid.nkr, grid.nl)
   Acopy = deepcopy(A)
 
   A_mul_B!(B1, grid.rfftplan, Acopy)
@@ -59,8 +57,7 @@ function test_cycle_rfft(grid)
   tol = 1e-15
 
   A = rand(grid.nx, grid.ny)
-  B = zeros(grid.Kr)
-
+  B = zeros(Complex{Float64}, grid.nkr, grid.nl)
   Aorig = deepcopy(A)
   Anew  = zeros(grid.X)
 
