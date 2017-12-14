@@ -604,6 +604,62 @@ end
 
 
 
+"""
+Returns the domain-integrated shear production.
+"""
+function shearproduction(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
+  v.Zh .= v.solr
+
+  @. v.Psih = -g.invKKrsq*v.Zh
+  @. v.Uh  = -im*g.l  * v.Psih
+  @. v.Vh  =  im*g.kr * v.Psih
+  @. v.Uxh =  im*g.kr * v.Uh
+  @. v.Uyh =  im*g.l  * v.Uh
+  @. v.Vxh =  im*g.kr * v.Vh
+  @. v.Vyh =  im*g.l  * v.Vh
+
+  A_mul_B!(v.Ux, g.irfftplan, v.Uxh)
+  A_mul_B!(v.Uy, g.irfftplan, v.Uyh)
+  A_mul_B!(v.Vx, g.irfftplan, v.Vxh)
+  A_mul_B!(v.Vy, g.irfftplan, v.Vyh)
+
+  @views A_mul_B!(v.u, g.ifftplan, v.solc[:, :, 1])
+  @views A_mul_B!(v.v, g.ifftplan, v.solc[:, :, 2])
+
+  @. v.UZuzvw = real( 
+      2.0*abs2(v.u)*v.Ux + 2.0*abs2(v.v)*v.Vy
+       + (conj(v.u)*v.v + v.u*conj(v.v))*(v.Uy + v.Vx)
+  )
+
+  g.dx*g.dy*sum(v.UZuzvw)
+end
+
+function shearproduction(prob::AbstractProblem)
+  shearproduction(prob.vars, prob.params, prob.grid)
+end
+
+
+
+
+""" 
+Return the domain-integrated conversion from potential to kinetic energy.
+"""
+function energyconversion(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
+  @views @. v.wh = -(g.k*v.solc[:, :, 1] + g.l*v.solc[:, :, 2]) / p.m
+  @views A_mul_B!(v.p, g.ifftplan, v.solc[:, :, 3])
+  A_mul_B!(v.w, g.ifftplan, v.wh)
+  # b = i*m*p
+  @. v.UZuzvw = real(im*p.m*conj(v.w)*v.p - im*p.m*v.w*conj(v.p))
+  g.dx*g.dy*sum(v.UZuzvw)
+end
+
+function energyconversion(prob::AbstractProblem)
+  energyconversion(prob.vars, prob.params, prob.grid)
+end
+  
+
+
+
 """ 
 Returns the projection of available potential vorticity onto the 
 zeroth mode.
