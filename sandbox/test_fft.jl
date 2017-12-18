@@ -1,6 +1,6 @@
 include("../src/fourierflows.jl")
 
-using FourierFlows
+using FourierFlows, Base.Test
 
 module FFTTests
 
@@ -78,7 +78,9 @@ import FFTTests: test_input_rfft, test_input_irfft, test_cycle_rfft,
 # Run tests
 grid = TwoDGrid(64, 2π)
 
-println("test_input_rfft:    ", test_input_rfft(grid))
-println("test_input_irfft:   ", test_input_irfft(grid))
-println("test_cycle_rfft:    ", test_cycle_rfft(grid))
-println("test_copying_irfft: ", test_copying_irfft(grid))
+@test test_input_rfft(grid)
+
+println("test_input_rfft:    ", @test test_input_rfft(grid))
+println("test_input_irfft (does irfft leave its input intact?):   ", test_input_irfft(grid))
+println("test_cycle_rfft:    ", @test test_cycle_rfft(grid))
+println("test_copying_irfft: ", @test test_copying_irfft(grid))
