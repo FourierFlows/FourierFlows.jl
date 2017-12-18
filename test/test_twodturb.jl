@@ -36,7 +36,7 @@ stepforward!(v, tsETDRK4, eq, p, g; nsteps=3)
 
 
 @printf "Testing var updating..."
-TwoDTurb.updatevars!(v, p, g)
+TwoDTurb.updatevars!(v, g)
 @printf " well, that seemed to go well.\n"
 
 
