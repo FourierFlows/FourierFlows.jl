@@ -112,7 +112,7 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
 
   # FFT plans
   FFTW.set_num_threads(nthreads)
-  fftplan   = plan_fft(Array{Float64,2}(nx, ny); flags=effort)
+  fftplan   = plan_fft(Array{Complex{Float64},2}(nx, ny); flags=effort)
   ifftplan  = plan_ifft(Array{Complex{Float64},2}(nk, nl); flags=effort)
   rfftplan  = plan_rfft(Array{Float64,2}(nx, ny); flags=effort)
   irfftplan = plan_irfft(Array{Complex{Float64},2}(nkr, nl), nx; flags=effort)
