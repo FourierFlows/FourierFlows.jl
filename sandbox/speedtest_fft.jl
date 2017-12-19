@@ -25,16 +25,20 @@ function testfftspeed(ns;
   nthreads=nothing, effort=FFTW.MEASURE, nloops=100, ffttype="complex")
 
   if nthreads == nothing
-    nthreads = [round(Int, Sys.CPU_CORES/2), Sys.CPU_CORES]
+    nthreads = [1]
+    while nthreads[end] < Sys.CPU_CORES
+      push!(nthreads, 2*nthreads[end])
+    end
   end
 
   srand(123)
-
   times = zeros(length(ns), length(nthreads))
 
   @printf("\ntesting %s fft speed...\n", ffttype)
   for (inth, nth) in enumerate(nthreads)
 
+    # Should we be super conservative about making sure number of 
+    # threads is right?
     FFTW.set_num_threads(nth)
     ENV["MKL_NUM_THREADS"] = nth
     ENV["JULIA_NUM_THREADS"] = nth
@@ -71,20 +75,27 @@ function testfftspeed(ns;
   ns, nthreads, times
 end
 
+
+"""
+Prettily print the results of an fft test across arrays of size ns and 
+nthreads.
+"""
 function printresults(nthreads, ns, nloops, times, ffttype)
 
+  # Header
   results = @sprintf("\n*** %s fft results (%d loops) ***\n\n", 
     ffttype, nloops)
-
   results *= @sprintf("threads | n:")
   for n in ns
     results *= @sprintf("% 9d | ", n)
   end
   
+  # Divider
   results *= "\n"
   results *= "----------------------------------------------------------------"
   results *= "---------------\n" 
 
+  # Body
   for (ith, nth) in enumerate(nthreads)
     results *= @sprintf("% 7d |   ", nth)
     for (i, n) in enumerate(ns)
@@ -98,13 +109,13 @@ function printresults(nthreads, ns, nloops, times, ffttype)
 end
 
 
+# Default test params
 nloops = 200
 testns = [64, 128, 256, 512, 1024, 2048]
-nthreads = [1, 2, 4]
 
+# Real and complex fft speed tests
 ns, nthreads, ctimes = testfftspeed(testns, ffttype="complex", nloops=nloops,
   nthreads=nthreads)
-
 ns, nthreads, rtimes = testfftspeed(testns, ffttype="real", nloops=nloops,
   nthreads=nthreads)
 
