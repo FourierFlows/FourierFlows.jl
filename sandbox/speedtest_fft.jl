@@ -112,13 +112,10 @@ end
 # Default test params
 nloops = 200
 testns = [64, 128, 256, 512, 1024, 2048]
-nthreads = nothing
 
 # Real and complex fft speed tests
-ns, nthreads, ctimes = testfftspeed(testns, ffttype="complex", nloops=nloops,
-  nthreads=nthreads)
-ns, nthreads, rtimes = testfftspeed(testns, ffttype="real", nloops=nloops,
-  nthreads=nthreads)
+ns, nthreads, ctimes = testfftspeed(testns, ffttype="complex", nloops=nloops)
+ns, nthreads, rtimes = testfftspeed(testns, ffttype="real", nloops=nloops)
 
 printresults(nthreads, ns, nloops, ctimes, "complex")
 printresults(nthreads, ns, nloops, rtimes, "real")
