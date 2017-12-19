@@ -1,66 +1,46 @@
 include("../src/fourierflows.jl")
 
+using Base.Test
 using FourierFlows
 import FourierFlows.TwoDTurb
 
-# Problem parameters
-nx  = 256     # Numerical problem size
-dt  = 1e-3    # Time step
-Lx  = 2.0*pi  # Physical domain size
-nu  = 1e-6    # Vorticity hyperviscosity
-nun = 4       # Vorticity hyperviscosity order
 
+function makebasicturbproblem(n, L, ν, nν)
+  g  = TwoDTurb.TwoDGrid(n, L)
+  p  = TwoDTurb.Params(ν, nν)
+  v  = TwoDTurb.Vars(g)
+  eq = TwoDTurb.Equation(p, g)
 
-@printf "Generating grid, params, and vars..."
-g  = TwoDTurb.TwoDGrid(nx, Lx)
-p  = TwoDTurb.Params(nu, nun)
-v  = TwoDTurb.Vars(g)
-eq = TwoDTurb.Equation(p, g)
-@printf " well, that seemed to go well.\n"
-
-
-@printf "Initializing four time-steppers..."
-tsFE     = ForwardEulerTimeStepper(dt, eq.LC)
-tsAB3    = AB3TimeStepper(dt, eq.LC)
-tsRK4    = RK4TimeStepper(dt, eq.LC)
-tsETDRK4 = ETDRK4TimeStepper(dt, eq.LC)
-@printf " well, that seemed to go well.\n"
-
-
-@printf "Testing step-forward methods for each time-stepper..."
-stepforward!(v, tsFE,     eq, p, g; nsteps=3)
-stepforward!(v, tsAB3,    eq, p, g; nsteps=3)
-stepforward!(v, tsRK4,    eq, p, g; nsteps=3)
-stepforward!(v, tsETDRK4, eq, p, g; nsteps=3)
-@printf " well, that seemed to go well.\n"
-
-
-@printf "Testing var updating..."
-TwoDTurb.updatevars!(v, p, g)
-@printf " well, that seemed to go well.\n"
-
-
-#=
-# Initial condition with two ellipsoid vortices for comparison.
-ampl = 1.131562576275490e-04
-qh = ampl*rfft( 200.0*exp.(-((g.X-1).^2-0.4*g.X.*g.Y)./.3^2-(g.Y-1).^2./.5^2)
-  - 100.0* exp.(-((g.X+1).^2-0.4*g.X.*g.Y)./.3^2-(g.Y+1).^2./.5^2) )
-
-qh[1, 1] = 0
-
-g  = TwoDGrid(nx, Lx)
-pr = Params(f0, nuq, nuqn, g)
-vs = Vars(p, g)
-eq = Equation(p, g)
-ts = ForwardEulerTimeStepper(dt, eq.LC)
-
-Solver.updatevars!(v, p, g)
-
-for n in 1:3
-  println("step ", n)
-  nsteps = 50
-
-  Solver.stepforward!(vs, ts, eq, pr, g, nsteps=nsteps)
-  Solver.updatevars!(vs, pr, g)
+  g, p, v, eq
 end
-=#
+
+function teststepforward(g, p, v, eq; dt=1e-16, nsteps=10, 
+  stepper="ForwardEuler")
+
+  if stepper == "ForwardEuler"; ts = ForwardEulerTimeStepper(dt, eq.LC)
+  elseif stepper == "AB3";      ts = AB3TimeStepper(dt, eq.LC)
+  elseif stepper == "RK4";      ts = RK4TimeStepper(dt, eq.LC)
+  elseif stepper == "ETDRK4";   ts = ETDRK4TimeStepper(dt, eq.LC)
+  end
+  
+  prob = Problem(g, v, p, eq, ts)
+  TwoDTurb.set_q!(prob, rand(g.nx, g.ny))
+
+  absq₀ = sum(abs.(prob.vars.sol))
+  stepforward!(prob; nsteps=nsteps)
+  absq₁ = sum(abs.(prob.vars.sol))
+
+  isapprox(absq₀, absq₁, atol=nsteps*g.nx*g.ny*1e-15)
+end
+
+function teststepforward(n::Int, L, ν, nν::Int; stepper="ForwardEuler")
+  g, p, v, eq = makebasicturbproblem(n, L, ν, nν)
+  teststepforward(g, p, v, eq; stepper=stepper)
+end
+
+@testset "TwoDTurb and Timestepper Tests" begin
+  @test teststepforward(128, 2π, 1e-2, 2; stepper="ForwardEuler")
+  @test teststepforward(128, 2π, 1e-2, 2; stepper="AB3")
+  @test teststepforward(128, 2π, 1e-2, 2; stepper="RK4")
+  @test teststepforward(128, 2π, 1e-2, 2; stepper="ETDRK4")
+end

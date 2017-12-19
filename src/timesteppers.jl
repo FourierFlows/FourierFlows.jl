@@ -31,13 +31,12 @@ function stepforward!(prob::Problem; nsteps=1)
   nothing
 end
 
-function stepforward!(prob::Problem, diags::AbstractArray;
-  nsteps=1)
-
+function stepforward!(prob::Problem, diags::AbstractArray; nsteps=1)
   # Initialize diagnostics for speed
   for diag in diags
     newnum = ceil(Int, (diag.count+nsteps)/diag.freq)
     if newnum > diag.num
+      warn("Resizing diags before stepping forward...")
       resize!(diag, newnum)
     end
   end
@@ -80,7 +79,7 @@ function ForwardEulerTimeStepper(dt::Float64, v::AbstractVars)
   ForwardEulerTimeStepper{ndims(NL)}(0, dt, NL)
 end
 
-function ForwardEulerTimeStepper(dt::Float64, LC::Array{Complex{Float64}, 2})
+function ForwardEulerTimeStepper(dt::Float64, LC::AbstractArray)
   NL = zeros(LC)
   ForwardEulerTimeStepper{ndims(LC)}(0, dt, NL)
 end
@@ -496,17 +495,17 @@ end
 # It is described, among other places, in Bewley's Numerical
 # Renaissance.
 
-type RK4TimeStepper <: AbstractTimeStepper
+type RK4TimeStepper{T,dim} <: AbstractTimeStepper
   step::Int
   dt::Float64
 
   # Intermediate times, solutions, and nonlinear evaluations
   ti::Float64
-  sol1::Array{Complex{Float64}, 2}
-  RHS1::Array{Complex{Float64}, 2}
-  RHS2::Array{Complex{Float64}, 2}
-  RHS3::Array{Complex{Float64}, 2}
-  RHS4::Array{Complex{Float64}, 2}
+  sol1::Array{T, dim}
+  RHS1::Array{T, dim}
+  RHS2::Array{T, dim}
+  RHS3::Array{T, dim}
+  RHS4::Array{T, dim}
 end
 
 function RK4TimeStepper(dt::Float64, v::AbstractVars)
@@ -516,17 +515,19 @@ function RK4TimeStepper(dt::Float64, v::AbstractVars)
   RHS2 = zeros(v.sol)
   RHS3 = zeros(v.sol)
   RHS4 = zeros(v.sol)
-  RK4TimeStepper(0, dt, ti, sol1, RHS1, RHS2, RHS3, RHS4)
+  RK4TimeStepper{eltype(v.sol),ndims(v.sol)}(
+    0, dt, ti, sol1, RHS1, RHS2, RHS3, RHS4)
 end
 
-function RK4TimeStepper(dt::Float64, LC::Array{Complex{Float64}, 2})
+function RK4TimeStepper(dt::Float64, LC::AbstractArray)
   ti = 0.0
   sol1 = zeros(LC)
   RHS1 = zeros(LC)
   RHS2 = zeros(LC)
   RHS3 = zeros(LC)
   RHS4 = zeros(LC)
-  RK4TimeStepper(0, dt, ti, sol1, RHS1, RHS2, RHS3, RHS4)
+  RK4TimeStepper{eltype(LC),ndims(LC)}(
+    0, dt, ti, sol1, RHS1, RHS2, RHS3, RHS4)
 end
 
 

@@ -5,7 +5,7 @@ module GridTest
 using FourierFlows
 
 # Test square grid
-nx = 32                  # number of points
+nx = 32                 # number of points
 Lx = 2.0*pi             # Domain width
 g = TwoDGrid(nx, Lx)
 
@@ -31,7 +31,7 @@ end
 test = 0
 
 for i in 1:g.nk
-  test += abs(maximum(abs.(g.K[i,:]))-minimum(abs.(g.K[i,:])));
+  test += abs(maximum(abs.(g.K[i, :]))-minimum(abs.(g.K[i, :])));
   #the inner abs's are needed bedcause Greg defined K as Complex128
 end
 if test>1e-12
@@ -42,7 +42,7 @@ end
 
 test = 0;
 for i in 1:g.nl
-  test += abs(maximum(abs.(g.L[:,i]))-minimum(abs.(g.L[:,i])));
+  test += abs(maximum(abs.(g.L[:, i]))-minimum(abs.(g.L[:, i])));
   #the inner abs's are needed because Greg defined L as Complex128
 end
 if test>1e-12
@@ -54,7 +54,7 @@ end
 
 test = 0;
 for i in 1:g.nkr
-  test += abs(maximum(abs.(g.Kr[i,:]))-minimum(abs.(g.Kr[i,:])));
+  test += abs(maximum(abs.(g.Kr[i, :]))-minimum(abs.(g.Kr[i, :])));
   #the inner abs's are needed because Greg defined Kr as Complex128
 end
 if test>1e-12
@@ -72,8 +72,14 @@ if nx/2>=4
   m = 5;
   n = 2;
 
-  f1   = cos.(m*real(g.k[2])*g.X).*cos.(n*real(g.l[2])*g.Y);
-  f2   = sin.(m*real(g.k[2])*g.X + n*real(g.l[2])*g.Y);
+  # the fundumental wavenumbers for this particular grid
+  k0 = g.k[2, 1]
+  l0 = g.l[1, 2]
+
+  # some test functions
+  f1   = cos.(m*k0*g.X).*cos.(n*l0*g.Y);
+  f2   = sin.(m*k0*g.X + n*l0*g.Y);
+  # and their fft's and rfft's
   f1h  = fft(f1);
   f2h  = fft(f2);
   f1hr = rfft(f1);
@@ -85,34 +91,37 @@ if nx/2>=4
   f2hr_mul = Array{Complex128}(g.nkr, g.nl)
   A_mul_B!( f2hr_mul, g.rfftplan, f2 )
 
+  ##############################################################################
+  # the theoretical values of the fft's and rfft's
   f1h_th   = zeros(size(f1h));  f2h_th   = zeros(size(f2h));
   f1hr_th  = zeros(size(f1hr)); f2hr_th  = zeros(size(f2hr));
 
-  for i in 1:g.nk, j in 1:g.nl
-    if ( abs(real(g.K[i,j])) == m*real(g.k[2]) && abs(real(g.L[i,j])) == n*real(g.l[2]) )
-      f1h_th[i,j] = - g.nx*g.ny/4;
+  for j in 1:g.nl, i in 1:g.nk
+    if ( abs(real(g.K[i, j])) == m*k0 && abs(real(g.L[i, j])) == n*l0 )
+      f1h_th[i, j] = - g.nx*g.ny/4
     end
-    if ( real(g.K[i,j]) == m*real(g.k[2]) && real(g.L[i,j]) == n*real(g.l[2]) )
-      f2h_th[i,j] = -g.nx*g.ny/2;
-    elseif ( real(g.K[i,j]) == -m*real(g.k[2]) && real(g.L[i,j]) == -n*real(g.l[2]) )
-      f2h_th[i,j] = g.nx*g.ny/2;
+    if ( real(g.K[i, j]) == m*k0 && real(g.L[i, j]) == n*l0 )
+      f2h_th[i, j] = -g.nx*g.ny/2
+    elseif ( real(g.K[i, j]) == -m*k0 && real(g.L[i, j]) == -n*l0 )
+      f2h_th[i, j] = g.nx*g.ny/2
     end
   end
   f2h_th = -im*f2h_th;
 
-
-  for j in g.nl, i in g.nkr
-    if ( abs(g.Kr[i,j])==m*real(g.k[2]) && abs(g.L[i,j])==n*real(g.l[2]) )
-      f1hr_th[i,j] = - g.nx*g.ny/4;
+  for j in 1:g.nl, i in 1:g.nkr
+    if ( abs(g.Kr[i, j])==m*k0 && abs(g.L[i, j])==n*l0 )
+      f1hr_th[i, j] = - g.nx*g.ny/4
     end
-    if ( real(g.Kr[i,j]) == m*real(g.k[2]) && real(g.L[i,j]) == n*real(g.l[2]) )
-      f2hr_th[i,j] = -g.nx*g.ny/2;
-    elseif ( real(g.Kr[i,j]) == -m*real(g.k[2]) && real(g.L[i,j]) == -n*real(g.l[2]) )
-      f2hr_th[i,j] = g.nx*g.ny/2;
+    if ( real(g.Kr[i, j]) == m*k0 && real(g.L[i, j]) == n*l0 )
+      f2hr_th[i, j] = -g.nx*g.ny/2
+    elseif ( real(g.Kr[i, j]) == -m*k0 && real(g.L[i, j]) == -n*l0 )
+      f2hr_th[i, j] = g.nx*g.ny/2
     end
   end
   f2hr_th = -im*f2hr_th;
+  ##############################################################################
 
+  # test if the numerical fft's and rfft's match the theoretical
   if norm(f1h-f1h_th)/norm(f1h_th)>1e-12
     info("  fft for cos(mx)cos(ny) is not correcty calculated!")
   else
@@ -163,7 +172,8 @@ else
   info(" ifft for cos(mx)cos(ny) seems OK.")
 end
 
-f1hr_c = deepcopy(f1hr) # deepcopy is needed because FFTW irfft messes up with input!
+f1hr_c = deepcopy(f1hr)
+# deepcopy is needed because FFTW irfft messes up with input!
 f1b = irfft(f1hr_c, nx)
 
 if norm(f1-f1b)/norm(f1) > 1e-12
@@ -172,7 +182,8 @@ else
   info("irfft for cos(mx)cos(ny) seems OK.")
 end
 
-f1hr_c = deepcopy(f1hr) # deepcopy is needed because FFTW irfft messes up with input!
+f1hr_c = deepcopy(f1hr)
+# deepcopy is needed because FFTW irfft messes up with input!
 f1b = Array{Float64}(g.nx, g.ny)
 A_mul_B!( f1b, g.irfftplan, f1hr_c )
 if norm(f1-f1b)/norm(f1) > 1e-12
@@ -181,7 +192,8 @@ else
   info("irfft with A_mul_B for cos(mx)cos(ny) seems OK.")
 end
 
-f2hr_c = deepcopy(f2hr); # deepcopy is needed because FFTW irfft messes up with input!
+f2hr_c = deepcopy(f2hr);
+# deepcopy is needed because FFTW irfft messes up with input!
 f2b3 = irfft(f2hr_c, g.nx);
 if norm(f2-f2b3)/norm(f2) > 1e-12
   info("irfft for sin(mx+ny) is not correcty calculated!")
@@ -197,7 +209,8 @@ else
   info(" ifft for sin(mx+ny) seems OK.")
 end
 
-f2hr_c = deepcopy(f2hr) # deepcopy is needed because FFTW irfft messes up with input!
+f2hr_c = deepcopy(f2hr)
+# deepcopy is needed because FFTW irfft messes up with input!
 f2b = Array{Float64}(g.nx, g.ny)
 A_mul_B!( f2b, g.irfftplan, f2hr_c )
 if norm(f2-f2b)/norm(f2) > 1e-12

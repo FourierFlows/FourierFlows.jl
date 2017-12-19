@@ -2,43 +2,45 @@ __precompile__()
 
 module TwoDTurb
 
-using FourierFlows,
-      PyPlot
-
-export Params,
-       Vars,
-       Equation
-
-export set_q!, updatevars!
-
+using FourierFlows, PyPlot
+export InitialValueProblem, Params, Vars, Equation, set_q!, updatevars!
 
 # Problem ---------------------------------------------------------------------
+"""
+Construct an initial value problem.
+"""
 function InitialValueProblem(;
-  nx = 256,
-  Lx = 2π,
-  ny = nothing,
-  Ly = nothing,
-  ν  = nothing,
-  nν = 2,
-  dt = 0.01,
-  withfilter = true
+  nx  = 256,
+  Lx  = 2π,
+  ny  = nothing,
+  Ly  = nothing,
+  ν   = nothing,
+  nu  = nothing,
+  nν  = 2,
+  nnu = nothing,
+  dt  = 0.01,
+  withfilter = false
   )
 
-  if Ly == nothing; Ly = Lx; end
-  if ny == nothing; ny = nx; end
-  if ν  == nothing; ν = 1e-1/(dt*(0.65π*nx/Lx)^nν); end
-  if ν  ==  0; withfilter = true; end
+  # Defaults
+  if  nu != nothing;  ν = nu;  end
+  if nnu != nothing; nν = nnu; end
+  if  Ly == nothing; Ly = Lx;  end
+  if  ny == nothing; ny = nx;  end
+
+  if ν == nothing
+    if withfilter; ν = 0.0
+    else;          ν = 1e-1/(dt*(0.65π*nx/Lx)^nν)
+    end
+  end
 
   g  = TwoDGrid(nx, Lx, ny, Ly)
   pr = TwoDTurb.Params(ν, nν)
   vs = TwoDTurb.Vars(g)
   eq = TwoDTurb.Equation(pr, g)
-  if withfilter
-      # ts = ForwardEulerTimeStepper(dt, g, vs)
-      ts = FilteredETDRK4TimeStepper(dt, eq.LC, g)
-  else
-      # ts = ETDRK4TimeStepper(dt, eq.LC)
-      ts = ETDRK4TimeStepper(dt, eq.LC)
+
+  if withfilter; ts = FilteredETDRK4TimeStepper(dt, eq.LC, g)
+  else;          ts = ETDRK4TimeStepper(dt, eq.LC)
   end
 
   FourierFlows.Problem(g, vs, pr, eq, ts)
@@ -53,18 +55,14 @@ function InitialValueProblem(nx, Lx, ny, Ly, ν, nν, dt, withfilter)
                         withfilter=withfilter)
 end
 
-
-
-# P A R A M S
+# Params
 type Params <: AbstractParams
   ν::Float64                     # Vorticity viscosity
   nν::Int                        # Vorticity hyperviscous order
 end
 
 
-
-
-# E Q U A T I O N S
+# Equations
 type Equation <: AbstractEquation
   LC::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's linear part
   calcNL!::Function               # Function to calculate eqn's nonlinear part
@@ -77,29 +75,27 @@ function Equation(p::Params, g::TwoDGrid)
 end
 
 
-
-
-# V A R S
+# Vars
 type Vars <: AbstractVars
 
   t::Float64
   sol::Array{Complex128, 2}
 
   # Auxiliary vars
-  q::Array{Float64, 2}
-  U::Array{Float64, 2}
-  V::Array{Float64, 2}
-  Uq::Array{Float64, 2}
-  Vq::Array{Float64, 2}
-  psi::Array{Float64, 2}
+  q::Array{Float64,2}
+  U::Array{Float64,2}
+  V::Array{Float64,2}
+  Uq::Array{Float64,2}
+  Vq::Array{Float64,2}
+  psi::Array{Float64,2}
 
   # Solution
-  qh::Array{Complex128, 2}
-  Uh::Array{Complex128, 2}
-  Vh::Array{Complex128, 2}
-  Uqh::Array{Complex128, 2}
-  Vqh::Array{Complex128, 2}
-  psih::Array{Complex128, 2}
+  qh::Array{Complex128,2}
+  Uh::Array{Complex128,2}
+  Vh::Array{Complex128,2}
+  Uqh::Array{Complex128,2}
+  Vqh::Array{Complex128,2}
+  psih::Array{Complex128,2}
 
 end
 
@@ -123,74 +119,50 @@ function Vars(g::TwoDGrid)
   Vqh  = zeros(Complex128, g.nkr, g.nl)
   psih = zeros(Complex128, g.nkr, g.nl)
 
-  # Random initial condition
-  sol = exp.( 2.0*pi*im*rand(g.nkr, g.nl) )
+  sol = exp.( 2π*im*rand(g.nkr, g.nl) ) # Random initial condition
 
-  return Vars(t, sol, q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih)
+  Vars(t, sol, q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih)
 end
 
 
-
-
-# S O L V E R S
+# Solvers
 function calcNL!(NL::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
   t::Float64, v::Vars, p::Params, g::TwoDGrid)
-
-  # This copy is necessary because calling A_mul_B(v.q, g.irfftplan, sol)
-  # a few lines below destroys sol when using Julia's FFTW.
   v.qh .= sol
+  A_mul_B!(v.q, g.irfftplan, v.qh) # destroys qh when using fftw
 
-  A_mul_B!(v.q, g.irfftplan, v.qh)
-
-  v.Uh .=    im .* g.Lr .* g.invKKrsq .* sol
-  v.Vh .= (-im) .* g.Kr .* g.invKKrsq .* sol
+  @. v.Uh =  im * g.l  * g.invKKrsq * sol
+  @. v.Vh = -im * g.kr * g.invKKrsq * sol
 
   A_mul_B!(v.U, g.irfftplan, v.Uh)
   A_mul_B!(v.V, g.irfftplan, v.Vh)
 
-  v.Uq .= v.U.*v.q
-  v.Vq .= v.V.*v.q
+  @. v.Uq = v.U * v.q
+  @. v.Vq = v.V * v.q
 
   A_mul_B!(v.Uqh, g.rfftplan, v.Uq)
   A_mul_B!(v.Vqh, g.rfftplan, v.Vq)
 
-  NL .= (-im) .* g.Kr.*v.Uqh .- im .* g.Lr.*v.Vqh
-
+  @. NL = -im*g.kr*v.Uqh - im*g.l*v.Vqh
+  nothing
 end
 
 
-
-
-# H E L P E R   F U N C T I O N S
+# Helper functions
+"""
+Update solution variables using qh in v.sol.
+"""
 function updatevars!(v::Vars, g::TwoDGrid)
-
   v.qh .= v.sol
-
-  # We don't use A_mul_B here because irfft destroys its input.
-  # A_mul_B!(v.q, g.irfftplan, v.qh)
   v.q = irfft(v.qh, g.nx)
 
-  @. v.psih = -v.qh*g.invKKrsq
+  @. v.psih = -g.invKKrsq * v.qh
+  @. v.Uh = -im*g.l  * v.psih
+  @. v.Vh =  im*g.kr * v.psih
 
-  @. v.Uh =    im * g.Lr * g.invKKrsq * v.qh
-  @. v.Vh = (-im) * g.Kr * g.invKKrsq * v.qh
-
-  # We don't use A_mul_B here because irfft destroys its input.
-  #A_mul_B!(v.U, g.irfftplan, v.Uh)
-  #A_mul_B!(v.V, g.irfftplan, v.Vh)
   v.U = irfft(v.Uh, g.nx)
   v.V = irfft(v.Vh, g.nx)
-
-  v.Uq .= v.U .* v.q
-  v.Vq .= v.V .* v.q
-
-  A_mul_B!(v.Uqh, g.rfftplan, v.Uq)
-  A_mul_B!(v.Vqh, g.rfftplan, v.Vq)
-
-end
-
-function updatevars!(v::Vars, p::Params, g::TwoDGrid)
-  updatevars!(v, g)
+  nothing
 end
 
 function updatevars!(prob::AbstractProblem)
@@ -198,15 +170,12 @@ function updatevars!(prob::AbstractProblem)
 end
 
 
-
-""" Set the vorticity field. """
+""" 
+Set the vorticity field. 
+"""
 function set_q!(v::Vars, g::TwoDGrid, q::Array{Float64, 2})
   A_mul_B!(v.sol, g.rfftplan, q)
   updatevars!(v, g)
-end
-
-function set_q!(v::Vars, p::Params, g::TwoDGrid, q::Array{Float64, 2})
-  set_q!(v, g, q)
 end
 
 function set_q!(prob::AbstractProblem, q)
@@ -214,9 +183,9 @@ function set_q!(prob::AbstractProblem, q)
 end
 
 
-
-
-""" Calculate the domain integrated kinetic energy. """
+""" 
+Calculate the domain integrated kinetic energy. 
+"""
 function energy(v::Vars, g::TwoDGrid)
   0.5*(FourierFlows.parsevalsum2(g.Kr.*g.invKKrsq.*v.sol, g)
         + FourierFlows.parsevalsum2(g.Lr.*g.invKKrsq.*v.sol, g))
@@ -225,8 +194,6 @@ end
 function energy(prob::AbstractProblem)
   energy(prob.vars, prob.grid)
 end
-
-
 
 
 """
