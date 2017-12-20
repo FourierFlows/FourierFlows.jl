@@ -4,4 +4,4 @@ julia:
   - 0.6
   - 0.6.2
 
-script: julia tests/test_grid.jl
+script: julia test/test_grid.jl
