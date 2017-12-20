@@ -1,8 +1,8 @@
 language: julia
 
 os:
-  # - linux
-  - osx
+  - linux
+  # - osx
 
 julia:
   # - nightly
@@ -10,6 +10,6 @@ julia:
   # - 0.6.2
 
 before_script:
- - julia -e 'Pkg.add("JLD2"); Pkg.add("SpecialFunctions"); Pkg.add("PyPlot")'
+ - julia -e 'Pkg.add("JLD2"); Pkg.add("SpecialFunctions"); Pkg.add("PyPlot"); Pkg.add("PyCall")'
 
 script: julia test/test_grid.jl
