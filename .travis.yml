@@ -10,6 +10,6 @@ julia:
   - 0.6.2
 
 before_script:
- - julia -e 'Pkg.add("JDL2"); Pkg.add("SpecialFunctions")'
+ - julia -e 'Pkg.add("JLD2"); Pkg.add("SpecialFunctions")'
 
 script: julia test/test_grid.jl
