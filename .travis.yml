@@ -3,3 +3,5 @@ julia:
   - nightly
   - 0.6
   - 0.6.2
+
+script: julia tests/test_grid.jl
