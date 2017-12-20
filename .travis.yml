@@ -10,6 +10,7 @@ julia:
   # - 0.6.2
 
 before_script:
- - julia -e 'Pkg.add("JLD2"); Pkg.add("SpecialFunctions"); Pkg.add("PyPlot"); Pkg.add("PyCall")'
+ - julia -e 'Pkg.add("JLD2"); Pkg.add("SpecialFunctions"); Pkg.add("PyPlot")'
+ - julia -e 'ENV["PYTHON"]="";Pkg.build("PyCall");'
 
 script: julia test/test_grid.jl
