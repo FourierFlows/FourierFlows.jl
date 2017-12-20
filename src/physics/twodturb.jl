@@ -46,6 +46,14 @@ function InitialValueProblem(;
   FourierFlows.Problem(g, vs, pr, eq, ts)
 end
 
+function InitialValueProblem(n, L, ν, nν, dt, withfilter)
+  InitialValueProblem(nx=n, Lx=L, ν=ν, nν=nν, dt=dt, withfilter=withfilter)
+end
+
+function InitialValueProblem(nx, Lx, ny, Ly, ν, nν, dt, withfilter)
+  InitialValueProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, ν=ν, nν=nν, dt=dt,
+                        withfilter=withfilter)
+end
 
 # Params
 type Params <: AbstractParams
