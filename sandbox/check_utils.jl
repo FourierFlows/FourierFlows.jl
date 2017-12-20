@@ -27,9 +27,9 @@ g = prob.grid
 v = prob.vars
 
 # Simpler initial condition
-# with E0 = 0.5*(m^2+n^2) and Q0 =0.5*(m^2+n^2)^2
-m, n = 1*(2π/Lx), 2*(2π/Ly)
-qi = -(m^2+n^2)*sin.(m*g.X).*sin.(n*g.Y)
+# with E0 = 0.125*(m^2+n^2) and Q0 =0.125*(m^2+n^2)^2
+m, n = 1*(2π/Lx), 3*(2π/Ly)
+qi = -(m^2+n^2)*cos.(m*g.X).*cos.(n*g.Y)
 
 TwoDTurb.set_q!(prob, qi)
 TwoDTurb.updatevars!(prob)
