@@ -14,7 +14,7 @@ export Problem
 
 
 
-# Abstract supertypes 
+# Abstract supertypes
 abstract type AbstractGrid end
 abstract type AbstractParams end
 abstract type AbstractVars end
@@ -36,7 +36,7 @@ type Problem <: AbstractProblem
   step::Int
 end
 
-function Problem(g::AbstractGrid, v::AbstractVars, p::AbstractParams, 
+function Problem(g::AbstractGrid, v::AbstractVars, p::AbstractParams,
   eq::AbstractEquation, ts::AbstractTimeStepper)
   Problem(g, v, p, eq, ts, 0.0, 0)
 end
@@ -56,7 +56,7 @@ include("diagnostics.jl")
 include("output.jl")
 include("timesteppers.jl")
 include("utils.jl")
-include("plotting.jl")
+# include("plotting.jl")
 
 
 # Include physics modules
