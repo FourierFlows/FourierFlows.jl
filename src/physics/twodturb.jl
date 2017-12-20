@@ -2,7 +2,7 @@ __precompile__()
 
 module TwoDTurb
 
-using FourierFlows, PyPlot
+using FourierFlows#, PyPlot
 export InitialValueProblem, Params, Vars, Equation, set_q!, updatevars!
 
 # Problem ---------------------------------------------------------------------
@@ -170,8 +170,8 @@ function updatevars!(prob::AbstractProblem)
 end
 
 
-""" 
-Set the vorticity field. 
+"""
+Set the vorticity field.
 """
 function set_q!(v::Vars, g::TwoDGrid, q::Array{Float64, 2})
   A_mul_B!(v.sol, g.rfftplan, q)
@@ -183,8 +183,8 @@ function set_q!(prob::AbstractProblem, q)
 end
 
 
-""" 
-Calculate the domain integrated kinetic energy. 
+"""
+Calculate the domain integrated kinetic energy.
 """
 function energy(v::Vars, g::TwoDGrid)
   0.5*(FourierFlows.parsevalsum2(g.Kr.*g.invKKrsq.*v.sol, g)
