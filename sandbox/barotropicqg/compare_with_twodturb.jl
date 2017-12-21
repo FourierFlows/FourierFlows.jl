@@ -1,4 +1,4 @@
-include("../../src/fourierflows.jl")
+include("../../src/FourierFlows.jl")
 
 using FourierFlows,
       PyPlot
@@ -43,11 +43,10 @@ test_plot(axs, gQ, v2, vQ)
 
 for i = 1:nloops
   @time stepforward!(vQ, nsteps, tsQ, eqQ, pQ, gQ)
-  BarotropicQG.updatevars!(vQ, pQ, gQ) 
+  BarotropicQG.updatevars!(vQ, pQ, gQ)
 
   @time stepforward!(v2, nsteps, ts2, eq2, p2, g2)
-  TwoDTurb.updatevars!(v2, p2, g2) 
+  TwoDTurb.updatevars!(v2, p2, g2)
 
   test_plot(axs, gQ, v2, vQ)
 end
-

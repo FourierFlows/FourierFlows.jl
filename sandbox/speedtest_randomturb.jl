@@ -1,5 +1,5 @@
 fourierflowspath = ".."
-include(joinpath(fourierflowspath, "src", "fourierflows.jl"))
+include(joinpath(fourierflowspath, "src", "FourierFlows.jl"))
 
 using FourierFlows, PyPlot
 import FourierFlows.TwoDTurb

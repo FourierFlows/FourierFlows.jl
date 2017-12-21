@@ -1,4 +1,4 @@
-include("../src/fourierflows.jl")
+include("../src/FourierFlows.jl")
 
 using Base.Test
 using FourierFlows
@@ -14,7 +14,7 @@ function makebasicturbproblem(n, L, ν, nν)
   g, p, v, eq
 end
 
-function teststepforward(g, p, v, eq; dt=1e-16, nsteps=10, 
+function teststepforward(g, p, v, eq; dt=1e-16, nsteps=10,
   stepper="ForwardEuler")
 
   if stepper == "ForwardEuler"; ts = ForwardEulerTimeStepper(dt, eq.LC)
@@ -22,7 +22,7 @@ function teststepforward(g, p, v, eq; dt=1e-16, nsteps=10,
   elseif stepper == "RK4";      ts = RK4TimeStepper(dt, eq.LC)
   elseif stepper == "ETDRK4";   ts = ETDRK4TimeStepper(dt, eq.LC)
   end
-  
+
   prob = Problem(g, v, p, eq, ts)
   TwoDTurb.set_q!(prob, rand(g.nx, g.ny))
 
