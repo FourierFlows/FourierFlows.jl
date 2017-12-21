@@ -1,4 +1,4 @@
-include("../src/fourierflows.jl")
+include("../src/FourierFlows.jl")
 
 using Base.Test
 using FourierFlows
