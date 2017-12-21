@@ -63,9 +63,9 @@ end
 
 @testset "TwoDTurb and Timestepper Tests" begin
   @test teststepforward(128, 2π, 1e-2, 2; stepper="ForwardEuler")
-  @test teststepforward(128, 2π, 1e-2, 2; stepper="FiltrForwardEuler")
+  # @test teststepforward(128, 2π, 1e-2, 2; stepper="FiltrForwardEuler")
   @test teststepforward(128, 2π, 1e-2, 2; stepper="AB3")
   @test teststepforward(128, 2π, 1e-2, 2; stepper="RK4")
   @test teststepforward(128, 2π, 1e-2, 2; stepper="ETDRK4")
-  @test teststepforward(128, 2π, 1e-2, 2; stepper="FiltrETDRK4")
+  # @test teststepforward(128, 2π, 1e-2, 2; stepper="FiltrETDRK4")
 end
