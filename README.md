@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/navidcy/FourierFlows.jl.svg?branch=master)](https://travis-ci.org/navidcy/FourierFlows.jl)
+
 # FourierFlows
 
 ## Overview
