@@ -17,3 +17,6 @@ script:
   - julia test/test_grid.jl
   - julia test/test_twodturb.jl
   - julia test/test_utils.jl
+
+notifications:
+  email: false
