@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/navidcy/FourierFlows.jl.svg?branch=master)](https://travis-ci.org/navidcy/FourierFlows.jl)
+[![Build Status](https://travis-ci.org/navidcy/FourierFlows.jl.svg?branch=master)](https://travis-ci.org/navidcy/FourierFlows.jl) [![codecov](https://codecov.io/gh/navidcy/FourierFlows.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/navidcy/FourierFlows.jl)
 
 # FourierFlows
 
