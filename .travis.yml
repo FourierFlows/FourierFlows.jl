@@ -22,7 +22,7 @@ before_script:
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia -e 'Pkg.clone(pwd())'
-  - julia -e 'Pkg.test("PkgName",coverage=true)'
+  - julia -e 'Pkg.test("FourierFlows",coverage=true)'
 
 after_success:
   - julia -e julia -e 'Pkg.add("Documenter")'
