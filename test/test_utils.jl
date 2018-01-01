@@ -1,9 +1,4 @@
-include("../src/FourierFlows.jl")
-
-using Base.Test
-using FourierFlows
 import FourierFlows.TwoDTurb
-
 
 function integralsquare(func, grid)
     sum(abs2.(func))*grid.dx*grid.dy
@@ -58,11 +53,9 @@ f1 = exp.(-(x.^2 + y.^2)/(2*sig^2))
 f2 = exp.( im*(2k0*x + 3l0*y.^2) ).*( exp.(-(x.^2 + y.^2)/(2sig^2))
                                         + 2im*exp.(-(x.^2 + y.^2)/(5sig^2)) )
 
-@testset "Parsevalsum Tests" begin
-  @test testparsevalsum(f1, g; realvalued=true)   #real valued f with rfft
-  @test testparsevalsum(f1, g; realvalued=false)  #real valued f with fft
-  @test testparsevalsum(f2, g; realvalued=false)  #complex valued f with fft
-  @test testparsevalsum2(f1, g; realvalued=true)  #real valued f with rfft
-  @test testparsevalsum2(f1, g; realvalued=false) #real valued f with fft
-  @test testparsevalsum2(f2, g; realvalued=false) #complex valued f with fft
-end
+@test testparsevalsum(f1, g; realvalued=true)   #real valued f with rfft
+@test testparsevalsum(f1, g; realvalued=false)  #real valued f with fft
+@test testparsevalsum(f2, g; realvalued=false)  #complex valued f with fft
+@test testparsevalsum2(f1, g; realvalued=true)  #real valued f with rfft
+@test testparsevalsum2(f1, g; realvalued=false) #real valued f with fft
+@test testparsevalsum2(f2, g; realvalued=false) #complex valued f with fft
