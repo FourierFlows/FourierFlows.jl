@@ -1,8 +1,8 @@
 language: julia
 
 os:
-  - linux
   - osx
+  - linux
 
 julia:
   # - nightly
@@ -13,6 +13,7 @@ before_script:
  - julia -e 'Pkg.add("JLD2"); Pkg.add("SpecialFunctions");' #Pkg.add("PyPlot"
  # - julia -e 'ENV["PYTHON"]="";Pkg.build("PyCall");'
 
+# this was the old way of running tests before runtests.jl
 # script:
 #   - julia test/test_grid.jl
 #   - julia test/test_twodturb.jl
@@ -23,5 +24,11 @@ script:
   - julia -e 'Pkg.clone(pwd())'
   - julia -e 'Pkg.test("FourierFlows")'
 
+after_success:
+  - julia -e julia -e 'Pkg.add("Documenter")'
+  - julia -e 'cd(Pkg.dir("FourierFlows")); include(joinpath("docs", "make.jl"))'
+  - julia -e 'cd(Pkg.dir("FourierFlows")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  - julia -e 'cd(Pkg.dir("FourierFlows")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(process_folder())'
+
 notifications:
-  email: false
+  email: true

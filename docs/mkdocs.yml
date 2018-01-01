@@ -1,0 +1,32 @@
+site_name:           FourierFlows
+repo_url:            https://github.com/navidcy/FourierFlows.jl
+site_description:    Description
+site_author:         Navid Constantinou
+theme:               readthedocs
+
+markdown_extensions:
+  - codehilite
+  - extra
+  - tables
+  - fenced_code
+  # - mdx_math # For LaTeX
+
+extra_css:
+  - assets/Documenter.css
+
+extra_javascript:
+  - https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML
+  - assets/mathjaxhelper.js
+
+docs_dir: 'build'
+
+pages:
+- Introduction: index.md
+- Tutorial:
+  - Title 1: tutorials/page1.md
+  - Title 2: tutorials/page2.md
+  - Title 3: tutorials/page3.md
+- Another Section:
+  - Title 1: sec2/page1.md
+  - Title 2: sec2/page2.md
+  - Title 3: sec2/page3.md
