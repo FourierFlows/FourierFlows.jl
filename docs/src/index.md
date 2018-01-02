@@ -1,4 +1,4 @@
-#Documentation Title
+#FourierFlows.jl Documentation
 
 Some text describing the package.
 

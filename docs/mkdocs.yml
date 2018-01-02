@@ -1,5 +1,5 @@
 site_name:           FourierFlows
-repo_url:            https://github.com/navidcy/FourierFlows.jl
+repo_url:            https://github.com/FourierFlows/FourierFlows.jl
 site_description:    Description
 site_author:         Navid Constantinou
 theme:               readthedocs
