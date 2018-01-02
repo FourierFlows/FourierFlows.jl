@@ -1,13 +1,13 @@
 language: julia
 
 os:
-  # - osx
-  - linux
+  - osx
+  # - linux
 
 julia:
   # - nightly
   - 0.6
-  # - 0.6.2
+  - 0.6.2
 
 before_script:
  - julia -e 'Pkg.add("JLD2"); Pkg.add("SpecialFunctions");'
