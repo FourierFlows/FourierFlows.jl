@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/navidcy/FourierFlows.jl.svg?branch=master)](https://travis-ci.org/navidcy/FourierFlows.jl) [![codecov](https://codecov.io/gh/navidcy/FourierFlows.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/navidcy/FourierFlows.jl) [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://navidcy.github.io/FourierFlows.jl/stable)
+[![Build Status](https://travis-ci.org/navidcy/FourierFlows.jl.svg?branch=master)](https://travis-ci.org/navidcy/FourierFlows.jl) [![codecov](https://codecov.io/gh/navidcy/FourierFlows.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/navidcy/FourierFlows.jl) [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://FourierFlows.github.io/FourierFlows.jl/)
 
 
 # FourierFlows
