@@ -6,6 +6,7 @@ os:
 
 julia:
   # - nightly
+  - 0.5
   - 0.6
   - 0.6.2
 
