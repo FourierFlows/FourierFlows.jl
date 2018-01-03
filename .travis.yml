@@ -32,3 +32,5 @@ after_success:
 
 notifications:
   email: true
+
+DOCUMENTER_DEBUG: true
