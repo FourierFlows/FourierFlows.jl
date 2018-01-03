@@ -12,8 +12,11 @@ makedocs(modules=[FourierFlows],
 deploydocs(
     repo = "github.com/FourierFlows/FourierFlows.jl.git",
     target = "build",
+    branch = "gh-pages",
+    julia = "0.6.0",
+    osname = "linux",
     deps = nothing,
-    make = nothing,
+    make = nothing
 )
 
 # deploydocs(deps   = Deps.pip("mkdocs", "python-markdown-math"),
