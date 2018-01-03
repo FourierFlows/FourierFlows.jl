@@ -1,7 +1,7 @@
 site_name:           FourierFlows
 repo_url:            https://github.com/FourierFlows/FourierFlows.jl
 site_description:    Description
-site_author:         Navid Constantinou
+site_author:         Gregory L. Wagner and Navid C. Constantinou
 theme:               readthedocs
 
 markdown_extensions:
