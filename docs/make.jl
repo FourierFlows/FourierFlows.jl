@@ -1,26 +1,18 @@
 using Documenter, FourierFlows
 
 makedocs(modules=[FourierFlows],
-        clean=true,
-        doctest=true,
-        format=:html,
-        build="build",
-        sitename="FourierFLowsDocs",
-        authors="Gregory L. Wagner and Navid C. Constantinou",
-        pages = Any[
-                 "Home" => "index.md"
-                 ])
-
-deploydocs(
-    repo = "github.com/FourierFlows/FourierFlows.jl.git",
-    target = "site",
-    julia = "0.6.0",
-    osname = "linux",
-    deps = nothing,
-    make = nothing
+         format = :html,
+         sitename = "navidccc",
+         pages = Any[
+                  "Home" => "index.md"
+                  ]
 )
 
-# deploydocs(deps   = Deps.pip("mkdocs", "python-markdown-math"),
-#     repo = "github.com/FourierFlows/FourierFlows.jl.git",
-#     julia  = "0.6.0",
-#     osname = "linux")
+ deploydocs(
+     repo   = "github.com/FourierFlows/FourierFlows.jl.git",
+     target = "build",
+     julia = "0.6.0",
+     osname = "linux",
+     deps   = nothing,
+     make   = nothing
+ )
