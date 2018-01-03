@@ -1,10 +1,9 @@
-# Title
+# Page 2
 
 Some text describing this section
 
 ## Subtitle
 
 ```@docs
-PkgName.coolfunc
-PkgName.coolfunc2
+
 ```
