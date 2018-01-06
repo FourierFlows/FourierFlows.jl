@@ -2,22 +2,15 @@ using Documenter, FourierFlows
 
 makedocs(modules=[FourierFlows],
          format = :html,
-         sitename = "navidccc",
+         sitename = "FourierFlows.jl",
          pages = Any[
           "Home" => "index.md",
-          "Tutorials" => Any[
-              "tutorials/page1.md",
-              "tutorials/page2.md",
-              "tutorials/page3.md"
-          ],
-          "section2" => Any[
-              "sec2/page1.md",
-              "sec2/page2.md",
-              "sec2/page3.md"
-          ]
+          "DocStrings" => Any[
+              "man/docstrings.md"
+              ]
           ])
 
- deploydocs(
+deploydocs(
      repo   = "github.com/FourierFlows/FourierFlows.jl.git",
      target = "build",
      julia = "0.6.0",
