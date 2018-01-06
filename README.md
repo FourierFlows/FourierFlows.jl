@@ -30,7 +30,7 @@ time-stepper types and routines. Problem-specific modules are stores in
 Here's an overview of the code structure:
 
 - ``/src/``
-    - ``fourierflows.jl``
+    - ``FourierFlows.jl``
         - Defines supertyping AbstractParams, AbstractGrid, etc.
         - Defines a ``Problem`` type to organize the grid, vars, params,
             equation, and timestepper into a single structure.
