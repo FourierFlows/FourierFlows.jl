@@ -14,9 +14,8 @@ A central intent of the software's design is also to provide a framework
 for writing new, fast solvers for new physical problems.
 The code is written in [Julia][].
 
-## Examples
+For more details refer to the [documentation](https://fourierflows.github.io/FourierFlows.jl/latest/).
 
-Coming soon...
 
 ## Source code organization
 
