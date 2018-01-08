@@ -12,13 +12,18 @@ end
 function teststepforward(g, p, v, eq; dt=1e-16, nsteps=10,
   stepper="ForwardEuler")
 
-  ts = FilteredForwardEulerTimeStepper(dt, g, v; filterorder=4.0, innerfilterK=0.4, outerfilterK=1)
-  filter = ts.filter
+  filter = ones(v.sol)
+  if stepper == "FiltrForwardEuler" || stepper == "FiltrETDRK4"
+      # create a filtered ts (simpler is Euler)
+      ts = FilteredForwardEulerTimeStepper(dt, g, v; filterorder=4.0, innerfilterK=0.65, outerfilterK=1)
+      # and use its filter to apply it to the initial condition
+      filter = ts.filter
+  end
 
   if stepper == "ForwardEuler"
       ts = ForwardEulerTimeStepper(dt, eq.LC)
   elseif stepper == "FiltrForwardEuler"
-      ts = FilteredForwardEulerTimeStepper(dt, g, v)
+      ts = FilteredForwardEulerTimeStepper(dt, g, v; filterorder=4.0, innerfilterK=0.65, outerfilterK=1)
   elseif stepper == "AB3"
       ts = AB3TimeStepper(dt, eq.LC)
   elseif stepper == "RK4"
@@ -29,26 +34,27 @@ function teststepforward(g, p, v, eq; dt=1e-16, nsteps=10,
       ts = FilteredETDRK4TimeStepper(dt, eq.LC, g)
   end
 
-  # qi = rand(g.nx, g.ny)
-  # qi = sin.(3*g.X).*sin.(2*g.Y) + 2*sin.(1*g.X).*sin.(4*g.Y)
-  # qi = qi-mean(qi)
-  # if stepper == "FiltrForwardEuler" || stepper == "FiltrETDRK4"
-  #   qi = irfft(rfft(qi).*ts.filter, g.nx)
-  # end
-
-
-  qih = (randn(g.nkr, g.nl)+im*randn(g.nkr, g.nl)).*filter
-  qih[1, 1]=0
-  qi = irfft(qih, g.nx)
+  # the initial conditions (IC)
+  qi = randn(g.nx, g.ny)
+  qi = qi-mean(qi)
+  qih_copy = rfft(qi).*filter
+  # the following removes power from IC from wavenumbers larger than 0.3*kmax
+  # (this is needed for the filtered time-steppers to give machine precision
+  # during the tests)
+  qih_copy[sqrt.( (g.Kr*g.dx/π).^2  + (g.Lr*g.dy/π).^2) .> 0.3]=0
+  qi = irfft(qih_copy, g.nx)
+  qih = rfft(qi)
 
   prob = Problem(g, v, p, eq, ts)
   TwoDTurb.set_q!(prob, qi)
 
   absq₀ = sum(abs.(prob.vars.sol))
+
   stepforward!(prob; nsteps=nsteps)
+
   absq₁ = sum(abs.(prob.vars.sol))
 
-  isapprox(absq₀, absq₁, atol=nsteps*g.nx*g.ny*1e-15)
+  isapprox(absq₀, absq₁, rtol=nsteps*1e-14)
 end
 
 function teststepforward(n::Int, L, ν, nν::Int; stepper="ForwardEuler")
@@ -57,8 +63,8 @@ function teststepforward(n::Int, L, ν, nν::Int; stepper="ForwardEuler")
 end
 
 @test teststepforward(128, 2π, 1e-2, 2; stepper="ForwardEuler")
-# @test teststepforward(128, 2π, 1e-2, 2; stepper="FiltrForwardEuler")
+@test teststepforward(128, 2π, 1e-2, 2; stepper="FiltrForwardEuler")
 @test teststepforward(128, 2π, 1e-2, 2; stepper="AB3")
 @test teststepforward(128, 2π, 1e-2, 2; stepper="RK4")
 @test teststepforward(128, 2π, 1e-2, 2; stepper="ETDRK4")
-# @test teststepforward(128, 2π, 1e-2, 2; stepper="FiltrETDRK4")
+@test teststepforward(128, 2π, 1e-2, 2; stepper="FiltrETDRK4")
