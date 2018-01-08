@@ -1,8 +1,6 @@
 __precompile__()
 
 
-
-
 export ForwardEulerTimeStepper, FilteredForwardEulerTimeStepper,
        AB3TimeStepper,
        RK4TimeStepper,
@@ -113,12 +111,11 @@ type FilteredForwardEulerTimeStepper{dim} <: AbstractTimeStepper
   step::Int
   dt::Float64
   NL::Array{Complex{Float64}, dim}        # Nonlinear term
-  filter::Array{Complex{Float64}, dim}    # Filter for solution
+  filter::Array{Float64, dim}    # Filter for solution
 end
 
 function FilteredForwardEulerTimeStepper(dt::Float64, g::AbstractGrid,
   sol::AbstractArray; filterorder=4.0, innerfilterK=0.65, outerfilterK=0.95)
-
   NL = zeros(sol)
 
   if size(sol)[1] == g.nkr
@@ -131,14 +128,13 @@ function FilteredForwardEulerTimeStepper(dt::Float64, g::AbstractGrid,
     outerK=outerfilterK, realvars=realvars)
 
   # Broadcast to correct size
-  filter = ones(sol) .* filter
+  filter = ones(real.(sol)) .* filter
 
   FilteredForwardEulerTimeStepper{ndims(NL)}(0, dt, NL, filter)
 end
 
 function FilteredForwardEulerTimeStepper(dt::Float64, g::AbstractGrid,
   v::AbstractVars; filterorder=4.0, innerfilterK=0.65, outerfilterK=0.95)
-
   FilteredForwardEulerTimeStepper(dt, g, v.sol; filterorder=filterorder,
     innerfilterK=innerfilterK, outerfilterK=outerfilterK)
 end
@@ -272,7 +268,7 @@ function FilteredETDRK4TimeStepper(dt::Float64, LC::AbstractArray,
     outerK=outerfilterK, realvars=realvars)
 
   # Broadcast to correct size
-  filter = ones(LC) .* filter
+  filter = ones(real.(LC)) .* filter
 
   FilteredETDRK4TimeStepper{ndims(LC)}(0, dt, LC, zeta, alph, beta, gamm,
         expLCdt, expLCdt2, ti, sol1, sol2, NL1, NL2, NL3, NL4, filter)
