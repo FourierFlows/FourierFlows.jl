@@ -69,7 +69,7 @@ s1 = sin.(k1*x + l1*y)
 s2 = sin.(k2*x + l2*y)
 
 # the analytical expression for the Jacobian of s1 and s2
-Js1s2 = (k1*l2-k2*l1)*cos.(k1*x + l1*y).*cos.(k2*x - l2*y)
+Js1s2 = (k1*l2-k2*l1)*cos.(k1*x + l1*y).*cos.(k2*x + l2*y)
 
 @test testparsevalsum(f1, g; realvalued=true)   #real valued f with rfft
 @test testparsevalsum(f1, g; realvalued=false)  #real valued f with fft
