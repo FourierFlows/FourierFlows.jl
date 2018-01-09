@@ -166,17 +166,16 @@ function jacobianh(a, b, g::TwoDGrid)
   bh = fft(b)
   bx = ifft(im*g.K.*bh)
   by = ifft(im*g.L.*bh)
-  im*g.K.*fft(a.*bx) - im*g.L.*fft(a.*by)
+  im*g.K.*fft(a.*by)-im*g.L.*fft(a.*bx)
 end
 
 
 
 """
-Returns the Jacobian of a and b.
+Returns the Jacobian of a and b. Uses ifft (not irfft) so some remnant imaginary
+part of order machine precision might remain in the end.
 """
 function jacobian(a, b, g::TwoDGrid)
-  ax = ifft(im*g.K.*fft(a))
-  ay = ifft(im*g.L.*fft(a))
  ifft(jacobianh(a, b, g))
 end
 

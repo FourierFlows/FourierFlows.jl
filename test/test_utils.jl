@@ -1,4 +1,4 @@
-import FourierFlows.TwoDTurb
+# import FourierFlows.TwoDTurb
 
 function integralsquare(func, grid)
     sum(abs2.(func))*grid.dx*grid.dy
@@ -36,6 +36,15 @@ function testparsevalsum2(func, grid; realvalued=true)
     isapprox(integral, parsevalsum2; atol=1.0e-14)
 end
 
+function testjacobian(a, b, analytic_answer, grid)
+
+    # compute the J(a,b) and compare witt analytic_answer
+    isapprox(norm(FourierFlows.jacobian(a, b, grid)), norm(analytic_answer); atol=g.nx*g.ny*1e-14)
+end
+
+
+# -----------------------------------------------------------------------------
+# Running the tests
 
 # Test on a rectangular grid
 nx, ny = 64, 128             # number of points
@@ -53,9 +62,21 @@ f1 = exp.(-(x.^2 + y.^2)/(2*sig^2))
 f2 = exp.( im*(2k0*x + 3l0*y.^2) ).*( exp.(-(x.^2 + y.^2)/(2sig^2))
                                         + 2im*exp.(-(x.^2 + y.^2)/(5sig^2)) )
 
+# a sine wave
+k1, l1 = 2*k0, 6*l0
+k2, l2 = 3*k0, -3*l0
+s1 = sin.(k1*x + l1*y)
+s2 = sin.(k2*x + l2*y)
+
+# the analytical expression for the Jacobian of s1 and s2
+Js1s2 = (k1*l2-k2*l1)*cos.(k1*x + l1*y).*cos.(k2*x - l2*y)
+
 @test testparsevalsum(f1, g; realvalued=true)   #real valued f with rfft
 @test testparsevalsum(f1, g; realvalued=false)  #real valued f with fft
 @test testparsevalsum(f2, g; realvalued=false)  #complex valued f with fft
 @test testparsevalsum2(f1, g; realvalued=true)  #real valued f with rfft
 @test testparsevalsum2(f1, g; realvalued=false) #real valued f with fft
 @test testparsevalsum2(f2, g; realvalued=false) #complex valued f with fft
+
+@test testjacobian(s1, s1, 0*s1, g) # test that J(a,a)=0
+@test testjacobian(s1, s2, Js1s2, g) # test J(s1,s2)=Js1s2
