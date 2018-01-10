@@ -1,6 +1,22 @@
 import SpecialFunctions
 
 
+"""
+    @createarrays T dims a b c 
+
+Create arrays of all zeros with element type T, size dims, and global names
+a, b, c...
+"""
+macro createarrays(T::DataType, dims::Tuple, vars...)
+  expr = Expr(:block)
+  append!(expr.args, 
+    [:( $(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
+  expr
+end
+
+
+
+
 "Return the fftwavenumber vector with length n and domain size L."
 fftwavenums(n::Int; L=1.0) = 2.0*pi/L*cat(1, 0:n/2, -n/2+1:-1)
 
