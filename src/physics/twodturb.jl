@@ -103,12 +103,13 @@ function Vars(g::TwoDGrid)
   sol  = zeros(Complex128, g.nkr, g.nl)
 
   # Vorticity auxiliary vars
-  q    = zeros(Float64, g.nx, g.ny)
-  U    = zeros(Float64, g.nx, g.ny)
-  V    = zeros(Float64, g.nx, g.ny)
-  Uq   = zeros(Float64, g.nx, g.ny)
-  Vq   = zeros(Float64, g.nx, g.ny)
-  psi  = zeros(Float64, g.nx, g.ny)
+  FourierFlows.@createarrays Float64 (g.nx, g.ny) q U V Uq Vq psi
+  #q    = zeros(Float64, g.nx, g.ny)
+  #U    = zeros(Float64, g.nx, g.ny)
+  #V    = zeros(Float64, g.nx, g.ny)
+  #Uq   = zeros(Float64, g.nx, g.ny)
+  #Vq   = zeros(Float64, g.nx, g.ny)
+  #psi  = zeros(Float64, g.nx, g.ny)
 
   qh   = zeros(Complex128, g.nkr, g.nl)
   Uh   = zeros(Complex128, g.nkr, g.nl)
