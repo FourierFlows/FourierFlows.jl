@@ -123,7 +123,7 @@ end
 mutable struct ForwardEulerTimeStepper{dim} <: AbstractTimeStepper
   step::Int
   dt::Float64
-  N::Array{Complex{Float64},dim}    # Nonlinear term
+  N::Array{Complex{Float64},dim}    # Explicit linear and nonlinear terms
 end
 
 function ForwardEulerTimeStepper(dt::Float64, v::AbstractVars)
@@ -164,7 +164,7 @@ end
 mutable struct FilteredForwardEulerTimeStepper{dim} <: AbstractTimeStepper
   step::Int
   dt::Float64
-  N::Array{Complex{Float64},dim}   # Nonlinear term
+  N::Array{Complex{Float64},dim}    # Explicit linear and nonlinear terms
   filter::Array{Float64,dim}        # Filter for solution
 end
 
@@ -213,7 +213,7 @@ end
 
 
 # ETDRK4 ----------------------------------------------------------------------
-# The Rolls-Royce of time-stepping. Exact treatment of linear part of
+# The Rolls-Royce of time-stepping. Exact treatment of the implicit linear part of
 # the equation, explicit and 4th-order accurate integration of nonlinear
 # parts of equation.
 
