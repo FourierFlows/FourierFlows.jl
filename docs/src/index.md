@@ -18,7 +18,21 @@ FourierFlows is a registered package and so can be installed via `Pkg.add`.
 Pkg.add("FourierFlows")
 ```
 
-For now, this package supports Julia `0.6`.
+For now, this package supports Julia `0.6`. Support for version `0.7` is on its
+way.
+
+
+## Basic Notation
+
+The code solves partial differential equations of the general form:
+
+$\partial_t u = \mathcal{L}u + \mathcal{N}(u)\ .$
+
+The $\mathcal{L}u$ part is time-stepped forward using an implicit scheme; the
+$\mathcal{N}(u)$ part is time-stepped forward using an explicit scheme.
+
+The coefficients for the linear operator $\mathcal{L}$ are stored in array `LC`.
+The term $\mathcal{N}(u)$ is computed for by calling the function `calcN`.
 
 
 ## Source code organization
@@ -54,19 +68,17 @@ Here's an overview of the code structure:
         - `twomodeboussinesq.jl`: Defines a `TwoModeBoussinesq` module
                 that provides solvers for a two-mode truncation of the
                 rotating, stratified Boussinesq equation.
-        - `niwqg.jl`: Defines a `NIWQG` module that provides a solver
-                for the vertical-plane-wave model for the interaction of
-                a near-inertial wave field and quasi-geostrophic flow.
         - `traceradvdiff.jl`: Defines a `TracerAdvDiff` module that
                 provides a solver for a two-dimensional and periodic tracer
                 field in a given 2D flow (u, w), which can be an arbitrary
                 function of x, z, and t.
+        - `tracerpatcheqn.jl`: ...
 
 
 ## Writing fast solvers
 
 The performance-intensive part of the code involves just two functions: the
-timestepping scheme `stepforward!`, and the function `calcNL!` that
+timestepping scheme `stepforward!`, and the function `calcN!` that
 calculates the nonlinear part of the given equation's right-hand side.
 Optimization of these two functions for a given problem will produce the
 fastest possible code.
@@ -77,7 +89,7 @@ fastest possible code.
 An example script that simulates decaying two-dimensional turbulence reproducing
 the results of the paper by
 
-  > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. _J. Fluid Mech._, **146**, 21-43.
+  > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. *J. Fluid Mech.*, **146**, 21-43.
 
 is found in `examples/twodturb/McWilliams.jl`.
 
