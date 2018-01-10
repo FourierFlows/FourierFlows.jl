@@ -15,7 +15,8 @@ function teststepforward(g, p, v, eq; dt=1e-16, nsteps=10,
   filter = ones(v.sol)
   if stepper == "FilteredForwardEuler" || stepper == "FilteredETDRK4"
       # create a filtered ts (simpler is Euler)
-      ts = FilteredForwardEulerTimeStepper(dt, g, v; filterorder=4.0, innerfilterK=0.65, outerfilterK=1)
+      ts = FilteredForwardEulerTimeStepper(dt, g, v; 
+        filterorder=4.0, innerfilterK=0.65, outerfilterK=1)
       # and use its filter to apply it to the initial condition
       filter = ts.filter
   end
