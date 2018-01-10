@@ -59,6 +59,67 @@ end
 
 
 
+# Utilities -------------------------------------------------------------------
+function get_etd_coeffs(dt::Float64, LC::Array{Complex{Float64}, 2})
+
+  # Calculate ETDRK4 coefficients by integrating over a small circle
+  # in complex space.
+
+  # Circle parameters
+  ncirc = 32
+  rcirc = 1.0
+
+  # Make circle
+  circ  = Array{Complex{Float64}}(1, 1, ncirc)
+  circ[1, 1, :]  = rcirc * exp.( 2.0*pi*im*(0.5:1.0:(ncirc-0.5))/ncirc )
+
+  # Construct intermediate vars
+  zc = broadcast(+, dt.*LC, circ)
+
+  # Four coefficients: zeta, alph, beta, gamm
+  zeta = dt.*squeeze(mean( (exp.(0.5.*zc)-1.0)./zc, 3), 3)
+
+  alph = dt.*squeeze(mean(
+    ( (-4.0) .- zc .+ exp.(zc).*(4.0.-3.0.*zc.+zc.^2.0))./zc.^3.0,      3), 3)
+  beta = dt.*squeeze(mean(
+    (   2.0  .+ zc .+ exp.(zc).*((-2.0).+zc))./zc.^3.0,                 3), 3)
+  gamm = dt.*squeeze(mean(
+    ( (-4.0) .- 3.0.*zc .- zc.^2.0 .+ exp.(zc).*(  4.0 .-zc))./zc.^3.0, 3), 3)
+
+  return zeta, alph, beta, gamm
+end
+
+
+function get_etd_coeffs(dt::Float64, LC::Array{Complex{Float64}, 3})
+
+  # Calculate ETDRK4 coefficients by integrating over a small circle
+  # in complex space.
+
+  # Circle parameters
+  ncirc = 32
+  rcirc = 1.0
+
+  # Make circle
+  circ  = Array{Complex{Float64}}(1, 1, 1, ncirc)
+  circ[1, 1, 1, :]  = rcirc * exp.( 2.0*pi*im*(0.5:1.0:(ncirc-0.5))/ncirc )
+
+  # Construct intermediate vars
+  zc = broadcast(+, dt.*LC, circ)
+
+  # Four coefficients: zeta, alph, beta, gamm
+  zeta = dt.*squeeze(mean( (exp.(0.5.*zc)-1.0)./zc, 4), 4)
+
+  alph = dt.*squeeze(mean(
+    ( (-4.0) .- zc .+ exp.(zc).*(4.0.-3.0.*zc.+zc.^2.0))./zc.^3.0,      4), 4)
+  beta = dt.*squeeze(mean(
+    (   2.0  .+ zc .+ exp.(zc).*((-2.0).+zc))./zc.^3.0,                 4), 4)
+  gamm = dt.*squeeze(mean(
+    ( (-4.0) .- 3.0.*zc .- zc.^2.0 .+ exp.(zc).*(  4.0 .-zc))./zc.^3.0, 4), 4)
+
+  return zeta, alph, beta, gamm
+end
+
+
 
 
 
@@ -188,8 +249,8 @@ type ETDRK4TimeStepper{dim} <: AbstractTimeStepper
 end
 
 function ETDRK4TimeStepper(dt::Float64, LC::AbstractArray)
-  expLCdt  = exp.(dt.*LC)
-  expLCdt2 = exp.(0.5.*dt.*LC)
+  @. expLCdt  = exp(dt*LC)
+  @. expLCdt2 = exp(0.5*dt*LC)
 
   zeta, alph, beta, gamm = get_etd_coeffs(dt, LC)
 
@@ -242,8 +303,8 @@ end
 
 function FilteredETDRK4TimeStepper(dt::Float64, LC::AbstractArray,
     g::AbstractGrid; filterorder=4.0, innerfilterK=0.65, outerfilterK=0.95)
-  expLCdt  = exp.(dt.*LC)
-  expLCdt2 = exp.(0.5.*dt.*LC)
+  @. expLCdt  = exp(dt*LC)
+  @. expLCdt2 = exp(0.5*dt*LC)
 
   zeta, alph, beta, gamm = get_etd_coeffs(dt, LC)
 
@@ -295,67 +356,6 @@ end
 
 
 
-function get_etd_coeffs(dt::Float64, LC::Array{Complex{Float64}, 2})
-
-  # Calculate ETDRK4 coefficients by integrating over a small circle
-  # in complex space.
-
-  # Circle parameters
-  ncirc = 32
-  rcirc = 1.0
-
-  # Make circle
-  circ  = Array{Complex{Float64}}(1, 1, ncirc)
-  circ[1, 1, :]  = rcirc * exp.( 2.0*pi*im*(0.5:1.0:(ncirc-0.5))/ncirc )
-
-  # Construct intermediate vars
-  zc = broadcast(+, dt.*LC, circ)
-
-  # Four coefficients: zeta, alph, beta, gamm
-  zeta = dt.*squeeze(mean( (exp.(0.5.*zc)-1.0)./zc, 3), 3)
-
-  alph = dt.*squeeze(mean(
-    ( (-4.0) .- zc .+ exp.(zc).*(4.0.-3.0.*zc.+zc.^2.0))./zc.^3.0,      3), 3)
-  beta = dt.*squeeze(mean(
-    (   2.0  .+ zc .+ exp.(zc).*((-2.0).+zc))./zc.^3.0,                 3), 3)
-  gamm = dt.*squeeze(mean(
-    ( (-4.0) .- 3.0.*zc .- zc.^2.0 .+ exp.(zc).*(  4.0 .-zc))./zc.^3.0, 3), 3)
-
-  return zeta, alph, beta, gamm
-end
-
-
-function get_etd_coeffs(dt::Float64, LC::Array{Complex{Float64}, 3})
-
-  # Calculate ETDRK4 coefficients by integrating over a small circle
-  # in complex space.
-
-  # Circle parameters
-  ncirc = 32
-  rcirc = 1.0
-
-  # Make circle
-  circ  = Array{Complex{Float64}}(1, 1, 1, ncirc)
-  circ[1, 1, 1, :]  = rcirc * exp.( 2.0*pi*im*(0.5:1.0:(ncirc-0.5))/ncirc )
-
-  # Construct intermediate vars
-  zc = broadcast(+, dt.*LC, circ)
-
-  # Four coefficients: zeta, alph, beta, gamm
-  zeta = dt.*squeeze(mean( (exp.(0.5.*zc)-1.0)./zc, 4), 4)
-
-  alph = dt.*squeeze(mean(
-    ( (-4.0) .- zc .+ exp.(zc).*(4.0.-3.0.*zc.+zc.^2.0))./zc.^3.0,      4), 4)
-  beta = dt.*squeeze(mean(
-    (   2.0  .+ zc .+ exp.(zc).*((-2.0).+zc))./zc.^3.0,                 4), 4)
-  gamm = dt.*squeeze(mean(
-    ( (-4.0) .- 3.0.*zc .- zc.^2.0 .+ exp.(zc).*(  4.0 .-zc))./zc.^3.0, 4), 4)
-
-  return zeta, alph, beta, gamm
-end
-
-
-
 
 
 
@@ -364,27 +364,27 @@ function stepforward!(v::AbstractVars, ts::ETDRK4TimeStepper,
 
   # Substep 1
   eq.calcNL!(ts.NL1, v.sol, v.t, v, p, g)
-  ts.sol1 .= ts.expLCdt2.*v.sol .+ ts.zeta.*ts.NL1
+  @. ts.sol1 = ts.expLCdt2*v.sol + ts.zeta*ts.NL1
 
   # Substep 2
   ts.ti = v.t + 0.5*ts.dt
   eq.calcNL!(ts.NL2, ts.sol1, ts.ti, v, p, g)
-  ts.sol2 .= ts.expLCdt2.*v.sol .+ ts.zeta.*ts.NL2
+  @. ts.sol2 = ts.expLCdt2*v.sol + ts.zeta*ts.NL2
 
   # Substep 3
   eq.calcNL!(ts.NL3, ts.sol2, ts.ti, v, p, g)
-  ts.sol2 .= ts.expLCdt2.*ts.sol1 .+ ts.zeta.*(2.0.*ts.NL3 .- ts.NL1)
+  @. ts.sol2 = ts.expLCdt2*ts.sol1 + ts.zeta*(2.0*ts.NL3 - ts.NL1)
 
   # Substep 4
   ts.ti = v.t + ts.dt
   eq.calcNL!(ts.NL4, ts.sol2, ts.ti, v, p, g)
 
   # Update
-  v.sol .= (ts.expLCdt.*v.sol .+      ts.alph .* ts.NL1
-                              .+ 2.0.*ts.beta .* (ts.NL2 .+ ts.NL3)
-                              .+      ts.gamm .* ts.NL4 )
+  @. v.sol = (ts.expLCdt.*v.sol +     ts.alph * ts.NL1
+                                + 2.0*ts.beta * (ts.NL2 + ts.NL3)
+                                +     ts.gamm * ts.NL4 )
 
-  v.t   += ts.dt
+  v.t += ts.dt
   ts.step += 1
 
 end
@@ -398,27 +398,26 @@ function stepforward!(v::AbstractVars, ts::FilteredETDRK4TimeStepper,
 
   # Substep 1
   eq.calcNL!(ts.NL1, v.sol, v.t, v, p, g)
-  ts.sol1 .= ts.expLCdt2.*v.sol .+ ts.zeta.*ts.NL1
+  @. ts.sol1 = ts.expLCdt2*v.sol + ts.zeta*ts.NL1
 
   # Substep 2
   ts.ti = v.t + 0.5*ts.dt
   eq.calcNL!(ts.NL2, ts.sol1, ts.ti, v, p, g)
-  ts.sol2 .= ts.expLCdt2.*v.sol .+ ts.zeta.*ts.NL2
+  @. ts.sol2 = ts.expLCdt2*v.sol + ts.zeta*ts.NL2
 
   # Substep 3
   eq.calcNL!(ts.NL3, ts.sol2, ts.ti, v, p, g)
-  ts.sol2 .= ts.expLCdt2.*ts.sol1 .+ ts.zeta.*(2.0.*ts.NL3 .- ts.NL1)
+  @. ts.sol2 = ts.expLCdt2*ts.sol1 + ts.zeta*(2.0*ts.NL3 - ts.NL1)
 
   # Substep 4
   ts.ti = v.t + ts.dt
   eq.calcNL!(ts.NL4, ts.sol2, ts.ti, v, p, g)
 
   # Update
-  v.sol .= (ts.expLCdt.*v.sol .+      ts.alph .* ts.NL1
-                              .+ 2.0.*ts.beta .* (ts.NL2 .+ ts.NL3)
-                              .+      ts.gamm .* ts.NL4 )
-  @. v.sol *= ts.filter
-  v.t   += ts.dt
+  @. v.sol = ts.filter*(ts.expLCdt*v.sol +     ts.alph * ts.NL1
+                                         + 2.0*ts.beta * (ts.NL2 + ts.NL3)
+                                         +     ts.gamm * ts.NL4 )
+  v.t += ts.dt
   ts.step += 1
 
 end
@@ -433,34 +432,34 @@ function stepforward!(v::AbstractVars, ts::DualETDRK4TimeStepper,
   # ---------------------------------------------------------------------------
   # Substep 1
   eq.calcNL!(ts.c.NL1, ts.r.NL1, v.solc, v.solr, v.t, v, p, g)
-  ts.c.sol1 .= ts.c.expLCdt2.*v.solc .+ ts.c.zeta.*ts.c.NL1
-  ts.r.sol1 .= ts.r.expLCdt2.*v.solr .+ ts.r.zeta.*ts.r.NL1
+  @. ts.c.sol1 = ts.c.expLCdt2*v.solc + ts.c.zeta*ts.c.NL1
+  @. ts.r.sol1 = ts.r.expLCdt2*v.solr + ts.r.zeta*ts.r.NL1
 
   # Substep 2
   ts.c.ti = v.t + 0.5*ts.c.dt
   eq.calcNL!(ts.c.NL2, ts.r.NL2, ts.c.sol1, ts.r.sol1, ts.c.ti, v, p, g)
-  ts.c.sol2 .= ts.c.expLCdt2.*v.solc .+ ts.c.zeta.*ts.c.NL2
-  ts.r.sol2 .= ts.r.expLCdt2.*v.solr .+ ts.r.zeta.*ts.r.NL2
+  @. ts.c.sol2 = ts.c.expLCdt2*v.solc + ts.c.zeta*ts.c.NL2
+  @. ts.r.sol2 = ts.r.expLCdt2*v.solr + ts.r.zeta*ts.r.NL2
 
   # Substep 3
   eq.calcNL!(ts.c.NL3, ts.r.NL3, ts.c.sol2, ts.r.sol2, ts.c.ti, v, p, g)
-  ts.c.sol2 .= (ts.c.expLCdt2.*ts.c.sol1
-    .+ ts.c.zeta.*(2.0.*ts.c.NL3 .- ts.c.NL1))
-  ts.r.sol2 .= (ts.r.expLCdt2.*ts.r.sol1
-    .+ ts.r.zeta.*(2.0.*ts.r.NL3 .- ts.r.NL1))
+  @. ts.c.sol2 = (ts.c.expLCdt2*ts.c.sol1
+    + ts.c.zeta*(2.0*ts.c.NL3 - ts.c.NL1))
+  @. ts.r.sol2 = (ts.r.expLCdt2*ts.r.sol1
+    + ts.r.zeta*(2.0*ts.r.NL3 - ts.r.NL1))
 
   # Substep 4
   ts.c.ti = v.t + ts.c.dt
   eq.calcNL!(ts.c.NL4, ts.r.NL4, ts.c.sol2, ts.r.sol2, ts.c.ti, v, p, g)
 
   # Update
-  v.solc .= (ts.c.expLCdt.*v.solc .+      ts.c.alph .* ts.c.NL1
-                                  .+ 2.0.*ts.c.beta .* (ts.c.NL2 .+ ts.c.NL3)
-                                  .+      ts.c.gamm .* ts.c.NL4 )
+  @. v.solc = (ts.c.expLCdt.*v.solc +     ts.c.alph * ts.c.NL1
+                                    + 2.0*ts.c.beta * (ts.c.NL2 + ts.c.NL3)
+                                    +     ts.c.gamm * ts.c.NL4 )
 
-  v.solr .= (ts.r.expLCdt.*v.solr .+      ts.r.alph .* ts.r.NL1
-                                  .+ 2.0.*ts.r.beta .* (ts.r.NL2 .+ ts.r.NL3)
-                                  .+      ts.r.gamm .* ts.r.NL4 )
+  @. v.solr = (ts.r.expLCdt.*v.solr +     ts.r.alph * ts.r.NL1
+                                    + 2.0*ts.r.beta * (ts.r.NL2 + ts.r.NL3)
+                                    +     ts.r.gamm * ts.r.NL4 )
 
   v.t += ts.dt
   ts.step += 1
@@ -537,25 +536,25 @@ function stepforward!(v::AbstractVars, ts::RK4TimeStepper,
 
   # Substep 1
   ts.ti = v.t + 0.5*ts.dt
-  ts.sol1 .= v.sol .+ (0.5*ts.dt).*ts.RHS1
+  @. ts.sol1 = v.sol + (0.5*ts.dt)*ts.RHS1
   eq.calcNL!(ts.RHS2, ts.sol1, v.t, v, p, g)
-  ts.RHS2 .+= eq.LC.*ts.sol1
+  @. ts.RHS2 += eq.LC*ts.sol1
 
   # Substep 2
-  ts.sol1 .= v.sol .+ (0.5*ts.dt).*ts.RHS2
+  @. ts.sol1 = v.sol + (0.5*ts.dt)*ts.RHS2
   eq.calcNL!(ts.RHS3, ts.sol1, v.t, v, p, g)
-  ts.RHS3 .+= eq.LC.*ts.sol1
+  @. ts.RHS3 += eq.LC*ts.sol1
 
   # Substep 3
   ts.ti = v.t + ts.dt
-  ts.sol1 .= v.sol .+ ts.dt.*ts.RHS3
+  @. ts.sol1 = v.sol + ts.dt*ts.RHS3
   eq.calcNL!(ts.RHS4, ts.sol1, v.t, v, p, g)
-  ts.RHS4 .+= eq.LC.*ts.sol1
+  @. ts.RHS4 += eq.LC*ts.sol1
 
   # Substep 4 and final step
-  v.sol .+= ts.dt.*(
-       (1.0/6.0).*ts.RHS1 .+ (1.0/3.0).*ts.RHS2
-    .+ (1.0/3.0).*ts.RHS3 .+ (1.0/6.0).*ts.RHS4 )
+  @. v.sol += ts.dt*(
+       (1.0/6.0)*ts.RHS1 + (1.0/3.0)*ts.RHS2
+     + (1.0/3.0)*ts.RHS3 + (1.0/6.0)*ts.RHS4 )
 
   v.t += ts.dt
   ts.step += 1
@@ -603,10 +602,10 @@ function stepforward!(v::AbstractVars, ts::AB3TimeStepper,
   eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
 
   eq.calcNL!(ts.RHS, v.sol, v.t, v, p, g)
-  ts.RHS  .+= eq.LC.*v.sol
+  @. ts.RHS += eq.LC.*v.sol
 
-  v.sol .+= ts.dt .* (
-    (23.0/12.0).*ts.RHS .- (16.0/12.0).*ts.RHSm1 .+ (5.0/12.0).*ts.RHSm2 )
+  @. v.sol += ts.dt * (
+    (23.0/12.0)*ts.RHS - (16.0/12.0)*ts.RHSm1 + (5.0/12.0)*ts.RHSm2 )
 
   v.t += ts.dt
   ts.step += 1
@@ -630,13 +629,13 @@ function stepforward!(v::AbstractVars, nsteps::Int,
   while initsteps < 2
     # Take forward Euler steps to initialize AB3
     eq.calcNL!(ts.RHS, v.sol, v.t, v, p, g)
-    ts.RHS .+= eq.LC.*v.sol
+    @. ts.RHS += eq.LC.*v.sol
 
     # Update
     ts.RHSm2 .= ts.RHSm1
     ts.RHSm1 .= ts.RHS
 
-    v.sol     .+= ts.dt.*ts.RHS
+    @. v.sol   += ts.dt*ts.RHS
     v.t        += ts.dt
     ts.step    += 1
     initsteps  += 1
