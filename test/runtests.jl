@@ -1,11 +1,10 @@
 #!/usr/bin/env julia
 
-#Start Test Script
+# Start Test Script
 using FourierFlows
 using Base.Test
 
 # Run tests
-
 tic()
 println("Starting Tests")
 println(" ")

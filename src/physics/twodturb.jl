@@ -54,7 +54,7 @@ function InitialValueProblem(nx, Lx, ny, Ly, ν, nν, dt, withfilter)
 end
 
 # Params
-type Params <: AbstractParams
+struct Params <: AbstractParams
   ν::Float64                     # Vorticity viscosity
   nν::Int                        # Vorticity hyperviscous order
 end
@@ -67,8 +67,7 @@ end
 
 
 # Vars
-type Vars <: AbstractVars
-
+mutable struct Vars <: AbstractVars
   t::Float64
   sol::Array{Complex128, 2}
 
@@ -87,32 +86,12 @@ type Vars <: AbstractVars
   Uqh::Array{Complex128,2}
   Vqh::Array{Complex128,2}
   psih::Array{Complex128,2}
-
 end
 
 function Vars(g::TwoDGrid)
-  # Initialize with t=0
-  t = 0.0
-  sol  = zeros(Complex128, g.nkr, g.nl)
-
-  # Vorticity auxiliary vars
-  q    = zeros(Float64, g.nx, g.ny)
-  U    = zeros(Float64, g.nx, g.ny)
-  V    = zeros(Float64, g.nx, g.ny)
-  Uq   = zeros(Float64, g.nx, g.ny)
-  Vq   = zeros(Float64, g.nx, g.ny)
-  psi  = zeros(Float64, g.nx, g.ny)
-
-  qh   = zeros(Complex128, g.nkr, g.nl)
-  Uh   = zeros(Complex128, g.nkr, g.nl)
-  Vh   = zeros(Complex128, g.nkr, g.nl)
-  Uqh  = zeros(Complex128, g.nkr, g.nl)
-  Vqh  = zeros(Complex128, g.nkr, g.nl)
-  psih = zeros(Complex128, g.nkr, g.nl)
-
-  sol = exp.( 2π*im*rand(g.nkr, g.nl) ) # Random initial condition
-
-  Vars(t, sol, q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih)
+  @createarrays Float64 (g.nx, g.ny) q U V Uq Vq psi
+  @createarrays Complex{Float64} (g.nkr, g.nl) sol qh Uh Vh Uqh Vqh psih
+  Vars(0.0, sol, q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih)
 end
 
 
