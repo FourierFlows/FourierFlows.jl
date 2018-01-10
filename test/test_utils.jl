@@ -36,10 +36,19 @@ function testparsevalsum2(func, grid; realvalued=true)
     isapprox(integral, parsevalsum2; atol=1.0e-14)
 end
 
-function testjacobian(a, b, analytic_answer, grid)
 
-    # compute the J(a,b) and compare witt analytic_answer
-    isapprox(norm(FourierFlows.jacobian(a, b, grid)), norm(analytic_answer); atol=g.nx*g.ny*1e-14)
+"""
+Compute the J(a,b) and compare with analytic_answer.
+"""
+function testjacobian(a, b, analytic_answer, grid)
+    isapprox(norm(FourierFlows.jacobian(a, b, grid)), norm(analytic_answer); 
+             atol=g.nx*g.ny*1e-14)
+end
+
+function testcreatearrays(T=Float64, dims=(13, 45))
+  a1, b1 = zeros(T, dims), zeros(T, dims)
+  FourierFlows.@createarrays T dims a2 b2
+  a1 == a2 && b1 == b2
 end
 
 
@@ -80,3 +89,5 @@ Js1s2 = (k1*l2-k2*l1)*cos.(k1*x + l1*y).*cos.(k2*x + l2*y)
 
 @test testjacobian(s1, s1, 0*s1, g) # test that J(a,a)=0
 @test testjacobian(s1, s2, Js1s2, g) # test J(s1,s2)=Js1s2
+
+@test testcreatearrays() # Test that @createarrays works properly.
