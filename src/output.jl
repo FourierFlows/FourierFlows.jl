@@ -12,7 +12,7 @@ gridfieldstosave = [:nx, :ny, :Lx, :Ly, :X, :Y]
 
 
 """ Output type for FourierFlows problems. """
-type Output
+mutable struct Output
   prob::Problem
   filename::String
   fields::Dict{Symbol, Function}
@@ -87,107 +87,4 @@ end
 """ Save attributes of the Problem associated with the given Output. """
 function saveproblem(out::Output)
   saveproblem(out.prob, out.filename)
-end
-
-
-
-
-
-""" Original output type for FourierFlows problems. """
-type OldOutput
-  name::String
-  calc::Function
-  prob::Problem
-  filename::String
-end
-
-function Output(name::String, calc::Function, prob::Problem, filename::String)
-  OldOutput(name, calc, prob, filename)
-end
-
-""" Save output to file. """
-function saveoutput(out::OldOutput)
-  step = out.prob.step
-  groupname = "timeseries"
-  name = out.name
-
-  jldopen(out.filename, "a+") do file
-    file["$groupname/$name/$step"] = out.calc(out.prob)
-    file["$groupname/t/$step"]     = out.prob.t
-  end
-
-  nothing
-end
-
-
-""" Save an array of outputs to file. """
-function saveoutput(outs::AbstractArray)
-
-  step = outs[1].prob.step
-  groupname = "timeseries"
-
-  jldopen(outs[1].filename, "a+") do file
-    file["$groupname/t/$step"] = outs[1].prob.t # save timestamp
-    for out in outs # save output data
-      name = out.name
-      file["$groupname/$name/$step"] = out.calc(out.prob)
-    end
-  end
-
-  nothing
-end
-
-
-""" Find the number of elements in a JLD2 group. """
-function groupsize(group::JLD2.Group)
-  try
-    value = length(group.unwritten_links) + length(group.written_links)
-  catch
-    value = length(group.unwritten_links)
-  end
-  return value
-end
-
-
-
-"""
-Save certain aspects of a Problem. Entire problems cannot be saved
-in general, because functions cannot be saved (and functions may use
-arbitrary numbers of global variables that cannot be included in a saved
-object).
-"""
-function saveproblem(prob::AbstractProblem, filename::String)
-
-  jldopen(filename, "a+") do file
-      file["timestepper/dt"] = prob.ts.dt
-      for field in gridfieldstosave
-        file["grid/$field"] = getfield(prob.grid, field)
-      end
-
-      for name in fieldnames(prob.params)
-        field = getfield(prob.params, name)
-        if !(typeof(field) <: Function)
-          file["params/$name"] = field
-        end
-      end
-  end
-
-  nothing
-end
-
-
-
-
-"""
-Save diagnostics to file.
-"""
-function savediagnostic(diag::AbstractDiagnostic, diagname::String,
-  filename::String)
-
-  jldopen(filename, "a+") do file
-    file["diags/$diagname/time"] = diag.time
-    file["diags/$diagname/data"] = diag.data
-  end
-
-  nothing
 end
