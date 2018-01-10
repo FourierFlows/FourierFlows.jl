@@ -1,5 +1,8 @@
 import FourierFlows.TwoDTurb
 
+# -----------------------------------------------------------------------------
+# TWODTURB's TEST FUNCTIONS
+
 function makebasicturbproblem(n, L, ν, nν)
   g  = TwoDTurb.TwoDGrid(n, L)
   p  = TwoDTurb.Params(ν, nν)
@@ -15,7 +18,7 @@ function teststepforward(g, p, v, eq; dt=1e-16, nsteps=10,
   filter = ones(v.sol)
   if stepper == "FilteredForwardEuler" || stepper == "FilteredETDRK4"
       # create a filtered ts (simpler is Euler)
-      ts = FilteredForwardEulerTimeStepper(dt, g, v; 
+      ts = FilteredForwardEulerTimeStepper(dt, g, v;
         filterorder=4.0, innerfilterK=0.65, outerfilterK=1)
       # and use its filter to apply it to the initial condition
       filter = ts.filter
@@ -24,7 +27,7 @@ function teststepforward(g, p, v, eq; dt=1e-16, nsteps=10,
   if stepper == "ForwardEuler"
       ts = ForwardEulerTimeStepper(dt, eq.LC)
   elseif stepper == "FilteredForwardEuler"
-      ts = FilteredForwardEulerTimeStepper(dt, g, v; 
+      ts = FilteredForwardEulerTimeStepper(dt, g, v;
         filterorder=4.0, innerfilterK=0.65, outerfilterK=1)
   elseif stepper == "AB3"
       ts = AB3TimeStepper(dt, eq.LC)
@@ -63,6 +66,11 @@ function teststepforward(n::Int, L, ν, nν::Int; stepper="ForwardEuler")
   g, p, v, eq = makebasicturbproblem(n, L, ν, nν)
   teststepforward(g, p, v, eq; stepper=stepper)
 end
+
+
+
+# -----------------------------------------------------------------------------
+# Running the tests
 
 @test teststepforward(128, 2π, 1e-2, 2; stepper="ForwardEuler")
 @test teststepforward(128, 2π, 1e-2, 2; stepper="FilteredForwardEuler")

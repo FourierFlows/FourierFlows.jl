@@ -19,7 +19,10 @@ end
     include("test_ifft.jl")
 end
 @time @testset "TwoDTurb and Timestepper tests" begin
-    include("test_twodturb.jl")
+    include("test_twodturb_timestep.jl")
+end
+@time @testset "BarotropicQG and Timestepper tests" begin
+    include("test_BarotropicQG_timestep.jl")
 end
 @time @testset "Utils tests" begin
     include("test_utils.jl")
