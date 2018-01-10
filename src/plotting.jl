@@ -8,20 +8,20 @@ abstract type AbstractTwoComponentPlot <: AbstractPlot end
 
 
 
-type PlotComponent
+struct PlotComponent
   getfield
   title
   limz
   colors
 end
 
-type PlotMessage
+struct PlotMessage
   getmessage
   axs
   fontsize
 end
 
-type ProblemPlot
+struct ProblemPlot
   prob
   fig
   axs
@@ -47,7 +47,7 @@ end
 
 # One component plots ---------------------------------------------------------
 """ A type for a one-component plot. """
-type OneComponentPlot <: AbstractPlot
+mutable struct OneComponentPlot <: AbstractPlot
   fig::PyPlot.Figure
   axs::PyCall.PyObject
   figsize::Tuple{Int64, Int64}
@@ -167,7 +167,7 @@ end
 
 
 # Two component plots ---------------------------------------------------------
-type TwoComponentProblemPlot <: AbstractTwoComponentPlot
+mutable struct TwoComponentProblemPlot <: AbstractTwoComponentPlot
   fig::PyPlot.Figure
   axs::Array{PyCall.PyObject, 1}
   figsize::Tuple{Int64, Int64}
@@ -257,7 +257,7 @@ end
 
 
 """ A type for a two-component plot. """
-type TwoComponentPlot <: AbstractTwoComponentPlot
+mutable struct TwoComponentPlot <: AbstractTwoComponentPlot
 
   fig::PyPlot.Figure
   axs::Array{PyCall.PyObject, 1}
@@ -437,8 +437,7 @@ end
 
 
 # Three component plots -------------------------------------------------------
-
-type ThreeComponentPlot <: AbstractPlot
+mutable struct ThreeComponentPlot <: AbstractPlot
 
   fig::PyPlot.Figure
   axs::Array{PyCall.PyObject, 1}
