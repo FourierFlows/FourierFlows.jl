@@ -79,11 +79,11 @@ end
 # Equation --------------------------------------------------------------------
 type Equation <: AbstractEquation
   LC::Array{Float64, 1}
-  calcNL!::Function
+  calcN!::Function
 end
 
 function Equation()
-  Equation(zeros(5), calcNL!)
+  Equation(zeros(5), calcN!)
 end
 
 
@@ -99,7 +99,7 @@ end
 
 
 # Solver ----------------------------------------------------------------------
-function calcNL!(NL::Array{Float64, 1}, sol::Array{Float64, 1}, t::Float64,
+function calcN!(N::Array{Float64, 1}, sol::Array{Float64, 1}, t::Float64,
   v::Vars, p::AnalyticFlowParams, g::AbstractGrid)
 
   # Key:
@@ -118,21 +118,21 @@ function calcNL!(NL::Array{Float64, 1}, sol::Array{Float64, 1}, t::Float64,
 
   # ∂t ξ = u(ξ, ζ)
   # ∂t ζ = v(ξ, ζ)
-  NL[1] = p.u(sol[1], sol[2], t)
-  NL[2] = p.v(sol[1], sol[2], t)
+  N[1] = p.u(sol[1], sol[2], t)
+  N[2] = p.v(sol[1], sol[2], t)
 
   # ∂t m₁₁ = 2η + 2m₁₁dα + 2m₁₂dβ
-  NL[3] = (
+  N[3] = (
     2.0*p.η(sol[2])
     + 2.0*sol[3]*p.ux(sol[1], sol[2], t)
     + 2.0*sol[4]*p.uy(sol[1], sol[2], t)
   )
 
   # ∂t m₁₂ = m₂₂dβ + m₁₁dγ
-  NL[4] = sol[5]*p.uy(sol[1], sol[2], t) + sol[3]*p.vx(sol[1], sol[2], t)
+  N[4] = sol[5]*p.uy(sol[1], sol[2], t) + sol[3]*p.vx(sol[1], sol[2], t)
 
   # ∂t m₂₂ = 2κ - 2m₂₂dα + 2m₁₂dγ
-  NL[5] = (
+  N[5] = (
     2.0*p.κ(sol[1])
     - 2.0*sol[5]*p.ux(sol[1], sol[2], t)
     + 2.0*sol[4]*p.vx(sol[1], sol[2], t)

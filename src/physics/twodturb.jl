@@ -62,14 +62,16 @@ end
 
 # Equations
 type Equation <: AbstractEquation
-  LC::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's linear part
-  calcNL!::Function               # Function to calculate eqn's nonlinear part
+  LC::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's implicit
+                                  # linear part
+  calcN!::Function                # Function to calculate the eqn's explicit
+                                  # linear and nonlinear parts
 end
 
 function Equation(p::Params, g::TwoDGrid)
-  # Function calcNL! is defined below.
+  # Function calcN! is defined below.
   LC = -p.ν * g.KKrsq.^(0.5*p.nν)
-  Equation(LC, calcNL!)
+  Equation(LC, calcN!)
 end
 
 
@@ -124,7 +126,7 @@ end
 
 
 # Solvers
-function calcNL!(NL::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
+function calcN!(N::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
   t::Float64, v::Vars, p::Params, g::TwoDGrid)
   v.qh .= sol
   A_mul_B!(v.q, g.irfftplan, v.qh) # destroys qh when using fftw
@@ -141,7 +143,7 @@ function calcNL!(NL::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2}
   A_mul_B!(v.Uqh, g.rfftplan, v.Uq)
   A_mul_B!(v.Vqh, g.rfftplan, v.Vq)
 
-  @. NL = -im*g.kr*v.Uqh - im*g.l*v.Vqh
+  @. N = -im*g.kr*v.Uqh - im*g.l*v.Vqh
   nothing
 end
 
