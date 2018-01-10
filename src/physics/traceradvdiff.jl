@@ -99,8 +99,10 @@ end
 
 # Equations
 type Equation <: AbstractEquation
-  LC::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's linear part
-  calcN!::Function               # Function to calculate eqn's nonlinear part
+  LC::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's implicit
+                                  # linear part
+  calcN!::Function                # Function to calculate the eqn's explicit
+                                  # linear and nonlinear parts
 end
 
 """ Initialize an equation with constant diffusivity problem parameters p

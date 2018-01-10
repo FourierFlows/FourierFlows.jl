@@ -84,11 +84,12 @@ end
 
 
 
-
 # E Q U A T I O N S -----------------------------------------------------------
 type Equation <: AbstractEquation
-  LC::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's linear part
-  calcN!::Function               # Function to calculate eqn's nonlinear part
+  LC::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's implicit 
+                                  # linear part
+  calcN!::Function                # Function to calculate the eqn's explicit  
+                                  # linear and nonlinear parts
 end
 
 function Equation(p::Params, g::TwoDGrid)
@@ -233,8 +234,8 @@ end
 
 function calcN!(N::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
   t::Float64, v::Vars, p::Params, g::TwoDGrid)
-  # Calculate the nonlinear part of two equations: one 2D equation
-  # governing the evolution of a barotropic QG flow, and a single
+  # Calculate the explicit linear and nonlinear of two equations: one 2D 
+  # equation governing the evolution of a barotropic QG flow, and a single
   # 0-dimensional equation for the time evolution of the zonal mean.
 
   # Note: U is stored in sol[1, 1]; the other elements of sol are qh.
@@ -300,7 +301,7 @@ end
 function calc_free_decay_N!(N::Array{Complex{Float64}, 2},
   sol::Array{Complex{Float64}, 2}, t::Float64, v::FreeDecayVars,
   p::FreeDecayParams, g::TwoDGrid)
-  # Calculate the nonlinear part of a 2D equation
+  # Calculate the explicit linear and nonlinear part of a 2D equation
   # governing the unforced, free decay of a barotropic QG flow.
 
   # This copy is necessary because FFTW's irfft destroys its input.
