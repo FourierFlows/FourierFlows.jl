@@ -74,12 +74,12 @@ end
 type Equation <: AbstractEquation
   LCc::Array{Complex{Float64}, 3} # Element-wise coeff of the eqn's linear part
   LCr::Array{Complex{Float64}, 2} # Element-wise coeff of the eqn's linear part
-  calcNL!::Function               # Function to calculate eqn's nonlinear part
+  calcN!::Function               # Function to calculate eqn's nonlinear part
 end
 
 function Equation(p::TwoModeParams, g::TwoDGrid)
   LCc, LCr = getlinearcoefficients(p, g)
-  Equation(LCc, LCr, calcNL!)
+  Equation(LCc, LCr, calcN!)
 end
 
 function getlinearcoefficients(p::TwoModeParams, g::TwoDGrid)
@@ -237,8 +237,8 @@ end
 
 
 # Solvers ---------------------------------------------------------------------
-function calcNL!(
-  NLc::Array{Complex{Float64}, 3},  NLr::Array{Complex{Float64}, 2},
+function calcN!(
+  Nc::Array{Complex{Float64}, 3},  Nr::Array{Complex{Float64}, 2},
   solc::Array{Complex{Float64}, 3}, solr::Array{Complex{Float64}, 2},
   t::Float64, v::Vars, p::TwoModeParams, g::TwoDGrid)
 
@@ -309,23 +309,23 @@ function calcNL!(
   A_mul_B!(v.uVxvVyh, g.fftplan, v.uVxvVy)
 
   # Zeroth-mode nonlinear term
-  @. NLr = - im*g.kr*v.UZuzvwh - im*g.l*v.VZvzuwh
+  @. Nr = - im*g.kr*v.UZuzvwh - im*g.l*v.VZvzuwh
 
   # First-mode nonlinear terms:
   # u
-  @views @. NLc[:, :, 1] = (  p.f*solc[:, :, 2] - im*g.k*solc[:, :, 3]
+  @views @. Nc[:, :, 1] = (  p.f*solc[:, :, 2] - im*g.k*solc[:, :, 3]
     - im*g.k*v.Uuh - im*g.l*v.Vuh - v.uUxvUyh )
 
   # v
-  @views @. NLc[:, :, 2] = ( -p.f*solc[:, :, 1] - im*g.l*solc[:, :, 3]
+  @views @. Nc[:, :, 2] = ( -p.f*solc[:, :, 1] - im*g.l*solc[:, :, 3]
     - im*g.k*v.Uvh - im*g.l*v.Vvh - v.uVxvVyh )
 
   # p
-  @views @. NLc[:, :, 3] = ( im*p.N^2.0/p.m*v.wh
+  @views @. Nc[:, :, 3] = ( im*p.N^2.0/p.m*v.wh
     - im*g.k*v.Uph - im*g.l*v.Vph )
 
-  #dealias!(NLr, g)
-  #dealias!(NLc, g)
+  #dealias!(Nr, g)
+  #dealias!(Nc, g)
 
   nothing
 end

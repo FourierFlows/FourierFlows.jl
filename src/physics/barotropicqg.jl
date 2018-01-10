@@ -88,24 +88,24 @@ end
 # E Q U A T I O N S -----------------------------------------------------------
 type Equation <: AbstractEquation
   LC::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's linear part
-  calcNL!::Function               # Function to calculate eqn's nonlinear part
+  calcN!::Function               # Function to calculate eqn's nonlinear part
 end
 
 function Equation(p::Params, g::TwoDGrid)
   LC = -p.mu - p.nu.*g.KKrsq.^(0.5*p.nun)
-  Equation(LC, calcNL!)
+  Equation(LC, calcN!)
 end
 
 function Equation(p::ConstMeanParams, g::TwoDGrid)
-  # Function calcNL! is defined below.
+  # Function calcN! is defined below.
   LC = -p.mu - p.nu.*g.KKrsq.^(0.5*p.nun)
-  Equation(LC, calc_const_mean_NL!)
+  Equation(LC, calc_const_mean_N!)
 end
 
 function Equation(p::FreeDecayParams, g::TwoDGrid)
-  # Function calcNL! is defined below.
+  # Function calcN! is defined below.
   LC = -p.mu - p.nu.*g.KKrsq.^(0.5*p.nun)
-  Equation(LC, calc_free_decay_NL!)
+  Equation(LC, calc_free_decay_N!)
 end
 
 
@@ -231,7 +231,7 @@ end
 
 # S O L V E R S ---------------------------------------------------------------
 
-function calcNL!(NL::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
+function calcN!(N::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
   t::Float64, v::Vars, p::Params, g::TwoDGrid)
   # Calculate the nonlinear part of two equations: one 2D equation
   # governing the evolution of a barotropic QG flow, and a single
@@ -258,16 +258,16 @@ function calcNL!(NL::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2}
   A_mul_B!(v.vqh,  g.rfftplan, v.vq)
 
   # Nonlinear term for q
-  NL .= (-im) .* g.Kr.*v.uUqh .- im .* g.Lr.*v.vqh - p.beta.*v.vh
+  N .= (-im) .* g.Kr.*v.uUqh .- im .* g.Lr.*v.vqh - p.beta.*v.vh
 
   # 'Nonlinear' term for U with topo correlation.
   # Note: < v*eta > = sum( conj(vh)*eta* ) / (nx^2*ny^2)
-  NL[1, 1] = p.FU(t) - sum(conj(v.vh).*p.etah).re / (g.nx^2.0*g.ny^2.0)
+  N[1, 1] = p.FU(t) - sum(conj(v.vh).*p.etah).re / (g.nx^2.0*g.ny^2.0)
 
 end
 
 
-function calc_const_mean_NL!(NL::Array{Complex{Float64}, 2},
+function calc_const_mean_N!(N::Array{Complex{Float64}, 2},
   sol::Array{Complex{Float64}, 2}, t::Float64, v::Vars,
   p::ConstMeanParams, g::TwoDGrid)
   # Calculate the nonlinear part of a 2D equation
@@ -291,13 +291,13 @@ function calc_const_mean_NL!(NL::Array{Complex{Float64}, 2},
   A_mul_B!(v.vqh,  g.rfftplan, v.vq)
 
   # Nonlinear term for q
-  NL .= (-im) .* g.Kr.*v.uUqh .- im .* g.Lr.*v.vqh .- p.beta.*v.vh
+  N .= (-im) .* g.Kr.*v.uUqh .- im .* g.Lr.*v.vqh .- p.beta.*v.vh
 
 end
 
 
 
-function calc_free_decay_NL!(NL::Array{Complex{Float64}, 2},
+function calc_free_decay_N!(N::Array{Complex{Float64}, 2},
   sol::Array{Complex{Float64}, 2}, t::Float64, v::FreeDecayVars,
   p::FreeDecayParams, g::TwoDGrid)
   # Calculate the nonlinear part of a 2D equation
@@ -322,7 +322,7 @@ function calc_free_decay_NL!(NL::Array{Complex{Float64}, 2},
   A_mul_B!(v.vqh, g.rfftplan, v.vq)
 
   # Nonlinear term for q
-  NL .= (-im) .* g.Kr.*v.uqh .- im .* g.Lr.*v.vqh .- p.beta.*v.vh
+  N .= (-im) .* g.Kr.*v.uqh .- im .* g.Lr.*v.vqh .- p.beta.*v.vh
 
 end
 

@@ -100,7 +100,7 @@ end
 # Equations
 type Equation <: AbstractEquation
   LC::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's linear part
-  calcNL!::Function               # Function to calculate eqn's nonlinear part
+  calcN!::Function               # Function to calculate eqn's nonlinear part
 end
 
 """ Initialize an equation with constant diffusivity problem parameters p
@@ -108,13 +108,13 @@ and on a grid g. """
 function Equation(p::ConstDiffParams, g::TwoDGrid)
   LC = zeros(g.Kr)
   @. LC = -p.η*g.kr^2 - p.κ*g.l^2
-  Equation(LC, calcNL!)
+  Equation(LC, calcN!)
 end
 
 function Equation(p::ConstDiffSteadyFlowParams, g::TwoDGrid)
   LC = zeros(g.Kr)
   @. LC = -p.η*g.kr^2 - p.κ*g.l^2 - p.κh*g.KKrsq^p.nκh
-  Equation(LC, calcNL_steadyflow!)
+  Equation(LC, calcN_steadyflow!)
 end
 
 
@@ -153,7 +153,7 @@ end
 Calculate the advective terms for a tracer equation with constant
 diffusivity.
 """
-function calcNL!(NL::Array{Complex{Float64},2},
+function calcN!(N::Array{Complex{Float64},2},
   sol::Array{Complex{Float64},2},
   t::Float64, v::Vars, p::ConstDiffParams, g::TwoDGrid)
 
@@ -169,7 +169,7 @@ function calcNL!(NL::Array{Complex{Float64},2},
   A_mul_B!(v.cuh, g.rfftplan, v.cu)
   A_mul_B!(v.cvh, g.rfftplan, v.cv)
 
-  @. NL = -im*g.kr*v.cuh - im*g.l*v.cvh
+  @. N = -im*g.kr*v.cuh - im*g.l*v.cvh
 
   nothing
 end
@@ -179,7 +179,7 @@ end
 Calculate the advective terms for a tracer equation with constant
 diffusivity and time-constant flow.
 """
-function calcNL_steadyflow!(NL::Array{Complex{Float64},2},
+function calcN_steadyflow!(N::Array{Complex{Float64},2},
   sol::Array{Complex{Float64},2},
   t::Float64, v::Vars, p::ConstDiffSteadyFlowParams, g::TwoDGrid)
 
@@ -192,7 +192,7 @@ function calcNL_steadyflow!(NL::Array{Complex{Float64},2},
   A_mul_B!(v.cuh, g.rfftplan, v.cu)
   A_mul_B!(v.cvh, g.rfftplan, v.cv)
 
-  @. NL = -im*g.kr*v.cuh - im*g.l*v.cvh
+  @. N = -im*g.kr*v.cuh - im*g.l*v.cvh
   nothing
 end
 
