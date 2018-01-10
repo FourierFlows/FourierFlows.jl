@@ -90,8 +90,8 @@ function stepforward!(v::AbstractVars, ts::ForwardEulerTimeStepper,
 
   eq.calcNL!(ts.NL, v.sol, v.t, v, p, g)
 
-  v.sol .+= ts.dt .* (ts.NL .+ eq.LC.*v.sol)
-  v.t    += ts.dt
+  @. v.sol += ts.dt*(ts.NL + eq.LC*v.sol)
+  v.t += ts.dt
 
   ts.step += 1
 end
@@ -110,8 +110,8 @@ end
 type FilteredForwardEulerTimeStepper{dim} <: AbstractTimeStepper
   step::Int
   dt::Float64
-  NL::Array{Complex{Float64}, dim}        # Nonlinear term
-  filter::Array{Float64, dim}    # Filter for solution
+  NL::Array{Complex{Float64},dim}   # Nonlinear term
+  filter::Array{Float64,dim}        # Filter for solution
 end
 
 function FilteredForwardEulerTimeStepper(dt::Float64, g::AbstractGrid,
