@@ -56,7 +56,6 @@ include("diagnostics.jl")
 include("output.jl")
 include("timesteppers.jl")
 include("utils.jl")
-# include("plotting.jl")
 
 
 # Include physics modules
