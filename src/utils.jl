@@ -5,9 +5,9 @@ import SpecialFunctions
     @createarrays T dims a b c 
 
 Create arrays of all zeros with element type T, size dims, and global names
-a, b, c...
+a, b, c (for example). An arbitrary number of arrays may be created.
 """
-macro createarrays(T::DataType, dims::Tuple, vars...)
+macro createarrays(T, dims, vars...)
   expr = Expr(:block)
   append!(expr.args, 
     [:( $(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
