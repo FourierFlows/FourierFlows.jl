@@ -95,28 +95,18 @@ end
 
 
 
-
-
-# Equations
-type Equation <: AbstractEquation
-  LC::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's implicit
-                                  # linear part
-  calcN!::Function                # Function to calculate the eqn's explicit
-                                  # linear and nonlinear parts
-end
-
 """ Initialize an equation with constant diffusivity problem parameters p
 and on a grid g. """
 function Equation(p::ConstDiffParams, g::TwoDGrid)
   LC = zeros(g.Kr)
   @. LC = -p.η*g.kr^2 - p.κ*g.l^2
-  Equation(LC, calcN!)
+  FourierFlows.Equation{2}(LC, calcN!)
 end
 
 function Equation(p::ConstDiffSteadyFlowParams, g::TwoDGrid)
   LC = zeros(g.Kr)
   @. LC = -p.η*g.kr^2 - p.κ*g.l^2 - p.κh*g.KKrsq^p.nκh
-  Equation(LC, calcN_steadyflow!)
+  FourierFlows.Equation{2}(LC, calcN_steadyflow!)
 end
 
 

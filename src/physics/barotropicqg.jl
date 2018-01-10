@@ -85,28 +85,21 @@ end
 
 
 # E Q U A T I O N S -----------------------------------------------------------
-type Equation <: AbstractEquation
-  LC::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's implicit 
-                                  # linear part
-  calcN!::Function                # Function to calculate the eqn's explicit  
-                                  # linear and nonlinear parts
-end
-
 function Equation(p::Params, g::TwoDGrid)
   LC = -p.mu - p.nu.*g.KKrsq.^(0.5*p.nun)
-  Equation(LC, calcN!)
+  FourierFlows.Equation{2}(LC, calcN!)
 end
 
 function Equation(p::ConstMeanParams, g::TwoDGrid)
   # Function calcN! is defined below.
   LC = -p.mu - p.nu.*g.KKrsq.^(0.5*p.nun)
-  Equation(LC, calc_const_mean_N!)
+  FourierFlows.Equation{2}(LC, calc_const_mean_N!)
 end
 
 function Equation(p::FreeDecayParams, g::TwoDGrid)
   # Function calcN! is defined below.
   LC = -p.mu - p.nu.*g.KKrsq.^(0.5*p.nun)
-  Equation(LC, calc_free_decay_N!)
+  FourierFlows.Equation{2}(LC, calc_free_decay_N!)
 end
 
 

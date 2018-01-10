@@ -23,6 +23,24 @@ abstract type AbstractTimeStepper end
 abstract type AbstractProblem end
 
 
+"""
+This type defines the linear implicit and explicit components of an equation.
+The linear implicit part of an equation is defined by an array of coefficients
+which multiply the solution. The explicit part of an equation is calculated
+by a function that may define linear and nonlinear parts.
+"""
+struct Equation{dims} <: AbstractEquation
+  LC::Array{Complex{Float64},dims} # Coeffs of the eqn's implicit linear part
+  calcN!::Function # Function that calcs linear & nonlinear parts
+end
+
+struct DualEquation{dimsc,dimsr} <: AbstractEquation
+  LCc::Array{Complex{Float64},dimsc}
+  LCr::Array{Complex{Float64},dimsr}
+  calcN!::Function
+end
+
+
 
 
 # Problem type and associated functions
