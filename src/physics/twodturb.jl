@@ -103,7 +103,8 @@ function Vars(g::TwoDGrid)
   sol  = zeros(Complex128, g.nkr, g.nl)
 
   # Vorticity auxiliary vars
-  FourierFlows.@createarrays Float64 (g.nx, g.ny) q U V Uq Vq psi
+  @createarrays Float64 (g.nx, g.ny) q U V Uq Vq psi
+  @createarrays Complex{Float64} (g.nkr, g.nl) qh Uh Vh Uqh Vqh psih
   #q    = zeros(Float64, g.nx, g.ny)
   #U    = zeros(Float64, g.nx, g.ny)
   #V    = zeros(Float64, g.nx, g.ny)
@@ -111,12 +112,12 @@ function Vars(g::TwoDGrid)
   #Vq   = zeros(Float64, g.nx, g.ny)
   #psi  = zeros(Float64, g.nx, g.ny)
 
-  qh   = zeros(Complex128, g.nkr, g.nl)
-  Uh   = zeros(Complex128, g.nkr, g.nl)
-  Vh   = zeros(Complex128, g.nkr, g.nl)
-  Uqh  = zeros(Complex128, g.nkr, g.nl)
-  Vqh  = zeros(Complex128, g.nkr, g.nl)
-  psih = zeros(Complex128, g.nkr, g.nl)
+  #qh   = zeros(Complex128, g.nkr, g.nl)
+  #Uh   = zeros(Complex128, g.nkr, g.nl)
+  #Vh   = zeros(Complex128, g.nkr, g.nl)
+  #Uqh  = zeros(Complex128, g.nkr, g.nl)
+  #Vqh  = zeros(Complex128, g.nkr, g.nl)
+  #psih = zeros(Complex128, g.nkr, g.nl)
 
   sol = exp.( 2π*im*rand(g.nkr, g.nl) ) # Random initial condition
 
