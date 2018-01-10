@@ -60,14 +60,12 @@ end
 
 
 # Utilities -------------------------------------------------------------------
-function get_etd_coeffs(dt::Float64, LC::Array{Complex{Float64}, 2})
-
-  # Calculate ETDRK4 coefficients by integrating over a small circle
-  # in complex space.
-
-  # Circle parameters
-  ncirc = 32
-  rcirc = 1.0
+"""
+Calculate ETDRK4 coefficients by integrating over a small circle
+in complex space.
+"""
+function get_etd_coeffs(dt::Float64, LC::Array{Complex{Float64}, 2};
+  ncirc=32, rcirc=1.0)
 
   # Make circle
   circ  = Array{Complex{Float64}}(1, 1, ncirc)
@@ -90,14 +88,12 @@ function get_etd_coeffs(dt::Float64, LC::Array{Complex{Float64}, 2})
 end
 
 
-function get_etd_coeffs(dt::Float64, LC::Array{Complex{Float64}, 3})
-
-  # Calculate ETDRK4 coefficients by integrating over a small circle
-  # in complex space.
-
-  # Circle parameters
-  ncirc = 32
-  rcirc = 1.0
+"""
+Calculate ETDRK4 coefficients by integrating over a small circle
+in complex space.
+"""
+function get_etd_coeffs(dt::Float64, LC::Array{Complex{Float64}, 3};
+  ncirc=32, rcirc=1.0)
 
   # Make circle
   circ  = Array{Complex{Float64}}(1, 1, 1, ncirc)
