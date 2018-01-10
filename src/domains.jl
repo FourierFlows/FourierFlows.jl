@@ -4,7 +4,7 @@ export TwoDGrid, dealias!
 """
 Doc.
 """
-type ZeroDGrid <: AbstractGrid
+struct ZeroDGrid <: AbstractGrid
   nvars::Int
 end
 
@@ -12,7 +12,7 @@ end
 """
 Doc.
 """
-type TwoDGrid <: AbstractGrid
+struct TwoDGrid <: AbstractGrid
   nx::Int
   ny::Int
   nk::Int

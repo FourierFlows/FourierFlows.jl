@@ -26,7 +26,7 @@ abstract type AbstractProblem end
 
 
 # Problem type and associated functions
-type Problem <: AbstractProblem
+mutable struct Problem <: AbstractProblem
   grid::AbstractGrid
   vars::AbstractVars
   params::AbstractParams

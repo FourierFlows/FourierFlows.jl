@@ -120,7 +120,7 @@ end
 # The simplest time-stepping method in the books. Explicit and 1st-order
 # accurate.
 
-type ForwardEulerTimeStepper{dim} <: AbstractTimeStepper
+mutable struct ForwardEulerTimeStepper{dim} <: AbstractTimeStepper
   step::Int
   dt::Float64
   NL::Array{Complex{Float64}, dim}    # Nonlinear term
@@ -161,7 +161,7 @@ end
 # The simplest time-stepping method in the books. Explicit and 1st-order
 # accurate.
 
-type FilteredForwardEulerTimeStepper{dim} <: AbstractTimeStepper
+mutable struct FilteredForwardEulerTimeStepper{dim} <: AbstractTimeStepper
   step::Int
   dt::Float64
   NL::Array{Complex{Float64},dim}   # Nonlinear term
@@ -217,7 +217,7 @@ end
 # the equation, explicit and 4th-order accurate integration of nonlinear
 # parts of equation.
 
-type ETDRK4TimeStepper{dim} <: AbstractTimeStepper
+mutable struct ETDRK4TimeStepper{dim} <: AbstractTimeStepper
   step::Int
   dt::Float64
 
@@ -268,7 +268,7 @@ end
 # the equation, explicit and 4th-order accurate integration of nonlinear
 # parts of equation.
 
-type FilteredETDRK4TimeStepper{dim} <: AbstractTimeStepper
+mutable struct FilteredETDRK4TimeStepper{dim} <: AbstractTimeStepper
   step::Int
   dt::Float64
 
@@ -334,7 +334,7 @@ end
 
 
 
-type DualETDRK4TimeStepper{dimc, dimr} <: AbstractTimeStepper
+mutable struct DualETDRK4TimeStepper{dimc, dimr} <: AbstractTimeStepper
   step::Int
   dt::Float64
   c::ETDRK4TimeStepper{dimc}
@@ -483,7 +483,7 @@ end
 # It is described, among other places, in Bewley's Numerical
 # Renaissance.
 
-type RK4TimeStepper{T,dim} <: AbstractTimeStepper
+mutable struct RK4TimeStepper{T,dim} <: AbstractTimeStepper
   step::Int
   dt::Float64
 
@@ -564,7 +564,7 @@ end
 # 3rd order Adams-Bashforth time stepping is an explicit scheme that uses
 # solutions from two previous time-steps to achieve 3rd order accuracy.
 
-type AB3TimeStepper <: AbstractTimeStepper
+mutable struct AB3TimeStepper <: AbstractTimeStepper
   step::Int
   dt::Float64
 
