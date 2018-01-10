@@ -123,17 +123,17 @@ end
 mutable struct ForwardEulerTimeStepper{dim} <: AbstractTimeStepper
   step::Int
   dt::Float64
-  NL::Array{Complex{Float64}, dim}    # Nonlinear term
+  N::Array{Complex{Float64},dim}    # Nonlinear term
 end
 
 function ForwardEulerTimeStepper(dt::Float64, v::AbstractVars)
-  NL = zeros(v.sol)
-  ForwardEulerTimeStepper{ndims(NL)}(0, dt, NL)
+  N = zeros(v.sol)
+  ForwardEulerTimeStepper{ndims(N)}(0, dt, N)
 end
 
 function ForwardEulerTimeStepper(dt::Float64, LC::AbstractArray)
-  NL = zeros(LC)
-  ForwardEulerTimeStepper{ndims(LC)}(0, dt, NL)
+  N = zeros(LC)
+  ForwardEulerTimeStepper{ndims(LC)}(0, dt, N)
 end
 
 
@@ -142,9 +142,9 @@ end
 function stepforward!(v::AbstractVars, ts::ForwardEulerTimeStepper,
   eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
 
-  eq.calcNL!(ts.NL, v.sol, v.t, v, p, g)
+  eq.calcN!(ts.N, v.sol, v.t, v, p, g)
 
-  @. v.sol += ts.dt*(ts.NL + eq.LC*v.sol)
+  @. v.sol += ts.dt*(ts.N + eq.LC*v.sol)
   v.t += ts.dt
 
   ts.step += 1
@@ -164,13 +164,13 @@ end
 mutable struct FilteredForwardEulerTimeStepper{dim} <: AbstractTimeStepper
   step::Int
   dt::Float64
-  NL::Array{Complex{Float64},dim}   # Nonlinear term
+  N::Array{Complex{Float64},dim}   # Nonlinear term
   filter::Array{Float64,dim}        # Filter for solution
 end
 
 function FilteredForwardEulerTimeStepper(dt::Float64, g::AbstractGrid,
   sol::AbstractArray; filterorder=4.0, innerfilterK=0.65, outerfilterK=0.95)
-  NL = zeros(sol)
+  N = zeros(sol)
 
   if size(sol)[1] == g.nkr
     realvars = true
@@ -184,7 +184,7 @@ function FilteredForwardEulerTimeStepper(dt::Float64, g::AbstractGrid,
   # Broadcast to correct size
   filter = ones(real.(sol)) .* filter
 
-  FilteredForwardEulerTimeStepper{ndims(NL)}(0, dt, NL, filter)
+  FilteredForwardEulerTimeStepper{ndims(N)}(0, dt, N, filter)
 end
 
 function FilteredForwardEulerTimeStepper(dt::Float64, g::AbstractGrid,
@@ -198,9 +198,9 @@ end
 function stepforward!(v::AbstractVars, ts::FilteredForwardEulerTimeStepper,
   eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
 
-  eq.calcNL!(ts.NL, v.sol, v.t, v, p, g)
+  eq.calcN!(ts.N, v.sol, v.t, v, p, g)
 
-  @. v.sol = ts.filter * ( v.sol + ts.dt*(ts.NL + eq.LC.*v.sol) )
+  @. v.sol = ts.filter * ( v.sol + ts.dt*(ts.N + eq.LC.*v.sol) )
   v.t += ts.dt
   ts.step += 1
 end
@@ -233,12 +233,12 @@ mutable struct ETDRK4TimeStepper{dim} <: AbstractTimeStepper
 
   # Intermediate times, solutions, and nonlinear evaluations
   ti::Float64
-  sol1::Array{Complex{Float64}, dim}
+  sol₁::Array{Complex{Float64}, dim}
   sol2::Array{Complex{Float64}, dim}
-  NL1::Array{Complex{Float64}, dim}
-  NL2::Array{Complex{Float64}, dim}
-  NL3::Array{Complex{Float64}, dim}
-  NL4::Array{Complex{Float64}, dim}
+  N₁::Array{Complex{Float64}, dim}
+  N₂::Array{Complex{Float64}, dim}
+  N₃::Array{Complex{Float64}, dim}
+  N₄::Array{Complex{Float64}, dim}
 end
 
 function ETDRK4TimeStepper(dt::Float64, LC::AbstractArray)
@@ -249,15 +249,15 @@ function ETDRK4TimeStepper(dt::Float64, LC::AbstractArray)
 
   ti = 0.0
 
-  sol1 = zeros(LC)
+  sol₁ = zeros(LC)
   sol2 = zeros(LC)
-  NL1  = zeros(LC)
-  NL2  = zeros(LC)
-  NL3  = zeros(LC)
-  NL4  = zeros(LC)
+    N₁ = zeros(LC)
+    N₂ = zeros(LC)
+    N₃ = zeros(LC)
+    N₄ = zeros(LC)
 
   ETDRK4TimeStepper{ndims(LC)}(0, dt, LC, ζ, α, β, Γ, expLCdt,
-    expLCdt2, ti, sol1, sol2, NL1, NL2, NL3, NL4)
+    expLCdt2, ti, sol₁, sol2, N₁, N₂, N₃, N₄)
 end
 
 
@@ -284,12 +284,12 @@ mutable struct FilteredETDRK4TimeStepper{dim} <: AbstractTimeStepper
 
   # Intermediate times, solutions, and nonlinear evaluations
   ti::Float64
-  sol1::Array{Complex{Float64}, dim}
+  sol₁::Array{Complex{Float64}, dim}
   sol2::Array{Complex{Float64}, dim}
-  NL1::Array{Complex{Float64}, dim}
-  NL2::Array{Complex{Float64}, dim}
-  NL3::Array{Complex{Float64}, dim}
-  NL4::Array{Complex{Float64}, dim}
+  N₁::Array{Complex{Float64}, dim}
+  N₂::Array{Complex{Float64}, dim}
+  N₃::Array{Complex{Float64}, dim}
+  N₄::Array{Complex{Float64}, dim}
   filter::Array{Complex{Float64}, dim}    # Filter for solution
 end
 
@@ -303,14 +303,12 @@ function FilteredETDRK4TimeStepper(dt::Float64, LC::AbstractArray,
 
   ti = 0.0
 
-  sol1 = zeros(LC)
+  sol₁ = zeros(LC)
   sol2 = zeros(LC)
-  NL1  = zeros(LC)
-  NL2  = zeros(LC)
-  NL3  = zeros(LC)
-  NL4  = zeros(LC)
-
-  NL = zeros(LC)
+    N₁ = zeros(LC)
+    N₂ = zeros(LC)
+    N₃ = zeros(LC)
+    N₄ = zeros(LC)
 
   if size(LC)[1] == g.nkr
     realvars = true
@@ -325,7 +323,7 @@ function FilteredETDRK4TimeStepper(dt::Float64, LC::AbstractArray,
   filter = ones(real.(LC)) .* filter
 
   FilteredETDRK4TimeStepper{ndims(LC)}(0, dt, LC, ζ, α, β, Γ,
-        expLCdt, expLCdt2, ti, sol1, sol2, NL1, NL2, NL3, NL4, filter)
+        expLCdt, expLCdt2, ti, sol₁, sol2, N₁, N₂, N₃, N₄, filter)
 end
 
 
@@ -356,26 +354,26 @@ function stepforward!(v::AbstractVars, ts::ETDRK4TimeStepper,
   eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
 
   # Substep 1
-  eq.calcNL!(ts.NL1, v.sol, v.t, v, p, g)
-  @. ts.sol1 = ts.expLCdt2*v.sol + ts.ζ*ts.NL1
+  eq.calcN!(ts.N₁, v.sol, v.t, v, p, g)
+  @. ts.sol₁ = ts.expLCdt2*v.sol + ts.ζ*ts.N₁
 
   # Substep 2
   ts.ti = v.t + 0.5*ts.dt
-  eq.calcNL!(ts.NL2, ts.sol1, ts.ti, v, p, g)
-  @. ts.sol2 = ts.expLCdt2*v.sol + ts.ζ*ts.NL2
+  eq.calcN!(ts.N₂, ts.sol₁, ts.ti, v, p, g)
+  @. ts.sol2 = ts.expLCdt2*v.sol + ts.ζ*ts.N₂
 
   # Substep 3
-  eq.calcNL!(ts.NL3, ts.sol2, ts.ti, v, p, g)
-  @. ts.sol2 = ts.expLCdt2*ts.sol1 + ts.ζ*(2.0*ts.NL3 - ts.NL1)
+  eq.calcN!(ts.N₃, ts.sol2, ts.ti, v, p, g)
+  @. ts.sol2 = ts.expLCdt2*ts.sol₁ + ts.ζ*(2.0*ts.N₃ - ts.N₁)
 
   # Substep 4
   ts.ti = v.t + ts.dt
-  eq.calcNL!(ts.NL4, ts.sol2, ts.ti, v, p, g)
+  eq.calcN!(ts.N₄, ts.sol2, ts.ti, v, p, g)
 
   # Update
-  @. v.sol = (ts.expLCdt.*v.sol +     ts.α * ts.NL1
-                                + 2.0*ts.β * (ts.NL2 + ts.NL3)
-                                +     ts.Γ * ts.NL4 )
+  @. v.sol = (ts.expLCdt.*v.sol +     ts.α * ts.N₁
+                                + 2.0*ts.β * (ts.N₂ + ts.N₃)
+                                +     ts.Γ * ts.N₄ )
 
   v.t += ts.dt
   ts.step += 1
@@ -390,26 +388,26 @@ function stepforward!(v::AbstractVars, ts::FilteredETDRK4TimeStepper,
   eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
 
   # Substep 1
-  eq.calcNL!(ts.NL1, v.sol, v.t, v, p, g)
-  @. ts.sol1 = ts.expLCdt2*v.sol + ts.ζ*ts.NL1
+  eq.calcN!(ts.N₁, v.sol, v.t, v, p, g)
+  @. ts.sol₁ = ts.expLCdt2*v.sol + ts.ζ*ts.N₁
 
   # Substep 2
   ts.ti = v.t + 0.5*ts.dt
-  eq.calcNL!(ts.NL2, ts.sol1, ts.ti, v, p, g)
-  @. ts.sol2 = ts.expLCdt2*v.sol + ts.ζ*ts.NL2
+  eq.calcN!(ts.N₂, ts.sol₁, ts.ti, v, p, g)
+  @. ts.sol2 = ts.expLCdt2*v.sol + ts.ζ*ts.N₂
 
   # Substep 3
-  eq.calcNL!(ts.NL3, ts.sol2, ts.ti, v, p, g)
-  @. ts.sol2 = ts.expLCdt2*ts.sol1 + ts.ζ*(2.0*ts.NL3 - ts.NL1)
+  eq.calcN!(ts.N₃, ts.sol2, ts.ti, v, p, g)
+  @. ts.sol2 = ts.expLCdt2*ts.sol₁ + ts.ζ*(2.0*ts.N₃ - ts.N₁)
 
   # Substep 4
   ts.ti = v.t + ts.dt
-  eq.calcNL!(ts.NL4, ts.sol2, ts.ti, v, p, g)
+  eq.calcN!(ts.N₄, ts.sol2, ts.ti, v, p, g)
 
   # Update
-  @. v.sol = ts.filter*(ts.expLCdt*v.sol +     ts.α * ts.NL1
-                                         + 2.0*ts.β * (ts.NL2 + ts.NL3)
-                                         +     ts.Γ * ts.NL4 )
+  @. v.sol = ts.filter*(ts.expLCdt*v.sol +     ts.α * ts.N₁
+                                         + 2.0*ts.β * (ts.N₂ + ts.N₃)
+                                         +     ts.Γ * ts.N₄ )
   v.t += ts.dt
   ts.step += 1
 
@@ -424,35 +422,35 @@ function stepforward!(v::AbstractVars, ts::DualETDRK4TimeStepper,
 
   # ---------------------------------------------------------------------------
   # Substep 1
-  eq.calcNL!(ts.c.NL1, ts.r.NL1, v.solc, v.solr, v.t, v, p, g)
-  @. ts.c.sol1 = ts.c.expLCdt2*v.solc + ts.c.ζ*ts.c.NL1
-  @. ts.r.sol1 = ts.r.expLCdt2*v.solr + ts.r.ζ*ts.r.NL1
+  eq.calcN!(ts.c.N₁, ts.r.N₁, v.solc, v.solr, v.t, v, p, g)
+  @. ts.c.sol₁ = ts.c.expLCdt2*v.solc + ts.c.ζ*ts.c.N₁
+  @. ts.r.sol₁ = ts.r.expLCdt2*v.solr + ts.r.ζ*ts.r.N₁
 
   # Substep 2
   ts.c.ti = v.t + 0.5*ts.c.dt
-  eq.calcNL!(ts.c.NL2, ts.r.NL2, ts.c.sol1, ts.r.sol1, ts.c.ti, v, p, g)
-  @. ts.c.sol2 = ts.c.expLCdt2*v.solc + ts.c.ζ*ts.c.NL2
-  @. ts.r.sol2 = ts.r.expLCdt2*v.solr + ts.r.ζ*ts.r.NL2
+  eq.calcN!(ts.c.N₂, ts.r.N₂, ts.c.sol₁, ts.r.sol₁, ts.c.ti, v, p, g)
+  @. ts.c.sol2 = ts.c.expLCdt2*v.solc + ts.c.ζ*ts.c.N₂
+  @. ts.r.sol2 = ts.r.expLCdt2*v.solr + ts.r.ζ*ts.r.N₂
 
   # Substep 3
-  eq.calcNL!(ts.c.NL3, ts.r.NL3, ts.c.sol2, ts.r.sol2, ts.c.ti, v, p, g)
-  @. ts.c.sol2 = (ts.c.expLCdt2*ts.c.sol1
-    + ts.c.ζ*(2.0*ts.c.NL3 - ts.c.NL1))
-  @. ts.r.sol2 = (ts.r.expLCdt2*ts.r.sol1
-    + ts.r.ζ*(2.0*ts.r.NL3 - ts.r.NL1))
+  eq.calcN!(ts.c.N₃, ts.r.N₃, ts.c.sol2, ts.r.sol2, ts.c.ti, v, p, g)
+  @. ts.c.sol2 = (ts.c.expLCdt2*ts.c.sol₁
+    + ts.c.ζ*(2.0*ts.c.N₃ - ts.c.N₁))
+  @. ts.r.sol2 = (ts.r.expLCdt2*ts.r.sol₁
+    + ts.r.ζ*(2.0*ts.r.N₃ - ts.r.N₁))
 
   # Substep 4
   ts.c.ti = v.t + ts.c.dt
-  eq.calcNL!(ts.c.NL4, ts.r.NL4, ts.c.sol2, ts.r.sol2, ts.c.ti, v, p, g)
+  eq.calcN!(ts.c.N₄, ts.r.N₄, ts.c.sol2, ts.r.sol2, ts.c.ti, v, p, g)
 
   # Update
-  @. v.solc = (ts.c.expLCdt.*v.solc +     ts.c.α * ts.c.NL1
-                                    + 2.0*ts.c.β * (ts.c.NL2 + ts.c.NL3)
-                                    +     ts.c.Γ * ts.c.NL4 )
+  @. v.solc = (ts.c.expLCdt.*v.solc +     ts.c.α * ts.c.N₁
+                                    + 2.0*ts.c.β * (ts.c.N₂ + ts.c.N₃)
+                                    +     ts.c.Γ * ts.c.N₄ )
 
-  @. v.solr = (ts.r.expLCdt.*v.solr +     ts.r.α * ts.r.NL1
-                                    + 2.0*ts.r.β * (ts.r.NL2 + ts.r.NL3)
-                                    +     ts.r.Γ * ts.r.NL4 )
+  @. v.solr = (ts.r.expLCdt.*v.solr +     ts.r.α * ts.r.N₁
+                                    + 2.0*ts.r.β * (ts.r.N₂ + ts.r.N₃)
+                                    +     ts.r.Γ * ts.r.N₄ )
 
   v.t += ts.dt
   ts.step += 1
@@ -489,7 +487,7 @@ mutable struct RK4TimeStepper{T,dim} <: AbstractTimeStepper
 
   # Intermediate times, solutions, and nonlinear evaluations
   ti::Float64
-  sol1::Array{T, dim}
+  sol₁::Array{T, dim}
   RHS1::Array{T, dim}
   RHS2::Array{T, dim}
   RHS3::Array{T, dim}
@@ -498,24 +496,24 @@ end
 
 function RK4TimeStepper(dt::Float64, v::AbstractVars)
   ti = 0.0
-  sol1 = zeros(v.sol)
+  sol₁ = zeros(v.sol)
   RHS1 = zeros(v.sol)
   RHS2 = zeros(v.sol)
   RHS3 = zeros(v.sol)
   RHS4 = zeros(v.sol)
   RK4TimeStepper{eltype(v.sol),ndims(v.sol)}(
-    0, dt, ti, sol1, RHS1, RHS2, RHS3, RHS4)
+    0, dt, ti, sol₁, RHS1, RHS2, RHS3, RHS4)
 end
 
 function RK4TimeStepper(dt::Float64, LC::AbstractArray)
   ti = 0.0
-  sol1 = zeros(LC)
+  sol₁ = zeros(LC)
   RHS1 = zeros(LC)
   RHS2 = zeros(LC)
   RHS3 = zeros(LC)
   RHS4 = zeros(LC)
   RK4TimeStepper{eltype(LC),ndims(LC)}(
-    0, dt, ti, sol1, RHS1, RHS2, RHS3, RHS4)
+    0, dt, ti, sol₁, RHS1, RHS2, RHS3, RHS4)
 end
 
 
@@ -524,25 +522,25 @@ end
 function stepforward!(v::AbstractVars, ts::RK4TimeStepper,
   eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
 
-  eq.calcNL!(ts.RHS1, v.sol, v.t, v, p, g)
+  eq.calcN!(ts.RHS1, v.sol, v.t, v, p, g)
   ts.RHS1 .+= eq.LC.*v.sol
 
   # Substep 1
   ts.ti = v.t + 0.5*ts.dt
-  @. ts.sol1 = v.sol + (0.5*ts.dt)*ts.RHS1
-  eq.calcNL!(ts.RHS2, ts.sol1, v.t, v, p, g)
-  @. ts.RHS2 += eq.LC*ts.sol1
+  @. ts.sol₁ = v.sol + (0.5*ts.dt)*ts.RHS1
+  eq.calcN!(ts.RHS2, ts.sol₁, v.t, v, p, g)
+  @. ts.RHS2 += eq.LC*ts.sol₁
 
   # Substep 2
-  @. ts.sol1 = v.sol + (0.5*ts.dt)*ts.RHS2
-  eq.calcNL!(ts.RHS3, ts.sol1, v.t, v, p, g)
-  @. ts.RHS3 += eq.LC*ts.sol1
+  @. ts.sol₁ = v.sol + (0.5*ts.dt)*ts.RHS2
+  eq.calcN!(ts.RHS3, ts.sol₁, v.t, v, p, g)
+  @. ts.RHS3 += eq.LC*ts.sol₁
 
   # Substep 3
   ts.ti = v.t + ts.dt
-  @. ts.sol1 = v.sol + ts.dt*ts.RHS3
-  eq.calcNL!(ts.RHS4, ts.sol1, v.t, v, p, g)
-  @. ts.RHS4 += eq.LC*ts.sol1
+  @. ts.sol₁ = v.sol + ts.dt*ts.RHS3
+  eq.calcN!(ts.RHS4, ts.sol₁, v.t, v, p, g)
+  @. ts.RHS4 += eq.LC*ts.sol₁
 
   # Substep 4 and final step
   @. v.sol += ts.dt*(
@@ -594,7 +592,7 @@ end
 function stepforward!(v::AbstractVars, ts::AB3TimeStepper,
   eq::AbstractEquation, p::AbstractParams, g::AbstractGrid)
 
-  eq.calcNL!(ts.RHS, v.sol, v.t, v, p, g)
+  eq.calcN!(ts.RHS, v.sol, v.t, v, p, g)
   @. ts.RHS += eq.LC.*v.sol
 
   @. v.sol += ts.dt * (
@@ -621,7 +619,7 @@ function stepforward!(v::AbstractVars, nsteps::Int,
 
   while initsteps < 2
     # Take forward Euler steps to initialize AB3
-    eq.calcNL!(ts.RHS, v.sol, v.t, v, p, g)
+    eq.calcN!(ts.RHS, v.sol, v.t, v, p, g)
     @. ts.RHS += eq.LC.*v.sol
 
     # Update
