@@ -88,3 +88,60 @@ end
 function saveproblem(out::Output)
   saveproblem(out.prob, out.filename)
 end
+
+
+
+
+""" Find the number of elements in a JLD2 group. """
+function groupsize(group::JLD2.Group)
+  try
+    value = length(group.unwritten_links) + length(group.written_links)
+  catch
+    value = length(group.unwritten_links)
+  end
+  return value
+end
+
+
+
+""" 
+Save certain aspects of a Problem. Entire problems cannot be saved
+in general, because functions cannot be saved (and functions may use
+arbitrary numbers of global variables that cannot be included in a saved 
+object). 
+"""
+function saveproblem(prob::AbstractProblem, filename::String)
+
+  jldopen(filename, "a+") do file
+      file["timestepper/dt"] = prob.ts.dt
+      for field in gridfieldstosave
+        file["grid/$field"] = getfield(prob.grid, field)
+      end
+
+      for name in fieldnames(prob.params)
+        field = getfield(prob.params, name)
+        if !(typeof(field) <: Function)
+          file["params/$name"] = field
+        end
+      end
+  end
+
+  nothing
+end
+
+
+
+
+"""
+Save diagnostics to file.
+"""
+function savediagnostic(diag::AbstractDiagnostic, diagname::String,
+  filename::String) 
+
+  jldopen(filename, "a+") do file
+    file["diags/$diagname/time"] = diag.time
+    file["diags/$diagname/data"] = diag.data
+  end
+
+  nothing
+end

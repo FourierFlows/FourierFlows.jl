@@ -71,15 +71,9 @@ end
 
 
 # Equations -------------------------------------------------------------------
-type Equation <: AbstractEquation
-  LCc::Array{Complex{Float64}, 3} # Element-wise coeff of the eqn's linear part
-  LCr::Array{Complex{Float64}, 2} # Element-wise coeff of the eqn's linear part
-  calcN!::Function               # Function to calculate eqn's nonlinear part
-end
-
 function Equation(p::TwoModeParams, g::TwoDGrid)
   LCc, LCr = getlinearcoefficients(p, g)
-  Equation(LCc, LCr, calcN!)
+  FourierFlows.DualEquation{3,2}(LCc, LCr, calcN!)
 end
 
 function getlinearcoefficients(p::TwoModeParams, g::TwoDGrid)

@@ -1,6 +1,6 @@
 module TwoDTurb
 
-using FourierFlows#, PyPlot
+using FourierFlows
 export InitialValueProblem, Params, Vars, Equation, set_q!, updatevars!
 
 # Problem ---------------------------------------------------------------------
@@ -8,15 +8,15 @@ export InitialValueProblem, Params, Vars, Equation, set_q!, updatevars!
 Construct an initial value problem.
 """
 function InitialValueProblem(;
-  nx  = 256,
-  Lx  = 2π,
-  ny  = nothing,
-  Ly  = nothing,
-  ν   = nothing,
-  nu  = nothing,
-  nν  = 2,
+   nx = 256,
+   Lx = 2π,
+   ny = nothing,
+   Ly = nothing,
+    ν = nothing,
+   nu = nothing,
+   nν = 2,
   nnu = nothing,
-  dt  = 0.01,
+   dt = 0.01,
   withfilter = false
   )
 
@@ -59,18 +59,10 @@ struct Params <: AbstractParams
   nν::Int                        # Vorticity hyperviscous order
 end
 
-
 # Equations
-struct Equation <: AbstractEquation
-  LC::Array{Complex{Float64}, 2}  # Element-wise coeff of the eqn's implicit
-                                  # linear part
-  calcN!::Function                # Function to calculate the eqn's explicit
-                                  # linear and nonlinear parts
-end
-
 function Equation(p::Params, g::TwoDGrid)
   LC = -p.ν * g.KKrsq.^(0.5*p.nν)
-  Equation(LC, calcN!)
+  FourierFlows.Equation{2}(LC, calcN!)
 end
 
 

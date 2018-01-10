@@ -77,20 +77,15 @@ end
 
 
 # Equation --------------------------------------------------------------------
-type Equation <: AbstractEquation
-  LC::Array{Float64, 1}
-  calcN!::Function
-end
-
 function Equation()
-  Equation(zeros(5), calcN!)
+  FourierFlows.Equation{1}(zeros(5), calcN!)
 end
 
 
 # Vars ------------------------------------------------------------------------
 type Vars <: AbstractVars
   t::Float64
-  sol::Array{Float64, 1} # x, y, u, v, ux, uy, vx.
+  sol::Array{Float64,1} # x, y, u, v, ux, uy, vx.
 end
 
 function Vars()
