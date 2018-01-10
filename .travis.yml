@@ -1,12 +1,12 @@
 language: julia
 
 os:
-  - osx
+ # - osx
   - linux
 
 julia:
   # - nightly
-  - 0.6.0
+  # - 0.6.0
   - 0.6.2
 
 before_script:
