@@ -249,8 +249,8 @@ type ETDRK4TimeStepper{dim} <: AbstractTimeStepper
 end
 
 function ETDRK4TimeStepper(dt::Float64, LC::AbstractArray)
-  expLCdt  = exp(dt*LC)
-  expLCdt2 = exp(0.5*dt*LC)
+  expLCdt  = exp.(dt*LC)
+  expLCdt2 = exp.(0.5*dt*LC)
 
   ζ, α, β, Γ = get_etd_coeffs(dt, LC)
 
@@ -303,8 +303,8 @@ end
 
 function FilteredETDRK4TimeStepper(dt::Float64, LC::AbstractArray,
     g::AbstractGrid; filterorder=4.0, innerfilterK=0.65, outerfilterK=0.95)
-  expLCdt  = exp(dt*LC)
-  expLCdt2 = exp(0.5*dt*LC)
+  expLCdt  = exp.(dt*LC)
+  expLCdt2 = exp.(0.5*dt*LC)
 
   ζ, α, β, Γ = get_etd_coeffs(dt, LC)
 
