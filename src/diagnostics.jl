@@ -10,7 +10,7 @@ abstract type AbstractDiagnostic end
 
 
 """ A diagnostic type associated with FourierFlows.Problem types """
-type Diagnostic{T} <: AbstractDiagnostic
+mutable struct Diagnostic{T} <: AbstractDiagnostic
   calc::Function
   prob::Problem
   num::Int
