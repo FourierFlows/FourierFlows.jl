@@ -1,5 +1,3 @@
-__precompile__()
-
 module TracerAdvDiff
 
 using FourierFlows
@@ -34,11 +32,11 @@ function ConstDiffSteadyFlowProblem(;
   if v == nothing; vin(x, y) = 0.0
   else;            vin = v
   end
-    
-  if grid == nothing; 
+
+  if grid == nothing;
     grid = TwoDGrid(nx, Lx, ny, Ly)
   end
-    
+
   vs = Vars(grid)
   pr = ConstDiffSteadyFlowParams(η, κ, uin, vin, grid)
   eq = Equation(pr, grid)
@@ -78,7 +76,7 @@ type ConstDiffSteadyFlowParams <: AbstractTracerParams
   v::Array{Float64,2}          # Advecting y-velocity
 end
 
-function ConstDiffSteadyFlowParams(η, κ, κh, nκh, 
+function ConstDiffSteadyFlowParams(η, κ, κh, nκh,
   u::Function, v::Function, g::TwoDGrid)
   ugrid = u.(g.X, g.Y)
   vgrid = v.(g.X, g.Y)
@@ -89,7 +87,7 @@ function ConstDiffSteadyFlowParams(η, κ, u::Function, v::Function, g::TwoDGrid
   ConstDiffSteadyFlowParams(η, κ, 0, 0, u, v, g)
 end
 
-function ConstDiffSteadyFlowParams(η, κ, u::AbstractArray, v::AbstractArray, 
+function ConstDiffSteadyFlowParams(η, κ, u::AbstractArray, v::AbstractArray,
   g::TwoDGrid)
   ConstDiffSteadyFlowParams(η, κ, 0, 0, u, v)
 end
@@ -150,15 +148,15 @@ end
 
 
 
-# Solvers --------------------------------------------------------------------- 
+# Solvers ---------------------------------------------------------------------
 """
 Calculate the advective terms for a tracer equation with constant
 diffusivity.
 """
-function calcNL!(NL::Array{Complex{Float64},2}, 
-  sol::Array{Complex{Float64},2}, 
+function calcNL!(NL::Array{Complex{Float64},2},
+  sol::Array{Complex{Float64},2},
   t::Float64, v::Vars, p::ConstDiffParams, g::TwoDGrid)
-  
+
   v.ch .= sol
   A_mul_B!(v.c, g.irfftplan, v.ch) # destroys v.ch when using fftw
 
@@ -181,8 +179,8 @@ end
 Calculate the advective terms for a tracer equation with constant
 diffusivity and time-constant flow.
 """
-function calcNL_steadyflow!(NL::Array{Complex{Float64},2}, 
-  sol::Array{Complex{Float64},2}, 
+function calcNL_steadyflow!(NL::Array{Complex{Float64},2},
+  sol::Array{Complex{Float64},2},
   t::Float64, v::Vars, p::ConstDiffSteadyFlowParams, g::TwoDGrid)
 
   v.ch .= sol
@@ -205,7 +203,7 @@ end
 
 
 
-# Helper functions ------------------------------------------------------------ 
+# Helper functions ------------------------------------------------------------
 """ Update state variables. """
 function updatevars!(v::AbstractVars, p::AbstractTracerParams, g::TwoDGrid)
   v.ch  .= v.sol

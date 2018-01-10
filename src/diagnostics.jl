@@ -1,5 +1,3 @@
-__precompile__()
-
 import Base: resize!
 
 export AbstractDiagnostic, Diagnostic
@@ -25,9 +23,9 @@ type Diagnostic{T} <: AbstractDiagnostic
 end
 
 """ Constructor for the ProblemDiagnostic type. """
-function Diagnostic(calc::Function, prob::FourierFlows.Problem; freq=1, 
+function Diagnostic(calc::Function, prob::FourierFlows.Problem; freq=1,
   nsteps=1, num=ceil(Int, (nsteps+1)/freq))
-  
+
   value = calc(prob)
   T = typeof(value)
 

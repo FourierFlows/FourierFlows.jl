@@ -1,5 +1,3 @@
-__precompile__()
-
 export TwoDGrid, dealias!
 
 

@@ -1,6 +1,3 @@
-__precompile__()
-
-
 module TracerPatchEqn
 
 using FourierFlows
@@ -8,7 +5,7 @@ using FourierFlows
 abstract type AbstractTracerParams <: AbstractParams end
 
 
-# Problem initializer --------------------------------------------------------- 
+# Problem initializer ---------------------------------------------------------
 function AnalyticFlowProblem(;
    κ = 1.0,
    η = nothing,
@@ -45,7 +42,7 @@ function AnalyticFlowProblem(;
 end
 
 
-# Params ---------------------------------------------------------------------- 
+# Params ----------------------------------------------------------------------
 type AnalyticFlowParams <: AbstractTracerParams
   κ::Function
   η::Function
@@ -79,7 +76,7 @@ end
 
 
 
-# Equation -------------------------------------------------------------------- 
+# Equation --------------------------------------------------------------------
 type Equation <: AbstractEquation
   LC::Array{Float64, 1}
   calcNL!::Function
@@ -90,7 +87,7 @@ function Equation()
 end
 
 
-# Vars ------------------------------------------------------------------------ 
+# Vars ------------------------------------------------------------------------
 type Vars <: AbstractVars
   t::Float64
   sol::Array{Float64, 1} # x, y, u, v, ux, uy, vx.
@@ -101,8 +98,8 @@ function Vars()
 end
 
 
-# Solver ---------------------------------------------------------------------- 
-function calcNL!(NL::Array{Float64, 1}, sol::Array{Float64, 1}, t::Float64, 
+# Solver ----------------------------------------------------------------------
+function calcNL!(NL::Array{Float64, 1}, sol::Array{Float64, 1}, t::Float64,
   v::Vars, p::AnalyticFlowParams, g::AbstractGrid)
 
   # Key:
@@ -127,7 +124,7 @@ function calcNL!(NL::Array{Float64, 1}, sol::Array{Float64, 1}, t::Float64,
   # ∂t m₁₁ = 2η + 2m₁₁dα + 2m₁₂dβ
   NL[3] = (
     2.0*p.η(sol[2])
-    + 2.0*sol[3]*p.ux(sol[1], sol[2], t) 
+    + 2.0*sol[3]*p.ux(sol[1], sol[2], t)
     + 2.0*sol[4]*p.uy(sol[1], sol[2], t)
   )
 
@@ -141,11 +138,11 @@ function calcNL!(NL::Array{Float64, 1}, sol::Array{Float64, 1}, t::Float64,
     + 2.0*sol[4]*p.vx(sol[1], sol[2], t)
   )
 
-  nothing 
+  nothing
 end
 
 
-# Helper functions ------------------------------------------------------------ 
+# Helper functions ------------------------------------------------------------
 function set_position!(prob::AbstractProblem, ξ₀, ζ₀)
   prob.vars.sol[1:2] = [ξ₀, ζ₀]
   nothing

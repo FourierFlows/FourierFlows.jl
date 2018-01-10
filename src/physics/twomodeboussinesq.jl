@@ -1,24 +1,22 @@
-__precompile__()
-
 # A module for solving a two-vertical-mode truncation of the Boussinesq 
 # equations
 module TwoModeBoussinesq
 
 using FourierFlows
 
-# Problem --------------------------------------------------------------------- 
-""" 
+# Problem ---------------------------------------------------------------------
+"""
 Construct a TwoModeBoussinesq initial value problem.
 """
 function InitialValueProblem(;
-  nx   = 128, 
-  Lx   = 2π, 
+  nx   = 128,
+  Lx   = 2π,
   ny   = nothing,
   Ly   = nothing,
-  ν0   = nothing, 
-  nν0  = 2, 
+  ν0   = nothing,
+  nν0  = 2,
   ν1   = nothing,
-  nν1  = 2, 
+  nν1  = 2,
   f    = 1.0,
   N    = 10.0,
   m    = 40.0,
@@ -50,7 +48,7 @@ end
 
 
 
-# Params ---------------------------------------------------------------------- 
+# Params ----------------------------------------------------------------------
 abstract type TwoModeParams <: AbstractParams end
 
 type Params <: TwoModeParams
@@ -72,7 +70,7 @@ end
 
 
 
-# Equations ------------------------------------------------------------------- 
+# Equations -------------------------------------------------------------------
 type Equation <: AbstractEquation
   LCc::Array{Complex{Float64}, 3} # Element-wise coeff of the eqn's linear part
   LCr::Array{Complex{Float64}, 2} # Element-wise coeff of the eqn's linear part
@@ -97,7 +95,7 @@ end
 
 
 
-# Vars ------------------------------------------------------------------------ 
+# Vars ------------------------------------------------------------------------
 abstract type TwoModeVars <: AbstractVars end
 
 type Vars <: TwoModeVars
@@ -181,7 +179,7 @@ function Vars(g::TwoDGrid)
   Vx     = zeros(Float64, g.nx, g.ny)
   Vy     = zeros(Float64, g.nx, g.ny)
   Psi    = zeros(Float64, g.nx, g.ny)
-  
+
   # Auxiliary first-mode vars
   u      = zeros(Complex{Float64}, g.nx, g.ny)
   v      = zeros(Complex{Float64}, g.nx, g.ny)
@@ -216,7 +214,7 @@ function Vars(g::TwoDGrid)
   wh      = zeros(Complex{Float64}, g.nk, g.nl)
   ph      = zeros(Complex{Float64}, g.nk, g.nl)
   zetah   = zeros(Complex{Float64}, g.nk, g.nl)
-  
+
   Uuh     = zeros(Complex{Float64}, g.nk, g.nl)
   Uvh     = zeros(Complex{Float64}, g.nk, g.nl)
   Uph     = zeros(Complex{Float64}, g.nk, g.nl)
@@ -227,10 +225,10 @@ function Vars(g::TwoDGrid)
   uUxvUyh= zeros(Complex{Float64}, g.nk, g.nl)
   uVxvVyh= zeros(Complex{Float64}, g.nk, g.nl)
 
-  return Vars(t, solr, solc, 
-    Z, U, V, UZuzvw, VZvzuw, Ux, Uy, Vx, Vy, Psi, 
+  return Vars(t, solr, solc,
+    Z, U, V, UZuzvw, VZvzuw, Ux, Uy, Vx, Vy, Psi,
     u, v, w, p, zeta, Uu, Uv, Up, Vu, Vv, Vp, uUxvUy, uVxvVy,
-    Zh, Uh, Vh, UZuzvwh, VZvzuwh, Uxh, Uyh, Vxh, Vyh, Psih, 
+    Zh, Uh, Vh, UZuzvwh, VZvzuwh, Uxh, Uyh, Vxh, Vyh, Psih,
     uh, vh, wh, ph, zetah, Uuh, Uvh, Uph, Vuh, Vvh, Vph, uUxvUyh, uVxvVyh,
     )
 end
@@ -238,12 +236,12 @@ end
 
 
 
-# Solvers --------------------------------------------------------------------- 
+# Solvers ---------------------------------------------------------------------
 function calcNL!(
-  NLc::Array{Complex{Float64}, 3},  NLr::Array{Complex{Float64}, 2}, 
-  solc::Array{Complex{Float64}, 3}, solr::Array{Complex{Float64}, 2}, 
+  NLc::Array{Complex{Float64}, 3},  NLr::Array{Complex{Float64}, 2},
+  solc::Array{Complex{Float64}, 3}, solr::Array{Complex{Float64}, 2},
   t::Float64, v::Vars, p::TwoModeParams, g::TwoDGrid)
-  
+
   v.Zh .= solr
 
   @. v.Psih = -g.invKKrsq*v.Zh
@@ -279,11 +277,11 @@ function calcNL!(
 
   # Multiplies
   @. v.UZuzvw = (v.U * v.Z
-    + real(   v.u*conj(v.zeta)  +  im*p.m*v.v*conj(v.w) 
+    + real(   v.u*conj(v.zeta)  +  im*p.m*v.v*conj(v.w)
             + conj(v.u)*v.zeta  -  im*p.m*conj(v.v)*v.w   ))
 
-  @. v.VZvzuw = (v.V * v.Z 
-    + real(   v.v*conj(v.zeta)  -  im*p.m*v.u*conj(v.w) 
+  @. v.VZvzuw = (v.V * v.Z
+    + real(   v.v*conj(v.zeta)  -  im*p.m*v.u*conj(v.w)
             + conj(v.v)*v.zeta  +  im*p.m*conj(v.u)*v.w   ))
 
   @. v.Uu = v.U * v.u
@@ -335,8 +333,8 @@ end
 
 
 
-# Helper functions ------------------------------------------------------------ 
-function updatevars!(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid, 
+# Helper functions ------------------------------------------------------------
+function updatevars!(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid,
   Zh::AbstractArray)
   # We don't use A_mul_B here because irfft destroys its input.
   v.Z = irfft(Zh, g.nx)
@@ -344,7 +342,7 @@ function updatevars!(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid,
   @. v.Psih = -g.invKKrsq*v.Zh
   @. v.Uh   = -im*g.l*v.Psih
   @. v.Vh   =  im*g.kr*v.Psih
- 
+
   # We don't use A_mul_B here because irfft destroys its input.
   v.Psi = irfft(v.Psih, g.nx)
   v.U = irfft(v.Uh, g.nx)
@@ -377,7 +375,7 @@ end
 
 
 """
-Set zeroth mode vorticity and update vars. 
+Set zeroth mode vorticity and update vars.
 """
 function set_Z!(v::Vars, p::TwoModeParams, g::TwoDGrid, Z)
   A_mul_B!(v.solr, g.rfftplan, Z)
@@ -392,7 +390,7 @@ end
 
 
 
-""" 
+"""
 Set first mode u, v, and p and update vars.
 """
 function set_uvp!(vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid, u, v, p)
@@ -415,9 +413,9 @@ end
 
 
 
-""" 
+"""
 Set a plane wave solution with initial speed uw and non-dimensional wave
-number nkw. The dimensional wavenumber will be 2π*nkw/Lx. 
+number nkw. The dimensional wavenumber will be 2π*nkw/Lx.
 """
 function set_planewave!(vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid,
   uw::Real, nkw::Int)
@@ -436,7 +434,7 @@ function set_planewave!(vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid,
   u = u0 * exp.(im*kw*x)
   v = v0 * exp.(im*kw*x)
   p = p0 * exp.(im*kw*x)
-  
+
   set_uvp!(vs, pr, g, u, v, p)
   nothing
 end
@@ -448,7 +446,7 @@ end
 
 
 
-""" 
+"""
 Generate an isotropic spectrum of waves.
 """
 function set_isotropicwavefield!(
@@ -467,7 +465,7 @@ function set_isotropicwavefield!(
   # Sum Fourier components
   for k in real.(g.k), l in real.(g.l)
     if amplitude(k, l) > 1e-15
-     
+
       # Dispersion relation
       σ = sqrt(f^2 + N^2/m^2*(k^2 + l^2))
 
@@ -481,7 +479,7 @@ function set_isotropicwavefield!(
     end
   end
 
-  
+
   if maxspeed == nothing # Normalize by kinetic energy
     uh, vh = fft(u0), fft(v0)
     ke = mode1ke(uh, vh, g)
@@ -494,7 +492,7 @@ function set_isotropicwavefield!(
   u0 .*= norm
   v0 .*= norm
   p0 .*= norm
-   
+
   set_uvp!(vs, pr, g, u0, v0, p0)
 
   nothing
@@ -508,15 +506,15 @@ end
 
 function set_isotropicwavefield!(prob::AbstractProblem, amplitude::Function;
   kwargs...)
-  set_isotropicwavefield!(prob.vars, prob.params, prob.grid, amplitude; 
+  set_isotropicwavefield!(prob.vars, prob.params, prob.grid, amplitude;
     kwargs...)
 end
 
 
- 
 
-""" 
-Returns the integrated energy in the zeroth mode energy. 
+
+"""
+Returns the integrated energy in the zeroth mode energy.
 """
 function mode0energy(v::Vars, p::TwoModeParams, g::TwoDGrid)
   0.5*FourierFlows.parsevalsum(real.(g.invKKrsq).*abs2.(v.solr), g)
@@ -529,7 +527,7 @@ end
 
 
 
-""" 
+"""
 Returns the projection of the integrated first mode kinetic energy
 onto the zeroth mode.
 """
@@ -548,9 +546,9 @@ end
 
 
 
-""" 
+"""
 Returns the projection of the integrated first mode potential energy onto the
-zeroth mode. 
+zeroth mode.
 """
 function mode1pe(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   p.m^2/p.N^2*FourierFlows.parsevalsum2(v.solc[:, :, 3], g)
@@ -563,7 +561,7 @@ end
 
 
 
-""" 
+"""
 Returns the projection of the total integrated first mode energy onto the
 zeroth mode.
 """
@@ -578,7 +576,7 @@ end
 
 
 
-""" 
+"""
 Returns the total energy projected onto the zeroth mode.
 """
 function totalenergy(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
@@ -592,8 +590,8 @@ end
 
 
 
-""" 
-Returns kinetic energy dissipation of the zeroth mode. 
+"""
+Returns kinetic energy dissipation of the zeroth mode.
 """
 function mode0dissipation(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   delzeta = irfft(
@@ -626,7 +624,7 @@ function shearproduction(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   @views A_mul_B!(v.u, g.ifftplan, v.solc[:, :, 1])
   @views A_mul_B!(v.v, g.ifftplan, v.solc[:, :, 2])
 
-  @. v.UZuzvw = real( 
+  @. v.UZuzvw = real(
       2.0*abs2(v.u)*v.Ux + 2.0*abs2(v.v)*v.Vy
        + (conj(v.u)*v.v + v.u*conj(v.v))*(v.Uy + v.Vx)
   )
@@ -641,7 +639,7 @@ end
 
 
 
-""" 
+"""
 Return the domain-integrated conversion from potential to kinetic energy.
 """
 function energyconversion(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
@@ -656,17 +654,17 @@ end
 function energyconversion(prob::AbstractProblem)
   energyconversion(prob.vars, prob.params, prob.grid)
 end
-  
 
 
 
-""" 
-Returns the projection of available potential vorticity onto the 
+
+"""
+Returns the projection of available potential vorticity onto the
 zeroth mode.
 """
 function mode0apv(Z, u, v, p, pr::TwoModeParams, g::TwoDGrid)
   (Z .+ irfft( pr.m^2.0./pr.N^2.0 .* (
-      im.*g.l.*rfft(real.(u.*conj.(p) .+ conj.(u).*p)) 
+      im.*g.l.*rfft(real.(u.*conj.(p) .+ conj.(u).*p))
     - im.*g.kr.*rfft(real.(v.*conj.(p) .+ conj.(v).*p))
   ), g.nx))
 end
@@ -686,7 +684,7 @@ end
 
 
 
-""" 
+"""
 Returns the projection of available potential energy onto the first mode.
 """
 function mode1apv(Z, zeta, p, pr::TwoModeParams, g::TwoDGrid)
@@ -715,7 +713,7 @@ function mode1apv(v::Vars, p::TwoModeParams, g::TwoDGrid)
   mode1apv(v.Z, v, p, g)
 end
 
-mode1apv(prob::AbstractProblem) = mode1apv(prob.vars, prob.params, prob.grid) 
+mode1apv(prob::AbstractProblem) = mode1apv(prob.vars, prob.params, prob.grid)
 
 
 
@@ -782,13 +780,13 @@ mode0speed(prob) = sqrt.(prob.vars.U.^2.0 .+ prob.vars.V.^2.0)
 
 
 
-""" 
-Returns the Courant-Freidrichs-Lewy number. 
+"""
+Returns the Courant-Freidrichs-Lewy number.
 """
 function CFL(prob, dt)
   dx = minimum([prob.grid.dx, prob.grid.dy])
   U = maximum([
-    maximum(abs.(prob.vars.U)), 
+    maximum(abs.(prob.vars.U)),
     maximum(abs.(prob.vars.V)),
     maximum(abs.(prob.vars.u)),
     maximum(abs.(prob.vars.v))])
@@ -796,7 +794,7 @@ function CFL(prob, dt)
   U*dt/dx
 end
 
- 
+
 
 
 # End module

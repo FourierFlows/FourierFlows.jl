@@ -1,5 +1,3 @@
-__precompile__()
-
 using JLD2
 # using HDF5
 
@@ -21,7 +19,7 @@ type Output
   init::Bool
 end
 
-function Output(prob::Problem, filename::String, 
+function Output(prob::Problem, filename::String,
   fields::Dict{Symbol, Function})
   saveproblem(prob, filename)
   Output(prob, filename, fields, true)
@@ -152,11 +150,11 @@ end
 
 
 
-""" 
+"""
 Save certain aspects of a Problem. Entire problems cannot be saved
 in general, because functions cannot be saved (and functions may use
-arbitrary numbers of global variables that cannot be included in a saved 
-object). 
+arbitrary numbers of global variables that cannot be included in a saved
+object).
 """
 function saveproblem(prob::AbstractProblem, filename::String)
 
@@ -184,7 +182,7 @@ end
 Save diagnostics to file.
 """
 function savediagnostic(diag::AbstractDiagnostic, diagname::String,
-  filename::String) 
+  filename::String)
 
   jldopen(filename, "a+") do file
     file["diags/$diagname/time"] = diag.time

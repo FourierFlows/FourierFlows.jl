@@ -1,5 +1,3 @@
-__precompile__()
-
 import PyPlot, PyCall
 
 using PyPlot
@@ -36,7 +34,7 @@ end
 # Key for figure sizes. Index is the number of plot components.
 figsizekey = [(6, 6), (10, 5), (12, 4)]
 
-function ProblemPlot(prob; components=nothing, messages=nothing, 
+function ProblemPlot(prob; components=nothing, messages=nothing,
   name="problemplot", dpi=240)
 
   ncomps = length(components)
@@ -47,7 +45,7 @@ function ProblemPlot(prob; components=nothing, messages=nothing,
   ProblemPlot(prob, fig, axs, components, messages, name, dpi)
 end
 
-# One component plots --------------------------------------------------------- 
+# One component plots ---------------------------------------------------------
 """ A type for a one-component plot. """
 type OneComponentPlot <: AbstractPlot
   fig::PyPlot.Figure
@@ -73,26 +71,26 @@ end
 
 function OneComponentPlot(
   g::TwoDGrid, v::AbstractVars, p::AbstractParams,
-  comp1, title1::String, limz1::AbstractArray, colors1::String, 
-  xlimz::AbstractArray, ylimz::AbstractArray, Lnorm, 
+  comp1, title1::String, limz1::AbstractArray, colors1::String,
+  xlimz::AbstractArray, ylimz::AbstractArray, Lnorm,
   xlabel::String, ylabel::String, message::Function, plotname::String,
   dpi::Int; figsize=(10, 5))
 
   fig, axs = subplots(nrows=1, ncols=1, sharex=true, sharey=true,
     figsize=figsize)
 
-  OneComponentPlot(fig, axs, figsize, g, v, p, 
+  OneComponentPlot(fig, axs, figsize, g, v, p,
     comp1, title1, limz1, colors1,
     xlimz, ylimz, Lnorm, xlabel, ylabel, message, plotname, 0, dpi)
 end
 
 function OneComponentPlot(
   g::TwoDGrid, v::AbstractVars, p::AbstractParams,
-  comp1::Function, limz1::AbstractArray, colors1::String, 
+  comp1::Function, limz1::AbstractArray, colors1::String,
   xlimz::AbstractArray, ylimz::AbstractArray, Lnorm,
   message::Function, plotname::String, dpi::Int; figsize=(10, 5))
 
-  OneComponentPlot(g, v, p, 
+  OneComponentPlot(g, v, p,
     comp1, "", limz1, colors1,
     xlimz, ylimz, Lnorm, "", "", message, plotname, dpi;
     figsize=figsize)
@@ -100,14 +98,14 @@ end
 
 function OneComponentPlot(
   g::TwoDGrid, v::AbstractVars, p::AbstractParams,
-  comp1, limz1::AbstractArray, colors1::String, 
+  comp1, limz1::AbstractArray, colors1::String,
   message::Function, plotname::String, dpi::Int; figsize=(12, 4))
 
   xlimz = [minimum(g.x), maximum(g.x)]
   ylimz = [minimum(g.y), maximum(g.y)]
   Lnorm = 1.0
 
-  OneComponentPlot(g, v, p, 
+  OneComponentPlot(g, v, p,
     comp1, "", limz1, colors1,
     xlimz, ylimz, Lnorm, "", "", message, plotname, dpi;
     figsize=figsize)
@@ -118,7 +116,7 @@ function makeplot!(pl::OneComponentPlot; save=false, show=false)
 
   c1 = pl.comp1(pl.v, pl.p, pl.g)
 
-  figure(pl.fig[:number]) 
+  figure(pl.fig[:number])
   axes(pl.axs)
   cla()
 
@@ -138,7 +136,7 @@ function makeplot!(pl::OneComponentPlot; save=false, show=false)
     pl.axs[:yaxis][:set_visible](false)
   end
 
-  if (pl.title1 == "" && 
+  if (pl.title1 == "" &&
       pl.xlabel == "" &&
       pl.ylabel == "" )
     tight_layout()
@@ -168,7 +166,7 @@ end
 
 
 
-# Two component plots --------------------------------------------------------- 
+# Two component plots ---------------------------------------------------------
 type TwoComponentProblemPlot <: AbstractTwoComponentPlot
   fig::PyPlot.Figure
   axs::Array{PyCall.PyObject, 1}
@@ -199,7 +197,7 @@ type TwoComponentProblemPlot <: AbstractTwoComponentPlot
 end
 
 function TwoComponentProblemPlot(prob::AbstractProblem,
-  comp1, title1::String, limz1::AbstractArray, colors1::String, 
+  comp1, title1::String, limz1::AbstractArray, colors1::String,
   comp2, title2::String, limz2::AbstractArray, colors2::String,
   xlimz, ylimz, Lnorm,
   xlabel::String, ylabel::String, message::Function, plotname::String;
@@ -209,16 +207,16 @@ function TwoComponentProblemPlot(prob::AbstractProblem,
   fig, axs = subplots(nrows=1, ncols=2, sharex=true, sharey=true,
     figsize=figsize)
 
-  TwoComponentProblemPlot(fig, axs, figsize, prob, 
-    comp1, title1, limz1, colors1, 
-    comp2, title2, limz2, colors2, 
+  TwoComponentProblemPlot(fig, axs, figsize, prob,
+    comp1, title1, limz1, colors1,
+    comp2, title2, limz2, colors2,
     xlimz, ylimz, Lnorm, xlabel, ylabel, message, plotname, 0, dpi)
 end
 
-""" Constrcut a TwoComponentProblemPlot object with no scaling and 
+""" Constrcut a TwoComponentProblemPlot object with no scaling and
 covering the size of the domain. """
 function TwoComponentProblemPlot(prob::AbstractProblem,
-  comp1, limz1::AbstractArray, colors1::String, 
+  comp1, limz1::AbstractArray, colors1::String,
   comp2, limz2::AbstractArray, colors2::String,
   xlabel::String, ylabel::String, message::Function, plotname::String;
   dpi=240, figsize=(10, 5))
@@ -227,20 +225,20 @@ function TwoComponentProblemPlot(prob::AbstractProblem,
   ylimz = [minimum(prob.grid.y), maximum(prob.grid.y)]
   Lnorm = 1.0
 
-  TwoComponentProblemPlot(prob, 
+  TwoComponentProblemPlot(prob,
     comp1, "", limz1, colors1, comp2, "", limz2, colors2, xlimz, ylimz, Lnorm,
     xlabel, ylabel, message, plotname; dpi=dpi, figsize=figsize)
 end
 
-""" Constrcut a TwoComponentProblemPlot object with no scaling and 
+""" Constrcut a TwoComponentProblemPlot object with no scaling and
 covering the size of the domain. """
 function TwoComponentProblemPlot(prob::AbstractProblem,
-  comp1, limz1::AbstractArray, colors1::String, 
+  comp1, limz1::AbstractArray, colors1::String,
   comp2, limz2::AbstractArray, colors2::String,
   message::Function, plotname::String;
   dpi=240, figsize=(10, 5))
 
-  TwoComponentProblemPlot(prob, 
+  TwoComponentProblemPlot(prob,
     comp1, limz1, colors1, comp2, limz2, colors2,
     "", "", message, plotname; dpi=dpi, figsize=figsize)
 end
@@ -293,16 +291,16 @@ end
 
 function TwoComponentPlot(
   g::TwoDGrid, v::AbstractVars, p::AbstractParams,
-  comp1, title1::String, limz1::AbstractArray, colors1::String, 
+  comp1, title1::String, limz1::AbstractArray, colors1::String,
   comp2, title2::String, limz2::AbstractArray, colors2::String,
-  xlimz::AbstractArray, ylimz::AbstractArray, Lnorm, 
+  xlimz::AbstractArray, ylimz::AbstractArray, Lnorm,
   xlabel::String, ylabel::String, message::Function, plotname::String,
   dpi::Int; figsize=(10, 5))
 
   fig, axs = subplots(nrows=1, ncols=2, sharex=true, sharey=true,
     figsize=figsize)
 
-  TwoComponentPlot(fig, axs, figsize, g, v, p, 
+  TwoComponentPlot(fig, axs, figsize, g, v, p,
     comp1, title1, limz1, colors1,
     comp2, title2, limz2, colors2,
     xlimz, ylimz, Lnorm, xlabel, ylabel, message, plotname, 0, dpi)
@@ -310,13 +308,13 @@ end
 
 function TwoComponentPlot(
   g::TwoDGrid, v::AbstractVars, p::AbstractParams,
-  comp1, limz1::AbstractArray, colors1::String, 
+  comp1, limz1::AbstractArray, colors1::String,
   comp2, limz2::AbstractArray, colors2::String,
-  xlimz::AbstractArray, ylimz::AbstractArray, Lnorm, 
+  xlimz::AbstractArray, ylimz::AbstractArray, Lnorm,
   xlabel::String, ylabel::String, message::Function, plotname::String,
   dpi::Int; figsize=(10, 5))
 
-  TwoComponentPlot(g, v, p, 
+  TwoComponentPlot(g, v, p,
     comp1, "", limz1, colors1,
     comp2, "", limz2, colors2,
     xlimz, ylimz, Lnorm, xlabel, ylabel, message, plotname, dpi;
@@ -325,12 +323,12 @@ end
 
 function TwoComponentPlot(
   g::TwoDGrid, v::AbstractVars, p::AbstractParams,
-  comp1, limz1::AbstractArray, colors1::String, 
+  comp1, limz1::AbstractArray, colors1::String,
   comp2, limz2::AbstractArray, colors2::String,
-  xlimz::AbstractArray, ylimz::AbstractArray, Lnorm, 
+  xlimz::AbstractArray, ylimz::AbstractArray, Lnorm,
   message::Function, plotname::String, dpi::Int; figsize=(10, 5))
 
-  TwoComponentPlot(g, v, p, 
+  TwoComponentPlot(g, v, p,
     comp1, "", limz1, colors1,
     comp2, "", limz2, colors2,
     xlimz, ylimz, Lnorm, "", "", message, plotname, dpi;
@@ -339,7 +337,7 @@ end
 
 function TwoComponentPlot(
   g::TwoDGrid, v::AbstractVars, p::AbstractParams,
-  comp1, limz1::AbstractArray, colors1::String, 
+  comp1, limz1::AbstractArray, colors1::String,
   comp2, limz2::AbstractArray, colors2::String,
   message::Function, plotname::String, dpi::Int; figsize=(10, 5))
 
@@ -347,7 +345,7 @@ function TwoComponentPlot(
   ylimz = [minimum(g.y), maximum(g.y)]
   Lnorm = 1.0
 
-  TwoComponentPlot(g, v, p, 
+  TwoComponentPlot(g, v, p,
     comp1, "", limz1, colors1,
     comp2, "", limz2, colors2,
     xlimz, ylimz, Lnorm, "", "", message, plotname, dpi;
@@ -356,7 +354,7 @@ end
 
 
 function get_components_and_message(pl::TwoComponentPlot)
-  (pl.comp1(pl.v, pl.p, pl.g), pl.comp1(pl.v, pl.p, pl.g), 
+  (pl.comp1(pl.v, pl.p, pl.g), pl.comp1(pl.v, pl.p, pl.g),
     pl.message(pl.v, pl.p, pl.g))
 end
 
@@ -376,11 +374,11 @@ function makeplot!(pl::AbstractTwoComponentPlot; save=false, show=false)
     pl.g
   end
 
-  figure(pl.fig[:number]) 
+  figure(pl.fig[:number])
   axes(pl.axs[1])
   cla()
 
-  pcolormesh(g.X/pl.Lnorm, g.Y/pl.Lnorm, c1, 
+  pcolormesh(g.X/pl.Lnorm, g.Y/pl.Lnorm, c1,
     cmap=pl.colors1, vmin=pl.limz1[1], vmax=pl.limz1[2])
 
   xlim(pl.xlimz[1]/pl.Lnorm, pl.xlimz[2]/pl.Lnorm)
@@ -409,7 +407,7 @@ function makeplot!(pl::AbstractTwoComponentPlot; save=false, show=false)
     pl.axs[2][:yaxis][:set_visible](false)
   end
 
-  if (pl.title1 == "" && 
+  if (pl.title1 == "" &&
       pl.title2 == "" &&
       pl.xlabel == "" &&
       pl.ylabel == "" )
@@ -438,7 +436,7 @@ end
 
 
 
-# Three component plots ------------------------------------------------------- 
+# Three component plots -------------------------------------------------------
 
 type ThreeComponentPlot <: AbstractPlot
 
@@ -479,17 +477,17 @@ end
 
 function ThreeComponentPlot(
   g::TwoDGrid, v::AbstractVars, p::AbstractParams,
-  comp1, title1::String, limz1::AbstractArray, colors1::String, 
+  comp1, title1::String, limz1::AbstractArray, colors1::String,
   comp2, title2::String, limz2::AbstractArray, colors2::String,
   comp3, title3::String, limz3::AbstractArray, colors3::String,
-  xlimz::AbstractArray, ylimz::AbstractArray, Lnorm, 
-  xlabel::String, ylabel::String, message::Function, plotname::String, 
+  xlimz::AbstractArray, ylimz::AbstractArray, Lnorm,
+  xlabel::String, ylabel::String, message::Function, plotname::String,
   dpi::Int; figsize=(12, 4))
 
   fig, axs = subplots(nrows=1, ncols=3, sharex=true, sharey=true,
     figsize=figsize)
 
-  ThreeComponentPlot(fig, axs, figsize, g, v, p, 
+  ThreeComponentPlot(fig, axs, figsize, g, v, p,
     comp1, title1, limz1, colors1,
     comp2, title2, limz2, colors2,
     comp3, title3, limz3, colors3,
@@ -498,14 +496,14 @@ end
 
 function ThreeComponentPlot(
   g::TwoDGrid, v::AbstractVars, p::AbstractParams,
-  comp1, limz1::AbstractArray, colors1::String, 
+  comp1, limz1::AbstractArray, colors1::String,
   comp2, limz2::AbstractArray, colors2::String,
   comp3, limz3::AbstractArray, colors3::String,
-  xlimz::AbstractArray, ylimz::AbstractArray, Lnorm, 
-  xlabel::String, ylabel::String, message::Function, plotname::String, 
+  xlimz::AbstractArray, ylimz::AbstractArray, Lnorm,
+  xlabel::String, ylabel::String, message::Function, plotname::String,
   dpi::Int; figsize=(12, 4))
 
-  ThreeComponentPlot(g, v, p, 
+  ThreeComponentPlot(g, v, p,
     comp1, "", limz1, colors1,
     comp2, "", limz2, colors2,
     comp3, "", limz3, colors3,
@@ -515,13 +513,13 @@ end
 
 function ThreeComponentPlot(
   g::TwoDGrid, v::AbstractVars, p::AbstractParams,
-  comp1, limz1::AbstractArray, colors1::String, 
+  comp1, limz1::AbstractArray, colors1::String,
   comp2, limz2::AbstractArray, colors2::String,
   comp3, limz3::AbstractArray, colors3::String,
-  xlimz::AbstractArray, ylimz::AbstractArray, Lnorm, 
+  xlimz::AbstractArray, ylimz::AbstractArray, Lnorm,
   message::Function, plotname::String, dpi::Int; figsize=(12, 4))
 
-  ThreeComponentPlot(g, v, p, 
+  ThreeComponentPlot(g, v, p,
     comp1, "", limz1, colors1,
     comp2, "", limz2, colors2,
     comp3, "", limz3, colors3,
@@ -531,7 +529,7 @@ end
 
 function ThreeComponentPlot(
   g::TwoDGrid, v::AbstractVars, p::AbstractParams,
-  comp1, limz1::AbstractArray, colors1::String, 
+  comp1, limz1::AbstractArray, colors1::String,
   comp2, limz2::AbstractArray, colors2::String,
   comp3, limz3::AbstractArray, colors3::String,
   message::Function, plotname::String; figsize=(12, 4))
@@ -540,7 +538,7 @@ function ThreeComponentPlot(
   ylimz = [minimum(g.y), maximum(g.y)]
   Lnorm = 1.0
 
-  ThreeComponentPlot(g, v, p, 
+  ThreeComponentPlot(g, v, p,
     comp1, "", limz1, colors1,
     comp2, "", limz2, colors2,
     comp3, "", limz3, colors3,
@@ -552,7 +550,7 @@ end
 
 function ThreeComponentPlot(
   g::TwoDGrid, v::AbstractVars, p::AbstractParams,
-  comp1, limz1::AbstractArray, colors1::String, 
+  comp1, limz1::AbstractArray, colors1::String,
   comp2, limz2::AbstractArray, colors2::String,
   comp3, limz3::AbstractArray, colors3::String,
   message::Function, plotname::String, dpi::Int; figsize=(12, 4))
@@ -561,7 +559,7 @@ function ThreeComponentPlot(
   ylimz = [minimum(g.y), maximum(g.y)]
   Lnorm = 1.0
 
-  ThreeComponentPlot(g, v, p, 
+  ThreeComponentPlot(g, v, p,
     comp1, "", limz1, colors1,
     comp2, "", limz2, colors2,
     comp3, "", limz3, colors3,
@@ -575,7 +573,7 @@ end
 
 function makeplot!(pl::ThreeComponentPlot; save=false, show=false)
 
-  figure(pl.fig[:number]) 
+  figure(pl.fig[:number])
 
   c1 = pl.comp1(pl.v, pl.p, pl.g)
   c2 = pl.comp2(pl.v, pl.p, pl.g)
@@ -585,8 +583,8 @@ function makeplot!(pl::ThreeComponentPlot; save=false, show=false)
   axes(pl.axs[1])
   cla()
 
-  pcolormesh(pl.g.X/pl.Lnorm, pl.g.Y/pl.Lnorm, 
-    c1, 
+  pcolormesh(pl.g.X/pl.Lnorm, pl.g.Y/pl.Lnorm,
+    c1,
     cmap=pl.colors1,
     vmin=pl.limz1[1], vmax=pl.limz1[2]
   )
@@ -601,8 +599,8 @@ function makeplot!(pl::ThreeComponentPlot; save=false, show=false)
   axes(pl.axs[2])
   cla()
 
-  pcolormesh(pl.g.X/pl.Lnorm, pl.g.Y/pl.Lnorm, 
-    c2, 
+  pcolormesh(pl.g.X/pl.Lnorm, pl.g.Y/pl.Lnorm,
+    c2,
     cmap=pl.colors2,
     vmin=pl.limz2[1], vmax=pl.limz2[2]
   )
@@ -616,8 +614,8 @@ function makeplot!(pl::ThreeComponentPlot; save=false, show=false)
   axes(pl.axs[3])
   cla()
 
-  pcolormesh(pl.g.X/pl.Lnorm, pl.g.Y/pl.Lnorm, 
-    c3, 
+  pcolormesh(pl.g.X/pl.Lnorm, pl.g.Y/pl.Lnorm,
+    c3,
     cmap=pl.colors3,
     vmin=pl.limz3[1], vmax=pl.limz3[2]
   )

@@ -1,13 +1,10 @@
-__precompile__()
-
-
 module NIWQG
 
 using FourierFlows
 
 import FourierFlows: jacobian
 
-export Timestepper, 
+export Timestepper,
        TwoDGrid,
        Params,
        Vars,
@@ -18,12 +15,12 @@ export set_q!, updatevars!
 
 
 
-# Problems --------------------------------------------------------------------- 
-function NIWQGProblem(nx::Int, Lx::Real, dt::Real, kap::Real, 
+# Problems ---------------------------------------------------------------------
+function NIWQGProblem(nx::Int, Lx::Real, dt::Real, kap::Real,
   nkap::Int, nu::Real, nnu::Int, eta::Real, f::Real, Us::Real, Vs::Real)
 
   gr = FourierFlows.TwoDGrid(nx, Lx)
-  pr = Params(kap, nkap, nu, nnu, eta, f, Us, Vs) 
+  pr = Params(kap, nkap, nu, nnu, eta, f, Us, Vs)
   eq = Equation(pr, gr)
   vs = Vars(gr)
   ts = Timestepper(dt, eq)
@@ -49,7 +46,7 @@ function NIWQGProblem(nx::Int, Lx::Real; kap=nothing,
   if nu  == nothing;  nu = 0.1/(dt*(0.65*pi*nx/Lx)^nnu);    end
 
   gr = FourierFlows.TwoDGrid(nx, Lx)
-  pr = Params(kap, nkap, nu, nnu, eta, f, Us, Vs) 
+  pr = Params(kap, nkap, nu, nnu, eta, f, Us, Vs)
   eq = Equation(pr, gr)
   vs = Vars(gr)
   ts = ETDRK4TimeStepper(dt, eq.LCc, eq.LCr)
@@ -62,7 +59,7 @@ end
 
 
 
-# Params ---------------------------------------------------------------------- 
+# Params ----------------------------------------------------------------------
 abstract type NIWQGParams <: AbstractParams end
 
 type Params <: NIWQGParams
@@ -87,7 +84,7 @@ end
 
 
 """ Construct a Params type with kw computed from f and eta. """
-function Params(kap::Real, nkap::Int, nu::Real, nnu::Int, eta::Real, f::Real, 
+function Params(kap::Real, nkap::Int, nu::Real, nnu::Int, eta::Real, f::Real,
   Us::Real, Vs::Real)
   kw = sqrt(2*eta/f)
   Params(kap, nkap, nu, nnu, eta, kw, f, Us, Vs)
@@ -98,7 +95,7 @@ end
 
 
 
-# Equations ------------------------------------------------------------------- 
+# Equations -------------------------------------------------------------------
 type Equation <: AbstractEquation
   LCc::Array{Complex{Float64}, 2}  # Coeff of the complex eqn's linear part
   LCr::Array{Complex{Float64}, 2}  # Coeff of the real eqn's linear part
@@ -112,7 +109,7 @@ end
 hyperdiffusivity and hyperviscosity. """
 function Equation(p::NIWQGParams, g::TwoDGrid)
   # Linear term for phi:
-  LCc = -p.nu  * g.KKsq.^(0.5*p.nnu) - 0.5*im*p.eta*g.KKsq 
+  LCc = -p.nu  * g.KKsq.^(0.5*p.nnu) - 0.5*im*p.eta*g.KKsq
 
   # Linear term for q:
   LCr = -p.kap * g.KKrsq.^(0.5*p.nkap)
@@ -123,7 +120,7 @@ end
 
 
 
-# Vars ------------------------------------------------------------------------ 
+# Vars ------------------------------------------------------------------------
 type Vars <: AbstractVars
 
   t::Float64
@@ -148,7 +145,7 @@ type Vars <: AbstractVars
   phix::Array{Complex{Float64}, 2}
   phiy::Array{Complex{Float64}, 2}
   zetaphi::Array{Complex{Float64}, 2}
-  
+
   # Vorticity transforms
   qh::Array{Complex{Float64}, 2}
   Uh::Array{Complex{Float64}, 2}
@@ -191,7 +188,7 @@ function Vars(g::TwoDGrid)
   Vq     = zeros(Float64, g.nx, g.ny)
   modphi = zeros(Float64, g.nx, g.ny)
   jacphi = zeros(Float64, g.nx, g.ny)
-  
+
   # Auxiliary wave vars
   phi     = zeros(Complex{Float64}, g.nx, g.ny)
   Uphi    = zeros(Complex{Float64}, g.nx, g.ny)
@@ -217,8 +214,8 @@ function Vars(g::TwoDGrid)
   phixh    = zeros(Complex{Float64}, g.nk, g.nl)
   phiyh    = zeros(Complex{Float64}, g.nk, g.nl)
   zetaphih = zeros(Complex{Float64}, g.nk, g.nl)
-  
-  return Vars(t, solc, solr, 
+
+  return Vars(t, solc, solr,
     q, U, V, zeta, psi, Uq, Vq, modphi, jacphi,
     phi, Uphi, Vphi, phix, phiy, zetaphi,
     qh, Uh, Vh, zetah, psih, Uqh, Vqh, modphih, jacphih,
@@ -231,12 +228,12 @@ end
 
 # Solvers ---------------------------------------------------------------------
 
-""" Calculate the 'nonlinear' right hand side of the NIWQG system. The 
+""" Calculate the 'nonlinear' right hand side of the NIWQG system. The
 result for the complex and real parts of the system are stored in the first
 two arguments, NLc, and NLr. """
 function calcNL!(
-  NLc::Array{Complex{Float64}, 2},  NLr::Array{Complex{Float64}, 2}, 
-  solc::Array{Complex{Float64}, 2}, solr::Array{Complex{Float64}, 2}, 
+  NLc::Array{Complex{Float64}, 2},  NLr::Array{Complex{Float64}, 2},
+  solc::Array{Complex{Float64}, 2}, solr::Array{Complex{Float64}, 2},
   t::Float64, v::Vars, p::Params, g::TwoDGrid)
 
 
@@ -276,7 +273,7 @@ function calcNL!(
   A_mul_B!(v.zeta, g.irfftplan, v.zetah)
 
 
-  # Multiplies 
+  # Multiplies
   @. v.Uq = v.U * v.q
   @. v.Vq = v.V * v.q
 
@@ -304,7 +301,7 @@ end
 
 
 
-# Default timesteppers --------------------------------------------------------- 
+# Default timesteppers ---------------------------------------------------------
 
 """ Construct an ETDRK4TimeStepper for solving the NIWQG problem. """
 function Timestepper(dt::Real, eq::Equation)
@@ -314,12 +311,12 @@ end
 
 
 
-# Helper functions ------------------------------------------------------------ 
+# Helper functions ------------------------------------------------------------
 
 """ Update variables for current value of solc and solr. """
 function updatevars!(v::Vars, p::NIWQGParams, g::TwoDGrid)
 
-  @. v.phih = v.solc 
+  @. v.phih = v.solc
   @. v.qh = v.solr
 
   # Wave calcs and inverse transforms
@@ -348,9 +345,9 @@ function updatevars!(v::Vars, p::NIWQGParams, g::TwoDGrid)
 
   # We don't use A_mul_B here because irfft destroys its input.
   v.q    = irfft(v.qh, g.nx)
-  v.U    = irfft(v.Uh, g.nx) 
-  v.V    = irfft(v.Vh, g.nx) 
-  v.zeta = irfft(v.zetah, g.nx) 
+  v.U    = irfft(v.Uh, g.nx)
+  v.V    = irfft(v.Vh, g.nx)
+  v.zeta = irfft(v.zetah, g.nx)
 
   nothing
 end
@@ -393,15 +390,15 @@ function delphi(vs, pr, g)
   0.5*(vs.phix-im*vs.phiy)
 end
 
-  
 
-""" Return the horizontal velocities u and v, vertical velocity w, and 
+
+""" Return the horizontal velocities u and v, vertical velocity w, and
 buoyancy b. """
-function getprimitivefields(vs::Vars, pr::NIWQGParams, g::TwoDGrid; z=0.0, 
+function getprimitivefields(vs::Vars, pr::NIWQGParams, g::TwoDGrid; z=0.0,
   N=10*pr.f)
 
   updatevars!(vs, pr, g)
-  
+
   # k = N*m/f
   m = pr.f*pr.kw/N
 
@@ -412,8 +409,8 @@ function getprimitivefields(vs::Vars, pr::NIWQGParams, g::TwoDGrid; z=0.0,
   wc = im/m * exp(im*phase) * delphi
   bc = m*pr.eta * exp(im*phase) * delphi
 
-  u = real.(exp(im*phase) * vs.phi) 
-  v = imag.(exp(im*phase) * vs.phi) 
+  u = real.(exp(im*phase) * vs.phi)
+  v = imag.(exp(im*phase) * vs.phi)
   w = real.(wc + conj.(wc))
   b = real.(bc + conj.(bc))
 
@@ -432,7 +429,7 @@ end
 
 function niwke(prob::AbstractProblem)
   niwke(prob.vars, prob.params, prob.grid)
-end 
+end
 
 
 """ Returns the net NIW potential energy. """
@@ -448,7 +445,7 @@ end
 
 """ Returns the net QG energy. """
 function qgenergy(v::AbstractVars, p::AbstractParams, g::AbstractGrid)
-  (0.5*g.dx*g.dy*sum(v.U.^2.0+v.V.^2.0) 
+  (0.5*g.dx*g.dy*sum(v.U.^2.0+v.V.^2.0)
     + 0.25/p.kw^2.0*g.dx*g.dy*sum(abs2.(v.phix)+abs2.(v.phiy)))
 end
 
@@ -494,7 +491,7 @@ function qg_dissipation(prob::AbstractProblem)
 end
 
 
-""" Returns the wave-QG cross-term that contributes to the balanced energy 
+""" Returns the wave-QG cross-term that contributes to the balanced energy
 budget. """
 function waveqg_dissipation(
   v::AbstractVars, p::AbstractParams, g::AbstractGrid)
@@ -505,7 +502,7 @@ function waveqg_dissipation(
     conj.(v.phi).*delphi .+ v.phi.*conj.(delphi))
 
   chi .+= 0.5.*p.nu./p.f .* v.psi .* real.(
-              im.*jacobian(conj.(v.phi), delphi, g) 
+              im.*jacobian(conj.(v.phi), delphi, g)
            .- im.*jacobian(v.phi, conj.(delphi), g)
   )
 

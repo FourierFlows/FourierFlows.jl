@@ -1,6 +1,3 @@
-__precompile__()
-
-
 export ForwardEulerTimeStepper, FilteredForwardEulerTimeStepper,
        AB3TimeStepper,
        RK4TimeStepper,
