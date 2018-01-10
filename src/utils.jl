@@ -1,5 +1,7 @@
 import SpecialFunctions
 
+export @createarrays
+
 
 """
     @createarrays T dims a b c 
