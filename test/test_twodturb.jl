@@ -13,7 +13,7 @@ function teststepforward(g, p, v, eq; dt=1e-16, nsteps=10,
   stepper="ForwardEuler")
 
   filter = ones(v.sol)
-  if stepper == "FiltrForwardEuler" || stepper == "FiltrETDRK4"
+  if stepper == "FilteredForwardEuler" || stepper == "FilteredETDRK4"
       # create a filtered ts (simpler is Euler)
       ts = FilteredForwardEulerTimeStepper(dt, g, v; filterorder=4.0, innerfilterK=0.65, outerfilterK=1)
       # and use its filter to apply it to the initial condition
@@ -22,15 +22,16 @@ function teststepforward(g, p, v, eq; dt=1e-16, nsteps=10,
 
   if stepper == "ForwardEuler"
       ts = ForwardEulerTimeStepper(dt, eq.LC)
-  elseif stepper == "FiltrForwardEuler"
-      ts = FilteredForwardEulerTimeStepper(dt, g, v; filterorder=4.0, innerfilterK=0.65, outerfilterK=1)
+  elseif stepper == "FilteredForwardEuler"
+      ts = FilteredForwardEulerTimeStepper(dt, g, v; 
+        filterorder=4.0, innerfilterK=0.65, outerfilterK=1)
   elseif stepper == "AB3"
       ts = AB3TimeStepper(dt, eq.LC)
   elseif stepper == "RK4"
       ts = RK4TimeStepper(dt, eq.LC)
   elseif stepper == "ETDRK4"
       ts = ETDRK4TimeStepper(dt, eq.LC)
-  elseif stepper == "FiltrETDRK4"
+  elseif stepper == "FilteredETDRK4"
       ts = FilteredETDRK4TimeStepper(dt, eq.LC, g)
   end
 
@@ -63,8 +64,8 @@ function teststepforward(n::Int, L, ν, nν::Int; stepper="ForwardEuler")
 end
 
 @test teststepforward(128, 2π, 1e-2, 2; stepper="ForwardEuler")
-@test teststepforward(128, 2π, 1e-2, 2; stepper="FiltrForwardEuler")
+@test teststepforward(128, 2π, 1e-2, 2; stepper="FilteredForwardEuler")
 @test teststepforward(128, 2π, 1e-2, 2; stepper="AB3")
 @test teststepforward(128, 2π, 1e-2, 2; stepper="RK4")
 @test teststepforward(128, 2π, 1e-2, 2; stepper="ETDRK4")
-@test teststepforward(128, 2π, 1e-2, 2; stepper="FiltrETDRK4")
+@test teststepforward(128, 2π, 1e-2, 2; stepper="FilteredETDRK4")
