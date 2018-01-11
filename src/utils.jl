@@ -30,38 +30,22 @@ function getvarsexpr(name, physfields, transfields; soldims=2, vardims=2,
     for fld in transfields]
 
   if !dual
-    solexpr = 
+    firstexpr = [
+      :(t::Float64), 
+      :(sol::Array{Complex{Float64},$soldims})
+    ]
   else
-    solexpr = [
+    firstexpr = [
+      :(t::Float64), 
       :(solc::Array{Complex{Float64},$soldims}),
       :(solr::Array{Complex{Float64},$soldims}),
     ]
   end
       
-  if parent != nothing && !dual
+  if parent != nothing
     expr = quote
       mutable struct $name <: $parent
-        t::Float64
-        sol::Array{Complex{Float64},$soldims}
-        $(physexprs...)
-        $(transexprs...)
-      end
-    end
-  elseif parent != nothing && dual
-    expr = quote 
-      mutable struct $name <: $parent
-        t::Float64
-        solc::Array{Complex{Float64},$soldims}
-        solr::Array{Complex{Float64},$soldims}
-        $(physexprs...)
-        $(transexprs...)
-      end
-    end
-  elseif parent == nothing && !dual
-    expr = quote
-      mutable struct $name
-        t::Float64
-        sol::Array{Complex{Float64},$soldims}
+        $(firstexpr...)
         $(physexprs...)
         $(transexprs...)
       end
@@ -69,9 +53,7 @@ function getvarsexpr(name, physfields, transfields; soldims=2, vardims=2,
   else
     expr = quote
       mutable struct $name
-        t::Float64
-        solc::Array{Complex{Float64},$soldims}
-        solr::Array{Complex{Float64},$soldims}
+        $(firstexpr...)
         $(physexprs...)
         $(transexprs...)
       end
