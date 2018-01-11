@@ -39,12 +39,17 @@ function getvarsexpr(name, physfields, transfields; soldims=2, vardims=2,
   end
       
   if parent != nothing
-    header = :(mutable struct $name <: $parent)
-  else
-    header = :(mutable struct $name)
-  end
     expr = quote
-      $header
+      mutable struct $name <: $parent
+        t::Float64
+        $(solexpr...)
+        $(physdefs...)
+        $(transdefs...)
+      end
+    end
+  else
+    expr = quote
+      mutable struct $name
         t::Float64
         $(solexpr...)
         $(physdefs...)
