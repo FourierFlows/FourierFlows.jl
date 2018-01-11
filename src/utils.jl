@@ -17,6 +17,47 @@ macro createarrays(T, dims, vars...)
 end
 
 
+"""
+This function returns an expression that defines a Composite Type
+of the AbstractVars variety.
+"""
+function getvarsexpr(name, physfields, transfields; soldims=2, vardims=2, 
+                     dual=false, parent=:AbstractVars) 
+  
+  physexprs = [:( $fld::Array{Float64,$vardims} ) 
+    for fld in physfields]
+  transexprs = [:( $fld::Array{Complex{Float64},$vardims} ) 
+    for fld in transfields]
+
+  if !dual
+    solexpr = :(sol::Array{Complex{Float64},$soldims})
+  else
+    solexpr = [
+      :(solc::Array{Complex{Float64},$soldims}),
+      :(solr::Array{Complex{Float64},$soldims}),
+    ]
+  end
+      
+  if parent != nothing
+    header = :(mutable struct $name <: $parent)
+  else
+    header = :(mutable struct $name)
+  end
+    expr = quote
+      $header
+        t::Float64
+        $(solexpr...)
+        $(physdefs...)
+        $(transdefs...)
+      end
+    end
+
+  expr
+end
+
+
+
+
 
 
 "Return the fftwavenumber vector with length n and domain size L."
