@@ -1,4 +1,9 @@
 [![Build Status](https://travis-ci.org/FourierFlows/FourierFlows.jl.svg?branch=master)](https://travis-ci.org/FourierFlows/FourierFlows.jl) [![Build status](https://ci.appveyor.com/api/projects/status/3hm86k8d4qdch730?svg=true)](https://ci.appveyor.com/project/navidcy/fourierflows-jl) [![codecov](https://codecov.io/gh/FourierFlows/FourierFlows.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/FourierFlows/FourierFlows.jl) [![Coverage Status](https://coveralls.io/repos/github/FourierFlows/FourierFlows.jl/badge.svg?branch=master)](https://coveralls.io/github/FourierFlows/FourierFlows.jl?branch=master)
+
+[![FourierFlows](http://pkg.julialang.org/badges/FourierFlows_0.6.svg)](http://pkg.julialang.org/detail/FourierFlows)
+[![FourierFlows](http://pkg.julialang.org/badges/FourierFlows_0.7.svg)](http://pkg.julialang.org/detail/FourierFlows)
+
+
 <!-- [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://FourierFlows.github.io/FourierFlows.jl/stable) -->
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://FourierFlows.github.io/FourierFlows.jl/latest)
 
