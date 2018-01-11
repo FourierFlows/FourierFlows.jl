@@ -67,6 +67,11 @@ end
 
 
 # Vars
+physvars = [:q, :U, :V, :Uq, :Vq, :psi]
+transvars = [:qh, :Uh, :Vh, :Uqh, :Vqh, :psih]
+@eval getvarsexpr(:Vars, physvars, transvars)
+
+#=
 mutable struct Vars <: AbstractVars
   t::Float64
   sol::Array{Complex128, 2}
@@ -87,6 +92,7 @@ mutable struct Vars <: AbstractVars
   Vqh::Array{Complex128,2}
   psih::Array{Complex128,2}
 end
+=#
 
 function Vars(g::TwoDGrid)
   @createarrays Float64 (g.nx, g.ny) q U V Uq Vq psi
