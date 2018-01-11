@@ -21,8 +21,8 @@ end
 This function returns an expression that defines a Composite Type
 of the AbstractVars variety.
 """
-function getvarsexpr(name, physfields, transfields; soldims=2, vardims=2, 
-                     dual=false, parent=:AbstractVars) 
+function getexpr_varstype(name, physfields, transfields; soldims=2, vardims=2, 
+                          dual=false, parent=:AbstractVars) 
   
   physexprs = [:( $fld::Array{Float64,$vardims} ) 
     for fld in physfields]
