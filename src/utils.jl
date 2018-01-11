@@ -43,8 +43,8 @@ function getvarsexpr(name, physfields, transfields; soldims=2, vardims=2,
       mutable struct $name <: $parent
         t::Float64
         $(solexpr...)
-        $(physdefs...)
-        $(transdefs...)
+        $(physexprs...)
+        $(transexprs...)
       end
     end
   else
