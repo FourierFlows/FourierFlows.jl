@@ -56,6 +56,7 @@ function getvarsexpr(name, physfields, transfields; soldims=2, vardims=2,
         $(transdefs...)
       end
     end
+  end
 
   expr
 end
