@@ -55,8 +55,15 @@ end
 
 # Params
 struct Params <: AbstractParams
-  ν::Float64                     # Vorticity viscosity
-  nν::Int                        # Vorticity hyperviscous order
+  ν::Float64        # Vorticity viscosity
+  nν::Int           # Vorticity hyperviscous order
+end
+
+struct ForcedParams <: AbstractParams
+  ν::Float64        # Vorticity viscosity
+  nν::Int           # Vorticity hyperviscous order
+  μ::Float64        # Bottom drag
+  calcF!::Function  # Function that calculates the forcing F
 end
 
 # Equations
@@ -65,12 +72,19 @@ function Equation(p::Params, g::TwoDGrid)
   FourierFlows.Equation{2}(LC, calcN!)
 end
 
+function Equation(p::ForcedParams, g::TwoDGrid)
+  LC = -p.ν*g.KKrsq.^p.nν - μ
+  FourierFlows.Equation{2}(LC, calcN!)
+end
+
+
+
 
 # Vars
 physvars = [:q, :U, :V, :Uq, :Vq, :psi]
 transvars = [:qh, :Uh, :Vh, :Uqh, :Vqh, :psih]
 
-expr = FourierFlows.getvarsexpr(:Vars, physvars, transvars)
+expr = FourierFlows.getexpr_varstype(:Vars, physvars, transvars)
 eval(expr)
 
 function Vars(g::TwoDGrid)
@@ -79,41 +93,24 @@ function Vars(g::TwoDGrid)
   Vars(0.0, sol, q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih)
 end
 
-#=
-function Vars(g::TwoDGrid)
-  @createarrays Float64 (g.nx, g.ny) $(physvars...)
-  @createarrays Complex{Float64} (g.nkr, g.nl) sol $(transvars...)
-  Vars(0.0, sol, q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih)
+
+forcedtransvars = [:qh, :Uh, :Vh, :Uqh, :Vqh, :psih, :F]
+expr = FourierFlows.getexpr_varstype(:ForcedVars, physvars, forcedtransvars)
+eval(expr)
+
+function ForcedVars(g::TwoDGrid)
+  @createarrays Float64 (g.nx, g.ny) q U V Uq Vq psi
+  @createarrays Complex{Float64} (g.nkr, g.nl) sol qh Uh Vh Uqh Vqh psih F
+  Vars(0.0, sol, q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih, F)
 end
-=#
 
 
-#=
-mutable struct Vars <: AbstractVars
-  t::Float64
-  sol::Array{Complex128, 2}
 
-  # Auxiliary vars
-  q::Array{Float64,2}
-  U::Array{Float64,2}
-  V::Array{Float64,2}
-  Uq::Array{Float64,2}
-  Vq::Array{Float64,2}
-  psi::Array{Float64,2}
-
-  # Solution
-  qh::Array{Complex128,2}
-  Uh::Array{Complex128,2}
-  Vh::Array{Complex128,2}
-  Uqh::Array{Complex128,2}
-  Vqh::Array{Complex128,2}
-  psih::Array{Complex128,2}
-end
-=#
 
 # Solvers
-function calcN!(N::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
-  t::Float64, v::Vars, p::Params, g::TwoDGrid)
+function calcN_advection!(N::Array{Complex{Float64}, 2}, 
+                sol::Array{Complex{Float64}, 2},
+                t::Float64, v::AbstractVars, p::AbstractParams, g::TwoDGrid)
   v.qh .= sol
   A_mul_B!(v.q, g.irfftplan, v.qh) # destroys qh when using fftw
 
@@ -133,21 +130,43 @@ function calcN!(N::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
   nothing
 end
 
+function calcN!(N::Array{Complex{Float64}, 2}, 
+                sol::Array{Complex{Float64}, 2}, t::Float64, 
+                v::Vars, p::Params, g::TwoDGrid)
+  calcN_advection!(N, sol, t, v, p, g)
+  nothing
+end
+
+function calcN!(N::Array{Complex{Float64}, 2}, 
+                sol::Array{Complex{Float64}, 2}, t::Float64, 
+                v::ForcedVars, p::ForcedParams, g::TwoDGrid)
+
+  calcN_advection!(N, sol, t, v, p, g)
+  p.calcF!(v.F, sol, t, v, p, g)
+
+  @. N += v.F
+  nothing
+end
+
 
 # Helper functions
 """
 Update solution variables using qh in v.sol.
 """
-function updatevars!(v::Vars, g::TwoDGrid)
+function updatevars!(v, g)
   v.qh .= v.sol
-  v.q = irfft(v.qh, g.nx)
-
   @. v.psih = -g.invKKrsq * v.qh
   @. v.Uh = -im*g.l  * v.psih
   @. v.Vh =  im*g.kr * v.psih
 
-  v.U = irfft(v.Uh, g.nx)
-  v.V = irfft(v.Vh, g.nx)
+  qh1 = deepcopy(v.qh)
+  Uh1 = deepcopy(v.Uh)
+  Vh1 = deepcopy(v.Vh)
+
+  A_mul_B!(v.q, g.irfftplan, qh1)
+  A_mul_B!(v.U, g.irfftplan, Uh1)
+  A_mul_B!(v.V, g.irfftplan, Vh1)
+
   nothing
 end
 
@@ -159,7 +178,7 @@ end
 """
 Set the vorticity field.
 """
-function set_q!(v::Vars, g::TwoDGrid, q::Array{Float64, 2})
+function set_q!(v, g, q)
   A_mul_B!(v.sol, g.rfftplan, q)
   updatevars!(v, g)
 end
@@ -172,12 +191,12 @@ end
 """
 Calculate the domain integrated kinetic energy.
 """
-function energy(v::Vars, g::TwoDGrid)
+function energy(v, g)
   0.5*(FourierFlows.parsevalsum2(g.Kr.*g.invKKrsq.*v.sol, g)
         + FourierFlows.parsevalsum2(g.Lr.*g.invKKrsq.*v.sol, g))
 end
 
-function energy(prob::AbstractProblem)
+function energy(prob)
   energy(prob.vars, prob.grid)
 end
 
@@ -185,7 +204,7 @@ end
 """
 Returns the domain-integrated enstrophy.
 """
-function enstrophy(v::Vars, g::TwoDGrid)
+function enstrophy(v, g)
   0.5*FourierFlows.parsevalsum2(v.sol, g)
 end
 
