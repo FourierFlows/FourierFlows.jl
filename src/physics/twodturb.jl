@@ -53,6 +53,39 @@ function InitialValueProblem(nx, Lx, ny, Ly, ν, nν, dt, withfilter)
                         withfilter=withfilter)
 end
 
+
+function ForcedProblem(;
+        nx = 256,
+        Lx = 2π,
+        ny = nothing,
+        Ly = nothing,
+         ν = 0.0,
+        nν = 2,
+         μ = 0.0,
+        dt = 0.01,
+withfilter = false,
+     calcF = nothing
+  )
+
+  if  Ly == nothing; Ly = Lx;  end
+  if  ny == nothing; ny = nx;  end
+
+  if calcF == nothing; _calcF(F, sol, t, v, p, g) = nothing
+  else;                _calcF = calcF
+  end
+
+  g  = TwoDGrid(nx, Lx, ny, Ly)
+  pr = TwoDTurb.ForcedParams(ν, nν, μ, _calcF)
+  vs = TwoDTurb.ForcedVars(g)
+  eq = TwoDTurb.Equation(pr, g)
+
+  if withfilter; ts = FilteredForwardEulerTimeStepper(dt, eq.LC, g)
+  else;          ts = ForwardEulerTimeStepper(dt, eq.LC)
+  end
+
+  FourierFlows.Problem(g, vs, pr, eq, ts)
+end
+
 # Params
 struct Params <: AbstractParams
   ν::Float64        # Vorticity viscosity
@@ -73,7 +106,7 @@ function Equation(p::Params, g::TwoDGrid)
 end
 
 function Equation(p::ForcedParams, g::TwoDGrid)
-  LC = -p.ν*g.KKrsq.^p.nν - μ
+  LC = -p.ν*g.KKrsq.^p.nν - p.μ
   FourierFlows.Equation{2}(LC, calcN!)
 end
 
@@ -101,7 +134,7 @@ eval(expr)
 function ForcedVars(g::TwoDGrid)
   @createarrays Float64 (g.nx, g.ny) q U V Uq Vq psi
   @createarrays Complex{Float64} (g.nkr, g.nl) sol qh Uh Vh Uqh Vqh psih F
-  Vars(0.0, sol, q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih, F)
+  ForcedVars(0.0, sol, q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih, F)
 end
 
 
@@ -145,6 +178,7 @@ function calcN!(N::Array{Complex{Float64}, 2},
   p.calcF!(v.F, sol, t, v, p, g)
 
   @. N += v.F
+  v.F .= 0.0
   nothing
 end
 
