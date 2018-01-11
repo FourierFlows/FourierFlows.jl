@@ -69,7 +69,7 @@ end
 # Vars
 physvars = [:q, :U, :V, :Uq, :Vq, :psi]
 transvars = [:qh, :Uh, :Vh, :Uqh, :Vqh, :psih]
-@eval getvarsexpr(:Vars, physvars, transvars)
+@eval FourierFlows.getvarsexpr(:Vars, physvars, transvars)
 
 #=
 mutable struct Vars <: AbstractVars
