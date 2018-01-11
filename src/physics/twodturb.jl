@@ -69,9 +69,16 @@ end
 # Vars
 physvars = [:q, :U, :V, :Uq, :Vq, :psi]
 transvars = [:qh, :Uh, :Vh, :Uqh, :Vqh, :psih]
-#println(FourierFlows.getvarsexpr(:Vars, physvars, transvars))
+
 expr = FourierFlows.getvarsexpr(:Vars, physvars, transvars)
 eval(expr)
+
+function Vars(g::TwoDGrid)
+  @createarrays Float64 (g.nx, g.ny) $(physvars...)
+  @createarrays Complex{Float64} (g.nkr, g.nl) sol $(transvars...)
+  Vars(0.0, sol, q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih)
+end
+
 
 #=
 mutable struct Vars <: AbstractVars
@@ -94,13 +101,13 @@ mutable struct Vars <: AbstractVars
   Vqh::Array{Complex128,2}
   psih::Array{Complex128,2}
 end
-=#
 
 function Vars(g::TwoDGrid)
   @createarrays Float64 (g.nx, g.ny) q U V Uq Vq psi
   @createarrays Complex{Float64} (g.nkr, g.nl) sol qh Uh Vh Uqh Vqh psih
   Vars(0.0, sol, q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih)
 end
+=#
 
 
 # Solvers
