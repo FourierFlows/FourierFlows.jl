@@ -2,6 +2,47 @@ import SpecialFunctions
 
 export @createarrays
 
+# Utility for generating time-steppers.
+
+# Time-steppers lists
+steppers = [
+  "ForwardEuler",
+  "FilteredForwardEuler",
+  "AB3",
+  "RK4",
+  "ETDRK4",
+  "FilteredETDRK4",
+]
+
+filteredsteppers = [
+  "FilteredForwardEuler",
+  "FilteredETDRK4",
+]
+
+"""
+Returns a time-stepper type defined by the prefix 'stepper', timestep dt
+solution sol (used to construct variables with identical type and size as
+the solution vector), and grid g.
+"""
+function autoconstructtimestepper(stepper, dt, sol, 
+                                  g::AbstractGrid=ZeroDGrid(1))
+  fullsteppername = Symbol(stepper, :TimeStepper)
+  if stepper ∈ filteredsteppers
+    tsexpr = Expr(:call, fullsteppername, dt, sol, g)
+  else
+    tsexpr = Expr(:call, fullsteppername, dt, sol)
+  end
+
+  eval(tsexpr)
+end
+
+function autoconstructtimestepper(stepper, dt, solc, solr)
+  fullsteppername = Symbol(stepper, :TimeStepper)
+  tsexpr = Expr(:call, fullsteppername, dt, solc, solr)
+  eval(tsexpr)
+end
+
+
 
 """
     @createarrays T dims a b c 
