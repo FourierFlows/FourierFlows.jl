@@ -1,28 +1,17 @@
 using Base.Test, FourierFlows
 import FourierFlows.TwoDTurb
 
-steppers = [
-  "ForwardEuler",
-  "FilteredForwardEuler",
-  "AB3",
-  "RK4",
-  "ETDRK4",
-  "FilteredETDRK4",
-]
-
-steppersteps = [
-  1,
-  1,
-  3,
-  1,
-  1,
-  1,
-]
-
-filteredsteppers = [
-  "FilteredForwardEuler",
-  "FilteredETDRK4",
-]
+# Dictionary of (stepper, nsteps) pairs to test. Each stepper is tested by
+# stepping forward nstep times.
+steppersteps = Dict([
+  ("ForwardEuler", 1),
+  ("FilteredForwardEuler", 1),
+  ("AB3", 3),
+  ("RK4", 1),
+  ("ETDRK4", 1),
+  ("FilteredETDRK4", 1),
+])
+ 
 
 """
 Build a twodturb problem, and use it to test time-stepping methods.
@@ -34,7 +23,7 @@ function testtwodturbstepforward(n=64, L=2π, ν=0.0, nν=2;
   p  = TwoDTurb.Params(ν, nν)
   v  = TwoDTurb.Vars(g)
   eq = TwoDTurb.Equation(p, g)
-  ts = FourierFlows.autoconstructtimestepper(stepper, dt, sol, g)
+  ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
   
   # Initial condition (IC)
   qi = rand(g.nx, g.ny)
@@ -60,6 +49,6 @@ end
 # Run the tests
 n = 64 
 
-for (i, stepper) in enumerate(steppers)
-  @test testtwodturbstepforward(n; stepper=stepper, nsteps=steppersteps[i])
+for (stepper, steps) in steppersteps
+  @test testtwodturbstepforward(n; stepper=stepper, nsteps=steps)
 end
