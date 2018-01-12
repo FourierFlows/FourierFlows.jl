@@ -7,7 +7,7 @@ import FourierFlows.TwoDTurb: energy, enstrophy
   μ = 0.0    # Bottom drag
   ν = 1e-6   # Laplacian viscosity
  nν = 2
- dt = 1e-2   # Time step
+ dt = 2e-3   # Time step
  tf = 1000   # final time
 ndp = 10000  # Timesteps between plots
 
@@ -40,7 +40,7 @@ Z = Diagnostic(enstrophy, prob, nsteps=round(Int, tf/dt))
 diags = [E, Z]
 
 # Step forward
-fig, axs = subplots(nrows=2)
+fig, axs = subplots(ncols=2, figsize=(8, 4))
 tic()
 for i = 1:round(Int, tf/dt/ndp)
   stepforward!(prob, diags, nsteps=ndp)
@@ -54,7 +54,9 @@ for i = 1:round(Int, tf/dt/ndp)
   pcolormesh(prob.grid.X, prob.grid.Y, prob.vars.q)
 
   sca(axs[2]); cla()
-  plot(E.time[1:E.count], E.data[1:E.count]/E.data[1])
+  plot(E.time[1:E.count], E.data[1:E.count])
+
+  pause(0.01)
 
 end
 
