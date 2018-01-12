@@ -22,30 +22,16 @@ This function returns an expression that defines a Composite Type
 of the AbstractVars variety.
 """
 function getexpr_varstype(name, physfields, transfields; soldims=2, vardims=2, 
-                          dual=false, parent=:AbstractVars) 
+                          parent=:AbstractVars) 
   
   physexprs = [:( $fld::Array{Float64,$vardims} ) 
     for fld in physfields]
   transexprs = [:( $fld::Array{Complex{Float64},$vardims} ) 
     for fld in transfields]
 
-  if !dual
-    firstexpr = [
-      :(t::Float64), 
-      :(sol::Array{Complex{Float64},$soldims})
-    ]
-  else
-    firstexpr = [
-      :(t::Float64), 
-      :(solc::Array{Complex{Float64},$soldims}),
-      :(solr::Array{Complex{Float64},$soldims}),
-    ]
-  end
-      
   if parent != nothing
     expr = quote
       mutable struct $name <: $parent
-        $(firstexpr...)
         $(physexprs...)
         $(transexprs...)
       end
@@ -53,7 +39,6 @@ function getexpr_varstype(name, physfields, transfields; soldims=2, vardims=2,
   else
     expr = quote
       mutable struct $name
-        $(firstexpr...)
         $(physexprs...)
         $(transexprs...)
       end
