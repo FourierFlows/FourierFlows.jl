@@ -8,39 +8,22 @@ Grid = TwoDGrid
 Construct an initial value problem.
 """
 function InitialValueProblem(;
-   nx = 256,
-   Lx = 2π,
-   ny = nothing,
-   Ly = nothing,
-    ν = nothing,
-   nu = nothing,
-   nν = 2,
-  nnu = nothing,
-   dt = 0.01,
-  withfilter = false
+     nx = 256,
+     Lx = 2π,
+     ny = nx,
+     Ly = Lx,
+      ν = 0.0,
+     nν = 2,
+     dt = 0.01,
+stepper = "ETDRK4"
   )
-
-  # Defaults
-  if  nu != nothing;  ν = nu;  end
-  if nnu != nothing; nν = nnu; end
-  if  Ly == nothing; Ly = Lx;  end
-  if  ny == nothing; ny = nx;  end
-
-  if ν == nothing
-    if withfilter; ν = 0.0
-    else;          ν = 1e-1/(dt*(0.65π*nx/Lx)^nν)
-    end
-  end
 
   g  = TwoDGrid(nx, Lx, ny, Ly)
   pr = TwoDTurb.Params(ν, nν)
   vs = TwoDTurb.Vars(g)
   eq = TwoDTurb.Equation(pr, g)
-
-  if withfilter; ts = FilteredETDRK4TimeStepper(dt, eq.LC, g)
-  else;          ts = ETDRK4TimeStepper(dt, eq.LC)
-  end
-
+  ts = FourierFlows.autoconstructstepper(stepper, dt, eq.LC, g)
+  
   FourierFlows.Problem(g, vs, pr, eq, ts; realsol=true, nvars=1)
 end
 
@@ -48,29 +31,21 @@ function InitialValueProblem(n, L, ν, nν, dt, withfilter)
   InitialValueProblem(nx=n, Lx=L, ν=ν, nν=nν, dt=dt, withfilter=withfilter)
 end
 
-function InitialValueProblem(nx, Lx, ny, Ly, ν, nν, dt, withfilter)
-  InitialValueProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, ν=ν, nν=nν, dt=dt,
-                        withfilter=withfilter)
-end
-
 
 function ForcedProblem(;
         nx = 256,
         Lx = 2π,
-        ny = nothing,
-        Ly = nothing,
+        ny = nx,
+        Ly = Lx,
          ν = 0.0,
         nν = 2,
          μ = 0.0,
         dt = 0.01,
-withfilter = false,
+   stepper = "RK4",
      calcF = nothing
   )
 
-  if  Ly == nothing; Ly = Lx;  end
-  if  ny == nothing; ny = nx;  end
-
-  if calcF == nothing; _calcF(F, sol, t, v, p, g) = nothing
+  if calcF == nothing; _calcF(F, sol, t, s, v, p, g) = nothing
   else;                _calcF = calcF
   end
 
@@ -78,12 +53,14 @@ withfilter = false,
   pr = TwoDTurb.ForcedParams(ν, nν, μ, _calcF)
   vs = TwoDTurb.ForcedVars(g)
   eq = TwoDTurb.Equation(pr, g)
-
-  if withfilter; ts = FilteredForwardEulerTimeStepper(dt, eq.LC, g)
-  else;          ts = ForwardEulerTimeStepper(dt, eq.LC)
-  end
+  ts = FourierFlows.autoconstructstepper(stepper, dt, eq.LC, g)
 
   FourierFlows.Problem(g, vs, pr, eq, ts; realsol=true, nvars=1)
+end
+
+function ForcedProblem(n, L, ν, nν, μ, dt, calcF, withfilter=false)
+  ForcedProblem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, calcF=calcF, 
+    withfilter=withfilter)
 end
 
 # Params
@@ -169,10 +146,11 @@ function calcN_forced!(N::Array{Complex{Float64}, 2},
                 s::State, v::ForcedVars, p::ForcedParams, g::TwoDGrid)
 
   calcN_advection!(N, sol, t, s, v, p, g)
+
+  v.F .= 0.0
   p.calcF!(v.F, sol, t, s, v, p, g)
 
   @. N += v.F
-  v.F .= 0.0
   nothing
 end
 
