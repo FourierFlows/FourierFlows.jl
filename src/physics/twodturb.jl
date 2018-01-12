@@ -5,7 +5,7 @@ Grid = TwoDGrid
 
 # Problem ---------------------------------------------------------------------
 """
-Construct an initial value problem.
+Construct an initial-value 2D turbulence problem.
 """
 function InitialValueProblem(;
      nx = 256,
@@ -22,9 +22,9 @@ stepper = "ETDRK4"
   pr = TwoDTurb.Params(ν, nν)
   vs = TwoDTurb.Vars(g)
   eq = TwoDTurb.Equation(pr, g)
-  ts = FourierFlows.autoconstructstepper(stepper, dt, eq.LC, g)
+  ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
   
-  FourierFlows.Problem(g, vs, pr, eq, ts; realsol=true, nvars=1)
+  FourierFlows.Problem(g, vs, pr, eq, ts)
 end
 
 function InitialValueProblem(n, L, ν, nν, dt, withfilter)
@@ -32,6 +32,9 @@ function InitialValueProblem(n, L, ν, nν, dt, withfilter)
 end
 
 
+"""
+Construct a forced 2D turbulence problem.
+"""
 function ForcedProblem(;
         nx = 256,
         Lx = 2π,
@@ -53,9 +56,9 @@ function ForcedProblem(;
   pr = TwoDTurb.ForcedParams(ν, nν, μ, _calcF)
   vs = TwoDTurb.ForcedVars(g)
   eq = TwoDTurb.Equation(pr, g)
-  ts = FourierFlows.autoconstructstepper(stepper, dt, eq.LC, g)
+  ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
 
-  FourierFlows.Problem(g, vs, pr, eq, ts; realsol=true, nvars=1)
+  FourierFlows.Problem(g, vs, pr, eq, ts)
 end
 
 function ForcedProblem(n, L, ν, nν, μ, dt, calcF, withfilter=false)
