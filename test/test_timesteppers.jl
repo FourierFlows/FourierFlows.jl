@@ -34,14 +34,7 @@ function testtwodturbstepforward(n=64, L=2π, ν=0.0, nν=2;
   p  = TwoDTurb.Params(ν, nν)
   v  = TwoDTurb.Vars(g)
   eq = TwoDTurb.Equation(p, g)
-
-  fullsteppername = Symbol(stepper, :TimeStepper)
-  if issubset([stepper], filteredsteppers)
-    tsexpr = Expr(:call, fullsteppername, dt, eq.LC, g)
-  else
-    tsexpr = Expr(:call, fullsteppername, dt, eq.LC)
-  end
-  eval(:( ts = eval($tsexpr) ))
+  ts = FourierFlows.autoconstructtimestepper(stepper, dt, sol, g)
   
   # Initial condition (IC)
   qi = rand(g.nx, g.ny)
