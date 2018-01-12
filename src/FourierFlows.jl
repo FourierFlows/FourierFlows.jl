@@ -1,14 +1,16 @@
 __precompile__()
 
 module FourierFlows
+import Base: getfield
 
 export AbstractGrid,
        AbstractParams,
        AbstractVars,
        AbstractEquation,
        AbstractTimeStepper,
-       AbstractProblem,
-       Problem, State, DualState
+       AbstractProblem
+       
+export Equation, Problem, State, DualState
 
 # Abstract supertypes
 abstract type AbstractGrid end
@@ -18,7 +20,6 @@ abstract type AbstractEquation end
 abstract type AbstractTimeStepper end
 abstract type AbstractProblem end
 abstract type AbstractState end
-
 
 mutable struct State{T,dim} <: AbstractState
   t::Float64
@@ -71,10 +72,64 @@ mutable struct Problem <: AbstractProblem
   eqn::AbstractEquation
   ts::AbstractTimeStepper
   state::AbstractState
-  t::Real
+  t::Float64
   step::Int
 end
 
+#=
+For v1.0 release:
+  The `t` and `step` properties can be removed from Problem, instead
+  overloading the `getfield` function to intercept attempts to access
+  `t` and `step`, which will be redirected to prob.state.t and 
+  prob.state.step (and perhaps sol as well). This'll make lots of things
+  just a little bit nicer.
+
+function getfield(prob::AbstractProblem, name)
+  if name ∈ [:t, :step]
+    return getfield(prob.state, name)
+  else
+    return getfield(prob, name)
+  end
+end
+=#
+
+
+# Time-steppers lists
+steppers = [
+  "ForwardEuler",
+  "FilteredForwardEuler",
+  "AB3",
+  "RK4",
+  "ETDRK4",
+  "FilteredETDRK4",
+]
+
+filteredsteppers = [
+  "FilteredForwardEuler",
+  "FilteredETDRK4",
+]
+
+"""
+Returns a time-stepper type defined by the prefix 'stepper', timestep dt
+solution sol (used to construct variables with identical type and size as
+the solution vector), and grid g.
+"""
+function autoconstructtimestepper(stepper, dt, sol, g::AbstractGrid=ZeroDGrid(1))
+  fullsteppername = Symbol(stepper, :TimeStepper)
+  if stepper ∈ filteredsteppers
+    tsexpr = Expr(:call, fullsteppername, dt, sol, g)
+  else
+    tsexpr = Expr(:call, fullsteppername, dt, sol)
+  end
+
+  eval(tsexpr)
+end
+
+function autoconstructtimestepper(stepper, dt, solc, solr)
+  fullsteppername = Symbol(stepper, :TimeStepper)
+  tsexpr = Expr(:call, fullsteppername, dt, solc, solr)
+  eval(tsexpr)
+end
 
 # Include base functionality
 include("domains.jl")
@@ -86,22 +141,11 @@ include("utils.jl")
 
 function Problem(g::AbstractGrid, v::AbstractVars, p::AbstractParams,
   eq::AbstractEquation, ts::AbstractTimeStepper, st::AbstractState)
-  Problem(g, v, p, eq, ts, st, 0.0, 0)
+  Problem(g, v, p, eq, ts, st, st.t, st.step)
 end
 
-function Problem(g::TwoDGrid, v, p, eq, ts; nvars=1, realsol=true, 
-                 T=Complex{Float64})
-  if nvars == 1
-    if realsol; sol = zeros(T, (g.nkr, g.nl))
-    else;       sol = zeros(T, (g.nk, g.nl))
-    end 
-  else
-    if realsol; sol = zeros(T, (g.nkr, g.nl, nvars))
-    else;       sol = zeros(T, (g.nk, g.nl, nvars))
-    end 
-  end
-  st = State{T,ndims(sol)}(0.0, 0, sol)
-
+function Problem(g::TwoDGrid, v, p, eq, ts)
+  st = State{T,ndims(eq.LC)}(0.0, 0, zeros(eq.LC))
   Problem(g, v, p, eq, ts, st)
 end
 
