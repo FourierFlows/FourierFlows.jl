@@ -2,21 +2,10 @@
 # B A R O T R O P I C Q G >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 module BarotropicQG
-
 using FourierFlows
 
-export Grid,
-       Params, FreeDecayParams, ConstMeanParams,
-       Vars, FreeDecayVars,
-       Equation
-
-export set_zeta!
-
-Grid = TwoDGrid
-
-
 # P A R A M S -----------------------------------------------------------------
-type Params <: AbstractParams
+struct Params <: AbstractParams
   f0::Float64                       # Constant planetary vorticity
   beta::Float64                     # Planetary vorticity y-gradient
   FU::Function                      # Time-dependent forcing of domain average flow
@@ -54,24 +43,23 @@ end
 
 
 # "ConstMeanParams for flows with fixed values of U
-type ConstMeanParams <: AbstractParams
-  f0::Float64                       # Constant planetary vorticity
-  beta::Float64                     # Planetary vorticity y-gradient
-  U::Float64                        # Time-dependent forcing of domain average flow
-  etah::Array{Complex{Float64}, 2}  # Transform of topographic PV
-  mu::Float64                       # Linear drag
-  nu::Float64                       # Vorticity viscosity
-  nun::Int                          # Vorticity hyperviscous order
+struct ConstMeanParams <: AbstractParams
+  f0::Float64       # Constant planetary vorticity
+  beta::Float64     # Planetary vorticity y-gradient
+  U::Float64        # Time-dependent forcing of domain average flow
+  etah::Array{Complex{Float64},2}  # Transform of topographic PV
+  mu::Float64       # Linear drag
+  nu::Float64       # Vorticity viscosity
+  nun::Int          # Vorticity hyperviscous order
 end
 
-
-type FreeDecayParams <: AbstractParams
-  f0::Float64                       # Constant planetary vorticity
-  beta::Float64                     # Planetary vorticity y-gradient
-  etah::Array{Complex{Float64}, 2}  # Transform of topographic PV
-  mu::Float64                       # Linear drag
-  nu::Float64                       # Vorticity viscosity
-  nun::Int                          # Vorticity hyperviscous order
+struct FreeDecayParams <: AbstractParams
+  f0::Float64       # Constant planetary vorticity
+  beta::Float64     # Planetary vorticity y-gradient
+  etah::Array{Complex{Float64},2}  # Transform of topographic PV
+  mu::Float64       # Linear drag
+  nu::Float64       # Vorticity viscosity
+  nun::Int          # Vorticity hyperviscous order
 end
 
 function FreeDecayParams(g::TwoDGrid, beta::Real, etah::Real, mu::Real,
@@ -91,13 +79,11 @@ function Equation(p::Params, g::TwoDGrid)
 end
 
 function Equation(p::ConstMeanParams, g::TwoDGrid)
-  # Function calcN! is defined below.
   LC = -p.mu - p.nu.*g.KKrsq.^(0.5*p.nun)
   FourierFlows.Equation{2}(LC, calc_const_mean_N!)
 end
 
 function Equation(p::FreeDecayParams, g::TwoDGrid)
-  # Function calcN! is defined below.
   LC = -p.mu - p.nu.*g.KKrsq.^(0.5*p.nun)
   FourierFlows.Equation{2}(LC, calc_free_decay_N!)
 end
@@ -113,33 +99,26 @@ end
 
 # V A R S ---------------------------------------------------------------------
 
-type Vars <: AbstractVars
-  t::Float64
-  sol::Array{Complex{Float64}, 2}
-
-  q::Array{Float64, 2}
+struct Vars <: AbstractVars
+  q::Array{Float64,2}
   U::Float64
-  u::Array{Float64, 2}
-  v::Array{Float64, 2}
-  uUq::Array{Float64, 2}
-  vq::Array{Float64, 2}
-  psi::Array{Float64, 2}
-  zeta::Array{Float64, 2}
-  sp::Array{Float64, 2}
-
-  qh::Array{Complex{Float64}, 2}
-  uh::Array{Complex{Float64}, 2}
-  vh::Array{Complex{Float64}, 2}
-  uUqh::Array{Complex{Float64}, 2}
-  vqh::Array{Complex{Float64}, 2}
-  psih::Array{Complex{Float64}, 2}
-  zetah::Array{Complex{Float64}, 2}
+  u::Array{Float64,2}
+  v::Array{Float64,2}
+  uUq::Array{Float64,2}
+  vq::Array{Float64,2}
+  psi::Array{Float64,2}
+  zeta::Array{Float64,2}
+  sp::Array{Float64,2}
+  qh::Array{Complex{Float64},2}
+  uh::Array{Complex{Float64},2}
+  vh::Array{Complex{Float64},2}
+  uUqh::Array{Complex{Float64},2}
+  vqh::Array{Complex{Float64},2}
+  psih::Array{Complex{Float64},2}
+  zetah::Array{Complex{Float64},2}
 end
 
 function Vars(g::TwoDGrid)
-  t     = 0.0
-  sol   = zeros(Complex{Float64}, g.nkr, g.nl)
-
   q     = zeros(Float64, g.nx, g.ny)
   U     = 0.0
   u     = zeros(Float64, g.nx, g.ny)
@@ -167,28 +146,22 @@ end
 
 
 
-type FreeDecayVars <: AbstractVars
-  t::Float64
-  sol::Array{Complex{Float64}, 2}
-
-  # Auxiliary vars
-  q::Array{Float64, 2}
-  u::Array{Float64, 2}
-  v::Array{Float64, 2}
-  uq::Array{Float64, 2}
-  vq::Array{Float64, 2}
-  psi::Array{Float64, 2}
-  zeta::Array{Float64, 2}
-  sp::Array{Float64, 2}
-
-  # Solution
-  qh::Array{Complex{Float64}, 2}
-  uh::Array{Complex{Float64}, 2}
-  vh::Array{Complex{Float64}, 2}
-  uqh::Array{Complex{Float64}, 2}
-  vqh::Array{Complex{Float64}, 2}
-  psih::Array{Complex{Float64}, 2}
-  zetah::Array{Complex{Float64}, 2}
+struct FreeDecayVars <: AbstractVars
+  q::Array{Float64,2}
+  u::Array{Float64,2}
+  v::Array{Float64,2}
+  uq::Array{Float64,2}
+  vq::Array{Float64,2}
+  psi::Array{Float64,2}
+  zeta::Array{Float64,2}
+  sp::Array{Float64,2}
+  qh::Array{Complex{Float64},2}
+  uh::Array{Complex{Float64},2}
+  vh::Array{Complex{Float64},2}
+  uqh::Array{Complex{Float64},2}
+  vqh::Array{Complex{Float64},2}
+  psih::Array{Complex{Float64},2}
+  zetah::Array{Complex{Float64},2}
 end
 
 
@@ -226,7 +199,7 @@ end
 # S O L V E R S ---------------------------------------------------------------
 
 function calcN!(N::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
-  t::Float64, v::Vars, p::Params, g::TwoDGrid)
+  t::Float64, s::State, v::Vars, p::Params, g::TwoDGrid)
   # Calculate the explicit linear and nonlinear of two equations: one 2D 
   # equation governing the evolution of a barotropic QG flow, and a single
   # 0-dimensional equation for the time evolution of the zonal mean.

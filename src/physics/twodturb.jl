@@ -1,7 +1,7 @@
 module TwoDTurb
 
 using FourierFlows
-export InitialValueProblem, Params, Vars, Equation, set_q!, updatevars!
+Grid = TwoDGrid
 
 # Problem ---------------------------------------------------------------------
 """
@@ -41,7 +41,7 @@ function InitialValueProblem(;
   else;          ts = ETDRK4TimeStepper(dt, eq.LC)
   end
 
-  FourierFlows.Problem(g, vs, pr, eq, ts)
+  FourierFlows.Problem(g, vs, pr, eq, ts; realsol=true, nvars=1)
 end
 
 function InitialValueProblem(n, L, ν, nν, dt, withfilter)
@@ -83,7 +83,7 @@ withfilter = false,
   else;          ts = ForwardEulerTimeStepper(dt, eq.LC)
   end
 
-  FourierFlows.Problem(g, vs, pr, eq, ts)
+  FourierFlows.Problem(g, vs, pr, eq, ts; realsol=true, nvars=1)
 end
 
 # Params
@@ -102,12 +102,12 @@ end
 # Equations
 function Equation(p::Params, g::TwoDGrid)
   LC = -p.ν * g.KKrsq.^(0.5*p.nν)
-  FourierFlows.Equation{2}(LC, calcN!)
+  FourierFlows.Equation{2}(LC, calcN_advection!)
 end
 
 function Equation(p::ForcedParams, g::TwoDGrid)
   LC = -p.ν*g.KKrsq.^p.nν - p.μ
-  FourierFlows.Equation{2}(LC, calcN!)
+  FourierFlows.Equation{2}(LC, calcN_forced!)
 end
 
 
@@ -123,7 +123,7 @@ eval(expr)
 function Vars(g::TwoDGrid)
   @createarrays Float64 (g.nx, g.ny) q U V Uq Vq psi
   @createarrays Complex{Float64} (g.nkr, g.nl) sol qh Uh Vh Uqh Vqh psih
-  Vars(0.0, sol, q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih)
+  Vars(q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih)
 end
 
 
@@ -141,9 +141,10 @@ end
 
 
 # Solvers
-function calcN_advection!(N::Array{Complex{Float64}, 2}, 
-                sol::Array{Complex{Float64}, 2},
-                t::Float64, v::AbstractVars, p::AbstractParams, g::TwoDGrid)
+function calcN_advection!(
+  N::Array{Complex{Float64},2}, sol::Array{Complex{Float64},2},
+  t::Float64, s::State, v::AbstractVars, p::AbstractParams, g::TwoDGrid)
+
   v.qh .= sol
   A_mul_B!(v.q, g.irfftplan, v.qh) # destroys qh when using fftw
 
@@ -163,19 +164,12 @@ function calcN_advection!(N::Array{Complex{Float64}, 2},
   nothing
 end
 
-function calcN!(N::Array{Complex{Float64}, 2}, 
+function calcN_forced!(N::Array{Complex{Float64}, 2}, 
                 sol::Array{Complex{Float64}, 2}, t::Float64, 
-                v::Vars, p::Params, g::TwoDGrid)
-  calcN_advection!(N, sol, t, v, p, g)
-  nothing
-end
+                s::State, v::ForcedVars, p::ForcedParams, g::TwoDGrid)
 
-function calcN!(N::Array{Complex{Float64}, 2}, 
-                sol::Array{Complex{Float64}, 2}, t::Float64, 
-                v::ForcedVars, p::ForcedParams, g::TwoDGrid)
-
-  calcN_advection!(N, sol, t, v, p, g)
-  p.calcF!(v.F, sol, t, v, p, g)
+  calcN_advection!(N, sol, t, s, v, p, g)
+  p.calcF!(v.F, sol, t, s, v, p, g)
 
   @. N += v.F
   v.F .= 0.0
@@ -187,8 +181,8 @@ end
 """
 Update solution variables using qh in v.sol.
 """
-function updatevars!(v, g)
-  v.qh .= v.sol
+function updatevars!(s, v, g)
+  v.qh .= s.sol
   @. v.psih = -g.invKKrsq * v.qh
   @. v.Uh = -im*g.l  * v.psih
   @. v.Vh =  im*g.kr * v.psih
@@ -200,55 +194,55 @@ function updatevars!(v, g)
   A_mul_B!(v.q, g.irfftplan, qh1)
   A_mul_B!(v.U, g.irfftplan, Uh1)
   A_mul_B!(v.V, g.irfftplan, Vh1)
-
   nothing
 end
 
 function updatevars!(prob::AbstractProblem)
-  updatevars!(prob.vars, prob.grid)
+  updatevars!(prob.state, prob.vars, prob.grid)
 end
 
 
 """
 Set the vorticity field.
 """
-function set_q!(v, g, q)
-  A_mul_B!(v.sol, g.rfftplan, q)
-  updatevars!(v, g)
+function set_q!(s, v, g, q)
+  A_mul_B!(s.sol, g.rfftplan, q)
+  updatevars!(s, v, g)
 end
 
 function set_q!(prob::AbstractProblem, q)
-  set_q!(prob.vars, prob.grid, q)
+  set_q!(prob.state, prob.vars, prob.grid, q)
 end
 
 
 """
 Calculate the domain integrated kinetic energy.
 """
-function energy(v, g)
-  0.5*(FourierFlows.parsevalsum2(g.Kr.*g.invKKrsq.*v.sol, g)
-        + FourierFlows.parsevalsum2(g.Lr.*g.invKKrsq.*v.sol, g))
+function energy(s, g)
+  0.5*(FourierFlows.parsevalsum2(g.Kr.*g.invKKrsq.*s.sol, g)
+        + FourierFlows.parsevalsum2(g.Lr.*g.invKKrsq.*s.sol, g))
 end
 
 function energy(prob)
-  energy(prob.vars, prob.grid)
+  energy(prob.state, prob.grid)
 end
 
 
 """
 Returns the domain-integrated enstrophy.
 """
-function enstrophy(v, g)
-  0.5*FourierFlows.parsevalsum2(v.sol, g)
+function enstrophy(s, g)
+  0.5*FourierFlows.parsevalsum2(s.sol, g)
 end
 
 function enstrophy(prob)
-  enstrophy(prob.vars, prob.grid)
+  enstrophy(prob.state, prob.grid)
 end
 
 
 
 
+#=
 """ Make a field of mature turbulence on a square grid.
 
   Args:
@@ -351,12 +345,7 @@ function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nν=4,
 
   return vs.q
 end
+=#
 
 
-
-
-
-
-
-end
-# E N D   T W O D T U R B >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+end # module

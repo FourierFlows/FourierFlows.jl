@@ -31,6 +31,7 @@ function AnalyticFlowProblem(;
    p = AnalyticFlowParams(κ, η, u★, v★, ux★, uy★, vx★)
    v = Vars()
   eq = Equation()
+  st = State{Float64,1}(0.0, 0, zeros(Float64, 5))
 
   if timestepper == "RK4"
     ts = RK4TimeStepper(dt, eq.LC)
@@ -38,7 +39,8 @@ function AnalyticFlowProblem(;
     ts = ForwardEulerTimeStepper(dt, eq.LC)
   end
 
-  FourierFlows.Problem(g, v, p, eq, ts)
+
+  FourierFlows.Problem(g, v, p, eq, ts, st)
 end
 
 
@@ -83,19 +85,11 @@ end
 
 
 # Vars ------------------------------------------------------------------------
-type Vars <: AbstractVars
-  t::Float64
-  sol::Array{Float64,1} # x, y, u, v, ux, uy, vx.
-end
-
-function Vars()
-  Vars(0.0, zeros(5))
-end
-
+type Vars <: AbstractVars end
 
 # Solver ----------------------------------------------------------------------
 function calcN!(N::Array{Float64, 1}, sol::Array{Float64, 1}, t::Float64,
-  v::Vars, p::AnalyticFlowParams, g::AbstractGrid)
+  s::State, v::Vars, p::AnalyticFlowParams, g::AbstractGrid)
 
   # Key:
   # ξ   = sol[1]
@@ -139,17 +133,17 @@ end
 
 # Helper functions ------------------------------------------------------------
 function set_position!(prob::AbstractProblem, ξ₀, ζ₀)
-  prob.vars.sol[1:2] = [ξ₀, ζ₀]
+  prob.state.sol[1:2] = [ξ₀, ζ₀]
   nothing
 end
 
 function set_moments!(prob::AbstractProblem, m₁₁, m₁₂, m₂₂)
-  prob.vars.sol[3:5] = [m₁₁, m₁₂, m₂₂]
+  prob.state.sol[3:5] = [m₁₁, m₁₂, m₂₂]
   nothing
 end
 
 function set_sol!(prob::AbstractProblem, sol)
-  prob.vars.sol = sol
+  prob.state.sol = sol
   nothing
 end
 

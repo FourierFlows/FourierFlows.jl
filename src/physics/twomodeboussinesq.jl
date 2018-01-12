@@ -35,6 +35,7 @@ function InitialValueProblem(;
   pr = TwoModeBoussinesq.Params(ν0, nν0, ν1, nν1, f, N, m)
   vs = TwoModeBoussinesq.Vars(g)
   eq = TwoModeBoussinesq.Equation(pr, g)
+  st = DualState(Complex{Float64}, (g.nk, g.nl, 3), (g.nkr, g.nl, 2))
 
   if withfilter
     ts = FilteredETDRK4TimeStepper(dt, eq.LCc, eq.LCr)
@@ -42,7 +43,7 @@ function InitialValueProblem(;
     ts = ETDRK4TimeStepper(dt, eq.LCc, eq.LCr)
   end
 
-  FourierFlows.Problem(g, vs, pr, eq, ts)
+  FourierFlows.Problem(g, vs, pr, eq, ts, st)
 end
 
 
@@ -51,7 +52,7 @@ end
 # Params ----------------------------------------------------------------------
 abstract type TwoModeParams <: AbstractParams end
 
-type Params <: TwoModeParams
+struct Params <: TwoModeParams
   ν0::Float64                 # Mode-0 viscosity
   nν0::Int                    # Mode-0 hyperviscous order
   ν1::Float64                 # Mode-1 viscosity
@@ -92,51 +93,47 @@ end
 # Vars ------------------------------------------------------------------------
 abstract type TwoModeVars <: AbstractVars end
 
-type Vars <: TwoModeVars
-  t::Float64
-  solr::Array{Complex128, 2}
-  solc::Array{Complex128, 3}
+struct Vars <: TwoModeVars
+  # Zeroth-mode
+  Z::Array{Float64,2}
+  U::Array{Float64,2}
+  V::Array{Float64,2}
+  UZuzvw::Array{Float64,2}
+  VZvzuw::Array{Float64,2}
+  Ux::Array{Float64,2}
+  Uy::Array{Float64,2}
+  Vx::Array{Float64,2}
+  Vy::Array{Float64,2}
+  Psi::Array{Float64,2}
 
-  # Auxiliary zeroth-mode vars
-  Z::Array{Float64, 2}
-  U::Array{Float64, 2}
-  V::Array{Float64, 2}
-  UZuzvw::Array{Float64, 2}
-  VZvzuw::Array{Float64, 2}
-  Ux::Array{Float64, 2}
-  Uy::Array{Float64, 2}
-  Vx::Array{Float64, 2}
-  Vy::Array{Float64, 2}
-  Psi::Array{Float64, 2}
-
-  # Auxiliary first-mode vars
-  u::Array{Complex{Float64}, 2}
-  v::Array{Complex{Float64}, 2}
-  w::Array{Complex{Float64}, 2}
-  p::Array{Complex{Float64}, 2}
-  zeta::Array{Complex{Float64}, 2}
+  # First-mode
+  u::Array{Complex{Float64},2}
+  v::Array{Complex{Float64},2}
+  w::Array{Complex{Float64},2}
+  p::Array{Complex{Float64},2}
+  zeta::Array{Complex{Float64},2}
 
   # Multiplies
-  Uu::Array{Complex{Float64}, 2}
-  Uv::Array{Complex{Float64}, 2}
-  Up::Array{Complex{Float64}, 2}
-  Vu::Array{Complex{Float64}, 2}
-  Vv::Array{Complex{Float64}, 2}
-  Vp::Array{Complex{Float64}, 2}
-  uUxvUy::Array{Complex{Float64}, 2}
-  uVxvVy::Array{Complex{Float64}, 2}
+  Uu::Array{Complex{Float64},2}
+  Uv::Array{Complex{Float64},2}
+  Up::Array{Complex{Float64},2}
+  Vu::Array{Complex{Float64},2}
+  Vv::Array{Complex{Float64},2}
+  Vp::Array{Complex{Float64},2}
+  uUxvUy::Array{Complex{Float64},2}
+  uVxvVy::Array{Complex{Float64},2}
 
   # Zeroth-mode transforms
-  Zh::Array{Complex{Float64}, 2}
-  Uh::Array{Complex{Float64}, 2}
-  Vh::Array{Complex{Float64}, 2}
-  UZuzvwh::Array{Complex{Float64}, 2}
-  VZvzuwh::Array{Complex{Float64}, 2}
-  Uxh::Array{Complex{Float64}, 2}
-  Uyh::Array{Complex{Float64}, 2}
-  Vxh::Array{Complex{Float64}, 2}
-  Vyh::Array{Complex{Float64}, 2}
-  Psih::Array{Complex{Float64}, 2}
+  Zh::Array{Complex{Float64},2}
+  Uh::Array{Complex{Float64},2}
+  Vh::Array{Complex{Float64},2}
+  UZuzvwh::Array{Complex{Float64},2}
+  VZvzuwh::Array{Complex{Float64},2}
+  Uxh::Array{Complex{Float64},2}
+  Uyh::Array{Complex{Float64},2}
+  Vxh::Array{Complex{Float64},2}
+  Vyh::Array{Complex{Float64},2}
+  Psih::Array{Complex{Float64},2}
 
   # First-mode transforms
   uh::Array{Complex{Float64}, 2}
@@ -157,69 +154,18 @@ type Vars <: TwoModeVars
 end
 
 function Vars(g::TwoDGrid)
-  # Initialize with t=0
-  t = 0.0
-  solc = zeros(Complex{Float64}, g.nk, g.nl, 3)
-  solr = zeros(Complex{Float64}, g.nkr, g.nl)
+  @createarrays Float64 (g.nx, g.ny) Z U V UZuzvw VZvzuw Ux Uy Vx Vy Psi
+  @createarrays Complex{Float64} (g.nx, g.ny) u v w p zeta Uu Uv Up Vu Vv Vp
+  @createarrays Complex{Float64} (g.nx, g.ny) uUxvUy uVxvVy
 
-  # Auxiliary zeroth-mode vars
-  Z      = zeros(Float64, g.nx, g.ny)
-  U      = zeros(Float64, g.nx, g.ny)
-  V      = zeros(Float64, g.nx, g.ny)
-  UZuzvw = zeros(Float64, g.nx, g.ny)
-  VZvzuw = zeros(Float64, g.nx, g.ny)
-  Ux     = zeros(Float64, g.nx, g.ny)
-  Uy     = zeros(Float64, g.nx, g.ny)
-  Vx     = zeros(Float64, g.nx, g.ny)
-  Vy     = zeros(Float64, g.nx, g.ny)
-  Psi    = zeros(Float64, g.nx, g.ny)
+  @createarrays Complex{Float64} (g.nkr, g.nl) Zh Uh Vh UZuzvwh VZvzuwh
+  @createarrays Complex{Float64} (g.nkr, g.nl) Uxh Vyh Vxh Vyh Psih
 
-  # Auxiliary first-mode vars
-  u      = zeros(Complex{Float64}, g.nx, g.ny)
-  v      = zeros(Complex{Float64}, g.nx, g.ny)
-  w      = zeros(Complex{Float64}, g.nx, g.ny)
-  p      = zeros(Complex{Float64}, g.nx, g.ny)
-  zeta   = zeros(Complex{Float64}, g.nx, g.ny)
-
-  Uu     = zeros(Complex{Float64}, g.nx, g.ny)
-  Uv     = zeros(Complex{Float64}, g.nx, g.ny)
-  Up     = zeros(Complex{Float64}, g.nx, g.ny)
-  Vu     = zeros(Complex{Float64}, g.nx, g.ny)
-  Vv     = zeros(Complex{Float64}, g.nx, g.ny)
-  Vp     = zeros(Complex{Float64}, g.nx, g.ny)
-
-  uUxvUy = zeros(Complex{Float64}, g.nx, g.ny)
-  uVxvVy = zeros(Complex{Float64}, g.nx, g.ny)
-
-  # Transforms
-  Zh      = zeros(Complex{Float64}, g.nkr, g.nl)
-  Uh      = zeros(Complex{Float64}, g.nkr, g.nl)
-  Vh      = zeros(Complex{Float64}, g.nkr, g.nl)
-  UZuzvwh = zeros(Complex{Float64}, g.nkr, g.nl)
-  VZvzuwh = zeros(Complex{Float64}, g.nkr, g.nl)
-  Uxh     = zeros(Complex{Float64}, g.nkr, g.nl)
-  Uyh     = zeros(Complex{Float64}, g.nkr, g.nl)
-  Vxh     = zeros(Complex{Float64}, g.nkr, g.nl)
-  Vyh     = zeros(Complex{Float64}, g.nkr, g.nl)
-  Psih    = zeros(Complex{Float64}, g.nkr, g.nl)
-
-  uh      = zeros(Complex{Float64}, g.nk, g.nl)
-  vh      = zeros(Complex{Float64}, g.nk, g.nl)
-  wh      = zeros(Complex{Float64}, g.nk, g.nl)
-  ph      = zeros(Complex{Float64}, g.nk, g.nl)
-  zetah   = zeros(Complex{Float64}, g.nk, g.nl)
-
-  Uuh     = zeros(Complex{Float64}, g.nk, g.nl)
-  Uvh     = zeros(Complex{Float64}, g.nk, g.nl)
-  Uph     = zeros(Complex{Float64}, g.nk, g.nl)
-  Vuh     = zeros(Complex{Float64}, g.nk, g.nl)
-  Vvh     = zeros(Complex{Float64}, g.nk, g.nl)
-  Vph     = zeros(Complex{Float64}, g.nk, g.nl)
-
-  uUxvUyh= zeros(Complex{Float64}, g.nk, g.nl)
-  uVxvVyh= zeros(Complex{Float64}, g.nk, g.nl)
-
-  return Vars(t, solr, solc,
+  @createarrays Complex{Float64} (g.nk, g.nl) uh vh wh ph zetah
+  @createarrays Complex{Float64} (g.nk, g.nl) Uuh Uvh Uph Vuh Vvh Vph
+  @createarrays Complex{Float64} (g.nk, g.nl) uUxvUyh uVxvVyh
+  
+  return Vars(
     Z, U, V, UZuzvw, VZvzuw, Ux, Uy, Vx, Vy, Psi,
     u, v, w, p, zeta, Uu, Uv, Up, Vu, Vv, Vp, uUxvUy, uVxvVy,
     Zh, Uh, Vh, UZuzvwh, VZvzuwh, Uxh, Uyh, Vxh, Vyh, Psih,
@@ -234,7 +180,7 @@ end
 function calcN!(
   Nc::Array{Complex{Float64}, 3},  Nr::Array{Complex{Float64}, 2},
   solc::Array{Complex{Float64}, 3}, solr::Array{Complex{Float64}, 2},
-  t::Float64, v::Vars, p::TwoModeParams, g::TwoDGrid)
+  t::Float64, s::DualState, v::Vars, p::TwoModeParams, g::TwoDGrid)
 
   v.Zh .= solr
 
@@ -318,9 +264,6 @@ function calcN!(
   @views @. Nc[:, :, 3] = ( im*p.N^2.0/p.m*v.wh
     - im*g.k*v.Uph - im*g.l*v.Vph )
 
-  #dealias!(Nr, g)
-  #dealias!(Nc, g)
-
   nothing
 end
 
@@ -328,8 +271,9 @@ end
 
 
 # Helper functions ------------------------------------------------------------
-function updatevars!(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid,
-  Zh::AbstractArray)
+function updatevars!(s::DualState, v::TwoModeVars, p::TwoModeParams, 
+                     g::TwoDGrid, Zh::AbstractArray)
+  
   # We don't use A_mul_B here because irfft destroys its input.
   v.Z = irfft(Zh, g.nx)
 
@@ -342,9 +286,9 @@ function updatevars!(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid,
   v.U = irfft(v.Uh, g.nx)
   v.V = irfft(v.Vh, g.nx)
 
-  @views v.uh .= v.solc[:, :, 1]
-  @views v.vh .= v.solc[:, :, 2]
-  @views v.ph .= v.solc[:, :, 3]
+  @views v.uh .= s.solc[:, :, 1]
+  @views v.vh .= s.solc[:, :, 2]
+  @views v.ph .= s.solc[:, :, 3]
 
   @. v.wh = -1.0/p.m*(g.k*v.uh + g.l*v.vh)
 
@@ -356,13 +300,13 @@ function updatevars!(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid,
   nothing
 end
 
-function updatevars!(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  v.Zh .= v.solr
+function updatevars!(s::DualState, v::Vars, p::TwoModeParams, g::TwoDGrid)
+  v.Zh .= s.solr
   updatevars!(v, p, g, v.Zh)
 end
 
 function updatevars!(prob::AbstractProblem)
-  updatevars!(prob.vars, prob.params, prob.grid)
+  updatevars!(prob.state, prob.vars, prob.params, prob.grid)
 end
 
 
@@ -371,14 +315,14 @@ end
 """
 Set zeroth mode vorticity and update vars.
 """
-function set_Z!(v::Vars, p::TwoModeParams, g::TwoDGrid, Z)
-  A_mul_B!(v.solr, g.rfftplan, Z)
-  updatevars!(v, p, g)
+function set_Z!(s::DualState, v::Vars, p::TwoModeParams, g::TwoDGrid, Z)
+  A_mul_B!(s.solr, g.rfftplan, Z)
+  updatevars!(s, v, p, g)
   nothing
 end
 
 function set_Z!(prob::AbstractProblem, Z)
-  set_Z!(prob.vars, prob.params, prob.grid, Z)
+  set_Z!(prob.state, prob.vars, prob.params, prob.grid, Z)
 end
 
 
@@ -387,21 +331,22 @@ end
 """
 Set first mode u, v, and p and update vars.
 """
-function set_uvp!(vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid, u, v, p)
+function set_uvp!(s::DualState, vs::TwoModeVars, pr::TwoModeParams, 
+                  g::TwoDGrid, u, v, p)
   uh = fft(u)
   vh = fft(v)
   ph = fft(p)
 
-  @. vs.solc[:, :, 1] = uh
-  @. vs.solc[:, :, 2] = vh
-  @. vs.solc[:, :, 3] = ph
+  @. s.solc[:, :, 1] = uh
+  @. s.solc[:, :, 2] = vh
+  @. s.solc[:, :, 3] = ph
 
-  updatevars!(vs, pr, g)
+  updatevars!(s, vs, pr, g)
   nothing
 end
 
 function set_uvp!(prob::AbstractProblem, u, v, p)
-  set_uvp!(prob.vars, prob.params, prob.grid, u, v, p)
+  set_uvp!(prob.state, prob.vars, prob.params, prob.grid, u, v, p)
 end
 
 
@@ -411,8 +356,8 @@ end
 Set a plane wave solution with initial speed uw and non-dimensional wave
 number nkw. The dimensional wavenumber will be 2π*nkw/Lx.
 """
-function set_planewave!(vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid,
-  uw::Real, nkw::Int)
+function set_planewave!(s::DualState, vs::TwoModeVars, pr::TwoModeParams, 
+                        g::TwoDGrid, uw::Real, nkw::Int)
 
   x, y = g.X, g.Y
 
@@ -429,12 +374,13 @@ function set_planewave!(vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid,
   v = v0 * exp.(im*kw*x)
   p = p0 * exp.(im*kw*x)
 
-  set_uvp!(vs, pr, g, u, v, p)
+  set_uvp!(s, vs, pr, g, u, v, p)
   nothing
 end
 
 function set_planewave!(prob::AbstractProblem, uw::Real, nkw::Int)
-  set_planewave!(prob.vars, prob.params, prob.grid, uw::Real, nkw::Int)
+  set_planewave!(prob.state, prob.vars, prob.params, prob.grid, 
+    uw::Real, nkw::Int)
 end
 
 
@@ -443,9 +389,8 @@ end
 """
 Generate an isotropic spectrum of waves.
 """
-function set_isotropicwavefield!(
-  vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid, amplitude::Function; KE=1.0,
-  maxspeed=nothing)
+function set_isotropicwavefield!(s, vs, pr, g, amplitude; 
+                                 KE=1.0, maxspeed=nothing)
 
   # For clarity
   f, N, m = pr.f, pr.N, pr.m
@@ -487,21 +432,15 @@ function set_isotropicwavefield!(
   v0 .*= norm
   p0 .*= norm
 
-  set_uvp!(vs, pr, g, u0, v0, p0)
+  set_uvp!(s, vs, pr, g, u0, v0, p0)
 
   nothing
 end
 
-function set_isotropicwavefield!(
-  vs::TwoModeVars, pr::TwoModeParams, g::TwoDGrid; kwargs...)
-  amplitude(k, l) = 1.0
-  set_isotropicwavefield!(vs, pr, g, amplitude; kwargs...)
-end
-
 function set_isotropicwavefield!(prob::AbstractProblem, amplitude::Function;
   kwargs...)
-  set_isotropicwavefield!(prob.vars, prob.params, prob.grid, amplitude;
-    kwargs...)
+  set_isotropicwavefield!(prob.state, prob.vars, prob.params, prob.grid, 
+    amplitude; kwargs...)
 end
 
 
@@ -510,12 +449,12 @@ end
 """
 Returns the integrated energy in the zeroth mode energy.
 """
-function mode0energy(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  0.5*FourierFlows.parsevalsum(real.(g.invKKrsq).*abs2.(v.solr), g)
+function mode0energy(s::DualState, g::TwoDGrid)
+  0.5*FourierFlows.parsevalsum(real.(g.invKKrsq).*abs2.(s.solr), g)
 end
 
 function mode0energy(prob::AbstractProblem)
-  mode0energy(prob.vars, prob.params, prob.grid)
+  mode0energy(prob.state, prob.grid)
 end
 
 
@@ -529,12 +468,12 @@ function mode1ke(uh, vh, g)
   FourierFlows.parsevalsum2(uh, g) + FourierFlows.parsevalsum2(vh, g)
 end
 
-function mode1ke(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
-  @views mode1ke(v.solc[:, :, 1], v.solc[:, :, 2], g)
+function mode1ke(s::DualState, g::TwoDGrid)
+  @views mode1ke(s.solc[:, :, 1], s.solc[:, :, 2], g)
 end
 
 function mode1ke(prob::AbstractProblem)
-  mode1ke(prob.vars, prob.params, prob.grid)
+  mode1ke(prob.state, prob.grid)
 end
 
 
@@ -544,12 +483,12 @@ end
 Returns the projection of the integrated first mode potential energy onto the
 zeroth mode.
 """
-function mode1pe(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
-  p.m^2/p.N^2*FourierFlows.parsevalsum2(v.solc[:, :, 3], g)
+function mode1pe(s::DualState, p::TwoModeParams, g::TwoDGrid)
+  p.m^2/p.N^2*FourierFlows.parsevalsum2(s.solc[:, :, 3], g)
 end
 
 function mode1pe(prob::AbstractProblem)
-  mode1pe(prob.vars, prob.params, prob.grid)
+  mode1pe(prob.state, prob.params, prob.grid)
 end
 
 
@@ -559,12 +498,12 @@ end
 Returns the projection of the total integrated first mode energy onto the
 zeroth mode.
 """
-function mode1energy(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
-  mode1ke(v, p, g) + mode1pe(v, p, g)
+function mode1energy(s::DualState, p::TwoModeParams, g::TwoDGrid)
+  mode1ke(s, g) + mode1pe(s, p, g)
 end
 
 function mode1energy(prob::AbstractProblem)
-  mode1energy(prob.vars, prob.params, prob.grid)
+  mode1energy(prob.state, prob.params, prob.grid)
 end
 
 
@@ -573,12 +512,12 @@ end
 """
 Returns the total energy projected onto the zeroth mode.
 """
-function totalenergy(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
-  mode0energy(v, p, g) + mode1energy(v, p, g)
+function totalenergy(s::DualState, p::TwoModeParams, g::TwoDGrid)
+  mode0energy(s, g) + mode1energy(s, p, g)
 end
 
 function totalenergy(prob::AbstractProblem)
-  totalenergy(prob.vars, prob.params, prob.grid)
+  totalenergy(prob.state, prob.params, prob.grid)
 end
 
 
@@ -587,10 +526,16 @@ end
 """
 Returns kinetic energy dissipation of the zeroth mode.
 """
-function mode0dissipation(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
-  delzeta = irfft(
-    (-1.0)^(p.nν0/2) .* g.KKrsq.^(p.nν0/2) .* vs.solr, g.nx)
-  -p.nu*g.dx*g.dy*sum(vs.Psi.*delzeta)
+function mode0dissipation(s::DualState, v::TwoModeVars, 
+                          p::TwoModeParams, g::TwoDGrid)
+  v.Zh .= s.solr
+  @. v.Psih = -g.invKKrsq*v.Zh
+  @. v.UZuzvwh = -1.0^(p.nν0/2) * g.KKrsq.^(p.nν0/2) * s.solr
+  A_mul_B!(v.UZuzvw, g.irfftplan, v.UZuzvwh) 
+  A_mul_B!(v.Psi, g.irfftplan, v.Psih) 
+  @. v.VZvzuw = v.Psi*v.UZuzvw
+
+  -p.nu*g.dx*g.dy*sum(v.VZvzuw)
 end
 
 
@@ -599,9 +544,8 @@ end
 """
 Returns the domain-integrated shear production.
 """
-function shearproduction(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
-  v.Zh .= v.solr
-
+function shearproduction(s, v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
+  v.Zh .= s.solr
   @. v.Psih = -g.invKKrsq*v.Zh
   @. v.Uh  = -im*g.l  * v.Psih
   @. v.Vh  =  im*g.kr * v.Psih
@@ -615,8 +559,8 @@ function shearproduction(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
   A_mul_B!(v.Vx, g.irfftplan, v.Vxh)
   A_mul_B!(v.Vy, g.irfftplan, v.Vyh)
 
-  @views A_mul_B!(v.u, g.ifftplan, v.solc[:, :, 1])
-  @views A_mul_B!(v.v, g.ifftplan, v.solc[:, :, 2])
+  @views A_mul_B!(v.u, g.ifftplan, s.solc[:, :, 1])
+  @views A_mul_B!(v.v, g.ifftplan, s.solc[:, :, 2])
 
   @. v.UZuzvw = real(
       2.0*abs2(v.u)*v.Ux + 2.0*abs2(v.v)*v.Vy
@@ -627,7 +571,7 @@ function shearproduction(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
 end
 
 function shearproduction(prob::AbstractProblem)
-  shearproduction(prob.vars, prob.params, prob.grid)
+  shearproduction(prob.state, prob.vars, prob.params, prob.grid)
 end
 
 
@@ -636,9 +580,9 @@ end
 """
 Return the domain-integrated conversion from potential to kinetic energy.
 """
-function energyconversion(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
-  @views @. v.wh = -(g.k*v.solc[:, :, 1] + g.l*v.solc[:, :, 2]) / p.m
-  @views A_mul_B!(v.p, g.ifftplan, v.solc[:, :, 3])
+function energyconversion(s, v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
+  @views @. v.wh = -(g.k*s.solc[:, :, 1] + g.l*s.solc[:, :, 2]) / p.m
+  @views A_mul_B!(v.p, g.ifftplan, s.solc[:, :, 3])
   A_mul_B!(v.w, g.ifftplan, v.wh)
   # b = i*m*p
   @. v.UZuzvw = real(im*p.m*conj(v.w)*v.p - im*p.m*v.w*conj(v.p))
@@ -646,7 +590,7 @@ function energyconversion(v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
 end
 
 function energyconversion(prob::AbstractProblem)
-  energyconversion(prob.vars, prob.params, prob.grid)
+  energyconversion(prob.state, prob.vars, prob.params, prob.grid)
 end
 
 
@@ -663,16 +607,16 @@ function mode0apv(Z, u, v, p, pr::TwoModeParams, g::TwoDGrid)
   ), g.nx))
 end
 
-function mode0apv(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  v.Z = irfft(v.solr, g.nx)
-  @views A_mul_B!(v.u, g.ifftplan, v.solc[:, :, 1])
-  @views A_mul_B!(v.v, g.ifftplan, v.solc[:, :, 2])
-  @views A_mul_B!(v.p, g.ifftplan, v.solc[:, :, 3])
+function mode0apv(s, v::Vars, p::TwoModeParams, g::TwoDGrid)
+  v.Z = irfft(s.solr, g.nx)
+  @views A_mul_B!(v.u, g.ifftplan, s.solc[:, :, 1])
+  @views A_mul_B!(v.v, g.ifftplan, s.solc[:, :, 2])
+  @views A_mul_B!(v.p, g.ifftplan, s.solc[:, :, 3])
   mode0apv(v.Z, v.u, v.v, v.p, p, g)
 end
 
 function mode0apv(prob::AbstractProblem)
-  mode0apv(prob.vars, prob.params, prob.grid)
+  mode0apv(prob.state, prob.vars, prob.params, prob.grid)
 end
 
 
@@ -685,9 +629,9 @@ function mode1apv(Z, zeta, p, pr::TwoModeParams, g::TwoDGrid)
   zeta .- pr.m.^2.0./pr.N.^2.0 .* (pr.f .+ Z) .* p
 end
 
-function mode1apv(Z, v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
-  @views @. v.ph = v.solc[:, :, 3]
-  @views @. v.zetah = im*g.k*v.solc[:, :, 2] - im*g.l*v.solc[:, :, 1]
+function mode1apv(Z, s, v::TwoModeVars, p::TwoModeParams, g::TwoDGrid)
+  @views @. v.ph = s.solc[:, :, 3]
+  @views @. v.zetah = im*g.k*s.solc[:, :, 2] - im*g.l*s.solc[:, :, 1]
 
   A_mul_B!(v.p,  g.ifftplan, v.ph)
   A_mul_B!(v.zeta,  g.ifftplan, v.zetah)
@@ -702,13 +646,13 @@ end
 Return the apv associated with mode-1.
 """
 
-function mode1apv(v::Vars, p::TwoModeParams, g::TwoDGrid)
-  v.Z = irfft(v.solr, g.nx)
+function mode1apv(s, v::Vars, p::TwoModeParams, g::TwoDGrid)
+  v.Z = irfft(s.solr, g.nx)
   mode1apv(v.Z, v, p, g)
 end
 
-mode1apv(prob::AbstractProblem) = mode1apv(prob.vars, prob.params, prob.grid)
-
+mode1apv(prob::AbstractProblem) = mode1apv(prob.state, prob.vars, prob.params, 
+                                           prob.grid)
 
 
 
