@@ -3,10 +3,10 @@ import FourierFlows.TwoDTurb
 
  n = 128
  L = 2π
- ν = 8e-5   # Laplacian viscosity
+ ν = 1e-4  # Laplacian viscosity
 nν = 2
-dt = 1e-1   # Time step
-nt = 1000   # Number of time steps
+dt = 1e0   # Time step
+nt = 100   # Number of time steps
 
 prob = TwoDTurb.InitialValueProblem(nx=n, Lx=L, ν=ν, nν=nν, dt=dt)
 TwoDTurb.set_q!(prob, rand(n, n))
@@ -14,7 +14,7 @@ TwoDTurb.set_q!(prob, rand(n, n))
 # Step forward
 fig = figure(); tic()
 for i = 1:10
-  stepforward!(prob, nsteps=nt)
+  stepforward!(prob, nt)
   TwoDTurb.updatevars!(prob)  
 
   cfl = maximum(prob.vars.U)*prob.grid.dx/prob.ts.dt
