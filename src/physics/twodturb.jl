@@ -61,11 +61,6 @@ function ForcedProblem(;
   FourierFlows.Problem(g, vs, pr, eq, ts)
 end
 
-function ForcedProblem(n, L, ν, nν, μ, dt, calcF, withfilter=false)
-  ForcedProblem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, calcF=calcF, 
-    withfilter=withfilter)
-end
-
 # Params
 struct Params <: AbstractParams
   ν::Float64        # Vorticity viscosity
@@ -114,7 +109,7 @@ eval(expr)
 function ForcedVars(g::TwoDGrid)
   @createarrays Float64 (g.nx, g.ny) q U V Uq Vq psi
   @createarrays Complex{Float64} (g.nkr, g.nl) sol qh Uh Vh Uqh Vqh psih F
-  ForcedVars(0.0, sol, q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih, F)
+  ForcedVars(q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih, F)
 end
 
 
@@ -149,8 +144,6 @@ function calcN_forced!(N::Array{Complex{Float64}, 2},
                 s::State, v::ForcedVars, p::ForcedParams, g::TwoDGrid)
 
   calcN_advection!(N, sol, t, s, v, p, g)
-
-  v.F .= 0.0
   p.calcF!(v.F, sol, t, s, v, p, g)
 
   @. N += v.F
@@ -199,13 +192,14 @@ end
 """
 Calculate the domain integrated kinetic energy.
 """
-function energy(s, g)
-  0.5*(FourierFlows.parsevalsum2(g.Kr.*g.invKKrsq.*s.sol, g)
-        + FourierFlows.parsevalsum2(g.Lr.*g.invKKrsq.*s.sol, g))
+function energy(s, v, g)
+  @. v.Uh =  im * g.l  * g.invKKrsq * s.sol
+  @. v.Vh = -im * g.kr * g.invKKrsq * s.sol
+  0.5*(FourierFlows.parsevalsum2(v.Uh, g)+FourierFlows.parsevalsum2(v.Vh, g))
 end
 
 function energy(prob)
-  energy(prob.state, prob.grid)
+  energy(prob.state, prob.vars, prob.grid)
 end
 
 
@@ -218,6 +212,13 @@ end
 
 function enstrophy(prob)
   enstrophy(prob.state, prob.grid)
+end
+
+
+function injection(s, v, g)
+  @. v.psih = -g.invKKrsq * s.sol
+  @. v.Uq = -real(v.psih*conj(v.F))
+  FourierFlows.parsevalsum(v.Uq)
 end
 
 
