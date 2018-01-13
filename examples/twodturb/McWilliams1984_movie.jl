@@ -8,7 +8,7 @@ import FourierFlows.TwoDTurb: energy, enstrophy
 # Physical parameters
  n = 256
  L = 2π
- nν = 4
+ nν = 2
   ν = 0e-8
 
 # Time-stepping

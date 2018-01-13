@@ -4,7 +4,7 @@ import FourierFlows.TwoDTurb
  n = 128
  L = 2π
  ν = 1e-4  # Laplacian viscosity
-nν = 2
+nν = 1
 dt = 1e0   # Time step
 nt = 100   # Number of time steps
 
