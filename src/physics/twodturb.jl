@@ -3,8 +3,10 @@ module TwoDTurb
 using FourierFlows
 Grid = TwoDGrid
 
-# Problem ---------------------------------------------------------------------
+# Problem
 """
+    InitialValueProblem(; twodturbparameters...)
+
 Construct an initial-value 2D turbulence problem.
 """
 function InitialValueProblem(;
@@ -13,9 +15,9 @@ function InitialValueProblem(;
      ny = nx,
      Ly = Lx,
       ν = 0.0,
-     nν = 2,
+     nν = 1,
      dt = 0.01,
-stepper = "ETDRK4"
+stepper = "RK4"
   )
 
   g  = TwoDGrid(nx, Lx, ny, Ly)
@@ -27,12 +29,9 @@ stepper = "ETDRK4"
   FourierFlows.Problem(g, vs, pr, eq, ts)
 end
 
-function InitialValueProblem(n, L, ν, nν, dt, withfilter)
-  InitialValueProblem(nx=n, Lx=L, ν=ν, nν=nν, dt=dt, withfilter=withfilter)
-end
-
-
 """
+    ForcedProblem(; twodturbparameters...)
+
 Construct a forced 2D turbulence problem.
 """
 function ForcedProblem(;
@@ -41,7 +40,7 @@ function ForcedProblem(;
         ny = nx,
         Ly = Lx,
          ν = 0.0,
-        nν = 2,
+        nν = 1,
          μ = 0.0,
         dt = 0.01,
    stepper = "RK4",
@@ -76,7 +75,7 @@ end
 
 # Equations
 function Equation(p::Params, g::TwoDGrid)
-  LC = -p.ν * g.KKrsq.^(0.5*p.nν)
+  LC = -p.ν * g.KKrsq.^p.nν
   FourierFlows.Equation{2}(LC, calcN_advection!)
 end
 
@@ -177,157 +176,88 @@ end
 
 
 """
-Set the vorticity field.
+    set_q!(s, v, g, q)
+
+Set the solution s.sol as the transform of q and update variables v 
+on the grid g.
 """
 function set_q!(s, v, g, q)
   A_mul_B!(s.sol, g.rfftplan, q)
   updatevars!(s, v, g)
 end
 
+"""
+    set_q!(prob, q)
+
+Set the solution prob.state.sol as the transform of q and update variables.
+"""
 function set_q!(prob::AbstractProblem, q)
   set_q!(prob.state, prob.vars, prob.grid, q)
 end
 
 
 """
-Calculate the domain integrated kinetic energy.
+    energy(s, v, g)
+
+Returns the domain-averaged kinetic energy in the Fourier-transformed vorticity
+solution s.sol.
 """
-function energy(s, v, g)
+@inline function energy(s, v, g)
   @. v.Uh =  im * g.l  * g.invKKrsq * s.sol
   @. v.Vh = -im * g.kr * g.invKKrsq * s.sol
-  0.5*(FourierFlows.parsevalsum2(v.Uh, g)+FourierFlows.parsevalsum2(v.Vh, g))
+  1 / (2*g.Lx*g.Ly) * (
+    FourierFlows.parsevalsum2(v.Uh, g)+FourierFlows.parsevalsum2(v.Vh, g))
 end
 
-function energy(prob)
+@inline function energy(prob)
   energy(prob.state, prob.vars, prob.grid)
 end
 
 
 """
-Returns the domain-integrated enstrophy.
+    enstrophy(s, g)
+
+Returns the domain-averaged enstrophy in the Fourier-transformed vorticity
+solution s.sol.
 """
-function enstrophy(s, g)
-  0.5*FourierFlows.parsevalsum2(s.sol, g)
+@inline function enstrophy(s, g)
+  1/(2*g.Lx*g.Ly)*FourierFlows.parsevalsum2(s.sol, g)
 end
 
-function enstrophy(prob)
+@inline function enstrophy(prob)
   enstrophy(prob.state, prob.grid)
 end
 
 
-function injection(s, v, g)
-  @. v.psih = -g.invKKrsq * s.sol
-  @. v.Uq = -real(v.psih*conj(v.F))
-  FourierFlows.parsevalsum(v.Uq)
-end
-
-
-
-
-#=
-""" Make a field of mature turbulence on a square grid.
-
-  Args:
-    nx: grid resolution
-    Lx: grid extent
-    qf: final maximum vorticity
-    q0: initial maximum vorticity
-    nν: order of hyperviscosity
-    maxsteps: maximum νmber of steps to take
-    dt: time step
-    ν: hyperviscosity
-    k0: initial waveνmber
-    E0: initial energy
-    tf: final time
-    plots: whether or not to plot field evolution
-
-  Returns
-    q: The vorticity field
 """
-function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nν=4,
-  maxsteps=10000, dt=nothing, ν=nothing, k0=nx/2,
-  E0=nothing, tf=nothing, plots=false, loginterval=5)
+    dissipation(s, v, p, g)
 
-  g  = TwoDGrid(nx, Lx)
-  vs = TwoDTurb.Vars(g)
-
-  if E0 != nothing # set initial energy rather than vorticity
-
-    # Closely following the formulation in Rocha, Wagner, Young
-    modk = sqrt(g.KKsq)
-
-    psik = zeros(g.nk, g.nl)
-    psik =  (modk .* (1 + (modk/k0).^4)).^(-0.5)
-    psik[1, 1] = 0.0
-    C = real(sqrt(E0/sum(g.KKsq.*abs2.(psik))))
-
-    psi = zeros(g.nx, g.ny)
-    for i = 1:128
-      for j = 1:128
-        psi .+= real.(C*psik[i, j]*cos.(
-          g.k[i]*g.X + g.l[j]*g.Y + 2*pi*rand(1)[1]))
-      end
-    end
-
-    psih = rfft(psi)
-    qi = -irfft(g.KKrsq.*psih, g.nx)
-    set_q!(vs, g, qi)
-    E0 = FourierFlows.parsevalsum(g.KKrsq.*abs2.(psih), g)
-
-  else
-    qi = FourierFlows.peaked_isotropic_spectrum(nx, k0; maxval=q0)
-    set_q!(vs, g, qi)
-    E0 = energy(vs, g)
-  end
-
-  maxq = q0 = maximum(abs.(vs.q))
-
-  # Defaults
-  if dt == nothing; dt = 0.1*g.dx/maximum([vs.U; vs.V]);  end
-  if ν == nothing; ν = 0.1/(dt*(0.65*nx/Lx)^nν);          end
-  if tf != nothing; maxsteps = ceil(Int, tf/dt); qf=0.0   end
-
-  # Number of substeps between vorticity-checking
-  substeps = ceil(Int, loginterval/(maxq*dt))
-
-  pr = TwoDTurb.Params(ν, nν)
-  eq = TwoDTurb.Equation(pr, g)
-  ts = ETDRK4TimeStepper(dt, eq.LC)
-
-  if plots
-    fig, axs = subplots()
-    imshow(vs.q)
-    pause(0.01)
-  end
-
-  @printf("\nMaking a mature turbulence field...\n")
-  starttime = time()
-  while maxq > qf && ts.step < maxsteps
-
-    stepforward!(vs, ts, eq, pr, g; nsteps=substeps)
-    TwoDTurb.updatevars!(vs, g)
-    maxq = maximum(abs.(vs.q))
-
-    if plots
-      imshow(vs.q)
-      pause(0.01)
-    end
-
-    log1 = @sprintf("τ: %.3f s, step: %d, t*q0: %.1e, max q: %.3e, ",
-      time()-starttime, ts.step, vs.t*q0, maxq)
-
-    log2 = @sprintf("ΔE: %.3f, CFL: %.3f",
-      energy(vs, g)/E0, maximum([vs.U; vs.V])*ts.dt/g.dx)
-
-    println(log1*log2)
-
-  end
-
-  @printf("... done.")
-
-  return vs.q
+Returns the domain-averaged dissipation rate.
+"""
+@inline function dissipation(s, v, p, g)
+  @. v.Uqh = (g.kr^(2*(p.nν-1)) + g.l^(2*(p.nν-1))) * abs2(s.sol)
+  p.ν*FourierFlows.parsevalsum(v.Uqh, g)
 end
-=#
+
+@inline function dissipation(prob::AbstractProblem)
+  dissipation(prob.state, prob.vars, prob.params, prob.grid)
+end
+
+
+"""
+    injection(s, v, p, g)
+
+Returns the domain-averaged rate of injection of energy by the forcing F.
+"""
+@inline function injection(s, v::ForcedVars, g)
+  @. v.psih = -g.invKKrsq * s.sol
+  @. v.Uqh = -v.psih*conj(v.F)
+  FourierFlows.parsevalsum(v.Uqh, g)
+end
+
+@inline function injection(prob::AbstractProblem)
+  injection(prob.state, prob.vars, prob.grid)
+end
 
 
 end # module

@@ -10,12 +10,14 @@ steppers = [
   "FilteredForwardEuler",
   "AB3",
   "RK4",
+  "FilteredRK4",
   "ETDRK4",
   "FilteredETDRK4",
 ]
 
 filteredsteppers = [
   "FilteredForwardEuler",
+  "FilteredRK4",
   "FilteredETDRK4",
 ]
 
@@ -204,46 +206,44 @@ end
 
 
 
-""" Integrate the square of a variables's Fourier transform on a 2D grid
-using Parseval's theorem, taking into account for FFT normalization and
-testing whether the coefficients are the product of a real or complex
-Fourier transform. """
+""" 
+    parsevalsum2(uh, g)
+
+Calculate ∫u = Σ|uh|² on a 2D grid, where uh is the Fourier transform of u.
+Accounts for DFT normalization, grid resolution, and whether or not uh
+is the product of fft or rfft.
+"""
 function parsevalsum2(uh, g::TwoDGrid)
-  # Weird normalization (hopefully holds for both Julia and MKL FFT)
-  norm = g.Lx*g.Ly/(g.nx^2*g.ny^2)
+  norm = g.Lx*g.Ly/(g.nx^2*g.ny^2)    # weird normalization for dft
 
-  nk, nl = size(uh)
-
-  # Different summing techniques for complex or real transform
-  if nk == g.nkr
-    U = sum(abs2.(uh[1, :]))
-    U += 2*sum(abs2.(uh[2:end, :]))
-  else
-    U = sum(abs2.(uh))
+  if size(uh)[1] == g.nkr             # uh is conjugate symmetric
+    U = sum(abs2, uh[1, :])           # k=0 modes
+    U += 2*sum(abs2, uh[2:end, :])    # sum k>0 modes twice     
+  else                                # count every mode once
+    U = sum(abs2, uh)
   end
 
-  return U*norm
+  norm*U
 end
 
+""" 
+    parsevalsum(uh, g)
 
-""" Sum a wavenumber variable, applying the proper normalization to convert
-this sum into an integral over physical space, and taking into account
-reflected wavenumbers if the variable is the product of a 'real FFT'. """
+Calculate real(Σ uh) on a 2D grid.  Accounts for DFT normalization, 
+grid resolution, and whether or not uh is in a conjugate-symmetric form to 
+save memory.
+""" 
 function parsevalsum(uh, g::TwoDGrid)
-    # Weird normalization (hopefully holds for both Julia and MKL FFT)
-    norm = g.Lx*g.Ly/(g.nx^2*g.ny^2)
+  norm = g.Lx*g.Ly/(g.nx^2*g.ny^2) # weird normalization for dft
 
-  nk, nl = size(uh)
-
-  # Different summing techniques for complex or real transform
-  if nk == g.nkr
-    U = sum(uh[1, :])
-    U += 2*sum(uh[2:end, :])
-  else
+  if size(uh)[1] == g.nkr       # uh is conjugate symmetric
+    U = sum(uh[1, :])           # k=0 modes
+    U += 2*sum(uh[2:end, :])    # sum k>0 modes twice     
+  else # count every mode once
     U = sum(uh)
   end
 
-  return real(U*norm)
+  norm*real(U)
 end
 
 

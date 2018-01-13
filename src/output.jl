@@ -1,15 +1,8 @@
 using JLD2
-# using HDF5
-
 import Base: getindex, setindex!, push!, append!, fieldnames
-
 export Output, saveoutput, saveproblem, groupsize, savediagnostic
 
-
-
-
 gridfieldstosave = [:nx, :ny, :Lx, :Ly, :X, :Y]
-
 
 """ Output type for FourierFlows problems. """
 mutable struct Output
@@ -81,16 +74,10 @@ function saveoutput(out::Output)
   nothing
 end
 
-
-
-
 """ Save attributes of the Problem associated with the given Output. """
 function saveproblem(out::Output)
   saveproblem(out.prob, out.filename)
 end
-
-
-
 
 """ Find the number of elements in a JLD2 group. """
 function groupsize(group::JLD2.Group)
@@ -102,8 +89,6 @@ function groupsize(group::JLD2.Group)
   return value
 end
 
-
-
 """ 
 Save certain aspects of a Problem. Entire problems cannot be saved
 in general, because functions cannot be saved (and functions may use
@@ -111,7 +96,6 @@ arbitrary numbers of global variables that cannot be included in a saved
 object). 
 """
 function saveproblem(prob::AbstractProblem, filename::String)
-
   jldopen(filename, "a+") do file
       file["timestepper/dt"] = prob.ts.dt
       for field in gridfieldstosave
@@ -128,9 +112,6 @@ function saveproblem(prob::AbstractProblem, filename::String)
 
   nothing
 end
-
-
-
 
 """
 Save diagnostics to file.
