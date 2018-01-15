@@ -8,7 +8,8 @@ nν = 1
 dt = 1e0   # Time step
 nt = 100   # Number of time steps
 
-prob = TwoDTurb.InitialValueProblem(nx=n, Lx=L, ν=ν, nν=nν, dt=dt)
+prob = TwoDTurb.InitialValueProblem(nx=n, Lx=L, ν=ν, nν=nν, dt=dt,
+  stepper="RK4")
 TwoDTurb.set_q!(prob, rand(n, n))
 
 # Step forward

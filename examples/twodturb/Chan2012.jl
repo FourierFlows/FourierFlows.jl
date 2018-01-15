@@ -13,7 +13,7 @@ ndp = 5000   # Timesteps between plots
 
   fi = 0.5
   ki = 16
-norm = n^2/4/sqrt(dt)
+norm = n^2/4
 
 function calcF!(F, sol, t, s, v, p, g)
   if t == s.t # not a substep
@@ -24,10 +24,10 @@ function calcF!(F, sol, t, s, v, p, g)
     j₂ = n + 2 - j₁ # e.g. j₁ = 1 => j₂ = nl+1
 
     if j₁ != 1
-      F[i₁, j₁] = fi*ki * norm*exp(im*ξ)
-      F[i₁, j₂] = fi*ki * norm*exp(im*ξ)
+      F[i₁, j₁] = fi*ki/sqrt(s.dt)*norm*exp(im*ξ)
+      F[i₁, j₂] = fi*ki/sqrt(s.dt)*norm*exp(im*ξ)
     else
-      F[i₁, j₁] = fi*ki * 2norm*exp(im*ξ)
+      F[i₁, j₁] = fi*ki/sqrt(s.dt)*2norm*exp(im*ξ)
     end
   end
 
