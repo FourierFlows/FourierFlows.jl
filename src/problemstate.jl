@@ -13,7 +13,7 @@ mutable struct Problem <: AbstractProblem
 end
 
 #=
-For v1.0 release:
+For Julia v1.0 release:
   The `t` and `step` properties can be removed from Problem, instead
   overloading the `getfield` function to intercept attempts to access
   `t` and `step`, which will be redirected to prob.state.t and 
