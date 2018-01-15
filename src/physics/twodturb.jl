@@ -1,9 +1,8 @@
+__precompile__()
 module TwoDTurb
-
 using FourierFlows
 Grid = TwoDGrid
 
-# Problem
 """
     InitialValueProblem(; twodturbparameters...)
 
@@ -42,6 +41,7 @@ function ForcedProblem(;
          ν = 0.0,
         nν = 1,
          μ = 0.0,
+        nμ = 0,
         dt = 0.01,
    stepper = "RK4",
      calcF = nothing
@@ -52,7 +52,7 @@ function ForcedProblem(;
   end
 
   g  = TwoDGrid(nx, Lx, ny, Ly)
-  pr = TwoDTurb.ForcedParams(ν, nν, μ, _calcF)
+  pr = TwoDTurb.ForcedParams(ν, nν, μ, nμ, _calcF)
   vs = TwoDTurb.ForcedVars(g)
   eq = TwoDTurb.Equation(pr, g)
   ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
@@ -60,58 +60,83 @@ function ForcedProblem(;
   FourierFlows.Problem(g, vs, pr, eq, ts)
 end
 
-# Params
+
+"""
+    Params(ν, nν)
+
+Returns the params for unforced two-dimensional turbulence.
+"""
 struct Params <: AbstractParams
   ν::Float64        # Vorticity viscosity
   nν::Int           # Vorticity hyperviscous order
 end
 
+"""
+  ForcedParams(ν, nν, μ, nμ, calcF!)
+
+Returns the params for forced two-dimensional turbulence with
+hyperviscosity ν and μ of order nν and nμ and forcing calculated by
+calcF!.
+"""
 struct ForcedParams <: AbstractParams
   ν::Float64        # Vorticity viscosity
   nν::Int           # Vorticity hyperviscous order
-  μ::Float64        # Bottom drag
+  μ::Float64        # Bottom drag or hypoviscosity
+  nμ::Float64       # Order of hypodrag
   calcF!::Function  # Function that calculates the forcing F
 end
 
-# Equations
+
+"""
+    Equation(p, g)
+
+Returns the equation for two-dimensional turbulence with params p and grid g.
+"""
 function Equation(p::Params, g::TwoDGrid)
   LC = -p.ν * g.KKrsq.^p.nν
   FourierFlows.Equation{2}(LC, calcN_advection!)
 end
 
 function Equation(p::ForcedParams, g::TwoDGrid)
-  LC = -p.ν*g.KKrsq.^p.nν - p.μ
+  LC = -p.ν*g.KKrsq.^p.nν - p.μ*g.KKrsq.^p.nμ
+  LC[1, 1] = 0
   FourierFlows.Equation{2}(LC, calcN_forced!)
 end
 
 
-
-
-# Vars
+# Construct Vars type for unforced two-dimensional turbulence
 physvars = [:q, :U, :V, :Uq, :Vq, :psi]
 transvars = [:qh, :Uh, :Vh, :Uqh, :Vqh, :psih]
-
-expr = FourierFlows.getexpr_varstype(:Vars, physvars, transvars)
+expr = FourierFlows.structvarsexpr(:Vars, physvars, transvars)
 eval(expr)
 
+"""
+    Vars(g)
+
+Returns the vars for unforced two-dimensional turbulence with grid g.
+"""
 function Vars(g::TwoDGrid)
   @createarrays Float64 (g.nx, g.ny) q U V Uq Vq psi
   @createarrays Complex{Float64} (g.nkr, g.nl) sol qh Uh Vh Uqh Vqh psih
   Vars(q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih)
 end
 
-
+# Construct Vars type for forced two-dimensional turbulence
 forcedtransvars = [:qh, :Uh, :Vh, :Uqh, :Vqh, :psih, :F]
-expr = FourierFlows.getexpr_varstype(:ForcedVars, physvars, forcedtransvars)
+expr = FourierFlows.structvarsexpr(:ForcedVars, physvars, forcedtransvars)
 eval(expr)
 
+
+"""
+    ForcedVars(g)
+
+Returns the vars for unforced two-dimensional turbulence with grid g.
+"""
 function ForcedVars(g::TwoDGrid)
   @createarrays Float64 (g.nx, g.ny) q U V Uq Vq psi
   @createarrays Complex{Float64} (g.nkr, g.nl) sol qh Uh Vh Uqh Vqh psih F
   ForcedVars(q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih, F)
 end
-
-
 
 
 # Solvers
@@ -152,9 +177,11 @@ end
 
 # Helper functions
 """
-Update solution variables using qh in v.sol.
+    updatevars!(v, s, g)
+
+Update the vars in v on the grid g with the solution in s.sol.
 """
-function updatevars!(s, v, g)
+function updatevars!(v, s, g)
   v.qh .= s.sol
   @. v.psih = -g.invKKrsq * v.qh
   @. v.Uh = -im*g.l  * v.psih
@@ -171,9 +198,8 @@ function updatevars!(s, v, g)
 end
 
 function updatevars!(prob::AbstractProblem)
-  updatevars!(prob.state, prob.vars, prob.grid)
+  updatevars!(prob.vars, prob.state, prob.grid)
 end
-
 
 """
     set_q!(s, v, g, q)
@@ -183,7 +209,8 @@ on the grid g.
 """
 function set_q!(s, v, g, q)
   A_mul_B!(s.sol, g.rfftplan, q)
-  updatevars!(s, v, g)
+  s.sol[1, 1] = 0 # zero out domain average
+  updatevars!(v, s, g)
 end
 
 """
@@ -195,7 +222,6 @@ function set_q!(prob::AbstractProblem, q)
   set_q!(prob.state, prob.vars, prob.grid, q)
 end
 
-
 """
     energy(s, v, g)
 
@@ -203,16 +229,13 @@ Returns the domain-averaged kinetic energy in the Fourier-transformed vorticity
 solution s.sol.
 """
 @inline function energy(s, v, g)
-  @. v.Uh =  im * g.l  * g.invKKrsq * s.sol
-  @. v.Vh = -im * g.kr * g.invKKrsq * s.sol
-  1 / (2*g.Lx*g.Ly) * (
-    FourierFlows.parsevalsum2(v.Uh, g)+FourierFlows.parsevalsum2(v.Vh, g))
+  @. v.Uqh = g.invKKrsq * abs2(s.sol)
+  1/(2*g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uqh, g)
 end
 
 @inline function energy(prob)
   energy(prob.state, prob.vars, prob.grid)
 end
-
 
 """
     enstrophy(s, g)
@@ -232,17 +255,17 @@ end
 """
     dissipation(s, v, p, g)
 
-Returns the domain-averaged dissipation rate.
+Returns the domain-averaged dissipation rate. nν must be >= 1.
 """
 @inline function dissipation(s, v, p, g)
-  @. v.Uqh = (g.kr^(2*(p.nν-1)) + g.l^(2*(p.nν-1))) * abs2(s.sol)
-  p.ν*FourierFlows.parsevalsum(v.Uqh, g)
+  @. v.Uqh = g.KKrsq^(p.nν-1) * abs2(s.sol)
+  @. v.Uqh[1, 1] = 0
+  p.ν/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uqh, g)
 end
 
 @inline function dissipation(prob::AbstractProblem)
   dissipation(prob.state, prob.vars, prob.params, prob.grid)
 end
-
 
 """
     injection(s, v, p, g)
@@ -250,14 +273,27 @@ end
 Returns the domain-averaged rate of injection of energy by the forcing F.
 """
 @inline function injection(s, v::ForcedVars, g)
-  @. v.psih = -g.invKKrsq * s.sol
-  @. v.Uqh = -v.psih*conj(v.F)
-  FourierFlows.parsevalsum(v.Uqh, g)
+  @. v.Uqh = g.invKKrsq * s.sol * conj(v.F)
+  1/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uqh, g)
 end
 
 @inline function injection(prob::AbstractProblem)
   injection(prob.state, prob.vars, prob.grid)
 end
 
+"""
+    drag(s, v, p, g)
+
+Returns the extraction of domain-averaged energy by drag μ.
+"""
+@inline function drag(s, v::ForcedVars, p::ForcedParams, g)
+  @. v.Uqh = g.KKrsq^(p.nμ-1) * abs2(s.sol)
+  @. v.Uqh[1, 1] = 0
+  p.μ/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uqh, g)
+end
+
+@inline function drag(prob::AbstractProblem)
+  drag(prob.state, prob.vars, prob.params, prob.grid) 
+end
 
 end # module
