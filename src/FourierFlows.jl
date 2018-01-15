@@ -14,9 +14,9 @@ abstract type AbstractGrid end
 abstract type AbstractParams end
 abstract type AbstractVars end
 abstract type AbstractTimeStepper end
-abstract type AbstractProblem end
 abstract type AbstractEquation end
 abstract type AbstractState end
+abstract type AbstractProblem end
 
 # Include base functionality
 include("problemstate.jl")
