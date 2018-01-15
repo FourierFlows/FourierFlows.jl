@@ -6,26 +6,29 @@ using Base.Test
 
 # Run tests
 tic()
-println("Starting Tests")
-println(" ")
 
-@time @testset "Grid tests" begin
+@testset "Grid tests" begin
     include("test_grid.jl")
 end
-@time @testset "FFT tests" begin
+
+@testset "FFT tests" begin
     include("test_fft.jl")
 end
-@time @testset "IFFT tests" begin
+
+@testset "IFFT tests" begin
     include("test_ifft.jl")
 end
-@time @testset "TwoDTurb and Timestepper tests" begin
-    include("test_twodturb_timestep.jl")
+
+@testset "Stepper tests" begin
+    include("test_timesteppers.jl")
 end
-@time @testset "BarotropicQG and Timestepper tests" begin
-    include("test_BarotropicQG_timestep.jl")
-end
-@time @testset "Utils tests" begin
+
+#@time @testset "BarotropicQG and Timestepper tests" begin
+#    include("test_BarotropicQG_timestep.jl")
+#end
+
+@testset "Utils tests" begin
     include("test_utils.jl")
 end
 
-toc()
+println("Total test time: ", toq())

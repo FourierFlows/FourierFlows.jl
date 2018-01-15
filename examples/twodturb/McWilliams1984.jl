@@ -63,7 +63,7 @@ out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 startwalltime = time()
 
 while prob.step < nsteps
-  stepforward!(prob, diags; nsteps=nsubs)
+  stepforward!(prob, diags, nsteps)
 
   # Message
   log = @sprintf("step: %04d, t: %d, ΔE: %.4f, ΔZ: %.4f, τ: %.2f min",

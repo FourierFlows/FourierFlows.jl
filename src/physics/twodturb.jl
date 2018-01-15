@@ -1,46 +1,29 @@
 module TwoDTurb
 
 using FourierFlows
-export InitialValueProblem, Params, Vars, Equation, set_q!, updatevars!
+Grid = TwoDGrid
 
 # Problem ---------------------------------------------------------------------
 """
-Construct an initial value problem.
+Construct an initial-value 2D turbulence problem.
 """
 function InitialValueProblem(;
-   nx = 256,
-   Lx = 2π,
-   ny = nothing,
-   Ly = nothing,
-    ν = nothing,
-   nu = nothing,
-   nν = 2,
-  nnu = nothing,
-   dt = 0.01,
-  withfilter = false
+     nx = 256,
+     Lx = 2π,
+     ny = nx,
+     Ly = Lx,
+      ν = 0.0,
+     nν = 2,
+     dt = 0.01,
+stepper = "ETDRK4"
   )
-
-  # Defaults
-  if  nu != nothing;  ν = nu;  end
-  if nnu != nothing; nν = nnu; end
-  if  Ly == nothing; Ly = Lx;  end
-  if  ny == nothing; ny = nx;  end
-
-  if ν == nothing
-    if withfilter; ν = 0.0
-    else;          ν = 1e-1/(dt*(0.65π*nx/Lx)^nν)
-    end
-  end
 
   g  = TwoDGrid(nx, Lx, ny, Ly)
   pr = TwoDTurb.Params(ν, nν)
   vs = TwoDTurb.Vars(g)
   eq = TwoDTurb.Equation(pr, g)
-
-  if withfilter; ts = FilteredETDRK4TimeStepper(dt, eq.LC, g)
-  else;          ts = ETDRK4TimeStepper(dt, eq.LC)
-  end
-
+  ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
+  
   FourierFlows.Problem(g, vs, pr, eq, ts)
 end
 
@@ -48,56 +31,95 @@ function InitialValueProblem(n, L, ν, nν, dt, withfilter)
   InitialValueProblem(nx=n, Lx=L, ν=ν, nν=nν, dt=dt, withfilter=withfilter)
 end
 
-function InitialValueProblem(nx, Lx, ny, Ly, ν, nν, dt, withfilter)
-  InitialValueProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, ν=ν, nν=nν, dt=dt,
-                        withfilter=withfilter)
+
+"""
+Construct a forced 2D turbulence problem.
+"""
+function ForcedProblem(;
+        nx = 256,
+        Lx = 2π,
+        ny = nx,
+        Ly = Lx,
+         ν = 0.0,
+        nν = 2,
+         μ = 0.0,
+        dt = 0.01,
+   stepper = "RK4",
+     calcF = nothing
+  )
+
+  if calcF == nothing; _calcF(F, sol, t, s, v, p, g) = nothing
+  else;                _calcF = calcF
+  end
+
+  g  = TwoDGrid(nx, Lx, ny, Ly)
+  pr = TwoDTurb.ForcedParams(ν, nν, μ, _calcF)
+  vs = TwoDTurb.ForcedVars(g)
+  eq = TwoDTurb.Equation(pr, g)
+  ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
+
+  FourierFlows.Problem(g, vs, pr, eq, ts)
 end
 
 # Params
 struct Params <: AbstractParams
-  ν::Float64                     # Vorticity viscosity
-  nν::Int                        # Vorticity hyperviscous order
+  ν::Float64        # Vorticity viscosity
+  nν::Int           # Vorticity hyperviscous order
+end
+
+struct ForcedParams <: AbstractParams
+  ν::Float64        # Vorticity viscosity
+  nν::Int           # Vorticity hyperviscous order
+  μ::Float64        # Bottom drag
+  calcF!::Function  # Function that calculates the forcing F
 end
 
 # Equations
 function Equation(p::Params, g::TwoDGrid)
-  LC = -p.ν * g.KKrsq.^(0.5*p.nν)
-  FourierFlows.Equation{2}(LC, calcN!)
+  LC = -p.ν * g.KKrsq.^p.nν
+  FourierFlows.Equation{2}(LC, calcN_advection!)
 end
+
+function Equation(p::ForcedParams, g::TwoDGrid)
+  LC = -p.ν*g.KKrsq.^p.nν - p.μ
+  FourierFlows.Equation{2}(LC, calcN_forced!)
+end
+
+
 
 
 # Vars
-mutable struct Vars <: AbstractVars
-  t::Float64
-  sol::Array{Complex128, 2}
+physvars = [:q, :U, :V, :Uq, :Vq, :psi]
+transvars = [:qh, :Uh, :Vh, :Uqh, :Vqh, :psih]
 
-  # Auxiliary vars
-  q::Array{Float64,2}
-  U::Array{Float64,2}
-  V::Array{Float64,2}
-  Uq::Array{Float64,2}
-  Vq::Array{Float64,2}
-  psi::Array{Float64,2}
-
-  # Solution
-  qh::Array{Complex128,2}
-  Uh::Array{Complex128,2}
-  Vh::Array{Complex128,2}
-  Uqh::Array{Complex128,2}
-  Vqh::Array{Complex128,2}
-  psih::Array{Complex128,2}
-end
+expr = FourierFlows.getexpr_varstype(:Vars, physvars, transvars)
+eval(expr)
 
 function Vars(g::TwoDGrid)
   @createarrays Float64 (g.nx, g.ny) q U V Uq Vq psi
   @createarrays Complex{Float64} (g.nkr, g.nl) sol qh Uh Vh Uqh Vqh psih
-  Vars(0.0, sol, q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih)
+  Vars(q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih)
 end
 
 
+forcedtransvars = [:qh, :Uh, :Vh, :Uqh, :Vqh, :psih, :F]
+expr = FourierFlows.getexpr_varstype(:ForcedVars, physvars, forcedtransvars)
+eval(expr)
+
+function ForcedVars(g::TwoDGrid)
+  @createarrays Float64 (g.nx, g.ny) q U V Uq Vq psi
+  @createarrays Complex{Float64} (g.nkr, g.nl) sol qh Uh Vh Uqh Vqh psih F
+  ForcedVars(q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih, F)
+end
+
+
+
+
 # Solvers
-function calcN!(N::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
-  t::Float64, v::Vars, p::Params, g::TwoDGrid)
+function calcN_advection!(
+  N::Array{Complex{Float64},2}, sol::Array{Complex{Float64},2},
+  t::Float64, s::State, v::AbstractVars, p::AbstractParams, g::TwoDGrid)
+
   v.qh .= sol
   A_mul_B!(v.q, g.irfftplan, v.qh) # destroys qh when using fftw
 
@@ -117,69 +139,92 @@ function calcN!(N::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
   nothing
 end
 
+function calcN_forced!(N::Array{Complex{Float64}, 2}, 
+                sol::Array{Complex{Float64}, 2}, t::Float64, 
+                s::State, v::ForcedVars, p::ForcedParams, g::TwoDGrid)
+
+  calcN_advection!(N, sol, t, s, v, p, g)
+  p.calcF!(v.F, sol, t, s, v, p, g)
+
+  @. N += v.F
+  nothing
+end
+
 
 # Helper functions
 """
 Update solution variables using qh in v.sol.
 """
-function updatevars!(v::Vars, g::TwoDGrid)
-  v.qh .= v.sol
-  v.q = irfft(v.qh, g.nx)
-
+function updatevars!(s, v, g)
+  v.qh .= s.sol
   @. v.psih = -g.invKKrsq * v.qh
   @. v.Uh = -im*g.l  * v.psih
   @. v.Vh =  im*g.kr * v.psih
 
-  v.U = irfft(v.Uh, g.nx)
-  v.V = irfft(v.Vh, g.nx)
+  qh1 = deepcopy(v.qh)
+  Uh1 = deepcopy(v.Uh)
+  Vh1 = deepcopy(v.Vh)
+
+  A_mul_B!(v.q, g.irfftplan, qh1)
+  A_mul_B!(v.U, g.irfftplan, Uh1)
+  A_mul_B!(v.V, g.irfftplan, Vh1)
   nothing
 end
 
 function updatevars!(prob::AbstractProblem)
-  updatevars!(prob.vars, prob.grid)
+  updatevars!(prob.state, prob.vars, prob.grid)
 end
 
 
 """
 Set the vorticity field.
 """
-function set_q!(v::Vars, g::TwoDGrid, q::Array{Float64, 2})
-  A_mul_B!(v.sol, g.rfftplan, q)
-  updatevars!(v, g)
+function set_q!(s, v, g, q)
+  A_mul_B!(s.sol, g.rfftplan, q)
+  updatevars!(s, v, g)
 end
 
 function set_q!(prob::AbstractProblem, q)
-  set_q!(prob.vars, prob.grid, q)
+  set_q!(prob.state, prob.vars, prob.grid, q)
 end
 
 
 """
 Calculate the domain integrated kinetic energy.
 """
-function energy(v::Vars, g::TwoDGrid)
-  0.5*(FourierFlows.parsevalsum2(g.Kr.*g.invKKrsq.*v.sol, g)
-        + FourierFlows.parsevalsum2(g.Lr.*g.invKKrsq.*v.sol, g))
+function energy(s, v, g)
+  @. v.Uh =  im * g.l  * g.invKKrsq * s.sol
+  @. v.Vh = -im * g.kr * g.invKKrsq * s.sol
+  0.5*(FourierFlows.parsevalsum2(v.Uh, g)+FourierFlows.parsevalsum2(v.Vh, g))
 end
 
-function energy(prob::AbstractProblem)
-  energy(prob.vars, prob.grid)
+function energy(prob)
+  energy(prob.state, prob.vars, prob.grid)
 end
 
 
 """
 Returns the domain-integrated enstrophy.
 """
-function enstrophy(v::Vars, g::TwoDGrid)
-  0.5*FourierFlows.parsevalsum2(v.sol, g)
+function enstrophy(s, g)
+  0.5*FourierFlows.parsevalsum2(s.sol, g)
 end
 
 function enstrophy(prob)
-  enstrophy(prob.vars, prob.grid)
+  enstrophy(prob.state, prob.grid)
+end
+
+
+function injection(s, v, g)
+  @. v.psih = -g.invKKrsq * s.sol
+  @. v.Uq = -real(v.psih*conj(v.F))
+  FourierFlows.parsevalsum(v.Uq)
 end
 
 
 
 
+#=
 """ Make a field of mature turbulence on a square grid.
 
   Args:
@@ -282,12 +327,7 @@ function makematureturb(nx::Int, Lx::Real; qf=0.1, q0=0.2, nν=4,
 
   return vs.q
 end
+=#
 
 
-
-
-
-
-
-end
-# E N D   T W O D T U R B >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+end # module

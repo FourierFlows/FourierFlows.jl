@@ -2,6 +2,47 @@ import SpecialFunctions
 
 export @createarrays
 
+# Utility for generating time-steppers.
+
+# Time-steppers lists
+steppers = [
+  "ForwardEuler",
+  "FilteredForwardEuler",
+  "AB3",
+  "RK4",
+  "ETDRK4",
+  "FilteredETDRK4",
+]
+
+filteredsteppers = [
+  "FilteredForwardEuler",
+  "FilteredETDRK4",
+]
+
+"""
+Returns a time-stepper type defined by the prefix 'stepper', timestep dt
+solution sol (used to construct variables with identical type and size as
+the solution vector), and grid g.
+"""
+function autoconstructtimestepper(stepper, dt, sol, 
+                                  g::AbstractGrid=ZeroDGrid(1))
+  fullsteppername = Symbol(stepper, :TimeStepper)
+  if stepper ∈ filteredsteppers
+    tsexpr = Expr(:call, fullsteppername, dt, sol, g)
+  else
+    tsexpr = Expr(:call, fullsteppername, dt, sol)
+  end
+
+  eval(tsexpr)
+end
+
+function autoconstructtimestepper(stepper, dt, solc, solr)
+  fullsteppername = Symbol(stepper, :TimeStepper)
+  tsexpr = Expr(:call, fullsteppername, dt, solc, solr)
+  eval(tsexpr)
+end
+
+
 
 """
     @createarrays T dims a b c 
@@ -15,6 +56,40 @@ macro createarrays(T, dims, vars...)
     [:( $(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
   expr
 end
+
+
+"""
+This function returns an expression that defines a Composite Type
+of the AbstractVars variety.
+"""
+function getexpr_varstype(name, physfields, transfields; soldims=2, vardims=2, 
+                          parent=:AbstractVars) 
+  
+  physexprs = [:( $fld::Array{Float64,$vardims} ) 
+    for fld in physfields]
+  transexprs = [:( $fld::Array{Complex{Float64},$vardims} ) 
+    for fld in transfields]
+
+  if parent != nothing
+    expr = quote
+      mutable struct $name <: $parent
+        $(physexprs...)
+        $(transexprs...)
+      end
+    end
+  else
+    expr = quote
+      mutable struct $name
+        $(physexprs...)
+        $(transexprs...)
+      end
+    end
+  end
+    
+  expr
+end
+
+
 
 
 
