@@ -76,7 +76,7 @@ end
 
 # Equations
 function Equation(p::Params, g::TwoDGrid)
-  LC = -p.ν * g.KKrsq.^(0.5*p.nν)
+  LC = -p.ν * g.KKrsq.^p.nν
   FourierFlows.Equation{2}(LC, calcN_advection!)
 end
 
