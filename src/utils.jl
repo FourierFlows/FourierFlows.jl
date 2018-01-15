@@ -64,7 +64,7 @@ end
 This function returns an expression that defines a Composite Type
 of the AbstractVars variety.
 """
-function getexpr_varstype(name, physfields, transfields; soldims=2, vardims=2, 
+function structvarsexpr(name, physfields, transfields; soldims=2, vardims=2, 
                           parent=:AbstractVars) 
   
   physexprs = [:( $fld::Array{Float64,$vardims} ) 
