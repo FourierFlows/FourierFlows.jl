@@ -24,7 +24,7 @@ end
 
 # Equations
 function Equation(p::Params, g::TwoDGrid)
-  LC = -p.mu - p.nu * g.KKrsq.^(0.5*p.nun)
+  LC = -p.mu - p.nu * g.KKrsq.^p.nun
   FourierFlows.Equation{2}(LC, calcN!)
 end
 
