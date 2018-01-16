@@ -17,29 +17,19 @@ function test_rms(n)
 end
 
 # This test could use some further work.
-function test_radialspectrum(n; debug=false)
-  δ = n/10
-
-  # ah = e^(-ρ^2)*cos(θ)^2
-  ahkl(k, l) = exp(-(k^2+l^2)/2δ^2)
-  #ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) * k^2/(k^2+l^2)
-
-  # ahρ = ∫ ah ρ dθ
-  ahρ_analytic(ρ) = 2π*ρ*exp(-ρ^2/2δ^2)
-  #ahρ_analytic(ρ) = π*ρ*exp(-ρ^2)
-
+function test_radialspectrum(n, ahkl, ahρ; debug=false, atol=0.1)
   g = TwoDGrid(n, 2π)
   ah = ahkl.(g.K, g.L)
   ah[1, 1] = 0.0
 
-  ρ, ahρ = FourierFlows.radialspectrum(ah, g; refinement=16)
+  ρ, ahρ_estimate = FourierFlows.radialspectrum(ah, g; refinement=16)
 
   if debug
-    println(sum(ahρ_analytic.(ρ) - ahρ))
-    return ah, ahρ, ahρ_analytic.(ρ)
+    println(sum(ahρ.(ρ) - ahρ_estimate))
+    return ah, ahρ_estimate, ahρ.(ρ)
   else
-    normalizeddiff = sum(abs.(ahρ_analytic.(ρ) - ahρ)) / length(ρ)
-    return isapprox(normalizeddiff, 0.0, atol=0.1)
+    normalizeddiff = sum(abs.(ahρ.(ρ) - ahρ_estimate)) / length(ρ)
+    return isapprox(normalizeddiff, 0.0, atol=atol)
   end
 end
 
@@ -121,6 +111,15 @@ Js1s2 = (k1*l2-k2*l1)*cos.(k1*x + l1*y).*cos.(k2*x + l2*y)
 @test test_createarrays()
 @test test_fftwavenums()
 @test test_rms(32)
-@test test_radialspectrum(128)
 @test test_domainaverage(32; xdir=true)
 @test test_domainaverage(32; xdir=false)
+
+# Radial spectrum tests. Note that ahρ = ∫ ah ρ dθ.
+n = 128; δ = n/10                 # Parameters
+ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) #  a = exp(-ρ²/2δ²)
+    ahρ(ρ) = 2π*ρ*exp(-ρ^2/2δ^2)  # aᵣ = 2π ρ exp(-ρ²/2δ²)
+@test test_radialspectrum(n, ahkl, ahρ)
+
+ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) * k^2/(k^2+l^2) #  a = exp(-ρ²/2δ²)*cos(θ)²
+    ahρ(ρ) = π*ρ*exp(-ρ^2/2δ^2)                   # aᵣ = π ρ exp(-ρ²/2δ²)
+@test test_radialspectrum(n, ahkl, ahρ)
