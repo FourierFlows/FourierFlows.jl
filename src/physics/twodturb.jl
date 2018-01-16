@@ -4,7 +4,7 @@ using FourierFlows
 Grid = TwoDGrid
 
 """
-    InitialValueProblem(; twodturbparameters...)
+    InitialValueProblem(; parameters...)
 
 Construct an initial-value 2D turbulence problem.
 """
@@ -29,7 +29,7 @@ stepper = "RK4"
 end
 
 """
-    ForcedProblem(; twodturbparameters...)
+    ForcedProblem(; parameters...)
 
 Construct a forced 2D turbulence problem.
 """
@@ -105,8 +105,8 @@ end
 
 
 # Construct Vars type for unforced two-dimensional turbulence
-physvars = [:q, :U, :V, :Uq, :Vq, :psi]
-transvars = [:qh, :Uh, :Vh, :Uqh, :Vqh, :psih]
+physvars = [:q, :U, :V, :psi]
+transvars = [:qh, :Uh, :Vh, :psih]
 expr = FourierFlows.structvarsexpr(:Vars, physvars, transvars)
 eval(expr)
 
@@ -116,13 +116,13 @@ eval(expr)
 Returns the vars for unforced two-dimensional turbulence with grid g.
 """
 function Vars(g::TwoDGrid)
-  @createarrays Float64 (g.nx, g.ny) q U V Uq Vq psi
-  @createarrays Complex{Float64} (g.nkr, g.nl) sol qh Uh Vh Uqh Vqh psih
-  Vars(q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih)
+  @createarrays Float64 (g.nx, g.ny) q U V psi
+  @createarrays Complex{Float64} (g.nkr, g.nl) sol qh Uh Vh psih
+  Vars(q, U, V, psi, qh, Uh, Vh, psih)
 end
 
 # Construct Vars type for forced two-dimensional turbulence
-forcedtransvars = [:qh, :Uh, :Vh, :Uqh, :Vqh, :psih, :F]
+forcedtransvars = [:qh, :Uh, :Vh, :psih, :F]
 expr = FourierFlows.structvarsexpr(:ForcedVars, physvars, forcedtransvars)
 eval(expr)
 
@@ -133,9 +133,9 @@ eval(expr)
 Returns the vars for unforced two-dimensional turbulence with grid g.
 """
 function ForcedVars(g::TwoDGrid)
-  @createarrays Float64 (g.nx, g.ny) q U V Uq Vq psi
-  @createarrays Complex{Float64} (g.nkr, g.nl) sol qh Uh Vh Uqh Vqh psih F
-  ForcedVars(q, U, V, Uq, Vq, psi, qh, Uh, Vh, Uqh, Vqh, psih, F)
+  @createarrays Float64 (g.nx, g.ny) q U V psi
+  @createarrays Complex{Float64} (g.nkr, g.nl) sol qh Uh Vh psih F
+  ForcedVars(q, U, V, psi, qh, Uh, Vh, psih, F)
 end
 
 
@@ -144,22 +144,21 @@ function calcN_advection!(
   N::Array{Complex{Float64},2}, sol::Array{Complex{Float64},2},
   t::Float64, s::State, v::AbstractVars, p::AbstractParams, g::TwoDGrid)
 
-  v.qh .= sol
-  A_mul_B!(v.q, g.irfftplan, v.qh) # destroys qh when using fftw
-
   @. v.Uh =  im * g.l  * g.invKKrsq * sol
   @. v.Vh = -im * g.kr * g.invKKrsq * sol
 
+  v.qh .= sol
   A_mul_B!(v.U, g.irfftplan, v.Uh)
   A_mul_B!(v.V, g.irfftplan, v.Vh)
+  A_mul_B!(v.q, g.irfftplan, v.qh)
 
-  @. v.Uq = v.U * v.q
-  @. v.Vq = v.V * v.q
+  @. v.U *= v.q # U*q
+  @. v.V *= v.q # V*q
 
-  A_mul_B!(v.Uqh, g.rfftplan, v.Uq)
-  A_mul_B!(v.Vqh, g.rfftplan, v.Vq)
+  A_mul_B!(v.Uh, g.rfftplan, v.U) # \hat{U*q}
+  A_mul_B!(v.Vh, g.rfftplan, v.V) # \hat{U*q}
 
-  @. N = -im*g.kr*v.Uqh - im*g.l*v.Vqh
+  @. N = -im*g.kr*v.Uh - im*g.l*v.Vh
   nothing
 end
 
@@ -184,8 +183,8 @@ Update the vars in v on the grid g with the solution in s.sol.
 function updatevars!(v, s, g)
   v.qh .= s.sol
   @. v.psih = -g.invKKrsq * v.qh
-  @. v.Uh = -im*g.l  * v.psih
-  @. v.Vh =  im*g.kr * v.psih
+  @. v.Uh = -im * g.l  * v.psih
+  @. v.Vh =  im * g.kr * v.psih
 
   qh1 = deepcopy(v.qh)
   Uh1 = deepcopy(v.Uh)
@@ -229,8 +228,8 @@ Returns the domain-averaged kinetic energy in the Fourier-transformed vorticity
 solution s.sol.
 """
 @inline function energy(s, v, g)
-  @. v.Uqh = g.invKKrsq * abs2(s.sol)
-  1/(2*g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uqh, g)
+  @. v.Uh = g.invKKrsq * abs2(s.sol)
+  1/(2*g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uh, g)
 end
 
 @inline function energy(prob)
@@ -258,9 +257,9 @@ end
 Returns the domain-averaged dissipation rate. nν must be >= 1.
 """
 @inline function dissipation(s, v, p, g)
-  @. v.Uqh = g.KKrsq^(p.nν-1) * abs2(s.sol)
-  @. v.Uqh[1, 1] = 0
-  p.ν/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uqh, g)
+  @. v.Uh = g.KKrsq^(p.nν-1) * abs2(s.sol)
+  @. v.Uh[1, 1] = 0
+  p.ν/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uh, g)
 end
 
 @inline function dissipation(prob::AbstractProblem)
@@ -273,8 +272,8 @@ end
 Returns the domain-averaged rate of injection of energy by the forcing F.
 """
 @inline function injection(s, v::ForcedVars, g)
-  @. v.Uqh = g.invKKrsq * s.sol * conj(v.F)
-  1/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uqh, g)
+  @. v.Uh = g.invKKrsq * s.sol * conj(v.F)
+  1/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uh, g)
 end
 
 @inline function injection(prob::AbstractProblem)
@@ -287,9 +286,9 @@ end
 Returns the extraction of domain-averaged energy by drag μ.
 """
 @inline function drag(s, v::ForcedVars, p::ForcedParams, g)
-  @. v.Uqh = g.KKrsq^(p.nμ-1) * abs2(s.sol)
-  @. v.Uqh[1, 1] = 0
-  p.μ/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uqh, g)
+  @. v.Uh = g.KKrsq^(p.nμ-1) * abs2(s.sol)
+  @. v.Uh[1, 1] = 0
+  p.μ/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uh, g)
 end
 
 @inline function drag(prob::AbstractProblem)
