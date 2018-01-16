@@ -98,7 +98,7 @@ end
 
 Return the fftwavenumber vector with length n and domain size L.
 """
-fftwavenums(n::Int; L=1.0) = 2.0*pi/L*cat(1, 0:n/2, -n/2+1:-1)
+fftwavenums(n::Int; L=1) = 2π/L*cat(1, 0:n/2, -n/2+1:-1)
 
 
 """ 
@@ -314,43 +314,45 @@ function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=4)
   if n == nothing; n = refinement*maximum([g.nk, g.nl]); end
   if m == nothing; m = refinement*maximum([g.nk, g.nl]); end
 
-  if size(ah)[1] == g.nkr # conjugate symmetric form
-    m = Int(m/2) # need half resolution for conjugate symmetric form
-    θ = linspace(-π/2, π/2, m) # θ grid from k=0 to max(kr)
-    ahsh = fftshift(ah, 2)     # shifted ah
-    ksh = linspace(0, (g.nkr-1)*2π/g.Lx, g.nkr) 
-  else                     
-    θ = linspace(0, 2π, m) # θ grid
+  if size(ah)[1] == g.nkr       # conjugate symmetric form
+    m = Int(m/2)                # => half resolution in θ
+    θ = linspace(-π/2, π/2, m)  # θ-grid from k=0 to max(kr)
+    ahsh = fftshift(ah, 2)      # shifted ah
+    ksh = linspace(0, g.nkr-1, g.nkr)*2π/g.Lx
+  else                          # ordinary form 
+    θ = linspace(0, 2π, m)      # θ grid
     ahsh = fftshift(ah, [1, 2]) # shifted ah
-    ksh = linspace((-g.nk+2)*π/g.Lx, g.nk*π/g.Lx, g.nk)
+    ksh = linspace(-g.nk/2+1, g.nk/2, g.nk)*2π/g.Lx
   end
 
-  lsh = linspace((-g.nl+2)*π/g.Ly, g.nl*π/g.Ly, g.nl)
-  ρmax = maximum([maximum(g.k), maximum(g.l)])
+  lsh = linspace(-g.nl/2+1, g.nl/2, g.nl)*2π/g.Ly
+  ρmax = minimum([maximum(g.k), maximum(g.l)])
   ρ = linspace(0, ρmax, n)
 
   itp = scale(interpolate(ahsh, BSpline(Linear()), OnGrid()), ksh, lsh)
   ahρθ = zeros(eltype(ahsh), (n, m))
 
+  # Interpolate ah onto fine grid in (ρ,θ).
   for i=2:n, j=1:m # ignore zeroth mode
     kk = ρ[i]*cos(θ[j])
     ll = ρ[i]*sin(θ[j])
     ahρθ[i, j] = itp[kk, ll]
   end
 
-  # aρ = ∫ a(p, θ) r dθ
+  # ahρ = ρ ∫ ah(ρ,θ) dθ  =>  Ah = ∫ ahρ dρ = ∫∫ ah dk dl
+  dθ = θ[2]-θ[1]
   if size(ah)[1] == g.nkr
-    aρ = 2*sum(ρ.*ahρθ, 2)*(θ[2]-θ[1]) # multiply by 2 for conjugate symmetry
+    ahρ = 2ρ.*sum(ahρθ, 2)*dθ # multiply by 2 for conjugate symmetry
   else
-    aρ = sum(ρ.*ahρθ, 2)*(θ[2]-θ[1])
+    ahρ = ρ.*sum(ahρθ, 2)*dθ
   end
-  aρ[1] = ah[1, 1] # zeroth mode
+  ahρ[1] = ah[1, 1] # zeroth mode
 
-  ρ, aρ 
+  ρ, ahρ 
 end
 
 # Moments and cumulants
-domainaverage(c, g) = g.dx*g.dy*sum(c)
+domainaverage(c, g) = g.dx*g.dy*sum(c)/(g.Lx*g.Ly)
 moment_x(c, g, n) = g.dx*g.dy*sum(g.X.^n.*c)
 moment_y(c, g, n) = g.dx*g.dy*sum(g.Y.^n.*c)
 
