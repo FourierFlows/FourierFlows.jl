@@ -1,5 +1,3 @@
-include("../../src/fourierflows.jl")
-
 using FourierFlows, PyPlot, JLD2
 
 import FourierFlows.TwoDTurb
@@ -14,7 +12,7 @@ import FourierFlows.TwoDTurb: energy, enstrophy
 # Time-stepping
 dt = 5e-3
 nsteps = 8000
-nsubs  = 200
+nsubs  = 50
 
 # Files
 filepath = "."
@@ -26,11 +24,11 @@ filename = joinpath(filepath, "testdata.jld2")
 if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
 
-# Initialize with random numbers
-prob = TwoDTurb.InitialValueProblem(nx=n, Lx=L, ν=ν, nν=nν, dt=dt, 
-  withfilter=true)
-g = prob.grid
+# Initialize problem
+prob = TwoDTurb.InitialValueProblem(;nx = n, Lx = L, ny = n, Ly = L, ν = ν,
+                                     nν = nν, dt = dt, stepper = "FilteredRK4")
 
+g = prob.grid
 
 # Initial condition closely following pyqg barotropic example
 # that reproduces the results of the paper by McWilliams (1984)
@@ -52,18 +50,53 @@ TwoDTurb.set_q!(prob, qi)
 # Create Diagnostic -- "energy" is a function imported at the top.
 E = Diagnostic(energy, prob; nsteps=nsteps)
 Z = Diagnostic(enstrophy, prob; nsteps=nsteps)
-diags = [E, Z]
+diags = [E, Z] # A list of Diagnostics types passed to "stepforward!" will
+# be updated every timestep. They should be efficient to calculate and
+# have a small memory footprint. (For example, the domain-integrated kinetic
+# energy is just a single number for each timestep). See the file in
+# src/diagnostics.jl and the stepforward! function in timesteppers.jl.
 
 # Create Output
 get_sol(prob) = prob.vars.sol # extracts the Fourier-transformed solution
 get_u(prob) = irfft(im*g.Lr.*g.invKKrsq.*prob.vars.sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 
+
+function plot_output(prob, fig, axs; drawcolorbar=false)
+  # Plot the vorticity field and the evolution of energy and enstrophy.
+  TwoDTurb.updatevars!(prob)
+  sca(axs[1])
+  pcolormesh(prob.grid.X, prob.grid.Y, prob.vars.q)
+  clim(-40, 40)
+  axis("off")
+  axis("square")
+  if drawcolorbar==true
+    colorbar()
+  end
+
+  sca(axs[2])
+  cla()
+  plot(E.time[1:E.prob.step], E.data[1:prob.step]/E.data[1])
+  plot(Z.time[1:Z.prob.step], Z.data[1:prob.step]/Z.data[1])
+  xlabel(L"t")
+  ylabel(L"\Delta E, \, \Delta Z")
+
+  pause(0.01)
+end
+
+
+
+
 # Step forward
 startwalltime = time()
 
+
+fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
+plot_output(prob, fig, axs; drawcolorbar=true)
+
+
 while prob.step < nsteps
-  stepforward!(prob, diags, nsteps)
+  stepforward!(prob, diags, nsubs)
 
   # Message
   log = @sprintf("step: %04d, t: %d, ΔE: %.4f, ΔZ: %.4f, τ: %.2f min",
@@ -71,23 +104,13 @@ while prob.step < nsteps
     (time()-startwalltime)/60)
 
   println(log)
+
+  plot_output(prob, fig, axs; drawcolorbar=false)
+
 end
 
-TwoDTurb.updatevars!(prob)
-fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
+plot_output(prob, fig, axs; drawcolorbar=true)
 
-axes(axs[1])
-pcolormesh(g.X, g.Y, prob.vars.q)
-axis("equal")
-colorbar()
-clim(-40, 40)
-axs[1][:axis]("off")
-
-axes(axs[2])
-plot(E.time[1:E.prob.step], E.data[1:prob.step]/E.data[1])
-plot(Z.time[1:E.prob.step], Z.data[1:prob.step]/Z.data[1])
-xlabel(L"t")
-ylabel(L"\Delta E, \, \Delta Z")
 
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), prob.step)
 savefig(savename, dpi=240)
