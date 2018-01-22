@@ -49,7 +49,7 @@ end
 
 function Vars(g::TwoDGrid)
   U     = 0.0
-  @createarrays Float64 (g.nx, g.ny) q u v uUq vq psi zeta 
+  @createarrays Float64 (g.nx, g.ny) q u v uUq vq psi zeta
   @createarrays Complex{Float64} (g.nkr, g.nl) qh uh vh uUqh vqh psih zetah
  return Vars(q, U, u, v, uUq, vq, psi, zeta, qh, uh, vh,
     uUqh, vqh, psih, zetah)
@@ -81,9 +81,14 @@ function calcN!(N::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
   # Nonlinear term for q
   @. N = -im*g.kr*v.uUqh - im*g.l*v.vqh - p.beta*v.vh
 
-  # 'Nonlinear' term for U with topographic correlation.
-  # Note: < v*eta > = sum(v*eta)*dx*dy/(Lx*Ly)
-  N[1, 1] = p.FU(t) - sum(v.v*v.eta)*g.dx*g.dy/(g.Lx*g.Ly)
+  # 'Nonlinear' term for U with topo correlation.
+  # Note: < v*eta > = sum( conj(vh)*etah ) / (nx^2*ny^2) if fft is used
+  # while < v*eta > = 2*sum( conj(vh)*etah ) / (nx^2*ny^2) if rfft is used
+  if size(sol)[1] == g.nkr
+    N[1, 1] = p.FU(t) + 2*sum(conj(v.vh).*p.etah).re / (g.nx^2.0*g.ny^2.0)
+  else
+    N[1, 1] = p.FU(t) + sum(conj(v.vh).*p.etah).re / (g.nx^2.0*g.ny^2.0)
+  end
 
 end
 
@@ -100,7 +105,7 @@ function updatevars!(s::State, v::Vars, p::Params, g::TwoDGrid)
   zetah1 = deepcopy(v.zetah)
   uh1 = deepcopy(v.uh)
   vh1 = deepcopy(v.vh)
-  
+
   A_mul_B!(v.zeta, g.irfftplan, zetah1)
   A_mul_B!(v.psi, g.irfftplan, v.psih)
   A_mul_B!(v.u, g.irfftplan, uh1)
