@@ -36,7 +36,7 @@ function Problem(g, v, p, eq, ts, st)
 end
 
 function Problem(g, v, p, eq, ts)
-  st = State{eltype(eq.LC),ndims(eq.LC)}(0.0, 0, zeros(eq.LC))
+  st = State{eltype(eq.LC),ndims(eq.LC)}(0.0, 0, ts.dt, zeros(eq.LC))
   Problem(g, v, p, eq, ts, st)
 end
 
@@ -45,25 +45,27 @@ end
 mutable struct State{T,dim} <: AbstractState
   t::Float64
   step::Int
+  dt::Float64
   sol::Array{T,dim}
 end
 
-function State(T::DataType, sz::Tuple)
+function State(T::DataType, sz::Tuple, dt)
   sol = zeros(T, sz)
-  State(0.0, 0, sol)
+  State(0.0, 0, dt, sol)
 end
 
 mutable struct DualState{T,dimc,dimr} <: AbstractState
   t::Float64
   step::Int
+  dt::Float64
   solc::Array{T,dimc}
   solr::Array{T,dimr}
 end
 
-function DualState(T::DataType, sizec, sizer)
+function DualState(T::DataType, sizec, sizer, dt)
   solc = zeros(T, sizec)
   solr = zeros(T, sizer)
-  DualState(0.0, 0, solc, solr)
+  DualState(0.0, 0, dt, solc, solr)
 end
 
 

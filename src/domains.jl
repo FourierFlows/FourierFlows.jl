@@ -84,11 +84,11 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
   Y = [ y[j] for i = 1:nx, j = 1:ny]
 
   # Wavenubmer grid
-  i1 = 0:1:Int(nx/2)
-  i2 = Int(-nx/2+1):1:-1
+  i1 = 0:Int(nx/2)
+  i2 = Int(-nx/2+1):-1
 
-  j1 = 0:1:Int(ny/2)
-  j2 = Int(-ny/2+1):1:-1
+  j1 = 0:Int(ny/2)
+  j2 = Int(-ny/2+1):-1
 
   k  = reshape(2π/Lx * cat(1, i1, i2), (nk, 1))
   kr = reshape(2π/Lx * cat(1, i1), (nkr, 1))
@@ -100,13 +100,13 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
   Kr = [ kr[i] for i = 1:nkr, j = 1:nl]
   Lr = [ l[j]  for i = 1:nkr, j = 1:nl]
 
-  KKsq  = K.^2.0 + L.^2.0
-  invKKsq = 1.0./KKsq
-  invKKsq[1, 1] = 0.0
+  KKsq  = K.^2 + L.^2
+  invKKsq = 1./KKsq
+  invKKsq[1, 1] = 0
 
-  KKrsq = Kr.^2.0 + Lr.^2.0
-  invKKrsq = 1.0./KKrsq
-  invKKrsq[1, 1] = 0.0
+  KKrsq = Kr.^2 + Lr.^2
+  invKKrsq = 1./KKrsq
+  invKKrsq[1, 1] = 0
 
   # FFT plans
   FFTW.set_num_threads(nthreads)
@@ -136,20 +136,20 @@ function TwoDGrid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64};
   TwoDGrid(nx, Lx, ny, Ly; nthreads=nthreads)
 end
 
-function dealias!(a::Array{Complex{Float64}, 2}, g)
+function dealias!(a::Array{Complex{Float64},2}, g)
   if size(a)[1] == g.nkr
-    a[g.iralias, g.jalias] = 0im
+    a[g.iralias, g.jalias] = 0
   else
-    a[g.ialias, g.jalias] = 0im
+    a[g.ialias, g.jalias] = 0
   end
   nothing
 end
 
-function dealias!(a::Array{Complex{Float64}, 3}, g)
+function dealias!(a::Array{Complex{Float64},3}, g)
   if size(a)[1] == g.nkr
-    @views @. a[g.iralias, g.jalias, :] = 0im
+    @views @. a[g.iralias, g.jalias, :] = 0
   else
-    @views @. a[g.ialias, g.jalias, :] = 0im
+    @views @. a[g.ialias, g.jalias, :] = 0
   end
   nothing
 end
@@ -175,4 +175,11 @@ function makefilter(g::TwoDGrid; order=4.0, innerK=0.65, outerK=1.0,
   filt[ real.(KK) .< innerK ] = 1
 
   return filt
+end
+
+function makefilter(g, T, sz; kwargs...)
+  if sz[1] == g.nkr; realvars = true
+  else;              realvars = false
+  end
+  ones(T, sz) .* makefilter(g; realvars=realvars, kwargs...)
 end

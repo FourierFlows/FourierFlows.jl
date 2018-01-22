@@ -1,13 +1,8 @@
-import Base: resize!
-
+import Base: resize!, getindex
 export AbstractDiagnostic, Diagnostic
 export resize!, update!, increment!
 
-
 abstract type AbstractDiagnostic end
-
-
-
 
 """ A diagnostic type associated with FourierFlows.Problem types """
 mutable struct Diagnostic{T} <: AbstractDiagnostic
@@ -40,10 +35,15 @@ function Diagnostic(calc::Function, prob::FourierFlows.Problem; freq=1,
   Diagnostic{T}(calc, prob, num, data, time, step, value, 1, freq)
 end
 
+function getindex(d::Diagnostic, inds...)
+  getindex(d.data, inds...)
+end
 
+""" 
+    resize!(diag, newnum)
 
-
-""" Resize the diagnostic data and time arrays. """
+Resize the Diagnostic data and time arrays to length newnum. 
+"""
 function resize!(diag::AbstractDiagnostic, newnum::Int)
   resize!(diag.data, newnum)
   resize!(diag.time, newnum)
@@ -51,11 +51,11 @@ function resize!(diag::AbstractDiagnostic, newnum::Int)
   nothing
 end
 
+""" 
+    update!(diag)
 
-
-
-
-""" Update the current value of the diagnostic. """
+Update diag with its current value.
+"""
 function update!(diag::AbstractDiagnostic)
   diag.data[diag.count] = diag.calc(diag.prob)
   diag.time[diag.count] = diag.prob.t
@@ -71,10 +71,11 @@ function update!(diags::AbstractArray)
   nothing
 end
 
+""" 
+    increment!(diag)
 
-
-
-""" Increment a diagnostic by calculating a new value. """
+Increment the Diagnostic diag.
+"""
 function increment!(diag::AbstractDiagnostic)
   if diag.count < diag.num
     diag.data[diag.count+1] = diag.calc(diag.prob)
@@ -91,9 +92,11 @@ function increment!(diag::AbstractDiagnostic)
   nothing
 end
 
+""" 
+    increment!(diags)
 
-
-""" Increment an array of diagnostics. """
+Increment the array of Diagnostics diags. 
+"""
 function increment!(diags::AbstractArray)
   for d in diags
     increment!(d)

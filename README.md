@@ -43,7 +43,7 @@ Here's an overview of the code structure:
         various time-steppers. Current implemented time-steppers are:
         - Forward Euler (+ Filtered Forward Euler)
         - 3rd-order Adams-Bashforth (AB3)
-        - 4th-order Runge-Kutta (RK4)
+        - 4th-order Runge-Kutta (RK4) (+ Filtered RK4)
         - 4th-order Runge-Kutta Exponential Time Differencing (ETDRK4)
         (+ Filtered ETDRK4)
     - `physics/`
@@ -55,19 +55,26 @@ Here's an overview of the code structure:
         - `twomodeboussinesq.jl`: Defines a `TwoModeBoussinesq` module
                 that provides solvers for a two-mode truncation of the
                 rotating, stratified Boussinesq equation.
-        - `niwqg.jl`: Defines a `NIWQG` module that provides a solver
-                for the vertical-plane-wave model for the interaction of
-                a near-inertial wave field and quasi-geostrophic flow.
         - `traceradvdiff.jl`: Defines a `TracerAdvDiff` module that
                 provides a solver for a two-dimensional and periodic tracer
                 field in a given 2D flow (u, w), which can be an arbitrary
                 function of x, z, and t.
 
 
+## Basic Notation
+
+The code solves partial differential equations of the general
+form: `u_t = L*u + N(u)`. The `L*u` part is time-stepped forward
+using an implicit scheme; the `N(u)` part is time-stepped forward
+using an explicit scheme. The coefficients for the linear operator
+`L` are stored in array `LC`. The term `N(u)` is computed for by
+calling the function `calcN!`.
+
+
 ## Writing fast solvers
 
 The performance-intensive part of the code involves just two functions: the
-timestepping scheme `stepforward!`, and the function `calcNL!` that
+timestepping scheme `stepforward!`, and the function `calcN!` that
 calculates the nonlinear part of the given equation's right-hand side.
 Optimization of these two functions for a given problem will produce the
 fastest possible code.
@@ -82,10 +89,11 @@ is not yet native to Julia for things like element-wise matrix multiplication,
 addition, and assignment). This feature may possibly be enabled by
 Intel Lab's [ParallelAccelerator][] package.
 
+
 # Authors
 
-Fourier flows is currently being developed by [Gregory L. Wagner][] (@glwagner)
-and [Navid C. Constantinou][] (@navidcy)
+FourierFlows is currently being developed by [Gregory L. Wagner][] (@glwagner)
+and [Navid C. Constantinou][] (@navidcy).
 
 
 [Julia]: https://julialang.org/

@@ -1,3 +1,4 @@
+using Interpolations
 import SpecialFunctions
 
 export @createarrays
@@ -10,12 +11,14 @@ steppers = [
   "FilteredForwardEuler",
   "AB3",
   "RK4",
+  "FilteredRK4",
   "ETDRK4",
   "FilteredETDRK4",
 ]
 
 filteredsteppers = [
   "FilteredForwardEuler",
+  "FilteredRK4",
   "FilteredETDRK4",
 ]
 
@@ -62,7 +65,7 @@ end
 This function returns an expression that defines a Composite Type
 of the AbstractVars variety.
 """
-function getexpr_varstype(name, physfields, transfields; soldims=2, vardims=2, 
+function structvarsexpr(name, physfields, transfields; soldims=2, vardims=2, 
                           parent=:AbstractVars) 
   
   physexprs = [:( $fld::Array{Float64,$vardims} ) 
@@ -90,22 +93,31 @@ function getexpr_varstype(name, physfields, transfields; soldims=2, vardims=2,
 end
 
 
+"""
+    fftwavenums(n; L=1)
+
+Return the fftwavenumber vector with length n and domain size L.
+"""
+fftwavenums(n::Int; L=1) = 2π/L*cat(1, 0:n/2, -n/2+1:-1)
 
 
+""" 
+    rms(q)
 
-
-"Return the fftwavenumber vector with length n and domain size L."
-fftwavenums(n::Int; L=1.0) = 2.0*pi/L*cat(1, 0:n/2, -n/2+1:-1)
-
-""" Return the root-mean-square of an array. """
+Return the root-mean-square of an array. 
+"""
 rms(q) = sqrt(mean(q.^2))
 
 
 """
+    peaked_isotropic_spectrum(nkl, kpeak; ord=4, rms=1, maxval=1)
+
 Generate a real and random two-dimensional distribution phi(x, y) with
 a Fourier spectrum peaked around a central non-dimensional wavenumber kpeak.
 The spectrum is normalized either by setting the root-mean-square value of phi
 with the keyword 'rms', or the maximum value of phi with the keyword 'maxval'.
+
+    peaked_isotropic_spectrum(nx, npeak; ord=4, rms=1, maxval=1)
 """
 function peaked_isotropic_spectrum(nkl::Tuple{Int, Int}, kpeak::Real;
   ord=4.0, rms=1.0, maxval=0.0)
@@ -134,18 +146,19 @@ function peaked_isotropic_spectrum(nkl::Tuple{Int, Int}, kpeak::Real;
   return phi
 end
 
-"Alternative input form for peaked_isotropic_spectrum for square grids."
 function peaked_isotropic_spectrum(nx::Int, npeak::Real; ord=4.0, rms=1.0,
   maxval=0.0)
   peaked_isotropic_spectrum((nx, nx), npeak; ord=ord, rms=rms, maxval=maxval)
 end
 
 
+""" 
+    lambdipole(Ue, R, g; center=(x0, y0))
 
-
-""" Return a 2D vorticity field corresponding to the Lamb Dipole with
-strength Ue, radius R, and wavenumber k, and centered around
-(xc, yc)=center. The default value of 'center' is the middle of the grid."""
+Return a 2D vorticity field corresponding to the Lamb Dipole with
+strength Ue, radius R, and centered around
+(xc, yc)=center. The default value of 'center' is the middle of the grid.
+"""
 function lambdipole(Ue::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
 
   if center == (nothing, nothing)
@@ -170,12 +183,13 @@ function lambdipole(Ue::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
 end
 
 
+""" 
+    gaussianvortex(q0, R, G; center=(x0, y0))
 
-
-
-""" Return a vorticity field with magnitude q0, radius R, and center at
+Return a vorticity field with magnitude q0, radius R, and center at
 center[1], center[2] on a TwoDGrid g corresponding to a 'Gaussian vortex' with
-Gaussian streamfunction. """
+Gaussian streamfunction. 
+"""
 function gaussianvortex(q0::Real, R::Real, g::TwoDGrid;
   center=(nothing, nothing))
 
@@ -192,9 +206,12 @@ function gaussianvortex(q0::Real, R::Real, g::TwoDGrid;
 end
 
 
+""" 
+    rmsrand(g, rmsval)
 
-""" Return an array of random numbers on a TwoDGrid normalized to have a
-specifed rms value. """
+Return an array of random numbers on a TwoDGrid normalized to have a
+specifed rms value. 
+"""
 function rmsrand(g::TwoDGrid, rmsval::Real)
   q = rand(g.nx, g.ny)
   q .*= rmsval / rms(q)
@@ -202,80 +219,140 @@ function rmsrand(g::TwoDGrid, rmsval::Real)
 end
 
 
+""" 
+    parsevalsum2(uh, g)
 
-
-""" Integrate the square of a variables's Fourier transform on a 2D grid
-using Parseval's theorem, taking into account for FFT normalization and
-testing whether the coefficients are the product of a real or complex
-Fourier transform. """
+Calculate ∫u = Σ|uh|² on a 2D grid, where uh is the Fourier transform of u.
+Accounts for DFT normalization, grid resolution, and whether or not uh
+is the product of fft or rfft.
+"""
 function parsevalsum2(uh, g::TwoDGrid)
-  # Weird normalization (hopefully holds for both Julia and MKL FFT)
-  norm = g.Lx*g.Ly/(g.nx^2*g.ny^2)
+  norm = g.Lx*g.Ly/(g.nx^2*g.ny^2)    # weird normalization for dft
 
-  nk, nl = size(uh)
-
-  # Different summing techniques for complex or real transform
-  if nk == g.nkr
-    U = sum(abs2.(uh[1, :]))
-    U += 2*sum(abs2.(uh[2:end, :]))
-  else
-    U = sum(abs2.(uh))
+  if size(uh)[1] == g.nkr             # uh is conjugate symmetric
+    U = sum(abs2, uh[1, :])           # k=0 modes
+    U += 2*sum(abs2, uh[2:end, :])    # sum k>0 modes twice     
+  else                                # count every mode once
+    U = sum(abs2, uh)
   end
 
-  return U*norm
+  norm*U
 end
 
+""" 
+    parsevalsum(uh, g)
 
-""" Sum a wavenumber variable, applying the proper normalization to convert
-this sum into an integral over physical space, and taking into account
-reflected wavenumbers if the variable is the product of a 'real FFT'. """
+Calculate real(Σ uh) on a 2D grid.  Accounts for DFT normalization, 
+grid resolution, and whether or not uh is in a conjugate-symmetric form to 
+save memory.
+""" 
 function parsevalsum(uh, g::TwoDGrid)
-    # Weird normalization (hopefully holds for both Julia and MKL FFT)
-    norm = g.Lx*g.Ly/(g.nx^2*g.ny^2)
+  norm = g.Lx*g.Ly/(g.nx^2*g.ny^2) # weird normalization for dft
 
-  nk, nl = size(uh)
-
-  # Different summing techniques for complex or real transform
-  if nk == g.nkr
-    U = sum(uh[1, :])
-    U += 2*sum(uh[2:end, :])
-  else
+  if size(uh)[1] == g.nkr       # uh is conjugate symmetric
+    U = sum(uh[1, :])           # k=0 modes
+    U += 2*sum(uh[2:end, :])    # sum k>0 modes twice     
+  else # count every mode once
     U = sum(uh)
   end
 
-  return real(U*norm)
+  norm*real(U)
 end
 
 
-
-
 """
+    jacobianh(a, b, g)
+
 Returns the transform of the Jacobian of two fields a, b on the grid g.
 """
 function jacobianh(a, b, g::TwoDGrid)
-  # J(a, b) = dx(a b_y) - dy(a b_x)
-  bh = fft(b)
-  bx = ifft(im*g.K.*bh)
-  by = ifft(im*g.L.*bh)
-  im*g.K.*fft(a.*by)-im*g.L.*fft(a.*bx)
+  if eltype(a) <: Real
+    bh = rfft(b)
+    bx = irfft(im*g.kr.*bh, g.nx)
+    by = irfft(im*g.l.*bh, g.nx)
+    return im*g.kr.*rfft(a.*by)-im*g.l.*rfft(a.*bx)
+  else
+    # J(a, b) = dx(a b_y) - dy(a b_x)
+    bh = fft(b)
+    bx = ifft(im*g.k.*bh)
+    by = ifft(im*g.l.*bh)
+    return im*g.k.*fft(a.*by).-im*g.l.*fft(a.*bx)
+  end
 end
 
 
-
 """
-Returns the Jacobian of a and b. Uses ifft (not irfft) so some remnant imaginary
-part of order machine precision might remain in the end.
+    jacobian(a, b, g)
+
+Returns the Jacobian of a and b.
 """
 function jacobian(a, b, g::TwoDGrid)
- ifft(jacobianh(a, b, g))
+  if eltype(a) <: Real
+   return irfft(jacobianh(a, b, g), g.nx)
+  else
+   return ifft(jacobianh(a, b, g))
+  end
 end
 
 
+"""
+    radialspectrum(ah, g; nr=nothing, nθ=nothing, refinement=4)
 
+Returns aρ = ∫ ah(ρ,θ) ρ dρ dθ, the radial spectrum of ah known on the 
+Cartesian wavenumber grid (k,l). 
 
+aρ is found by intepolating ah onto a polar wavenumber grid (ρ,θ), and 
+then integrating over θ to find aρ. The default resolution (n,m) for the 
+polar wave number grid is n=refinement*maximum(nk,nl), 
+m=refinement*maximum(nk,nl), where refinement=4 by default. If 
+ah is in conjugate symmetric form only the upper half plane in θ is
+represented on the polar grid.
+
+"""
+function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=4)
+
+  if n == nothing; n = refinement*maximum([g.nk, g.nl]); end
+  if m == nothing; m = refinement*maximum([g.nk, g.nl]); end
+
+  if size(ah)[1] == g.nkr       # conjugate symmetric form
+    m = Int(m/2)                # => half resolution in θ
+    θ = linspace(-π/2, π/2, m)  # θ-grid from k=0 to max(kr)
+    ahsh = fftshift(ah, 2)      # shifted ah
+    ksh = linspace(0, g.nkr-1, g.nkr)*2π/g.Lx
+  else                          # ordinary form 
+    θ = linspace(0, 2π, m)      # θ grid
+    ahsh = fftshift(ah, [1, 2]) # shifted ah
+    ksh = linspace(-g.nk/2+1, g.nk/2, g.nk)*2π/g.Lx
+  end
+
+  lsh = linspace(-g.nl/2+1, g.nl/2, g.nl)*2π/g.Ly
+  ρmax = minimum([maximum(g.k), maximum(g.l)])
+  ρ = linspace(0, ρmax, n)
+
+  itp = scale(interpolate(ahsh, BSpline(Linear()), OnGrid()), ksh, lsh)
+  ahρθ = zeros(eltype(ahsh), (n, m))
+
+  # Interpolate ah onto fine grid in (ρ,θ).
+  for i=2:n, j=1:m # ignore zeroth mode
+    kk = ρ[i]*cos(θ[j])
+    ll = ρ[i]*sin(θ[j])
+    ahρθ[i, j] = itp[kk, ll]
+  end
+
+  # ahρ = ρ ∫ ah(ρ,θ) dθ  =>  Ah = ∫ ahρ dρ = ∫∫ ah dk dl
+  dθ = θ[2]-θ[1]
+  if size(ah)[1] == g.nkr
+    ahρ = 2ρ.*sum(ahρθ, 2)*dθ # multiply by 2 for conjugate symmetry
+  else
+    ahρ = ρ.*sum(ahρθ, 2)*dθ
+  end
+  ahρ[1] = ah[1, 1] # zeroth mode
+
+  ρ, ahρ 
+end
 
 # Moments and cumulants
-domainaverage(c, g) = g.dx*g.dy*sum(c)
+domainaverage(c, g) = g.dx*g.dy*sum(c)/(g.Lx*g.Ly)
 moment_x(c, g, n) = g.dx*g.dy*sum(g.X.^n.*c)
 moment_y(c, g, n) = g.dx*g.dy*sum(g.Y.^n.*c)
 
@@ -286,29 +363,3 @@ cumulant_2x(c, g) = (g.dx*g.dy*sum((g.X-cumulant_1x(c, g)).^2.0.*c)
   / domainaverage(c, g))
 cumulant_2y(c, g) = (g.dx*g.dy*sum((g.Y.-cumulant_1y(c, g)).^2.0.*c)
   / domainaverage(c, g))
-
-
-#=
-M0(c, g)     = g.dx*g.dy*sum(c)
-Mxn(c, g, n) = g.dx*g.dy*sum(g.X.^n.*c)
-Myn(c, g, n) = g.dx*g.dy*sum(g.Y.^n.*c)
-
-Cx1(c, g) = g.dx*g.dy*sum(g.X.*c) / M0(c, g)
-Cy1(c, g) = g.dx*g.dy*sum(g.Y.*c) / M0(c, g)
-
-
-Cx3(c, g) = g.dx*g.dy*sum((g.X-Cx1(c, g)).^3.0.*c) / M0(c, g)
-Cy3(c, g) = g.dx*g.dy*sum((g.Y-Cy1(c, g)).^3.0.*c) / M0(c, g)
-
-intx(II, g) = g.dx*sum(II)
-inty(II, g) = g.dy*sum(II)
-
-mxn(c, g, n) = g.dx*sum(g.Y.^n.*c, 1)
-myn(c, g, n) = g.dy*sum(g.Y.^n.*c, 2)
-
-cx1(c, g) = g.dx*sum(g.X.*c) ./ mxn(c, g, 0)
-cy1(c, g) = g.dy*sum(g.Y.*c) ./ myn(c, g, 0)
-
-delyc1(c, g) = g.Y - broadcast(*, cy1(c, g), ones(g.nx, g.ny))
-cy2(c, g) = g.dy * sum(delyc1(c, g).*c, 2)./myn(c, g, 0)
-=#
