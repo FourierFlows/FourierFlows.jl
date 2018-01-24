@@ -4,12 +4,12 @@ using FourierFlows, PyPlot, JLD2
 import FourierFlows.BarotropicQG
 import FourierFlows.BarotropicQG: energy, enstrophy
 
-nx  = 256
-ν  = 0.0e-10
-νn = 4
+nx  = 128
+ν  = 8.0e-10
+νn = 2
 f0 = -1.0
 
-β = 1.4015
+β = 0*1.4015
 Lx = 2π
 μ = 1.0e-2
 F = 0.0012
@@ -39,12 +39,12 @@ eq = BarotropicQG.Equation(p, g)
 
 # Time-stepping
 dt  = 1e-2
-nsteps = 200000
-nsubs  = 1000
+nsteps = 1000
+nsubs  = 500
 
 
-# ts = ETDRK4TimeStepper(dt, eq.LC)
-ts = FilteredETDRK4TimeStepper(dt, eq.LC, g)
+# ts = FilteredETDRK4TimeStepper(dt, eq.LC, g)
+ts = ETDRK4TimeStepper(dt, eq.LC)
 prob = FourierFlows.Problem(g, v, p, eq, ts)
 s = prob.state
 
@@ -70,15 +70,54 @@ Q = Diagnostic(enstrophy, prob; nsteps=nsteps)
 diags = [E, Q]
 
 # Create Output
-get_sol(prob) = prob.vars.sol # extracts the Fourier-transformed solution
-get_u(prob) = irfft(im*g.Lr.*g.invKKrsq.*prob.vars.sol, g.nx)
+get_sol(prob) = prob.state.sol # extracts the Fourier-transformed solution
+get_u(prob) = irfft(im*g.Lr.*g.invKKrsq.*prob.state.sol, g.nx)
 out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
+
+
+
+function plot_output(prob, fig, axs; drawcolorbar=false)
+  # Plot the vorticity field and the evolution of energy and enstrophy.
+
+  s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
+  BarotropicQG.updatevars!(prob)
+
+  sca(axs[1])
+  pcolormesh(g.X, g.Y, v.q)
+  axis("square")
+  xlim(0, 2)
+  ylim(0, 2)
+  # axis("off")
+  if drawcolorbar==true
+    colorbar()
+  end
+
+  sca(axs[2])
+  cla()
+  plot(μ*E.time[1:E.prob.step], E.data[1:prob.step])
+  xlabel(L"\mu t")
+  ylabel(L"E")
+
+  sca(axs[3])
+  cla()
+  plot(μ*Q.time[1:Q.prob.step], Q.data[1:prob.step])
+  xlabel(L"\mu t")
+  ylabel(L"Q")
+
+  pause(0.001)
+end
+
+
+
+fig, axs = subplots(ncols=3, nrows=1, figsize=(15, 4))
+plot_output(prob, fig, axs; drawcolorbar=true)
+
 
 # Step forward
 startwalltime = time()
 
 while prob.step < nsteps
-  stepforward!(prob, diags; nsteps=nsubs)
+  stepforward!(prob, diags, nsubs)
 
   # Message
   log = @sprintf("step: %04d, t: %d, E: %.4f, Q: %.4f, τ: %.2f min",
@@ -87,42 +126,11 @@ while prob.step < nsteps
 
   println(log)
 
-
-  BarotropicQG.updatevars!(prob)
-  fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
-
-  axes(axs[1])
-  pcolormesh(g.X, g.Y, prob.vars.zeta)
-  axis("equal")
-  xlim(0, 2)
-  ylim(0, 2)
-  colorbar()
-  # clim(-40, 40)
-  axs[1][:axis]("off")
-
-  axes(axs[2])
-  plot(mu*E.time[1:E.prob.step], E.data[1:prob.step])
-  plot(mu*Q.time[1:E.prob.step], Q.data[1:prob.step])
-  xlabel(L"\mu t")
-  ylabel(L"E, \, Z")
+  plot_output(prob, fig, axs; drawcolorbar=false)
 
 end
 
-BarotropicQG.updatevars!(prob)
-fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
-
-axes(axs[1])
-pcolormesh(g.X, g.Y, prob.vars.zeta)
-axis("equal")
-colorbar()
-# clim(-40, 40)
-axs[1][:axis]("off")
-
-axes(axs[2])
-plot(mu*E.time[1:E.prob.step], E.data[1:prob.step])
-plot(mu*Q.time[1:E.prob.step], Q.data[1:prob.step])
-xlabel(L"\mu t")
-ylabel(L"E, \, Z")
+plot_output(prob, fig, axs; drawcolorbar=false)
 
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), prob.step)
 savefig(savename, dpi=240)
