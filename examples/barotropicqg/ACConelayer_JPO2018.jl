@@ -2,9 +2,9 @@ using FourierFlows, PyPlot, JLD2
 
 
 import FourierFlows.BarotropicQG
-import FourierFlows.BarotropicQG: energy, enstrophy
+import FourierFlows.BarotropicQG: energy, energy00, enstrophy, enstrophy00
 
-nx  = 128*2
+nx  = 512
 ν  = 8.0e-10
 νn = 2
 f0 = -1.0
@@ -16,7 +16,7 @@ F = 0.0012
 
 FU(t) = F
 
-η(x, y) = 2*cos.(10*x).*cos.(10*y)
+η(x, y) = 2*cos.(10x).*cos.(10y)
 
 
 g  = BarotropicQG.Grid(nx, Lx)
@@ -24,23 +24,11 @@ p  = BarotropicQG.Params(g, f0, β, FU, η, μ, ν, νn)
 v  = BarotropicQG.Vars(g)
 eq = BarotropicQG.Equation(p, g)
 
-# eta = 2*cos.(10*g.X).*cos.(10*g.Y)
-# v = cos(10*g.X).*cos(10*g.Y) + cos(10*g.X-10*g.Y)/2
-#
-# mean(eta.*v)
-#
-# etah = fft(eta)
-# vh = fft(v)
-# println(sum(conj(vh).*etah).re / (g.nx^2.0*g.ny^2.0))
-#
-# pcolormesh(g.X, g.Y, eta)
-
-
 
 # Time-stepping
-dt  = 1e-2
-nsteps = 1000
-nsubs  = 1000
+dt  = 2e-2
+nsteps = 20000
+nsubs  = 500
 
 
 # ts = FilteredETDRK4TimeStepper(dt, eq.LC, g)
@@ -67,7 +55,9 @@ BarotropicQG.set_zeta!(prob, 0*g.X)
 # at the top.
 E = Diagnostic(energy, prob; nsteps=nsteps)
 Q = Diagnostic(enstrophy, prob; nsteps=nsteps)
-diags = [E, Q]
+E00 = Diagnostic(energy00, prob; nsteps=nsteps)
+Q00 = Diagnostic(enstrophy00, prob; nsteps=nsteps)
+diags = [E, E00, Q, Q00]
 
 # Create Output
 get_sol(prob) = prob.state.sol # extracts the Fourier-transformed solution
@@ -94,19 +84,21 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[2])
   cla()
-  plot(μ*E.time[1:E.prob.step], E.data[1:prob.step])
+  plot(μ*E.time[1:E.prob.step], E.data[1:prob.step], label=L"$E_{\psi}$")
+  plot(μ*E.time[1:E00.prob.step], E00.data[1:prob.step], label=L"$E_U$")
   xlabel(L"\mu t")
   ylabel(L"E")
+  legend()
 
   sca(axs[3])
   cla()
-  plot(μ*Q.time[1:Q.prob.step], Q.data[1:prob.step])
+  plot(μ*Q.time[1:Q.prob.step], Q.data[1:prob.step], label=L"$Q_{\psi}$")
+  plot(μ*Q00.time[1:Q00.prob.step], Q00.data[1:prob.step], label=L"$Q_U$")
   xlabel(L"\mu t")
   ylabel(L"Q")
-
+  legend()
   pause(0.001)
 end
-
 
 
 fig, axs = subplots(ncols=3, nrows=1, figsize=(15, 4))

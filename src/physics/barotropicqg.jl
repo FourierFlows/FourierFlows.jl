@@ -160,5 +160,25 @@ function enstrophy(prob::AbstractProblem)
   0.5*FourierFlows.parsevalsum2(s.sol, g)/(g.Lx*g.Ly)
 end
 
+"""
+Returns the domain-averaged enstrophy.
+"""
+
+function U00(prob::AbstractProblem)
+  s = prob.state
+  s.sol[1, 1]
+end
+
+function energy00(prob::AbstractProblem)
+  s = prob.state
+  0.5*s.sol[1, 1].^2
+end
+
+function enstrophy00(prob::AbstractProblem)
+  s, p = prob.state, prob.params
+  p.beta*s.sol[1, 1]
+end
+
+
 
 end # module
