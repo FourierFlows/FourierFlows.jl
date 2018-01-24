@@ -4,7 +4,7 @@ using FourierFlows, PyPlot, JLD2
 import FourierFlows.BarotropicQG
 import FourierFlows.BarotropicQG: energy, enstrophy
 
-nx  = 128
+nx  = 128*4
 ν  = 8.0e-10
 νn = 2
 f0 = -1.0
@@ -40,7 +40,7 @@ eq = BarotropicQG.Equation(p, g)
 # Time-stepping
 dt  = 1e-2
 nsteps = 1000
-nsubs  = 500
+nsubs  = 1000
 
 
 # ts = FilteredETDRK4TimeStepper(dt, eq.LC, g)
@@ -129,6 +129,7 @@ while prob.step < nsteps
   plot_output(prob, fig, axs; drawcolorbar=false)
 
 end
+println((time()-startwalltime))
 
 plot_output(prob, fig, axs; drawcolorbar=false)
 
