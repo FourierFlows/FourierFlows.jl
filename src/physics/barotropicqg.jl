@@ -7,7 +7,8 @@ struct Params <: AbstractParams
   f0::Float64      # Constant planetary vorticity
   beta::Float64    # Planetary vorticity y-gradient
   FU::Function     # Time-dependent forcing of domain average flow
-  eta::Array{Float64,2}  # Topographic PV
+  eta::Array{Float64,2}            # Topographic PV
+  etah::Array{Complex{Float64},2}  # FFT of Topographic PV
   μ::Float64       # Linear drag
   ν::Float64       # Viscosity coefficient
   νn::Int          # Hyperviscous order (νn=1 is plain old viscosity)
@@ -19,7 +20,8 @@ Constructor that accepts generating function for the topographic height, eta.
 function Params(g::TwoDGrid, f0::Float64, beta::Float64, FU::Function,
   eta::Function, μ::Float64, ν::Float64, νn::Int)
   etagrid = eta(g.X, g.Y)
-  Params(f0, beta, FU, etagrid, μ, ν, νn)
+  etah = rfft(etagrid)
+  Params(f0, beta, FU, etagrid, etah, μ, ν, νn)
 end
 
 # Equations
@@ -29,7 +31,7 @@ function Equation(p::Params, g::TwoDGrid)
 end
 
 # Vars
-struct Vars <: AbstractVars
+mutable struct Vars <: AbstractVars
   q::Array{Float64,2}
   U::Float64
   u::Array{Float64,2}
@@ -73,7 +75,7 @@ function calcN!(N::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
   A_mul_B!(v.v, g.irfftplan, vh)
 
 
-  @. v.q = v.zeta + v.eta
+  @. v.q = v.zeta + p.eta
   @. v.uUq = (v.U + v.u)*v.q
   @. v.vq  = v.v*v.q
 
@@ -113,7 +115,7 @@ function updatevars!(s::State, v::Vars, p::Params, g::TwoDGrid)
   A_mul_B!(v.u, g.irfftplan, uh1)
   A_mul_B!(v.v, g.irfftplan, vh1)
 
-  @. v.q = v.zeta + v.eta
+  @. v.q = v.zeta + p.eta
   nothing
 end
 
@@ -143,24 +145,19 @@ end
 """
 Calculate the domain-averaged kinetic energy.
 """
-function energy(v::Vars, g::TwoDGrid)
-  0.5*(FourierFlows.parsevalsum2(g.Kr.*g.invKKrsq.*v.sol, g)
-        + FourierFlows.parsevalsum2(g.Lr.*g.invKKrsq.*v.sol, g))/(g.Lx*g.Ly)
+function energy(prob::AbstractProblem)
+  s, g = prob.state, prob.grid
+  0.5*(FourierFlows.parsevalsum2(g.Kr.*g.invKKrsq.*s.sol, g)
+        + FourierFlows.parsevalsum2(g.Lr.*g.invKKrsq.*s.sol, g))/(g.Lx*g.Ly)
 end
 
-function energy(prob::AbstractProblem)
-  energy(prob.vars, prob.grid)
-end
 
 """
 Returns the domain-averaged enstrophy.
 """
-function enstrophy(v::Vars, g::TwoDGrid)
-  0.5*FourierFlows.parsevalsum2(v.sol, g)/(g.Lx*g.Ly)
-end
-
-function enstrophy(prob)
-  enstrophy(prob.vars, prob.grid)
+function enstrophy(prob::AbstractProblem)
+  s, g = prob.state, prob.grid
+  0.5*FourierFlows.parsevalsum2(s.sol, g)/(g.Lx*g.Ly)
 end
 
 
