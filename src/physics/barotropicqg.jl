@@ -26,7 +26,7 @@ end
 
 # Equations
 function Equation(p::Params, g::TwoDGrid)
-  LC = -p.μ - p.ν * g.KKrsq.^p.νn
+  LC = -p.μ - p.ν * g.KKrsq.^p.νn + im*p.beta*g.Kr.*g.invKKrsq
   FourierFlows.Equation{2}(LC, calcN!)
 end
 
@@ -83,7 +83,7 @@ function calcN!(N::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
   A_mul_B!(v.vqh,  g.rfftplan, v.vq)
 
   # Nonlinear term for q
-  @. N = -im*g.kr*v.uUqh - im*g.l*v.vqh - p.beta*v.vh
+  @. N = -im*g.kr*v.uUqh - im*g.l*v.vqh
 
   # 'Nonlinear' term for U with topographic correlation.
   # Note: < v*eta > = sum( conj(vh)*eta ) / (nx^2*ny^2) if fft is used

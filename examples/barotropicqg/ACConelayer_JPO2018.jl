@@ -4,12 +4,12 @@ using FourierFlows, PyPlot, JLD2
 import FourierFlows.BarotropicQG
 import FourierFlows.BarotropicQG: energy, enstrophy
 
-nx  = 128*4
+nx  = 128*2
 ν  = 8.0e-10
 νn = 2
 f0 = -1.0
 
-β = 0*1.4015
+β = 1.4015
 Lx = 2π
 μ = 1.0e-2
 F = 0.0012
