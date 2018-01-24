@@ -8,23 +8,23 @@ struct Params <: AbstractParams
   beta::Float64    # Planetary vorticity y-gradient
   FU::Function     # Time-dependent forcing of domain average flow
   eta::Array{Float64,2}  # Topographic PV
-  mu::Float64      # Linear drag
-  nu::Float64      # Vorticity viscosity
-  nun::Int         # Vorticity hyperviscous order
+  μ::Float64       # Linear drag
+  ν::Float64       # Viscosity coefficient
+  νn::Int          # Hyperviscous order (νn=1 is plain old viscosity)
 end
 
 """
 Constructor that accepts generating function for the topographic height, eta.
 """
 function Params(g::TwoDGrid, f0::Float64, beta::Float64, FU::Function,
-  eta::Function, mu::Float64, nu::Float64, nun::Int)
-  etagrid = eta.(g.X, g.Y)
-  Params(f0, beta, FU, eta, mu, nu, nun)
+  eta::Function, μ::Float64, ν::Float64, νn::Int)
+  etagrid = eta(g.X, g.Y)
+  Params(f0, beta, FU, etagrid, μ, ν, νn)
 end
 
 # Equations
 function Equation(p::Params, g::TwoDGrid)
-  LC = -p.mu - p.nu * g.KKrsq.^p.nun
+  LC = -p.μ - p.ν * g.KKrsq.^p.νn
   FourierFlows.Equation{2}(LC, calcN!)
 end
 
@@ -69,7 +69,9 @@ function calcN!(N::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
 
   A_mul_B!(v.zeta, g.irfftplan, v.zetah)
   A_mul_B!(v.u, g.irfftplan, v.uh)
-  A_mul_B!(v.v, g.irfftplan, v.vh)
+  vh = deepcopy(v.vh)   # FFTW's irfft destroys its input; v.vh is needed for N
+  A_mul_B!(v.v, g.irfftplan, vh)
+
 
   @. v.q = v.zeta + v.eta
   @. v.uUq = (v.U + v.u)*v.q
@@ -81,9 +83,9 @@ function calcN!(N::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
   # Nonlinear term for q
   @. N = -im*g.kr*v.uUqh - im*g.l*v.vqh - p.beta*v.vh
 
-  # 'Nonlinear' term for U with topo correlation.
-  # Note: < v*eta > = sum( conj(vh)*etah ) / (nx^2*ny^2) if fft is used
-  # while < v*eta > = 2*sum( conj(vh)*etah ) / (nx^2*ny^2) if rfft is used
+  # 'Nonlinear' term for U with topographic correlation.
+  # Note: < v*eta > = sum( conj(vh)*eta ) / (nx^2*ny^2) if fft is used
+  # while < v*eta > = 2*sum( conj(vh)*eta ) / (nx^2*ny^2) if rfft is used
   if size(sol)[1] == g.nkr
     N[1, 1] = p.FU(t) + 2*sum(conj(v.vh).*p.etah).re / (g.nx^2.0*g.ny^2.0)
   else
@@ -115,6 +117,12 @@ function updatevars!(s::State, v::Vars, p::Params, g::TwoDGrid)
   nothing
 end
 
+function updatevars!(prob::AbstractProblem)
+  s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
+  updatevars!(s, v, p, g)
+end
+
+
 function set_zeta!(s::State, v::AbstractVars, p::AbstractParams, g::TwoDGrid,
   zeta::Array{Float64, 2})
 
@@ -130,5 +138,30 @@ function set_zeta!(prob::AbstractProblem, zeta)
   set_zeta!(prob.state, prob.vars, prob.params, prob.grid, zeta)
   nothing
 end
+
+
+"""
+Calculate the domain-averaged kinetic energy.
+"""
+function energy(v::Vars, g::TwoDGrid)
+  0.5*(FourierFlows.parsevalsum2(g.Kr.*g.invKKrsq.*v.sol, g)
+        + FourierFlows.parsevalsum2(g.Lr.*g.invKKrsq.*v.sol, g))/(g.Lx*g.Ly)
+end
+
+function energy(prob::AbstractProblem)
+  energy(prob.vars, prob.grid)
+end
+
+"""
+Returns the domain-averaged enstrophy.
+"""
+function enstrophy(v::Vars, g::TwoDGrid)
+  0.5*FourierFlows.parsevalsum2(v.sol, g)/(g.Lx*g.Ly)
+end
+
+function enstrophy(prob)
+  enstrophy(prob.vars, prob.grid)
+end
+
 
 end # module
