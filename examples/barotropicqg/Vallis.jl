@@ -4,12 +4,12 @@ import FourierFlows.BarotropicQG
 import FourierFlows.BarotropicQG: energy, enstrophy
 
 # Physical parameters
-nx  = 256
+nx  = 128
 ν  = 0.0
 νn = 2
 f0 = 1.0
 
-β = 12.0
+β = 6.0
 Lx = 1.0
 μ = 1.0e-1
 F = 0.0
@@ -25,12 +25,12 @@ eq = BarotropicQG.Equation(p, g)
 
 
 # Time-stepping
-dt = 0.01
-nsteps = 8000
-nsubs  = 200
+dt = 0.02
+nsteps = 20000
+nsubs  = 1000
 
 
-ts = FilteredETDRK4TimeStepper(dt, eq.LC)
+ts = FourierFlows.autoconstructtimestepper("FilteredRK4", dt, eq.LC, g)
 prob = FourierFlows.Problem(g, v, p, eq, ts)
 s = prob.state
 
@@ -52,7 +52,7 @@ g = prob.grid
 # Initial condition closely following pyqg barotropic example
 # that reproduces the results of the paper by McWilliams (1984)
 srand(1234)
-k0, E0 = 6, 0.5
+k0, E0 = 6, 0.005
 modk = sqrt.(g.KKrsq)
 psik = zeros(g.nk, g.nl)
 psik =  (modk.^2 .* (1 + (modk/k0).^4)).^(-0.5)
@@ -92,26 +92,26 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   sca(axs[1])
   pcolormesh(g.X, g.Y, v.q)
   axis("square")
-  xlim(0, 2)
-  ylim(0, 2)
-  # axis("off")
+  axis("off")
   if drawcolorbar==true
     colorbar()
   end
 
   sca(axs[2])
   cla()
-  plot(μ*E.time[1:E.prob.step], E.data[1:prob.step], label=L"$E_{\psi}$")
+  # plot(μ*E.time[1:E.prob.step], E.data[1:prob.step], label=L"$E$")
+  plot(μ*E.time[1:E.prob.step], E.data[1:prob.step]/E.data[1], label=L"$E$")
+  plot(μ*Z.time[1:Z.prob.step], Z.data[1:prob.step]/Z.data[1], label=L"$Z$")
   xlabel(L"\mu t")
   ylabel(L"E")
   legend()
 
-  sca(axs[3])
-  cla()
-  plot(μ*Q.time[1:Q.prob.step], Q.data[1:prob.step], label=L"$Q_{\psi}$")
-  xlabel(L"\mu t")
-  ylabel(L"Q")
-  legend()
+  # sca(axs[3])
+  # cla()
+  # plot(μ*Z.time[1:Z.prob.step], Z.data[1:prob.step], label=L"$Z$")
+  # xlabel(L"\mu t")
+  # ylabel(L"Q")
+  # legend()
   pause(0.001)
 end
 
@@ -128,7 +128,7 @@ while prob.step < nsteps
 
   # Message
   log = @sprintf("step: %04d, t: %d, E: %.4f, Q: %.4f, τ: %.2f min",
-    prob.step, prob.t, E.value, Q.value,
+    prob.step, prob.t, E.value/E.data[1], Z.value/Z.data[1],
     (time()-startwalltime)/60)
 
   println(log)
