@@ -33,7 +33,7 @@ and a nonlinear part ($\mathcal{N}(u)$). The time steppers treat the linear and
 nonlinear parts differently.
 
 The coefficients for the linear operator $\mathcal{L}$ are stored in array `LC`.
-The term $\mathcal{N}(u)$ is computed for by calling the function `calcN`.
+The term $\mathcal{N}(u)$ is computed for by calling the function `calcN!`.
 
 
 ## Source code organization
@@ -126,7 +126,7 @@ Intel Lab's
 [ParallelAccelerator](https://github.com/IntelLabs/ParallelAccelerator.jl)
 package.
 
-## Authors
+## Developers
 
 FourierFlows is currently being developed by [Gregory L. Wagner](https://glwagner.github.io) and [Navid C. Constantinou](http://www.navidconstantinou.com).
 
