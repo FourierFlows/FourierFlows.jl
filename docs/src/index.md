@@ -28,8 +28,9 @@ The code solves partial differential equations of the general form:
 
 $\partial_t u = \mathcal{L}u + \mathcal{N}(u)\ .$
 
-The $\mathcal{L}u$ part is time-stepped forward using an implicit scheme; the
-$\mathcal{N}(u)$ part is time-stepped forward using an explicit scheme.
+It is convenient to decompose the right hand side of the above in a linear part
+($\mathcal{L}u$) and a nonlinear part ($\mathcal{N}(u)$). The time steppers deal
+which each differently.
 
 The coefficients for the linear operator $\mathcal{L}$ are stored in array `LC`.
 The term $\mathcal{N}(u)$ is computed for by calling the function `calcN`.
@@ -56,7 +57,7 @@ Here's an overview of the code structure:
         various time-steppers. Current implemented time-steppers are:
         - Forward Euler (+ Filtered Forward Euler)
         - 3rd-order Adams-Bashforth (AB3)
-        - 4th-order Runge-Kutta (RK4)
+        - 4th-order Runge-Kutta (RK4) (+ Filtered ETDRK4)
         - 4th-order Runge-Kutta Exponential Time Differencing (ETDRK4)
         (+ Filtered ETDRK4)
     - `physics/`
@@ -89,9 +90,18 @@ fastest possible code.
 An example script that simulates decaying two-dimensional turbulence reproducing
 the results of the paper by
 
-  > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. *J. Fluid Mech.*, **146**, 21-43.
+  > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in
+  turbulent flow. *J. Fluid Mech.*, **146**, 21-43
 
 is found in `examples/twodturb/McWilliams.jl`.
+
+An example script that simulates barotropic quasi-geostrophic flow above
+topography reproducing the results of the paper by
+
+  > Constantinou, N. C. (2018). A barotropic model of eddy saturation. *J. Phys.
+  Oceanogr.*, in press, doi:10.1175/JPO-D-17-0182.1
+
+is found in `examples/barotropicqg/ACConelayer.jl`.
 
 
 ## Tutorials
@@ -101,7 +111,7 @@ Pages = [
     "modules/twodturb.md",
     "modules/barotropicqg.md"
         ]
-Depth = 2
+Depth = 1
 ```
 
 
@@ -124,6 +134,8 @@ FourierFlows is currently being developed by [Gregory L. Wagner](https://glwagne
 
 ```@contents
 Pages = [
+    "modules/twodturb.md",
+    "modules/barotropicqg.md",
     "man/docstrings.md",
     ]
 Depth = 2
@@ -133,6 +145,8 @@ Depth = 2
 
 ```@index
 Pages = [
+    "modules/twodturb.md",
+    "modules/barotropicqg.md",
     "man/docstrings.md",
     ]
 ```
