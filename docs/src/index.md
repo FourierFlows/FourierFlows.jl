@@ -28,9 +28,9 @@ The code solves partial differential equations of the general form:
 
 $\partial_t u = \mathcal{L}u + \mathcal{N}(u)\ .$
 
-It is convenient to decompose the right hand side of the above in a linear part
-($\mathcal{L}u$) and a nonlinear part ($\mathcal{N}(u)$). The time steppers deal
-which each differently.
+We decompose the right hand side of the above in a linear part ($\mathcal{L}u$)
+and a nonlinear part ($\mathcal{N}(u)$). The time steppers treat the linear and
+nonlinear parts differently.
 
 The coefficients for the linear operator $\mathcal{L}$ are stored in array `LC`.
 The term $\mathcal{N}(u)$ is computed for by calling the function `calcN`.
@@ -117,7 +117,7 @@ Depth = 1
 
 ## Future work
 
-The code is in the chaos stage of development. A main goal for the future
+The code is in the chaotic stage of development. A main goal for the future
 is to permit the use of shared memory parallelism in the compute-intensive
 routines (shared-memory parallelism provided already by FFTW/MKLFFT, but
 is not yet native to Julia for things like element-wise matrix multiplication,

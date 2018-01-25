@@ -82,7 +82,7 @@ fastest possible code.
 
 ## Future work
 
-The code is in the chaos stage of development. A main goal for the future
+The code is in the chaotic stage of development. A main goal for the future
 is to permit the use of shared memory parallelism in the compute-intensive
 routines (shared-memory parallelism provided already by FFTW/MKLFFT, but
 is not yet native to Julia for things like element-wise matrix multiplication,
@@ -90,7 +90,7 @@ addition, and assignment). This feature may possibly be enabled by
 Intel Lab's [ParallelAccelerator][] package.
 
 
-# Authors
+# Developers
 
 FourierFlows is currently being developed by [Gregory L. Wagner][] (@glwagner)
 and [Navid C. Constantinou][] (@navidcy).
