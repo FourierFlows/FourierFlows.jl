@@ -8,30 +8,17 @@ initial condition for dt=1e-16 looking at relative error of the norm. """
 function test_baroQG_timestep(grid, params, vars, eq, dt;
             stepper="ForwardEuler")
 
-    filter = ones(v.sol)
-    if stepper == "FilteredForwardEuler" || stepper == "FilteredETDRK4"
+    filter = ones(v.zetah)
+    if stepper == "FilteredForwardEuler" || stepper == "FilteredETDRK4" || stepper == "FilteredRK4"
         # create a filtered ts (simpler is Euler)
-        ts = FilteredForwardEulerTimeStepper(dt, g, v;
-          filterorder=4.0, innerfilterK=0.65, outerfilterK=1)
+        ts = FourierFlows.autoconstructtimestepper("FilteredForwardEuler",
+                                                    dt, eq.LC, g)
         # and use its filter to apply it to the initial condition
         filter = ts.filter
     end
 
-    if stepper == "ForwardEuler"
-        ts = ForwardEulerTimeStepper(dt, eq.LC)
-    elseif stepper == "FilteredForwardEuler"
-        ts = FilteredForwardEulerTimeStepper(dt, g, v;
-          filterorder=4.0, innerfilterK=0.65, outerfilterK=1)
-    elseif stepper == "AB3"
-        ts = AB3TimeStepper(dt, eq.LC)
-    elseif stepper == "RK4"
-        ts = RK4TimeStepper(dt, eq.LC)
-    elseif stepper == "ETDRK4"
-        ts = ETDRK4TimeStepper(dt, eq.LC)
-    elseif stepper == "FilteredETDRK4"
-        ts = FilteredETDRK4TimeStepper(dt, eq.LC, g)
-    end
-
+    ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
+    prob = FourierFlows.Problem(g, v, p, eq, ts)
 
     # the initial conditions (IC)
     ζ0  = randn(g.nx, g.ny)
@@ -44,15 +31,14 @@ function test_baroQG_timestep(grid, params, vars, eq, dt;
     ζ0 = irfft(ζ0h_copy, g.nx)
     ζ0h = rfft(ζ0)
 
-
-    BarotropicQG.set_zeta!(vars, params, grid, ζ0)
+    BarotropicQG.set_zeta!(prob, ζ0)
 
     nsteps = 5
 
-    stepforward!(vars, ts, eq, params, grid, nsteps=nsteps)
-    BarotropicQG.updatevars!(vars, params, grid)
+    stepforward!(prob, nsteps)
+    BarotropicQG.updatevars!(prob)
 
-    isapprox(ζ0, vars.zeta, rtol=nsteps*1e-14)
+    isapprox(ζ0, prob.vars.zeta, rtol=nsteps*1e-14)
 end
 
 
@@ -60,24 +46,28 @@ end
 # -----------------------------------------------------------------------------
 # Running the tests
 
-nx  = 128
+nx  = 64
 dt  = 1e-16
-nu  = 1e-6
-nun = 4
+ν  = 1e-6
+νn = 2
 
-beta = 0.5
+f0 = 1.0
+ β = 0.5
 Lx = 2.0*pi
-mu = 1e-3
+ μ = 1e-3
+
+η(x,y) = zeros(nx, nx)
+FU(t)  = 0
 
 g  = BarotropicQG.Grid(nx, Lx)
-p  = BarotropicQG.FreeDecayParams(g, beta, 0.0, mu, nu, nun)
-v  = BarotropicQG.FreeDecayVars(g)
+p  = BarotropicQG.Params(g, f0, β, FU, η, μ, ν, νn)
+v  = BarotropicQG.Vars(g)
 eq = BarotropicQG.Equation(p, g)
-
 
 @test test_baroQG_timestep(g, p, v, eq, dt; stepper = "ForwardEuler")
 @test test_baroQG_timestep(g, p, v, eq, dt; stepper = "FilteredForwardEuler")
 @test test_baroQG_timestep(g, p, v, eq, dt; stepper = "AB3")
 @test test_baroQG_timestep(g, p, v, eq, dt; stepper = "RK4")
+@test test_baroQG_timestep(g, p, v, eq, dt; stepper = "FilteredRK4")
 @test test_baroQG_timestep(g, p, v, eq, dt; stepper = "ETDRK4")
 @test test_baroQG_timestep(g, p, v, eq, dt; stepper = "FilteredETDRK4")
