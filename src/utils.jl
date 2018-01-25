@@ -27,7 +27,7 @@ Returns a time-stepper type defined by the prefix 'stepper', timestep dt
 solution sol (used to construct variables with identical type and size as
 the solution vector), and grid g.
 """
-function autoconstructtimestepper(stepper, dt, sol, 
+function autoconstructtimestepper(stepper, dt, sol,
                                   g::AbstractGrid=ZeroDGrid(1))
   fullsteppername = Symbol(stepper, :TimeStepper)
   if stepper ∈ filteredsteppers
@@ -48,14 +48,14 @@ end
 
 
 """
-    @createarrays T dims a b c 
+    @createarrays T dims a b c
 
 Create arrays of all zeros with element type T, size dims, and global names
 a, b, c (for example). An arbitrary number of arrays may be created.
 """
 macro createarrays(T, dims, vars...)
   expr = Expr(:block)
-  append!(expr.args, 
+  append!(expr.args,
     [:( $(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
   expr
 end
@@ -65,12 +65,12 @@ end
 This function returns an expression that defines a Composite Type
 of the AbstractVars variety.
 """
-function structvarsexpr(name, physfields, transfields; soldims=2, vardims=2, 
-                          parent=:AbstractVars) 
-  
-  physexprs = [:( $fld::Array{Float64,$vardims} ) 
+function structvarsexpr(name, physfields, transfields; soldims=2, vardims=2,
+                          parent=:AbstractVars)
+
+  physexprs = [:( $fld::Array{Float64,$vardims} )
     for fld in physfields]
-  transexprs = [:( $fld::Array{Complex{Float64},$vardims} ) 
+  transexprs = [:( $fld::Array{Complex{Float64},$vardims} )
     for fld in transfields]
 
   if parent != nothing
@@ -88,7 +88,7 @@ function structvarsexpr(name, physfields, transfields; soldims=2, vardims=2,
       end
     end
   end
-    
+
   expr
 end
 
@@ -101,10 +101,10 @@ Return the fftwavenumber vector with length n and domain size L.
 fftwavenums(n::Int; L=1) = 2π/L*cat(1, 0:n/2, -n/2+1:-1)
 
 
-""" 
+"""
     rms(q)
 
-Return the root-mean-square of an array. 
+Return the root-mean-square of an array.
 """
 rms(q) = sqrt(mean(q.^2))
 
@@ -152,7 +152,7 @@ function peaked_isotropic_spectrum(nx::Int, npeak::Real; ord=4.0, rms=1.0,
 end
 
 
-""" 
+"""
     lambdipole(Ue, R, g; center=(x0, y0))
 
 Return a 2D vorticity field corresponding to the Lamb Dipole with
@@ -170,7 +170,8 @@ function lambdipole(Ue::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
   end
 
   # Wavenumber corresponding to radius R and the first bessel func zero.
-  k = 3.8317 / R
+  # k = 3.8317 / R
+  k = 3.8317059702075123156 / R
   q0 = -2*Ue*k/SpecialFunctions.besselj(0, k*R)
 
   r = sqrt.((g.X-xc).^2.0 + (g.Y-yc).^2.0)
@@ -183,12 +184,12 @@ function lambdipole(Ue::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
 end
 
 
-""" 
+"""
     gaussianvortex(q0, R, G; center=(x0, y0))
 
 Return a vorticity field with magnitude q0, radius R, and center at
 center[1], center[2] on a TwoDGrid g corresponding to a 'Gaussian vortex' with
-Gaussian streamfunction. 
+Gaussian streamfunction.
 """
 function gaussianvortex(q0::Real, R::Real, g::TwoDGrid;
   center=(nothing, nothing))
@@ -206,11 +207,11 @@ function gaussianvortex(q0::Real, R::Real, g::TwoDGrid;
 end
 
 
-""" 
+"""
     rmsrand(g, rmsval)
 
 Return an array of random numbers on a TwoDGrid normalized to have a
-specifed rms value. 
+specifed rms value.
 """
 function rmsrand(g::TwoDGrid, rmsval::Real)
   q = rand(g.nx, g.ny)
@@ -219,7 +220,7 @@ function rmsrand(g::TwoDGrid, rmsval::Real)
 end
 
 
-""" 
+"""
     parsevalsum2(uh, g)
 
 Calculate ∫u = Σ|uh|² on a 2D grid, where uh is the Fourier transform of u.
@@ -231,7 +232,7 @@ function parsevalsum2(uh, g::TwoDGrid)
 
   if size(uh)[1] == g.nkr             # uh is conjugate symmetric
     U = sum(abs2, uh[1, :])           # k=0 modes
-    U += 2*sum(abs2, uh[2:end, :])    # sum k>0 modes twice     
+    U += 2*sum(abs2, uh[2:end, :])    # sum k>0 modes twice
   else                                # count every mode once
     U = sum(abs2, uh)
   end
@@ -239,19 +240,19 @@ function parsevalsum2(uh, g::TwoDGrid)
   norm*U
 end
 
-""" 
+"""
     parsevalsum(uh, g)
 
-Calculate real(Σ uh) on a 2D grid.  Accounts for DFT normalization, 
-grid resolution, and whether or not uh is in a conjugate-symmetric form to 
+Calculate real(Σ uh) on a 2D grid.  Accounts for DFT normalization,
+grid resolution, and whether or not uh is in a conjugate-symmetric form to
 save memory.
-""" 
+"""
 function parsevalsum(uh, g::TwoDGrid)
   norm = g.Lx*g.Ly/(g.nx^2*g.ny^2) # weird normalization for dft
 
   if size(uh)[1] == g.nkr       # uh is conjugate symmetric
     U = sum(uh[1, :])           # k=0 modes
-    U += 2*sum(uh[2:end, :])    # sum k>0 modes twice     
+    U += 2*sum(uh[2:end, :])    # sum k>0 modes twice
   else # count every mode once
     U = sum(uh)
   end
@@ -298,13 +299,13 @@ end
 """
     radialspectrum(ah, g; nr=nothing, nθ=nothing, refinement=4)
 
-Returns aρ = ∫ ah(ρ,θ) ρ dρ dθ, the radial spectrum of ah known on the 
-Cartesian wavenumber grid (k,l). 
+Returns aρ = ∫ ah(ρ,θ) ρ dρ dθ, the radial spectrum of ah known on the
+Cartesian wavenumber grid (k,l).
 
-aρ is found by intepolating ah onto a polar wavenumber grid (ρ,θ), and 
-then integrating over θ to find aρ. The default resolution (n,m) for the 
-polar wave number grid is n=refinement*maximum(nk,nl), 
-m=refinement*maximum(nk,nl), where refinement=4 by default. If 
+aρ is found by intepolating ah onto a polar wavenumber grid (ρ,θ), and
+then integrating over θ to find aρ. The default resolution (n,m) for the
+polar wave number grid is n=refinement*maximum(nk,nl),
+m=refinement*maximum(nk,nl), where refinement=4 by default. If
 ah is in conjugate symmetric form only the upper half plane in θ is
 represented on the polar grid.
 
@@ -319,7 +320,7 @@ function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=4)
     θ = linspace(-π/2, π/2, m)  # θ-grid from k=0 to max(kr)
     ahsh = fftshift(ah, 2)      # shifted ah
     ksh = linspace(0, g.nkr-1, g.nkr)*2π/g.Lx
-  else                          # ordinary form 
+  else                          # ordinary form
     θ = linspace(0, 2π, m)      # θ grid
     ahsh = fftshift(ah, [1, 2]) # shifted ah
     ksh = linspace(-g.nk/2+1, g.nk/2, g.nk)*2π/g.Lx
@@ -348,7 +349,7 @@ function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=4)
   end
   ahρ[1] = ah[1, 1] # zeroth mode
 
-  ρ, ahρ 
+  ρ, ahρ
 end
 
 # Moments and cumulants
