@@ -1,6 +1,6 @@
 export ForwardEulerTimeStepper, FilteredForwardEulerTimeStepper,
        AB3TimeStepper,
-       RK4TimeStepper,
+       RK4TimeStepper, FilteredRK4TimeStepper
        ETDRK4TimeStepper, FilteredETDRK4TimeStepper
 
 export stepforward!
@@ -15,7 +15,7 @@ export stepforward!
 Step forward the Problem prob for one timestep.
 """
 function stepforward!(prob::Problem)
-    stepforward!(prob.state, prob.ts, prob.eqn, prob.vars, prob.params, 
+    stepforward!(prob.state, prob.ts, prob.eqn, prob.vars, prob.params,
                  prob.grid)
     prob.t = prob.state.t
     prob.step = prob.state.step
@@ -38,7 +38,7 @@ end
 """
     stepforward!(prob, diags, nsteps)
 
-Step forward the problem prob for nsteps while calculating the 
+Step forward the problem prob for nsteps while calculating the
 diagnostics in diags.
 """
 function stepforward!(prob::Problem, diags::AbstractArray, nsteps)
@@ -144,7 +144,7 @@ end
 
 
 function stepforward!(s::State, ts::ForwardEulerTimeStepper,
-                      eq::AbstractEquation, v::AbstractVars, p::AbstractParams, 
+                      eq::AbstractEquation, v::AbstractVars, p::AbstractParams,
                       g::AbstractGrid)
 
   eq.calcN!(ts.N, s.sol, s.t, s, v, p, g)
@@ -180,7 +180,7 @@ function FilteredForwardEulerTimeStepper(dt, LC, g; filterkwargs...)
 end
 
 function stepforward!(s::State, ts::FilteredForwardEulerTimeStepper,
-                      eq::AbstractEquation, v::AbstractVars, p::AbstractParams, 
+                      eq::AbstractEquation, v::AbstractVars, p::AbstractParams,
                       g::AbstractGrid)
   eq.calcN!(ts.N, s.sol, s.t, s, v, p, g)
   @. s.sol = ts.filter*(s.sol + ts.dt*(ts.N + eq.LC.*s.sol) )
@@ -269,7 +269,7 @@ end
 
 
 function stepforward!(s::State, ts::ETDRK4TimeStepper,
-                      eq::AbstractEquation, v::AbstractVars, p::AbstractParams, 
+                      eq::AbstractEquation, v::AbstractVars, p::AbstractParams,
                       g::AbstractGrid)
   # Substep 1
   eq.calcN!(ts.N₁, s.sol, s.t, s, v, p, g)
@@ -296,7 +296,7 @@ function stepforward!(s::State, ts::ETDRK4TimeStepper,
 end
 
 function stepforward!(s::State, ts::FilteredETDRK4TimeStepper,
-                      eq::AbstractEquation, v::AbstractVars, p::AbstractParams, 
+                      eq::AbstractEquation, v::AbstractVars, p::AbstractParams,
                       g::AbstractGrid)
   # Substep 1
   eq.calcN!(ts.N₁, s.sol, s.t, s, v, p, g)
@@ -337,7 +337,7 @@ function ETDRK4TimeStepper(dt, LCc, LCr)
 end
 
 function stepforward!(s::DualState, ts::DualETDRK4TimeStepper,
-                      eq::AbstractEquation, v::AbstractVars, p::AbstractParams, 
+                      eq::AbstractEquation, v::AbstractVars, p::AbstractParams,
                       g::AbstractGrid)
   # Substep 1
   eq.calcN!(ts.c.N₁, ts.r.N₁, s.solc, s.solr, s.t, s, v, p, g)
@@ -395,7 +395,7 @@ function RK4TimeStepper(dt, LC)
 end
 
 function stepforward!(s::State, ts::RK4TimeStepper,
-                      eq::AbstractEquation, v::AbstractVars, p::AbstractParams, 
+                      eq::AbstractEquation, v::AbstractVars, p::AbstractParams,
                       g::AbstractGrid)
   eq.calcN!(ts.RHS₁, s.sol, s.t, s, v, p, g)
   @. ts.RHS₁ += eq.LC*s.sol
@@ -437,12 +437,12 @@ end
 function FilteredRK4TimeStepper(dt, LC, g; filterkwargs...)
   @createarrays eltype(LC) size(LC) sol₁ RHS₁ RHS₂ RHS₃ RHS₄
   filter = makefilter(g, typeof(dt), size(LC); filterkwargs...)
-  FilteredRK4TimeStepper{eltype(LC),ndims(LC)}(dt, sol₁, RHS₁, RHS₂, RHS₃, 
+  FilteredRK4TimeStepper{eltype(LC),ndims(LC)}(dt, sol₁, RHS₁, RHS₂, RHS₃,
     RHS₄, filter)
 end
 
 function stepforward!(s::State, ts::FilteredRK4TimeStepper,
-                      eq::AbstractEquation, v::AbstractVars, p::AbstractParams, 
+                      eq::AbstractEquation, v::AbstractVars, p::AbstractParams,
                       g::AbstractGrid)
   eq.calcN!(ts.RHS₁, s.sol, s.t, s, v, p, g)
   @. ts.RHS₁ += eq.LC*s.sol
@@ -491,7 +491,7 @@ function AB3TimeStepper(dt::Float64, sol::Array{Complex{Float64}, 2})
 end
 
 function stepforward!(s::State, ts::AB3TimeStepper,
-                      eq::AbstractEquation, v::AbstractVars, p::AbstractParams, 
+                      eq::AbstractEquation, v::AbstractVars, p::AbstractParams,
                       g::AbstractGrid)
   if s.step < 2                 # forward Euler steps to initialize AB3
     eq.calcN!(ts.RHS, s.sol, s.t, s, v, p, g)
