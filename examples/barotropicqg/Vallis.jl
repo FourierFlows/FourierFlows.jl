@@ -4,14 +4,14 @@ import FourierFlows.BarotropicQG
 import FourierFlows.BarotropicQG: energy, enstrophy
 
 # Physical parameters
-nx  = 128
+nx  = 256
 ν  = 0.0
 νn = 2
 f0 = 1.0
 
-β = 6.0
+β = 20.0
 Lx = 1.0
-μ = 1.0e-1
+μ = 1.0e-2
 F = 0.0
 
 FU(t) = F
@@ -25,9 +25,9 @@ eq = BarotropicQG.Equation(p, g)
 
 
 # Time-stepping
-dt = 0.02
+dt = 0.01
 nsteps = 20000
-nsubs  = 1000
+nsubs  = 400
 
 
 ts = FourierFlows.autoconstructtimestepper("FilteredRK4", dt, eq.LC, g)
@@ -57,6 +57,10 @@ modk = sqrt.(g.KKrsq)
 psik = zeros(g.nk, g.nl)
 psik =  (modk.^2 .* (1 + (modk/k0).^4)).^(-0.5)
 psik[1, 1] = 0.0
+psik = ones(g.nk, g.nl)
+psik =  (modk.^2 .* (1 + (modk/k0).^4)).^(-0.5)
+psik[real(g.KKrsq).<(12*2*pi/g.Lx)^2]=0
+psik[real(g.KKrsq).>(15*2*pi/g.Lx)^2]=0
 psih = (randn(g.nkr, g.nl)+im*randn(g.nkr, g.nl)).*psik
 psih = psih.*prob.ts.filter
 Ein = real(sum(g.KKrsq.*abs2.(psih)/(g.nx*g.ny)^2))
