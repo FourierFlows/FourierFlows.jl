@@ -1,6 +1,6 @@
 export ForwardEulerTimeStepper, FilteredForwardEulerTimeStepper,
        AB3TimeStepper,
-       RK4TimeStepper, FilteredRK4TimeStepper
+       RK4TimeStepper, FilteredRK4TimeStepper,
        ETDRK4TimeStepper, FilteredETDRK4TimeStepper
 
 export stepforward!
