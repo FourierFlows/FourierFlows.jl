@@ -94,6 +94,16 @@ the results of the paper by
 is found in `examples/twodturb/McWilliams.jl`.
 
 
+## Tutorials
+
+```@contents
+Pages = [
+    "modules/twodturb.md",
+    "modules/barotropicqg.md"
+        ]
+Depth = 2
+```
+
 
 ## Future work
 
