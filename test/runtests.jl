@@ -19,13 +19,17 @@ end
     include("test_ifft.jl")
 end
 
-@testset "Stepper tests" begin
+@testset "TwoDTurb Stepper tests" begin
     include("test_timesteppers.jl")
 end
 
-#@time @testset "BarotropicQG and Timestepper tests" begin
-#    include("test_BarotropicQG_timestep.jl")
-#end
+@testset "BarotropicQG Stepper tests" begin
+    include("test_BarotropicQG_timesteppers.jl")
+end
+
+@testset "BarotropicQG Rossby wave test" begin
+    include("test_BarotropicQG_RossbyWave.jl")
+end
 
 @testset "Utils tests" begin
     include("test_utils.jl")
