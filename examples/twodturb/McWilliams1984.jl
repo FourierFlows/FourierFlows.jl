@@ -12,7 +12,7 @@ import FourierFlows.TwoDTurb: energy, enstrophy
 # Time-stepping
 dt = 5e-3
 nsteps = 8000
-nsubs  = 50
+nsubs  = 200
 
 # Files
 filepath = "."

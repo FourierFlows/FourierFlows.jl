@@ -28,11 +28,12 @@ The code solves partial differential equations of the general form:
 
 $\partial_t u = \mathcal{L}u + \mathcal{N}(u)\ .$
 
-The $\mathcal{L}u$ part is time-stepped forward using an implicit scheme; the
-$\mathcal{N}(u)$ part is time-stepped forward using an explicit scheme.
+We decompose the right hand side of the above in a linear part ($\mathcal{L}u$)
+and a nonlinear part ($\mathcal{N}(u)$). The time steppers treat the linear and
+nonlinear parts differently.
 
 The coefficients for the linear operator $\mathcal{L}$ are stored in array `LC`.
-The term $\mathcal{N}(u)$ is computed for by calling the function `calcN`.
+The term $\mathcal{N}(u)$ is computed for by calling the function `calcN!`.
 
 
 ## Source code organization
@@ -56,7 +57,7 @@ Here's an overview of the code structure:
         various time-steppers. Current implemented time-steppers are:
         - Forward Euler (+ Filtered Forward Euler)
         - 3rd-order Adams-Bashforth (AB3)
-        - 4th-order Runge-Kutta (RK4)
+        - 4th-order Runge-Kutta (RK4) (+ Filtered ETDRK4)
         - 4th-order Runge-Kutta Exponential Time Differencing (ETDRK4)
         (+ Filtered ETDRK4)
     - `physics/`
@@ -86,18 +87,32 @@ fastest possible code.
 
 ## Examples
 
-An example script that simulates decaying two-dimensional turbulence reproducing
-the results of the paper by
+- `examples/twodturb/McWilliams.jl`: A script that simulates decaying two-dimensional turbulence reproducing the results of the paper by
 
-  > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. *J. Fluid Mech.*, **146**, 21-43.
+  > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. *J. Fluid Mech.*, **146**, 21-43
 
-is found in `examples/twodturb/McWilliams.jl`.
+- `examples/barotropicqg/decayingbetaturb.jl`: An example script that simulates decaying quasi-geostrophic flow on a beta-plane.
 
+- `examples/barotropicqg/ACConelayer.jl`: A script that simulates barotropic quasi-geostrophic flow above topography reproducing the results of the paper by
+
+  > Constantinou, N. C. (2018). A barotropic model of eddy saturation. *J. Phys. Oceanogr.*, in press, doi:10.1175/JPO-D-17-0182.1
+
+
+
+## Tutorials
+
+```@contents
+Pages = [
+    "modules/twodturb.md",
+    "modules/barotropicqg.md"
+        ]
+Depth = 1
+```
 
 
 ## Future work
 
-The code is in the chaos stage of development. A main goal for the future
+The code is in the chaotic stage of development. A main goal for the future
 is to permit the use of shared memory parallelism in the compute-intensive
 routines (shared-memory parallelism provided already by FFTW/MKLFFT, but
 is not yet native to Julia for things like element-wise matrix multiplication,
@@ -106,7 +121,7 @@ Intel Lab's
 [ParallelAccelerator](https://github.com/IntelLabs/ParallelAccelerator.jl)
 package.
 
-## Authors
+## Developers
 
 FourierFlows is currently being developed by [Gregory L. Wagner](https://glwagner.github.io) and [Navid C. Constantinou](http://www.navidconstantinou.com).
 
@@ -114,6 +129,8 @@ FourierFlows is currently being developed by [Gregory L. Wagner](https://glwagne
 
 ```@contents
 Pages = [
+    "modules/twodturb.md",
+    "modules/barotropicqg.md",
     "man/docstrings.md",
     ]
 Depth = 2
@@ -123,6 +140,8 @@ Depth = 2
 
 ```@index
 Pages = [
+    "modules/twodturb.md",
+    "modules/barotropicqg.md",
     "man/docstrings.md",
     ]
 ```

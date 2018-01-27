@@ -1,4 +1,3 @@
-__precompile__()
 module TwoDTurb
 using FourierFlows
 Grid = TwoDGrid
@@ -24,7 +23,7 @@ stepper = "RK4"
   vs = TwoDTurb.Vars(g)
   eq = TwoDTurb.Equation(pr, g)
   ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
-  
+
   FourierFlows.Problem(g, vs, pr, eq, ts)
 end
 
@@ -162,8 +161,8 @@ function calcN_advection!(
   nothing
 end
 
-function calcN_forced!(N::Array{Complex{Float64}, 2}, 
-                sol::Array{Complex{Float64}, 2}, t::Float64, 
+function calcN_forced!(N::Array{Complex{Float64}, 2},
+                sol::Array{Complex{Float64}, 2}, t::Float64,
                 s::State, v::ForcedVars, p::ForcedParams, g::TwoDGrid)
 
   calcN_advection!(N, sol, t, s, v, p, g)
@@ -203,7 +202,7 @@ end
 """
     set_q!(s, v, g, q)
 
-Set the solution s.sol as the transform of q and update variables v 
+Set the solution s.sol as the transform of q and update variables v
 on the grid g.
 """
 function set_q!(s, v, g, q)
@@ -292,7 +291,7 @@ Returns the extraction of domain-averaged energy by drag μ.
 end
 
 @inline function drag(prob::AbstractProblem)
-  drag(prob.state, prob.vars, prob.params, prob.grid) 
+  drag(prob.state, prob.vars, prob.params, prob.grid)
 end
 
 end # module

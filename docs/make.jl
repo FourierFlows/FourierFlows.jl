@@ -5,6 +5,10 @@ makedocs(modules=[FourierFlows],
          sitename = "FourierFlows.jl",
          pages = Any[
           "Home" => "index.md",
+          "Modules" => Any[
+              "modules/twodturb.md",
+              "modules/barotropicqg.md"
+              ],
           "DocStrings" => Any[
               "man/docstrings.md"
               ]
