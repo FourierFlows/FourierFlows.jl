@@ -91,8 +91,7 @@ fastest possible code.
 
   > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. *J. Fluid Mech.*, **146**, 21-43
 
-- `examples/barotropicqg/ACConelayer.jl`: An example script that simulates decaying quasi-geostrophic flow on a beta-plane.
-
+- `examples/barotropicqg/decayingbetaturb.jl`: An example script that simulates decaying quasi-geostrophic flow on a beta-plane.
 
 - `examples/barotropicqg/ACConelayer.jl`: A script that simulates barotropic quasi-geostrophic flow above topography reproducing the results of the paper by
 
