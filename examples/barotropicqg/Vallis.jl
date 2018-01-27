@@ -5,13 +5,13 @@ import FourierFlows.BarotropicQG: energy, enstrophy
 
 # Physical parameters
 nx  = 256
-ν  = 0.0
-νn = 2
+ν  = 0e-05
+νn = 1
 f0 = 1.0
 
 β = 20.0
-Lx = 1.0
-μ = 1.0e-2
+Lx = 2π
+μ = 0e-1
 F = 0.0
 
 FU(t) = F
@@ -25,12 +25,12 @@ eq = BarotropicQG.Equation(p, g)
 
 
 # Time-stepping
-dt = 0.01
+dt = 0.005
 nsteps = 20000
-nsubs  = 400
+nsubs  = 1000
 
 
-ts = FourierFlows.autoconstructtimestepper("FilteredRK4", dt, eq.LC, g)
+ts = FourierFlows.autoconstructtimestepper("FilteredETDRK4", dt, eq.LC, g)
 prob = FourierFlows.Problem(g, v, p, eq, ts)
 s = prob.state
 
@@ -52,15 +52,16 @@ g = prob.grid
 # Initial condition closely following pyqg barotropic example
 # that reproduces the results of the paper by McWilliams (1984)
 srand(1234)
-k0, E0 = 6, 0.005
+k0, E0 = 6, 0.1
 modk = sqrt.(g.KKrsq)
 psik = zeros(g.nk, g.nl)
 psik =  (modk.^2 .* (1 + (modk/k0).^4)).^(-0.5)
 psik[1, 1] = 0.0
 psik = ones(g.nk, g.nl)
 psik =  (modk.^2 .* (1 + (modk/k0).^4)).^(-0.5)
-psik[real(g.KKrsq).<(12*2*pi/g.Lx)^2]=0
-psik[real(g.KKrsq).>(15*2*pi/g.Lx)^2]=0
+psik[real(g.KKrsq).<(8*2*pi/g.Lx)^2]=0
+psik[real(g.KKrsq).>(10*2*pi/g.Lx)^2]=0
+psik[1, :]=0
 psih = (randn(g.nkr, g.nl)+im*randn(g.nkr, g.nl)).*psik
 psih = psih.*prob.ts.filter
 Ein = real(sum(g.KKrsq.*abs2.(psih)/(g.nx*g.ny)^2))
@@ -69,6 +70,7 @@ qi = -irfft(g.KKrsq.*psih, g.nx)
 E0 = FourierFlows.parsevalsum(g.KKrsq.*abs2.(psih), g)
 
 BarotropicQG.set_zeta!(prob, qi)
+BarotropicQG.updatevars!(prob)
 
 
 # Create Diagnostic -- "energy" is a function imported at the top.
@@ -94,6 +96,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   BarotropicQG.updatevars!(prob)
 
   sca(axs[1])
+  cla()
   pcolormesh(g.X, g.Y, v.q)
   axis("square")
   axis("off")
@@ -103,26 +106,30 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[2])
   cla()
-  # plot(μ*E.time[1:E.prob.step], E.data[1:prob.step], label=L"$E$")
-  plot(μ*E.time[1:E.prob.step], E.data[1:prob.step]/E.data[1], label=L"$E$")
-  plot(μ*Z.time[1:Z.prob.step], Z.data[1:prob.step]/Z.data[1], label=L"$Z$")
-  xlabel(L"\mu t")
-  ylabel(L"E")
-  legend()
+  pcolormesh(g.X, g.Y, v.psi)
+  axis("square")
+  axis("off")
+  if drawcolorbar==true
+    colorbar()
+  end
 
-  # sca(axs[3])
-  # cla()
-  # plot(μ*Z.time[1:Z.prob.step], Z.data[1:prob.step], label=L"$Z$")
-  # xlabel(L"\mu t")
-  # ylabel(L"Q")
-  # legend()
+  sca(axs[3])
+  cla()
+  plot(mean(v.zeta, 1).', g.Y[1,:])
+  # axis("square")
+
+  sca(axs[4])
+  cla()
+  plot(mean(v.u, 1).', g.Y[1,:])
+  # axis("square")
+
   pause(0.001)
 end
 
 
 
-fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
-plot_output(prob, fig, axs; drawcolorbar=true)
+fig, axs = subplots(ncols=2, nrows=2, figsize=(8, 8))
+plot_output(prob, fig, axs; drawcolorbar=false)
 
 # Step forward
 startwalltime = time()
