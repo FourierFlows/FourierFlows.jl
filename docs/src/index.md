@@ -87,21 +87,17 @@ fastest possible code.
 
 ## Examples
 
-An example script that simulates decaying two-dimensional turbulence reproducing
-the results of the paper by
+- `examples/twodturb/McWilliams.jl`: A script that simulates decaying two-dimensional turbulence reproducing the results of the paper by
 
-  > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in
-  turbulent flow. *J. Fluid Mech.*, **146**, 21-43
+  > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. *J. Fluid Mech.*, **146**, 21-43
 
-is found in `examples/twodturb/McWilliams.jl`.
+- `examples/barotropicqg/ACConelayer.jl`: An example script that simulates decaying quasi-geostrophic flow on a beta-plane.
 
-An example script that simulates barotropic quasi-geostrophic flow above
-topography reproducing the results of the paper by
 
-  > Constantinou, N. C. (2018). A barotropic model of eddy saturation. *J. Phys.
-  Oceanogr.*, in press, doi:10.1175/JPO-D-17-0182.1
+- `examples/barotropicqg/ACConelayer.jl`: A script that simulates barotropic quasi-geostrophic flow above topography reproducing the results of the paper by
 
-is found in `examples/barotropicqg/ACConelayer.jl`.
+  > Constantinou, N. C. (2018). A barotropic model of eddy saturation. *J. Phys. Oceanogr.*, in press, doi:10.1175/JPO-D-17-0182.1
+
 
 
 ## Tutorials
