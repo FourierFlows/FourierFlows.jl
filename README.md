@@ -4,10 +4,10 @@
 [![FourierFlows](http://pkg.julialang.org/badges/FourierFlows_0.7.svg)](http://pkg.julialang.org/detail/FourierFlows)
 
 
-<!-- [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://FourierFlows.github.io/FourierFlows.jl/stable) -->
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://FourierFlows.github.io/FourierFlows.jl/stable)
 [![](https://img.shields.io/badge/docs-latest-blue.svg)](https://FourierFlows.github.io/FourierFlows.jl/latest)
 
-
+[![DOI](https://zenodo.org/badge/95982414.svg)](https://zenodo.org/badge/latestdoi/95982414)
 
 # FourierFlows
 
