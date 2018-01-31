@@ -64,11 +64,16 @@ Here's an overview of the code structure:
 ## Basic Notation
 
 The code solves partial differential equations of the general
-form: `u_t = L*u + N(u)`. The `L*u` part is time-stepped forward
-using an implicit scheme; the `N(u)` part is time-stepped forward
-using an explicit scheme. The coefficients for the linear operator
-`L` are stored in array `LC`. The term `N(u)` is computed for by
-calling the function `calcN!`.
+form: `∂u/∂t = L*u + N(u)`, where `u` denotes the solution, which is
+typically an array of complex coefficients for each Fourier mode. In general, 
+`L` is an array of coeffients that describe the linear part of the equation
+governing `u`, while `N(u)` is an arbitrary function that may contain terms
+both linear and nonlinear in `u`, as well forcing terms. 
+The time-steppers currently implemented only accepted
+diagonal `L` arrays, which means that `L` and `u` have the same size.
+Currently, the ETDRK4 time-stepper is the only time-stepper implemented that
+makes special use of `L`. Both `L` and the function that calculates `N(u)` are
+stored as fields of the type `AbstractEquation`.
 
 
 ## Writing fast solvers
