@@ -57,7 +57,7 @@ Here's an overview of the code structure:
         various time-steppers. Current implemented time-steppers are:
         - Forward Euler (+ Filtered Forward Euler)
         - 3rd-order Adams-Bashforth (AB3)
-        - 4th-order Runge-Kutta (RK4) (+ Filtered ETDRK4)
+        - 4th-order Runge-Kutta (RK4) (+ Filtered RK4)
         - 4th-order Runge-Kutta Exponential Time Differencing (ETDRK4)
         (+ Filtered ETDRK4)
     - `physics/`

@@ -65,10 +65,10 @@ Here's an overview of the code structure:
 
 The code solves partial differential equations of the general
 form: `∂u/∂t = L*u + N(u)`, where `u` denotes the solution, which is
-typically an array of complex coefficients for each Fourier mode. In general, 
+typically an array of complex coefficients for each Fourier mode. In general,
 `L` is an array of coeffients that describe the linear part of the equation
 governing `u`, while `N(u)` is an arbitrary function that may contain terms
-both linear and nonlinear in `u`, as well forcing terms. 
+both linear and nonlinear in `u`, as well forcing terms.
 The time-steppers currently implemented only accepted
 diagonal `L` arrays, which means that `L` and `u` have the same size.
 Currently, the ETDRK4 time-stepper is the only time-stepper implemented that
