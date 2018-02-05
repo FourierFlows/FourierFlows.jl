@@ -133,26 +133,16 @@ end
 struct ForwardEulerTimeStepper{dim} <: AbstractTimeStepper
   dt::Float64
   N::Array{Complex{Float64},dim}    # Explicit linear and nonlinear terms
+  ForwardEulerTimeStepper(dt::Float64, N::Array{Complex{Float64},dim}) where dim = new{dim}(dt, zeros(size(N)))
 end
-
-function ForwardEulerTimeStepper(dt::Float64, sol::AbstractArray)
-  N = zeros(sol)
-  ForwardEulerTimeStepper{ndims(LC)}(dt, N)
-end
-
-
-
 
 function stepforward!(s::State, ts::ForwardEulerTimeStepper,
                       eq::AbstractEquation, v::AbstractVars, p::AbstractParams,
                       g::AbstractGrid)
-
   eq.calcN!(ts.N, s.sol, s.t, s, v, p, g)
-
   @. s.sol += ts.dt*(ts.N + eq.LC*s.sol)
   s.t += ts.dt
   s.step += 1
-
   nothing
 end
 
@@ -174,7 +164,7 @@ struct FilteredForwardEulerTimeStepper{dim} <: AbstractTimeStepper
 end
 
 function FilteredForwardEulerTimeStepper(dt, LC, g; filterkwargs...)
-  N = zeros(LC)
+  @createarrays eltype(LC) size(LC) N
   filter = makefilter(g, typeof(dt), size(LC); filterkwargs...)
   FilteredForwardEulerTimeStepper{ndims(N)}(dt, N, filter)
 end
@@ -183,7 +173,7 @@ function stepforward!(s::State, ts::FilteredForwardEulerTimeStepper,
                       eq::AbstractEquation, v::AbstractVars, p::AbstractParams,
                       g::AbstractGrid)
   eq.calcN!(ts.N, s.sol, s.t, s, v, p, g)
-  @. s.sol = ts.filter*(s.sol + ts.dt*(ts.N + eq.LC.*s.sol) )
+  @. s.sol = ts.filter*(s.sol + ts.dt*(ts.N + eq.LC*s.sol) )
   s.t += ts.dt
   s.step += 1
   nothing
