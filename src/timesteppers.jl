@@ -140,7 +140,7 @@ function stepforward!(s::State, ts::ForwardEulerTimeStepper,
                       eq::AbstractEquation, v::AbstractVars, p::AbstractParams,
                       g::AbstractGrid)
   eq.calcN!(ts.N, s.sol, s.t, s, v, p, g)
-  @. s.sol = s.sol + ts.dt*(ts.N + eq.LC*s.sol)
+  @. s.sol += ts.dt*(ts.N + eq.LC*s.sol)
   s.t += ts.dt
   s.step += 1
   nothing
