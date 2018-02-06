@@ -1,5 +1,16 @@
 import FourierFlows.TwoDTurb
 
+# Dictionary of (stepper, nsteps) pairs to test. Each stepper is tested by
+# stepping forward nstep times.
+steppersteps = Dict([
+  ("ForwardEuler", 1000),
+  ("FilteredForwardEuler", 1000),
+  ("RK4", 100),
+  ("FilteredRK4", 100),
+  ("ETDRK4", 100),
+  ("FilteredETDRK4", 100),
+])
+
 
 """
 Build a twodturb initial value problem and use it to test time-stepping methods.
@@ -11,7 +22,7 @@ state qh(t) with qh(0)*exp(-ν k^2 t).
 function testtwodturbstepforward(n=64, L=2π, μ=0.1, nμ=0, ν=0.0, nν=2;
                                  nsteps=100, stepper="ForwardEuler")
 
-  dt = tf/steps
+  dt = tf/nsteps
 
   prob = TwoDTurb.InitialValueProblem(nx=n, Lx=L, ny=n, Ly=L, ν=ν, nν=nν, dt=dt,
                                         stepper=stepper)
@@ -42,16 +53,6 @@ end
 
 
 
-# Dictionary of (stepper, nsteps) pairs to test. Each stepper is tested by
-# stepping forward nstep times.
-steppersteps = Dict([
-  ("ForwardEuler", 1000),
-  ("FilteredForwardEuler", 1000),
-  ("RK4", 100),
-  ("FilteredRK4", 100),
-  ("ETDRK4", 100),
-  ("FilteredETDRK4", 100),
-])
 
 # Run the tests
 n = 64
