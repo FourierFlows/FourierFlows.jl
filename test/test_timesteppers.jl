@@ -19,14 +19,14 @@ The amplitude of the initial condition is kept low (e.g. multiplied by 1e-5)
 so that nonlinear terms do not come into play. This way we can compare the final
 state qh(t) with qh(0)*exp(-ν k^2 t).
 """
-function testtwodturbstepforward(n=64, L=2π, μ=0.1, nμ=0, ν=0.0, nν=2;
+function testtwodturbstepforward(n=64, L=2π, ν=1e-3, nν=1;
                                  nsteps=100, stepper="ForwardEuler")
 
   dt = tf/nsteps
 
   prob = TwoDTurb.InitialValueProblem(nx=n, Lx=L, ny=n, Ly=L, ν=ν, nν=nν, dt=dt,
                                         stepper=stepper)
-  g = prob.grid
+  g, p, s = prob.grid, prob.params, prob.state
 
   # Initial condition (IC)
   qih = (rand(g.nkr, g.nl) + im*rand(g.nkr, g.nl))*1e-5
@@ -44,10 +44,9 @@ function testtwodturbstepforward(n=64, L=2π, μ=0.1, nμ=0, ν=0.0, nν=2;
   TwoDTurb.set_q!(prob, qi)
 
   stepforward!(prob, nsteps)
+  qfh = deepcopy(q0h).*exp.(-p.ν*g.KKrsq.^p.nν.*s.step*dt)
 
-  qfh = deepcopy(q0h).*exp.(-ν*g.KKrsq*prob.state.step*dt)
-
-  # println(sum(abs.(qfh-prob.state.sol)) / sum(abs.(qfh)))
+  # println(sum(abs.(qfh-s.sol)) / sum(abs.(qfh)))
   isapprox(qfh, prob.state.sol, rtol=n^2*nsteps*1e-13)
 end
 
@@ -56,7 +55,7 @@ end
 
 # Run the tests
 n = 64
-tf = 0.1
+tf = 0.2
 
 
 for (stepper, steps) in steppersteps
