@@ -9,7 +9,6 @@ export @createarrays
 steppers = [
   "ForwardEuler",
   "FilteredForwardEuler",
-  "AB3",
   "RK4",
   "FilteredRK4",
   "ETDRK4",

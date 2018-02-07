@@ -1,5 +1,4 @@
 export ForwardEulerTimeStepper, FilteredForwardEulerTimeStepper,
-       AB3TimeStepper,
        RK4TimeStepper, FilteredRK4TimeStepper,
        ETDRK4TimeStepper, FilteredETDRK4TimeStepper
 
@@ -456,55 +455,6 @@ function stepforward!(s::State, ts::FilteredRK4TimeStepper,
                                         + 1.0/3.0*ts.RHS₃ + 1.0/6.0*ts.RHS₄ ))
   s.t += ts.dt
   s.step += 1
-
-  nothing
-end
-
-
-
-# AB3 -------------------------------------------------------------------------
-# 3rd order Adams-Bashforth time stepping is an explicit scheme that uses
-# solutions from two previous time-steps to achieve 3rd order accuracy.
-
-struct AB3TimeStepper <: AbstractTimeStepper
-  dt::Float64
-  RHS::Array{Complex{Float64}, 2}
-  RHS₋₁::Array{Complex{Float64}, 2}
-  RHS₋₂::Array{Complex{Float64}, 2}
-end
-
-function AB3TimeStepper(dt::Float64, sol::Array{Complex{Float64}, 2})
-  RHS   = zeros(sol)
-  RHS₋₁ = zeros(sol)
-  RHS₋₂ = zeros(sol)
-  AB3TimeStepper(dt, RHS, RHS₋₁, RHS₋₂)
-end
-
-function stepforward!(s::State, ts::AB3TimeStepper,
-                      eq::AbstractEquation, v::AbstractVars, p::AbstractParams,
-                      g::AbstractGrid)
-  if s.step < 2                 # forward Euler steps to initialize AB3
-    eq.calcN!(ts.RHS, s.sol, s.t, s, v, p, g)
-    @. ts.RHS += eq.LC.*s.sol   # Add linear term to RHS
-
-    @. s.sol += ts.dt*ts.RHS    # Update
-    s.t += ts.dt                # ...
-    s.step += 1                 # ...
-
-    ts.RHS₋₂ .= ts.RHS₋₁        # Store
-    ts.RHS₋₁ .= ts.RHS          # ... previous values of RHS.
-  end
-
-  # Otherwise, stepforward with 3rd order Adams Bashforth:
-  eq.calcN!(ts.RHS, s.sol, s.t, s, v, p, g)
-  @. ts.RHS += eq.LC*s.sol      # Add linear term to RHS
-
-  @. s.sol += ts.dt*(23.0/12.0*ts.RHS - 16.0/12.0*ts.RHS₋₁ + 5.0/12.0*ts.RHS₋₂)
-  s.t += ts.dt
-  s.step += 1
-
-  ts.RHS₋₂ .= ts.RHS₋₁          # Store
-  ts.RHS₋₁ .= ts.RHS            # ... previous values of RHS
 
   nothing
 end
