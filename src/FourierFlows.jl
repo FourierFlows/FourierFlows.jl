@@ -8,7 +8,7 @@ export AbstractGrid,
        AbstractEquation,
        AbstractTimeStepper,
        AbstractProblem
-       
+
 # Abstract supertypes
 abstract type AbstractGrid end
 abstract type AbstractParams end
@@ -17,6 +17,13 @@ abstract type AbstractTimeStepper end
 abstract type AbstractEquation end
 abstract type AbstractState end
 abstract type AbstractProblem end
+
+"""
+    cxeltype(a)
+Returns Complex{eltype(a)} if eltype(a) <: Real; eltype(a) otherwise.
+"""
+cxeltype(a) = eltype(a) <: Real ? Complex{eltype(a)} : eltype(a)
+
 
 # Include base functionality
 include("problemstate.jl")
