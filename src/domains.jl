@@ -130,9 +130,9 @@ end
 
 function dealias!(a::Array{Complex{Float64},dim}, g) where {dim}
   if size(a)[1] == g.nkr
-    @views @. a[g.iralias, g.jalias, :,:] = 0
+    @views @. a[g.iralias, g.jalias, :] = 0
   else
-    @views @. a[g.ialias, g.jalias, :,:] = 0
+    @views @. a[g.ialias, g.jalias, :] = 0
   end
   nothing
 end
