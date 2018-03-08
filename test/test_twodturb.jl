@@ -53,6 +53,7 @@ function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, ν=1e-7, nν
   ν, nν = 1e-7, 2
   μ, nμ = 1e-1, 0
   dt, tf = 0.005, 0.1/μ
+  dt, tf = 0.0005, 0.02/μ
   nt = round(Int, tf/dt)
   ns = 1
 
