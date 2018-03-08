@@ -46,13 +46,13 @@ end
 
 
 # ISOTROPIC RING FORCING BUDGETS
-function stochasticforcingbudgetstest( n ; dt = 0.01, L=2π, ν=1e-7, nν=2,
-                                            μ = 1e-1, nμ = 0, message=false)
+function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, ν=1e-7, nν=2,
+                                         μ = 1e-1, nμ = 0, message=false)
 
   n, L  = 256, 2π
   ν, nν = 1e-7, 2
   μ, nμ = 1e-1, 0
-  dt, tf = 0.005, 0.2/μ
+  dt, tf = 0.005, 0.1/μ
   nt = round(Int, tf/dt)
   ns = 1
 
@@ -123,7 +123,7 @@ function stochasticforcingbudgetstest( n ; dt = 0.01, L=2π, ν=1e-7, nν=2,
             prob.step, prob.t, cfl, tc)
   end
 
-  # println(mean(abs.(residual)))
+  println(mean(abs.(residual)))
   isapprox(mean(abs.(residual)), 0, atol=1e-4)
 end
 
@@ -133,4 +133,4 @@ end
 
 @test lambdipoletest(256, 1e-3)
 
-@test stochasticforcingbudgetstest(256)
+@test stochasticforcingbudgetstest()
