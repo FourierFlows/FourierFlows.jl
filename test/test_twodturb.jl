@@ -46,8 +46,8 @@ end
 
 
 # ISOTROPIC RING FORCING BUDGETS
-function stochasticforcingbudgets( ;n = 256, dt = 0.01, L=2π, ν=1e-7, nν=2,
-                                   μ = 1e-1, nμ = 0, message=false)
+function stochasticforcingbudgetstest( n ; dt = 0.01, L=2π, ν=1e-7, nν=2,
+                                            μ = 1e-1, nμ = 0, message=false)
 
   n, L  = 256, 2π
   ν, nν = 1e-7, 2
@@ -133,4 +133,4 @@ end
 
 @test lambdipoletest(256, 1e-3)
 
-@test stochasticforcingbudgets()
+@test stochasticforcingbudgetstest(256)
