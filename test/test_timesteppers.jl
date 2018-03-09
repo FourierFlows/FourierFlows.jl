@@ -4,12 +4,14 @@ import FourierFlows.TwoDTurb: energy
 # Dictionary of (stepper, nsteps) pairs to test. Each stepper is tested by
 # stepping forward nstep times.
 steppersteps = Dict([
-  ("ForwardEuler", 1000),
-  ("FilteredForwardEuler", 1000),
-  ("RK4", 100),
-  ("FilteredRK4", 100),
-  ("ETDRK4", 100),
-  ("FilteredETDRK4", 100),
+  ("ForwardEuler", 2000),
+  ("FilteredForwardEuler", 2000),
+  ("AB3", 400),
+  ("FilteredAB3", 400),
+  ("RK4", 40),
+  ("FilteredRK4", 40),
+  ("ETDRK4", 40),
+  ("FilteredETDRK4", 40)
 ])
 
 
