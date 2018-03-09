@@ -10,6 +10,7 @@ steppers = [
   "ForwardEuler",
   "FilteredForwardEuler",
   "AB3",
+  "FilteredAB3",
   "RK4",
   "FilteredRK4",
   "ETDRK4",
@@ -18,6 +19,7 @@ steppers = [
 
 filteredsteppers = [
   "FilteredForwardEuler",
+  "FilteredAB3",
   "FilteredRK4",
   "FilteredETDRK4",
 ]
