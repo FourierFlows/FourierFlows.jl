@@ -128,24 +128,7 @@ function TwoDGrid(nx::Int, Lx::Float64, ny::Int=nx, Ly::Float64=Lx;
     fftplan, ifftplan, rfftplan, irfftplan, ialias, iralias, jalias)
 end
 
-# Grid constructor for tupled arguments
-function TwoDGrid(nxy::Tuple{Int, Int}, Lxy::Tuple{Float64, Float64};
-  nthreads=Sys.CPU_CORES)
-  nx, ny = nxy
-  Lx, Ly = Lxy
-  TwoDGrid(nx, Lx, ny, Ly; nthreads=nthreads)
-end
-
-function dealias!(a::Array{Complex{Float64},2}, g)
-  if size(a)[1] == g.nkr
-    a[g.iralias, g.jalias] = 0
-  else
-    a[g.ialias, g.jalias] = 0
-  end
-  nothing
-end
-
-function dealias!(a::Array{Complex{Float64},3}, g)
+function dealias!(a::Array{Complex{Float64},dim}, g) where {dim}
   if size(a)[1] == g.nkr
     @views @. a[g.iralias, g.jalias, :] = 0
   else
@@ -153,6 +136,7 @@ function dealias!(a::Array{Complex{Float64},3}, g)
   end
   nothing
 end
+
 
 """
 Returns an filter with an exponentially-decaying profile that, when multiplied

@@ -1,5 +1,4 @@
 export ForwardEulerTimeStepper, FilteredForwardEulerTimeStepper,
-       AB3TimeStepper,
        RK4TimeStepper, FilteredRK4TimeStepper,
        ETDRK4TimeStepper, FilteredETDRK4TimeStepper
 
@@ -65,64 +64,56 @@ function stepforward!(prob::Problem, diags::AbstractArray, nsteps)
 end
 
 
-
-# Utilities -------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Timestepper utilities -------------------------------------------------------
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 """
-Calculate ETDRK4 coefficients by integrating over a small circle
-in complex space.
+    getetdcoeffs(dt, LC; ncirc=32, rcirc=1)
+Calculate ETDRK4 coefficients associated with the (diagonal) linear coefficient
+LC by integrating over a small circle in complex space.
+Note: arbitrary-precision arithmetic might provide a more robust method for
+calculating these coefficients.
 """
-function getetdcoeffs(dt::Float64, LC::Array{Complex{Float64},2};
-  ncirc=32, rcirc=1.0)
+function getetdcoeffs(dt, LC; ncirc=32, rcirc=eltype(LC)(1))
 
-  # Make circle
-  circ  = Array{Complex{Float64}}(1, 1, ncirc)
-  circ[1, 1, :]  = rcirc * exp.( 2.0*pi*im*(0.5:1.0:(ncirc-0.5))/ncirc )
+  shape = Tuple(cat(1, ncirc, ones(Int, ndims(LC))))
 
-  # Construct intermediate vars
-  zc = broadcast(+, dt.*LC, circ)
+  circ = zeros(cxeltype(LC), shape)
+  circ .= rcirc * exp.(2π*im/ncirc*(0.5:1:(ncirc-0.5)))
+  circ = permutedims(circ, ndims(circ):-1:1)
+
+  zc = dt*LC .+ circ
+  M = ndims(LC)+1
 
   # Four coefficients: ζ, α, β, Γ
-  ζ = dt.*squeeze(mean( (exp.(0.5.*zc)-1.0)./zc, 3), 3)
+  ζc = @.          ( exp(zc/2)-1 ) / zc
+  αc = @. ( -4 - zc + exp(zc)*(4 - 3zc + zc^2) ) / zc^3
+  βc = @.    ( 2  + zc + exp(zc)*(-2 + zc) ) / zc^3
+  Γc = @. ( -4 - 3zc - zc^2 + exp(zc)*(4 - zc) ) / zc^3
 
-  α = dt.*squeeze(mean(
-    ( (-4.0) .- zc .+ exp.(zc).*(4.0.-3.0.*zc.+zc.^2.0))./zc.^3.0,      3), 3)
-  β = dt.*squeeze(mean(
-    (   2.0  .+ zc .+ exp.(zc).*((-2.0).+zc))./zc.^3.0,                 3), 3)
-  Γ = dt.*squeeze(mean(
-    ( (-4.0) .- 3.0.*zc .- zc.^2.0 .+ exp.(zc).*(  4.0 .-zc))./zc.^3.0, 3), 3)
+  if eltype(LC) <: Real
+    ζ = dt*real.(squeeze(mean(ζc, M), M))
+    α = dt*real.(squeeze(mean(αc, M), M))
+    β = dt*real.(squeeze(mean(βc, M), M))
+    Γ = dt*real.(squeeze(mean(Γc, M), M))
+  else
+    ζ = dt*squeeze(mean(ζc, M), M)
+    α = dt*squeeze(mean(αc, M), M)
+    β = dt*squeeze(mean(βc, M), M)
+    Γ = dt*squeeze(mean(Γc, M), M)
+  end
 
-  return ζ, α, β, Γ
+  ζ, α, β, Γ
 end
 
 
-"""
-Calculate ETDRK4 coefficients by integrating over a small circle
-in complex space.
-"""
-function getetdcoeffs(dt::Float64, LC::Array{Complex{Float64},3};
-  ncirc=32, rcirc=1.0)
-
-  # Make circle
-  circ  = Array{Complex{Float64}}(1, 1, 1, ncirc)
-  circ[1, 1, 1, :]  = rcirc * exp.( 2.0*pi*im*(0.5:1.0:(ncirc-0.5))/ncirc )
-
-  # Construct intermediate vars
-  zc = broadcast(+, dt.*LC, circ)
-
-  # Four coefficients: ζ, α, β, Γ
-  ζ = dt.*squeeze(mean( (exp.(0.5.*zc)-1.0)./zc, 4), 4)
-
-  α = dt.*squeeze(mean(
-    ( (-4.0) .- zc .+ exp.(zc).*(4.0.-3.0.*zc.+zc.^2.0))./zc.^3.0,      4), 4)
-  β = dt.*squeeze(mean(
-    (   2.0  .+ zc .+ exp.(zc).*((-2.0).+zc))./zc.^3.0,                 4), 4)
-  Γ = dt.*squeeze(mean(
-    ( (-4.0) .- 3.0.*zc .- zc.^2.0 .+ exp.(zc).*(  4.0 .-zc))./zc.^3.0, 4), 4)
-
-  return ζ, α, β, Γ
-end
-
-
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Timesteppers
+# -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 
@@ -461,7 +452,6 @@ function stepforward!(s::State, ts::FilteredRK4TimeStepper,
 end
 
 
-
 # AB3 -------------------------------------------------------------------------
 # 3rd order Adams-Bashforth time stepping is an explicit scheme that uses
 # solutions from two previous time-steps to achieve 3rd order accuracy.
@@ -500,6 +490,10 @@ function stepforward!(s::State, ts::AB3TimeStepper,
   nothing
 end
 
+
+# Filtered AB3 ----------------------------------------------------------------
+# 3rd order Adams-Bashforth time stepping is an explicit scheme that uses
+# solutions from two previous time-steps to achieve 3rd order accuracy.
 
 struct FilteredAB3TimeStepper{T,dim} <: AbstractTimeStepper
   dt::Float64

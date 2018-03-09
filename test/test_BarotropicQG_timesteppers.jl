@@ -66,7 +66,7 @@ eq = BarotropicQG.Equation(p, g)
 
 @test test_baroQG_timestep(g, p, v, eq, dt; stepper = "ForwardEuler")
 @test test_baroQG_timestep(g, p, v, eq, dt; stepper = "FilteredForwardEuler")
-@test test_baroQG_timestep(g, p, v, eq, dt; stepper = "AB3")
+# @test test_baroQG_timestep(g, p, v, eq, dt; stepper = "AB3")
 @test test_baroQG_timestep(g, p, v, eq, dt; stepper = "RK4")
 @test test_baroQG_timestep(g, p, v, eq, dt; stepper = "FilteredRK4")
 @test test_baroQG_timestep(g, p, v, eq, dt; stepper = "ETDRK4")
