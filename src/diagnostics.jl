@@ -11,7 +11,7 @@ mutable struct Diagnostic{T} <: AbstractDiagnostic
   num::Int
   data::Array{T, 1}
   time::Array{Float64, 1}
-  step::Array{Int64, 1}
+  step::Array{Int, 1}
   value::T
   count::Int
   freq::Int
@@ -26,7 +26,7 @@ function Diagnostic(calc::Function, prob::FourierFlows.Problem; freq=1,
 
   data = Array{T}(num)
   time = Array{Float64}(num)
-  step = Array{Int64}(num)
+  step = Array{Int}(num)
 
   data[1] = value
   time[1] = prob.t
@@ -39,10 +39,10 @@ function getindex(d::Diagnostic, inds...)
   getindex(d.data, inds...)
 end
 
-""" 
+"""
     resize!(diag, newnum)
 
-Resize the Diagnostic data and time arrays to length newnum. 
+Resize the Diagnostic data and time arrays to length newnum.
 """
 function resize!(diag::AbstractDiagnostic, newnum::Int)
   resize!(diag.data, newnum)
@@ -51,7 +51,7 @@ function resize!(diag::AbstractDiagnostic, newnum::Int)
   nothing
 end
 
-""" 
+"""
     update!(diag)
 
 Update diag with its current value.
@@ -71,7 +71,7 @@ function update!(diags::AbstractArray)
   nothing
 end
 
-""" 
+"""
     increment!(diag)
 
 Increment the Diagnostic diag.
@@ -92,10 +92,10 @@ function increment!(diag::AbstractDiagnostic)
   nothing
 end
 
-""" 
+"""
     increment!(diags)
 
-Increment the array of Diagnostics diags. 
+Increment the array of Diagnostics diags.
 """
 function increment!(diags::AbstractArray)
   for d in diags
