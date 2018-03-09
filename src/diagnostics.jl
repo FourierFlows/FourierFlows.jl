@@ -10,7 +10,7 @@ mutable struct Diagnostic{T} <: AbstractDiagnostic
   prob::Problem
   num::Int
   data::Array{T, 1}
-  time::Array{Float64, 1}
+  time::Array{Float, 1}
   step::Array{Int, 1}
   value::T
   count::Int
@@ -25,7 +25,7 @@ function Diagnostic(calc::Function, prob::FourierFlows.Problem; freq=1,
   T = typeof(value)
 
   data = Array{T}(num)
-  time = Array{Float64}(num)
+  time = Array{Float}(num)
   step = Array{Int}(num)
 
   data[1] = value
