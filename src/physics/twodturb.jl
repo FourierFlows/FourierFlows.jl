@@ -164,11 +164,9 @@ end
 function calcN_forced!(N::Array{Complex{Float64}, 2},
                 sol::Array{Complex{Float64}, 2}, t::Float64,
                 s::State, v::ForcedVars, p::ForcedParams, g::TwoDGrid)
-  if t == s.t
-    v.prevsol .= s.sol    # this is used for computing energy/enstrophy budgets
-  end
   calcN_advection!(N, sol, t, s, v, p, g)
   if t == s.t # not a substep
+    v.prevsol .= s.sol    # this is used for computing energy/enstrophy budgets
     p.calcF!(v.Fh, sol, t, s, v, p, g)
   end
   @. N += v.Fh
@@ -269,18 +267,18 @@ end
 end
 
 """
-    injection(s, v, p, g)
+    work(s, v, p, g)
 
-Returns the domain-averaged rate of injection of energy by the forcing Fh.
+Returns the domain-averaged rate of work of energy by the forcing Fh.
 """
-@inline function injection(s, v::ForcedVars, g)
+@inline function work(s, v::ForcedVars, g)
   @. v.Uh = g.invKKrsq * (v.prevsol + s.sol)/2.0 * conj(v.Fh) # Stratonovich
   # @. v.Uh = g.invKKrsq * v.prevsol * conj(v.Fh)               # Ito
   1/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uh, g)
 end
 
-@inline function injection(prob::AbstractProblem)
-  injection(prob.state, prob.vars, prob.grid)
+@inline function work(prob::AbstractProblem)
+  work(prob.state, prob.vars, prob.grid)
 end
 
 """

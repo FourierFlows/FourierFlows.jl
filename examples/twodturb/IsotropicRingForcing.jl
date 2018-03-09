@@ -1,6 +1,6 @@
 using PyPlot, FourierFlows
 import FourierFlows.TwoDTurb
-import FourierFlows.TwoDTurb: energy, enstrophy, dissipation, injection, drag
+import FourierFlows.TwoDTurb: energy, enstrophy, dissipation, work, drag
 
  n, L  = 256, 2π
  ν, nν = 1e-7, 2
@@ -41,15 +41,15 @@ TwoDTurb.set_q!(prob, 0*g.X)
 E = Diagnostic(energy,      prob, nsteps=nt)
 D = Diagnostic(dissipation, prob, nsteps=nt)
 R = Diagnostic(drag,        prob, nsteps=nt)
-I = Diagnostic(injection,   prob, nsteps=nt)
-diags = [E, D, I, R]
+W = Diagnostic(work,        prob, nsteps=nt)
+diags = [E, D, W, R]
 
 
 function makeplot(prob, diags)
 
   TwoDTurb.updatevars!(prob)
 
-  E, D, I, R = diags
+  E, D, W, R = diags
 
 
   t = round(μ*prob.state.t, 2)
@@ -67,21 +67,21 @@ function makeplot(prob, diags)
   ii = (i₀):E.count-1
   ii2 = (i₀+1):E.count
 
-  # dEdt = I - D - R?
+  # dEdt = W - D - R?
 
   # If the Ito interpretation was used for the work
   # then we need to add the drift term
-  # total = I[ii2]+σ - D[ii] - R[ii]      # Ito
-  total = I[ii2] - D[ii] - R[ii]        # Stratonovich
+  # total = W[ii2]+σ - D[ii] - R[ii]      # Ito
+  total = W[ii2] - D[ii] - R[ii]        # Stratonovich
 
 
   residual = dEdt - total
 
   # If the Ito interpretation was used for the work
   # then we need to add the drift term: I[ii2] + σ
-  plot(μ*E.time[ii], I[ii2], label=L"work ($P$)")   # Ito
-  # plot(μ*E.time[ii], I[ii2] , label=L"work ($P$)")      # Stratonovich
-  plot(μ*E.time[ii], σ+0*E.time[ii], "--", label=L"ensemble mean  work ($\langle P\rangle $)")
+  plot(μ*E.time[ii], W[ii2], label=L"work ($W$)")   # Ito
+  # plot(μ*E.time[ii], W[ii2] , label=L"work ($W$)")      # Stratonovich
+  plot(μ*E.time[ii], σ+0*E.time[ii], "--", label=L"ensemble mean  work ($\langle W\rangle $)")
   # plot(μ*E.time[ii], -D[ii], label="dissipation (\$D\$)")
   plot(μ*E.time[ii], -R[ii], label=L"drag ($D=2\mu E$)")
   plot(μ*E.time[ii], 0*E.time[ii], "k:", linewidth=0.5)
@@ -90,7 +90,7 @@ function makeplot(prob, diags)
   legend(fontsize=10)
 
   sca(axs[2]); cla()
-  plot(μ*E.time[ii], total[ii], label=L"computed $P-D$")
+  plot(μ*E.time[ii], total[ii], label=L"computed $W-D$")
   plot(μ*E.time[ii], dEdt, "--k", label=L"numerical $dE/dt$")
   ylabel(L"$dE/dt$")
   xlabel(L"$\mu t$")
@@ -122,8 +122,6 @@ for i = 1:ns
   res = makeplot(prob, diags)
   pause(0.01)
 
-  # @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s, mean(res) = %.3e\n",
-  #   prob.step, prob.t, cfl, tc, mean(res))
   @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n",
     prob.step, prob.t, cfl, tc)
 
@@ -136,5 +134,5 @@ end
 
 # savediagnostic(E, "energy", out.filename)
 # savediagnostic(D, "dissipation", out.filename)
-# savediagnostic(I, "injection", out.filename)
+# savediagnostic(W, "work", out.filename)
 # savediagnostic(R, "drag", out.filename)
