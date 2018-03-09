@@ -121,7 +121,7 @@ function Vars(g::TwoDGrid)
 end
 
 # Construct Vars type for forced two-dimensional turbulence
-forcedtransvars = [:qh, :Uh, :Vh, :psih, :F]
+forcedtransvars = [:qh, :Uh, :Vh, :psih, :Fh, :prevsol]
 expr = FourierFlows.structvarsexpr(:ForcedVars, physvars, forcedtransvars)
 eval(expr)
 
@@ -133,8 +133,8 @@ Returns the vars for unforced two-dimensional turbulence with grid g.
 """
 function ForcedVars(g::TwoDGrid)
   @createarrays Float64 (g.nx, g.ny) q U V psi
-  @createarrays Complex{Float64} (g.nkr, g.nl) sol qh Uh Vh psih F
-  ForcedVars(q, U, V, psi, qh, Uh, Vh, psih, F)
+  @createarrays Complex{Float64} (g.nkr, g.nl) qh Uh Vh psih Fh prevsol
+  ForcedVars(q, U, V, psi, qh, Uh, Vh, psih, Fh, prevsol)
 end
 
 
@@ -164,11 +164,12 @@ end
 function calcN_forced!(N::Array{Complex{Float64}, 2},
                 sol::Array{Complex{Float64}, 2}, t::Float64,
                 s::State, v::ForcedVars, p::ForcedParams, g::TwoDGrid)
-
   calcN_advection!(N, sol, t, s, v, p, g)
-  p.calcF!(v.F, sol, t, s, v, p, g)
-
-  @. N += v.F
+  if t == s.t # not a substep
+    v.prevsol .= s.sol    # this is used for computing energy/enstrophy budgets
+    p.calcF!(v.Fh, sol, t, s, v, p, g)
+  end
+  @. N += v.Fh
   nothing
 end
 
@@ -266,17 +267,18 @@ end
 end
 
 """
-    injection(s, v, p, g)
+    work(s, v, p, g)
 
-Returns the domain-averaged rate of injection of energy by the forcing F.
+Returns the domain-averaged rate of work of energy by the forcing Fh.
 """
-@inline function injection(s, v::ForcedVars, g)
-  @. v.Uh = g.invKKrsq * s.sol * conj(v.F)
+@inline function work(s, v::ForcedVars, g)
+  @. v.Uh = g.invKKrsq * (v.prevsol + s.sol)/2.0 * conj(v.Fh) # Stratonovich
+  # @. v.Uh = g.invKKrsq * v.prevsol * conj(v.Fh)               # Ito
   1/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uh, g)
 end
 
-@inline function injection(prob::AbstractProblem)
-  injection(prob.state, prob.vars, prob.grid)
+@inline function work(prob::AbstractProblem)
+  work(prob.state, prob.vars, prob.grid)
 end
 
 """

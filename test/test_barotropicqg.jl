@@ -56,6 +56,9 @@ dt, nsteps  = 1e-3, 200
 @test test_baroQG_RossbyWave("ETDRK4", dt, nsteps, g, p, v, eq)
 
 dt, nsteps  = 1e-3, 200
+@test test_baroQG_RossbyWave("FilteredETDRK4", dt, nsteps, g, p, v, eq)
+
+dt, nsteps  = 1e-3, 200
 @test test_baroQG_RossbyWave("RK4", dt, nsteps, g, p, v, eq)
 
 dt, nsteps  =1e-3, 200
