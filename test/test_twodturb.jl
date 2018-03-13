@@ -126,6 +126,75 @@ function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, ν=1e-7, nν
   isapprox(mean(abs.(residual)), 0, atol=1e-4)
 end
 
+
+
+# ISOTROPIC RING FORCING BUDGETS
+function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, ν=1e-7, nν=2,
+                                         μ = 1e-1, nμ = 0, message=false)
+
+  n, L  = 256, 2π
+  ν, nν = 1e-4, 1
+  μ, nμ = 0.0, 0
+  dt, tf = 0.005, 0.1/μ
+  nt = round(Int, tf/dt)
+  ns = 1
+
+  # Forcing
+  function calcF!(Fh, sol, t, s, v, p, g)
+    @. Fh = fft( 0.25*p.ν*(75*cos(g.Y) + 169*cos(3*g.Y))*sin(2*g.X)
+                                    - 23*cos(g.Y)^3*sin(4*g.X)*sin(g.Y) )
+ 
+    nothing
+  end
+
+  prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
+   stepper="RK4", calcF=calcF!)
+
+  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
+
+  TwoDTurb.set_q!(prob, 0*g.X)
+  E = Diagnostic(energy,      prob, nsteps=nt)
+  D = Diagnostic(dissipation, prob, nsteps=nt)
+  R = Diagnostic(drag,        prob, nsteps=nt)
+  W = Diagnostic(work,        prob, nsteps=nt)
+  diags = [E, D, W, R]
+
+  # Step forward
+
+  stepforward!(prob, diags, round(Int, nt))
+
+  TwoDTurb.updatevars!(prob)
+
+  cfl = prob.ts.dt*maximum(
+    [maximum(v.V)/g.dx, maximum(v.U)/g.dy])
+
+  E, D, W, R = diags
+
+  t = round(μ*prob.state.t, 2)
+
+  i₀ = 1
+  dEdt = (E[(i₀+1):E.count] - E[i₀:E.count-1])/prob.ts.dt
+  ii = (i₀):E.count-1
+  ii2 = (i₀+1):E.count
+
+  # dEdt = W - D - R?
+  # If the Ito interpretation was used for the work
+  # then we need to add the drift term
+  # total = W[ii2]+σ - D[ii] - R[ii]      # Ito
+  total = W[ii2] - D[ii] - R[ii]        # Stratonovich
+
+  residual = dEdt - total
+
+
+
+  if message
+    @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n",
+            prob.step, prob.t, cfl, tc)
+  end
+  # println(mean(abs.(residual)))
+  isapprox(mean(abs.(residual)), 0, atol=1e-4)
+end
+
 # -----------------------------------------------------------------------------
 # Running the tests
 
