@@ -132,8 +132,8 @@ end
 function testnonlinearterms( dt, stepper; n = 128, L=2π, ν=1e-2, nν=1,
                                    μ = 0.0, nμ = 0, message=false)
 
-# This tests the nonlinear terms in the twodturb module; it works as follows
-# assume a solution ψ_guess for the unforced case. Then we insert the solution
+# This tests the nonlinear terms in the twodturb module; it works as follows:
+# Assume a solution ψ_guess for the unforced case. Then insert the solution
 # in the equation and compute the remainder analytically, e.g.:
 # remainder = -(∂ζ_guess/∂t + J(ψ_guess, ζ_guess) - νΔζ_guess)
 # Finally we use remainder as forcing. Then ζ_guess should be a solution of
