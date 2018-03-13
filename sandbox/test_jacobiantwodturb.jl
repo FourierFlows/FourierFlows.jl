@@ -2,20 +2,27 @@ using PyPlot, FourierFlows
 import FourierFlows.TwoDTurb
 import FourierFlows.TwoDTurb: energy, enstrophy, dissipation, work, drag
 
+# This tests the nonlinear terms in the twodturb module; it works as follows
+# assume a solution ψ_guess for the unforced case. Then we insert the solution
+# in the equation and compute the remainder analytically, e.g.:
+# remainder = -(∂ζ_guess/∂t + J(ψ_guess, ζ_guess) - νΔζ_guess)
+# Finally we use remainder as forcing. Then ζ_guess should be a solution of
+# the forced problem.
+
 n, L  = 128, 2π
 ν, nν = 1e-2, 1
 μ, nμ = 0.0, 0
-dt, tf = 0.02, 250
+dt, tf = 0.005, 2
 nt = round(Int, tf/dt)
-ns = 40
+ns = 4
 
 gr  = TwoDGrid(n, L)
 
+x, y = gr.X, gr.Y
 
-remainder = -0.25*ν*(75.0*cos.(gr.Y) + 169.0*cos.(3*gr.Y)).*sin.(2*gr.X)- 12*cos.(gr.Y).^3.*sin.(4*gr.X).*sin.(gr.Y)
-
-# figure(3)
-# pcolormesh(gr.X, gr.Y, remainder)
+psi_guess = sin.(2x).*cos.(2y) + 2*sin.(x).*cos.(3y)
+q_guess = -8*sin.(2x).*cos.(2y) - 20*sin.(x).*cos.(3y)
+remainder = -ν*(64*sin.(2x).*cos.(2y) + 200*sin.(x).*cos.(3y))-8* (cos.(x).*cos.(3y).*sin.(2x).*sin.(2y)- 3cos.(2x).*cos.(2y).*sin.(x).*sin.(3y))
 
 remainderh = rfft(remainder);
 # Forcing
@@ -25,11 +32,11 @@ function calcF!(Fh, sol, t, s, v, p, g)
 end
 
 prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
-  stepper="ETDRK4", calcF=calcF!)
+  stepper="RK4", calcF=calcF!)
 
 s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
 
-TwoDTurb.set_q!(prob, 0*g.X)
+TwoDTurb.set_q!(prob, q_guess)
 E = Diagnostic(energy,      prob, nsteps=nt)
 D = Diagnostic(dissipation, prob, nsteps=nt)
 R = Diagnostic(drag,        prob, nsteps=nt)
@@ -47,12 +54,12 @@ function makeplot(prob, diags)
 
   t = round(prob.state.t, 2)
   sca(axs[1]); cla()
-  pcolormesh(x, y, prob.vars.q - (-0.5*cos.(y).*sin.(2x).*(1+13*cos.(2y)) ) )
+  pcolormesh(x, y, prob.vars.q - q_guess )
   xlabel(L"$x$")
   ylabel(L"$y$")
   title("\$\\nabla^2\\psi(x,y,\\mu t= $t )\$")
   axis("square")
-
+  clim(-1,1)
 
   sca(axs[3]); cla()
 
@@ -96,6 +103,18 @@ function makeplot(prob, diags)
 end
 
 fig, axs = subplots(ncols=2, nrows=2, figsize=(12, 8))
+
+TwoDTurb.updatevars!(prob)
+# saveoutput(out)
+
+cfl = prob.ts.dt*maximum(
+  [maximum(v.V)/g.dx, maximum(v.U)/g.dy])
+
+res = makeplot(prob, diags)
+sca(axs[1])
+clim(-1,1)
+pause(0.01)
+
 
 # Step forward
 for i = 1:ns

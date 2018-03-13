@@ -128,71 +128,60 @@ end
 
 
 
-# ISOTROPIC RING FORCING BUDGETS
-function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, ν=1e-7, nν=2,
-                                         μ = 1e-1, nμ = 0, message=false)
+# TEST NONLINEAR TERMS
+function testnonlinearterms( dt, stepper; n = 128, L=2π, ν=1e-2, nν=1,
+                                   μ = 0.0, nμ = 0, message=false)
 
-  n, L  = 256, 2π
-  ν, nν = 1e-4, 1
+# This tests the nonlinear terms in the twodturb module; it works as follows
+# assume a solution ψ_guess for the unforced case. Then we insert the solution
+# in the equation and compute the remainder analytically, e.g.:
+# remainder = -(∂ζ_guess/∂t + J(ψ_guess, ζ_guess) - νΔζ_guess)
+# Finally we use remainder as forcing. Then ζ_guess should be a solution of
+# the forced problem.
+
+  n, L  = 128, 2π
+  ν, nν = 1e-2, 1
   μ, nμ = 0.0, 0
-  dt, tf = 0.005, 0.1/μ
+  tf = 1.0
   nt = round(Int, tf/dt)
-  ns = 1
 
+  gr  = TwoDGrid(n, L)
+
+  x, y = gr.X, gr.Y
+
+  psi_guess = sin.(2x).*cos.(2y) + 2*sin.(x).*cos.(3y)
+  q_guess = -8*sin.(2x).*cos.(2y) - 20*sin.(x).*cos.(3y)
+
+  remainder = -ν*(64*sin.(2x).*cos.(2y) + 200*sin.(x).*cos.(3y))-8* (cos.(x).*cos.(3y).*sin.(2x).*sin.(2y)- 3cos.(2x).*cos.(2y).*sin.(x).*sin.(3y))
+
+  remainderh = rfft(remainder);
   # Forcing
   function calcF!(Fh, sol, t, s, v, p, g)
-    @. Fh = fft( 0.25*p.ν*(75*cos(g.Y) + 169*cos(3*g.Y))*sin(2*g.X)
-                                    - 23*cos(g.Y)^3*sin(4*g.X)*sin(g.Y) )
- 
+     Fh .= remainderh
     nothing
   end
 
   prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
-   stepper="RK4", calcF=calcF!)
+    stepper=stepper, calcF=calcF!)
 
   s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
 
-  TwoDTurb.set_q!(prob, 0*g.X)
-  E = Diagnostic(energy,      prob, nsteps=nt)
-  D = Diagnostic(dissipation, prob, nsteps=nt)
-  R = Diagnostic(drag,        prob, nsteps=nt)
-  W = Diagnostic(work,        prob, nsteps=nt)
-  diags = [E, D, W, R]
+  TwoDTurb.set_q!(prob, q_guess)
 
   # Step forward
-
-  stepforward!(prob, diags, round(Int, nt))
-
+  stepforward!(prob, round(Int, nt))
   TwoDTurb.updatevars!(prob)
 
   cfl = prob.ts.dt*maximum(
     [maximum(v.V)/g.dx, maximum(v.U)/g.dy])
 
-  E, D, W, R = diags
-
-  t = round(μ*prob.state.t, 2)
-
-  i₀ = 1
-  dEdt = (E[(i₀+1):E.count] - E[i₀:E.count-1])/prob.ts.dt
-  ii = (i₀):E.count-1
-  ii2 = (i₀+1):E.count
-
-  # dEdt = W - D - R?
-  # If the Ito interpretation was used for the work
-  # then we need to add the drift term
-  # total = W[ii2]+σ - D[ii] - R[ii]      # Ito
-  total = W[ii2] - D[ii] - R[ii]        # Stratonovich
-
-  residual = dEdt - total
-
-
-
   if message
     @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n",
             prob.step, prob.t, cfl, tc)
   end
-  # println(mean(abs.(residual)))
-  isapprox(mean(abs.(residual)), 0, atol=1e-4)
+
+  # println(norm(v.q - q_guess)/norm(q_guess))
+  isapprox(norm(v.q - q_guess)/norm(q_guess), 0, atol=1e-13)
 end
 
 # -----------------------------------------------------------------------------
@@ -202,3 +191,12 @@ end
 @test lambdipoletest(256, 1e-3)
 
 @test stochasticforcingbudgetstest()
+
+@test testnonlinearterms(0.0005, "ForwardEuler")
+@test testnonlinearterms(0.001, "FilteredForwardEuler")
+@test testnonlinearterms(0.001, "AB3")
+@test testnonlinearterms(0.002, "FilteredAB3")
+@test testnonlinearterms(0.005, "RK4")
+@test testnonlinearterms(0.01, "FilteredRK4")
+@test testnonlinearterms(0.005, "ETDRK4")
+@test testnonlinearterms(0.01, "FilteredETDRK4")
