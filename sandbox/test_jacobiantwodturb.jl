@@ -2,12 +2,13 @@ using PyPlot, FourierFlows
 import FourierFlows.TwoDTurb
 import FourierFlows.TwoDTurb: energy, enstrophy, dissipation, work, drag
 
-# This tests the nonlinear terms in the twodturb module; it works as follows
-# assume a solution ψ_guess for the unforced case. Then we insert the solution
-# in the equation and compute the remainder analytically, e.g.:
-# remainder = -(∂ζ_guess/∂t + J(ψ_guess, ζ_guess) - νΔζ_guess)
-# Finally we use remainder as forcing. Then ζ_guess should be a solution of
-# the forced problem.
+# Tests the advection term in the twodturb module by timestepping a
+# test problem with timestep dt and timestepper identified by the string stepper.
+# The test problem is derived by picking a solution ζf (with associated
+# streamfunction ψf) for which the advection term J(ψf, ζf) is non-zero. Next, a
+# forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - νΔζf. One solution
+# to the vorticity equation forced by this Ff is then ζf. (This solution may not
+# be realized, at least at long times, if it is unstable.)
 
 n, L  = 128, 2π
 ν, nν = 1e-2, 1
