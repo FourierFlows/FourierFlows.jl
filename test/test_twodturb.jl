@@ -127,17 +127,19 @@ function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, ν=1e-7, nν
 end
 
 
+"""
+    testnonlinearterms(dt, stepper; kwargs...)
 
-# TEST NONLINEAR TERMS
-function testnonlinearterms( dt, stepper; n = 128, L=2π, ν=1e-2, nν=1,
-                                   μ = 0.0, nμ = 0, message=false)
-
-# This tests the nonlinear terms in the twodturb module; it works as follows:
-# Assume a solution ψ_guess for the unforced case. Then insert the solution
-# in the equation and compute the remainder analytically, e.g.:
-# remainder = -(∂ζ_guess/∂t + J(ψ_guess, ζ_guess) - νΔζ_guess)
-# Finally use remainder as forcing. Then ζ_guess should be a solution of
-# the forced problem.
+Tests the advection term in the twodturb module by timestepping a
+test problem with timestep dt and timestepper identified by the string stepper.
+The test problem is derived by picking a solution ζf (with associated streamfunction ψf) 
+for which the advection term J(ψf, ζf) is non-zero. Next, a forcing Ff is derived
+according to Ff = ∂ζf/∂t + J(ψf, ζf) - νΔζf. One solution to the vorticity
+equation forced by this Ff is then ζf (this solution may not be realized, 
+at least at long times, if it is unstable).
+"""
+function testnonlinearterms(dt, stepper; n=128, L=2π, ν=1e-2, nν=1,
+                                         μ=0.0, nμ=0, message=false)
 
   n, L  = 128, 2π
   ν, nν = 1e-2, 1
@@ -149,24 +151,28 @@ function testnonlinearterms( dt, stepper; n = 128, L=2π, ν=1e-2, nν=1,
 
   x, y = gr.X, gr.Y
 
-  psi_guess = sin.(2x).*cos.(2y) + 2*sin.(x).*cos.(3y)
-  q_guess = -8*sin.(2x).*cos.(2y) - 20*sin.(x).*cos.(3y)
+  psif = @. sin(2x)*cos(2y) + 2sin(x)*cos(3y)
+  qf = @. -8sin(2x)*cos(2y) - 20sin(x)*cos(3y)
 
-  remainder = -ν*(64*sin.(2x).*cos.(2y) + 200*sin.(x).*cos.(3y))-8* (cos.(x).*cos.(3y).*sin.(2x).*sin.(2y)- 3cos.(2x).*cos.(2y).*sin.(x).*sin.(3y))
+  Ff = @. -( 
+    ν*( 64sin(2x)*cos(2y) + 200sin(x)*cos(3y) ) 
+    + 8*( cos(x)*cos(3y)*sin(2x)*sin(2y) - 3cos(2x)*cos(2y)*sin(x)*sin(3y) )
+  )
 
-  remainderh = rfft(remainder);
+  Ffh = rfft(Ff)
+  
   # Forcing
   function calcF!(Fh, sol, t, s, v, p, g)
-     Fh .= remainderh
+    Fh .= Ffh
     nothing
   end
 
   prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
     stepper=stepper, calcF=calcF!)
 
-  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
+  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
 
-  TwoDTurb.set_q!(prob, q_guess)
+  TwoDTurb.set_q!(prob, qf)
 
   # Step forward
   stepforward!(prob, round(Int, nt))
@@ -180,18 +186,11 @@ function testnonlinearterms( dt, stepper; n = 128, L=2π, ν=1e-2, nν=1,
             prob.step, prob.t, cfl, tc)
   end
 
-  # println(norm(v.q - q_guess)/norm(q_guess))
-  isapprox(norm(v.q - q_guess)/norm(q_guess), 0, atol=1e-13)
+  # println(norm(v.q - qf)/norm(qf))
+  isapprox(norm(v.q - qf)/norm(qf), 0, atol=1e-13)
 end
 
-# -----------------------------------------------------------------------------
-# Running the tests
-
-
-@test lambdipoletest(256, 1e-3)
-
-@test stochasticforcingbudgetstest()
-
+# Run the tests
 @test testnonlinearterms(0.0005, "ForwardEuler")
 @test testnonlinearterms(0.001, "FilteredForwardEuler")
 @test testnonlinearterms(0.001, "AB3")
@@ -200,3 +199,4 @@ end
 @test testnonlinearterms(0.01, "FilteredRK4")
 @test testnonlinearterms(0.005, "ETDRK4")
 @test testnonlinearterms(0.01, "FilteredETDRK4")
+@test stochasticforcingbudgetstest()
