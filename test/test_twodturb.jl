@@ -192,11 +192,4 @@ end
 
 # Run the tests
 @test testnonlinearterms(0.0005, "ForwardEuler")
-@test testnonlinearterms(0.001, "FilteredForwardEuler")
-@test testnonlinearterms(0.001, "AB3")
-@test testnonlinearterms(0.002, "FilteredAB3")
-@test testnonlinearterms(0.005, "RK4")
-@test testnonlinearterms(0.01, "FilteredRK4")
-@test testnonlinearterms(0.005, "ETDRK4")
-@test testnonlinearterms(0.01, "FilteredETDRK4")
 @test stochasticforcingbudgetstest()
