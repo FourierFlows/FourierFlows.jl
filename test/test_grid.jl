@@ -1,6 +1,12 @@
 # -----------------------------------------------------------------------------
 # X-Y GRID TEST FUNCTIONS
 
+"Tests that grid spacing is as specified."
+function testdx(g)
+  sum(abs.(g.x[2:end]-g.x[1:end-1])-(g.nx-1)*g.dx) < 1e-15*g.nx
+end
+  
+
 function testXgrid(g)
     # test if the X grid is actually created
     maximum(abs.(g.X)) > 1e-10
@@ -104,14 +110,20 @@ end
 # -----------------------------------------------------------------------------
 # Running the tests
 
-# Test square grid
-nx = 32               # number of points
-Lx = 2.0π             # Domain width
-g = TwoDGrid(nx, Lx)
+# Test 1d grid
+nx = 32
+Lx = 2π
+g1 = OneDGrid(nx, Lx)
 
+@test testdx(g1)
 
-@test testXgrid(g)
-@test testYgrid(g)
-@test testKgrid(g)
-@test testKrgrid(g)
-@test testLgrid(g)
+# Test 2d grid
+nx = 32  # number of points
+Lx = 2π  # Domain width
+g2 = TwoDGrid(nx, Lx)
+
+@test testXgrid(g2)
+@test testYgrid(g2)
+@test testKgrid(g2)
+@test testKrgrid(g2)
+@test testLgrid(g2)
