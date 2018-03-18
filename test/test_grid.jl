@@ -1,129 +1,43 @@
-# -----------------------------------------------------------------------------
-# X-Y GRID TEST FUNCTIONS
+# Physical grid tests
+testdx(g) = abs(sum(g.x[2:end].-g.x[1:end-1]) - (g.nx-1)*g.dx) < 1e-15*(g.nx-1)
+testdy(g) = abs(sum(g.y[2:end].-g.y[1:end-1]) - (g.ny-1)*g.dy) < 1e-15*(g.nx-1)
 
-"Tests that grid spacing is as specified."
-function testdx(g)
-  sum(abs.(g.x[2:end]-g.x[1:end-1])-(g.nx-1)*g.dx) < 1e-15*g.nx
-end
-  
+testx(g) = g.x[end]-g.x[1] == g.Lx-g.dx
+testy(g) = g.y[end]-g.y[1] == g.Ly-g.dy
 
-function testXgrid(g)
-    # test if the X grid is actually created
-    maximum(abs.(g.X)) > 1e-10
-end
+testX(g) = sum(g.X[end, :].-g.X[1, :]) - (g.Lx-g.dx)*g.ny < 1e-15*g.ny
+testY(g) = sum(g.Y[:, end].-g.Y[:, 1]) - (g.Ly-g.dy)*g.nx < 1e-15*g.nx
 
-function testYgrid(g)
-    # test if the Y grid is actually created
-    maximum(abs.(g.Y)) > 1e-10
-end
+# Test proper arrangement of fft wavenumbers
+testk(g) = sum(g.k[2:g.nkr-1] .+ flipdim(g.k[g.nkr+1:end], 1)) == 0.0
+testl(g::OneDGrid) = sum(g.l[2:g.nkr-1] .+ flipdim(g.l[g.nkr+1:end], 1)) == 0.0
+testl(g::TwoDGrid) = sum(g.l[2:g.nkr-1] .+ flipdim(g.l[g.nkr+1:end], 2)) == 0.0
 
-# -----------------------------------------------------------------------------
-# K-L GRID TEST FUNCTIONS
-function testKgrid(g)
-    test = 0
-    for i in 1:g.nk
-      test += abs(maximum(g.K[i, :])-minimum(g.K[i, :]));
-    end
-    test<1e-12  #if true K grid is oriented correctly
-end
+testkr(g) = sum(g.k[1:g.nkr] .- g.kr) == 0.0
 
-function testKrgrid(g)
-    test = 0
-    for i in 1:g.nkr
-      test += abs(maximum(g.Kr[i, :])-minimum(g.Kr[i, :]));
-    end
-    test<1e-12  #if true Kr grid is oriented correctly
-end
-
-function testLgrid(g)
-    test = 0
-    for i in 1:g.nl
-      test += abs(maximum(g.L[:, i])-minimum(g.L[:, i]));
-    end
-    test<1e-12  #if true L grid is oriented correctly
-end
-
-# -----------------------------------------------------------------------------
-
-function create_testfuncs(g)
-    if nx/2<=4
-        error("asdf")
-    end
-
-    m = 5;
-    n = 2;
-
-    # the fundumental wavenumbers for this particular grid
-    k0 = g.k[2, 1]
-    l0 = g.l[1, 2]
-
-    # some test functions
-    f1   = cos.(m*k0*g.X).*cos.(n*l0*g.Y);
-    f2   = sin.(m*k0*g.X + n*l0*g.Y);
-    # and their fft's and rfft's
-    f1h  = fft(f1);
-    f2h  = fft(f2);
-    f1hr = rfft(f1);
-    f2hr = rfft(f2);
-
-    f1hr_mul = Array{Complex128}(g.nkr, g.nl)
-    A_mul_B!( f1hr_mul, g.rfftplan, f1 )
-
-    f2hr_mul = Array{Complex128}(g.nkr, g.nl)
-    A_mul_B!( f2hr_mul, g.rfftplan, f2 )
-
-    ############################################################################
-    # the theoretical values of the fft's and rfft's
-    f1h_th   = zeros(size(f1h));  f2h_th   = zeros(size(f2h));
-    f1hr_th  = zeros(size(f1hr)); f2hr_th  = zeros(size(f2hr));
-
-    for j in 1:g.nl, i in 1:g.nk
-      if ( abs(real(g.K[i, j])) == m*k0 && abs(real(g.L[i, j])) == n*l0 )
-        f1h_th[i, j] = - g.nx*g.ny/4
-      end
-      if ( real(g.K[i, j]) == m*k0 && real(g.L[i, j]) == n*l0 )
-        f2h_th[i, j] = -g.nx*g.ny/2
-      elseif ( real(g.K[i, j]) == -m*k0 && real(g.L[i, j]) == -n*l0 )
-        f2h_th[i, j] = g.nx*g.ny/2
-      end
-    end
-    f2h_th = -im*f2h_th;
-
-    for j in 1:g.nl, i in 1:g.nkr
-      if ( abs(g.Kr[i, j])==m*k0 && abs(g.L[i, j])==n*l0 )
-        f1hr_th[i, j] = - g.nx*g.ny/4
-      end
-      if ( real(g.Kr[i, j]) == m*k0 && real(g.L[i, j]) == n*l0 )
-        f2hr_th[i, j] = -g.nx*g.ny/2
-      elseif ( real(g.Kr[i, j]) == -m*k0 && real(g.L[i, j]) == -n*l0 )
-        f2hr_th[i, j] = g.nx*g.ny/2
-      end
-    end
-    f2hr_th = -im*f2hr_th;
-    ############################################################################
-
-    return f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mul, f2hr_mul,
-            f1h_th, f1hr_th, f2h_th, f2hr_th
-end
-
-
-# -----------------------------------------------------------------------------
-# Running the tests
+testK(g) = sum(g.K[2:g.nkr-1, :] .+ flipdim(g.K[g.nkr+1:end, :], 1)) == 0.0
+testL(g) = sum(g.L[:, 2:Int(g.ny/2)] .+ flipdim(g.L[:, Int(g.ny/2+2):end], 2)) == 0.0
+testKr(g) = sum(g.K[1:g.nkr, :] .- g.Kr) == 0.0
+testLr(g) = sum(g.L[1:g.nkr, :] .- g.Lr) == 0.0
 
 # Test 1d grid
-nx = 32
-Lx = 2π
-g1 = OneDGrid(nx, Lx)
+g1 = OneDGrid(32, 2π)
 
 @test testdx(g1)
+@test testx(g1)
+@test testk(g1)
+@test testkr(g1)
 
-# Test 2d grid
-nx = 32  # number of points
-Lx = 2π  # Domain width
-g2 = TwoDGrid(nx, Lx)
+# Test 2d anisotropic grid
+g2 = TwoDGrid(32, 2π, 24, 4π)
 
-@test testXgrid(g2)
-@test testYgrid(g2)
-@test testKgrid(g2)
-@test testKrgrid(g2)
-@test testLgrid(g2)
+@test testdx(g2)
+@test testdy(g2)
+@test testx(g2)
+@test testy(g2)
+@test testX(g2)
+@test testY(g2)
+@test testK(g2)
+@test testL(g2)
+@test testKr(g2)
+@test testLr(g2)
