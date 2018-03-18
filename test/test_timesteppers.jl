@@ -21,7 +21,7 @@ We integrate a random IC from 0 to t=tf.
 The amplitude of the initial condition is kept low (e.g. multiplied by 1e-5)
 so that nonlinear terms do not come into play. This way we can compare the final
 state qh(t=tf) with qh(t=0)*exp(-ν k^nν tf).
-We choose to linear drag (nν=0) so that we can test the energy since in that
+We choose linear drag (nν=0) so that we can test the energy since in that
 case E(t=tf) = E(t=0)*exp(-2ν tf).
 """
 function testtwodturbstepforward(n=64, L=2π, ν=1e-2, nν=0;
@@ -67,7 +67,6 @@ end
 # Run the tests
 n = 64
 tf = 0.2
-
 
 for (stepper, steps) in steppersteps
   @test testtwodturbstepforward(n; stepper=stepper, nsteps=steps)
