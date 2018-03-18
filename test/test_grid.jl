@@ -20,7 +20,7 @@ testL(g) = sum(g.L[:, 2:Int(g.ny/2)] .+ flipdim(g.L[:, Int(g.ny/2+2):end], 2)) =
 testKr(g) = sum(g.K[1:g.nkr, :] .- g.Kr) == 0.0
 testLr(g) = sum(g.L[1:g.nkr, :] .- g.Lr) == 0.0
 
-# Test 1d grid
+# Test 1D grid
 g1 = OneDGrid(32, 2π)
 
 @test testdx(g1)
@@ -28,7 +28,7 @@ g1 = OneDGrid(32, 2π)
 @test testk(g1)
 @test testkr(g1)
 
-# Test 2d anisotropic grid
+# Test 2D rectangular grid
 g2 = TwoDGrid(32, 2π, 24, 4π)
 
 @test testdx(g2)

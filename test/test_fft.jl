@@ -88,7 +88,11 @@ function create_testfuncs(g::TwoDGrid)
       f1h_th, f1hr_th, f2h_th, f2hr_th
 end
 
+# -----------------------------------------------------------------------------
+# FFT's TEST FUNCTIONS
+
 tolerance = 1e-12
+
 function test_fft_cosmx(g::OneDGrid)
     f1, f1h, f1hr, f1hr_mul, f1h_th, f1hr_th = create_testfuncs(g)
     norm(f1h-f1h_th)/norm(f1h_th) < tolerance
@@ -140,14 +144,14 @@ function test_rfft_AmulB_sinmxny(g::TwoDGrid)
     norm(f2hr_mul-f2hr_th)/norm(f2hr_th) < tolerance
 end
 
-# Test square grid
-nx = 32 # number of points
-Lx = 2π # domain width
+# Test 1D grid
+nx = 32             # number of points
+Lx = 2π             # Domain width
 g1 = OneDGrid(nx, Lx)
 
-# Test square grid
-nx, ny = 32, 64 # number of points
-Lx, Ly = 2π, 3π # domain width
+# Test 2D rectangular grid
+nx, ny = 32, 64     # number of points
+Lx, Ly = 2π, 3π     # Domain width
 g2 = TwoDGrid(nx, Lx, ny, Ly)
 
 @test test_fft_cosmx(g1)
