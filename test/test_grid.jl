@@ -5,7 +5,7 @@
 function testdx(g)
   sum(abs.(g.x[2:end]-g.x[1:end-1])-(g.nx-1)*g.dx) < 1e-15*g.nx
 end
-  
+
 
 function testXgrid(g)
     # test if the X grid is actually created
@@ -45,9 +45,56 @@ end
 
 # -----------------------------------------------------------------------------
 
-function create_testfuncs(g)
+function create_testfuncs1D(g::OneDGrid)
     if nx/2<=4
-        error("asdf")
+        error("please create a larger grid for the tests")
+    end
+
+    m = 5
+
+    # the fundumental wavenumbers for this particular grid
+    k0 = g.k[2]
+
+    # some test functions
+    φ = π/3
+    f1   = cos.(m*k0*g.x + φ)
+    # and their fft's and rfft's
+    f1h  = fft(f1)
+    # f2h  = fft(f2);
+    f1hr = rfft(f1)
+    # f2hr = rfft(f2);
+
+    f1hr_mul = Array{Complex128}(g.nkr)
+    A_mul_B!( f1hr_mul, g.rfftplan, f1 )
+
+    # f2hr_mul = Array{Complex128}(g.nkr)
+    # A_mul_B!( f2hr_mul, g.rfftplan, f2 )
+
+    ############################################################################
+    # the theoretical values of the fft's and rfft's
+    f1h_th   = zeros(Complex{Float64}, size(f1h))
+    f1hr_th  = zeros(Complex{Float64}, size(f1hr))
+
+    for i in 1:g.nk
+      if abs(real(g.k[i])) == m*k0
+        f1h_th[i] = -exp(sign(real(g.k[i]))*im*φ)*g.nx/2
+      end
+    end
+
+    for i in 1:g.nkr
+      if abs(real(g.k[i]))==m*k0
+        f1hr_th[i] = -exp(sign(real(g.kr[i]))*im*φ)*g.nx/2
+      end
+    end
+    ############################################################################
+
+    return f1, f1h, f1hr, f1hr_mul, f1h_th, f1hr_th
+end
+
+
+function create_testfuncs2D(g::TwoDGrid)
+    if nx/2<=4
+        error("please create a larger grid for the tests")
     end
 
     m = 5;
@@ -74,8 +121,10 @@ function create_testfuncs(g)
 
     ############################################################################
     # the theoretical values of the fft's and rfft's
-    f1h_th   = zeros(size(f1h));  f2h_th   = zeros(size(f2h));
-    f1hr_th  = zeros(size(f1hr)); f2hr_th  = zeros(size(f2hr));
+    f1h_th   = zeros(Complex{Float64}, size(f1h))
+    f2h_th   = zeros(Complex{Float64}, size(f2h))
+    f1hr_th  = zeros(Complex{Float64}, size(f1hr))
+    f2hr_th  = zeros(Complex{Float64}, size(f2hr))
 
     for j in 1:g.nl, i in 1:g.nk
       if ( abs(real(g.K[i, j])) == m*k0 && abs(real(g.L[i, j])) == n*l0 )
