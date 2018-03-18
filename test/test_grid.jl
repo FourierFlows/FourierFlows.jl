@@ -55,20 +55,15 @@ function create_testfuncs1D(g::OneDGrid)
     # the fundumental wavenumbers for this particular grid
     k0 = g.k[2]
 
-    # some test functions
+    # a test function
     φ = π/3
     f1   = cos.(m*k0*g.x + φ)
-    # and their fft's and rfft's
+    # and its fft's and rfft's
     f1h  = fft(f1)
-    # f2h  = fft(f2);
     f1hr = rfft(f1)
-    # f2hr = rfft(f2);
 
     f1hr_mul = Array{Complex128}(g.nkr)
     A_mul_B!( f1hr_mul, g.rfftplan, f1 )
-
-    # f2hr_mul = Array{Complex128}(g.nkr)
-    # A_mul_B!( f2hr_mul, g.rfftplan, f2 )
 
     ############################################################################
     # the theoretical values of the fft's and rfft's
