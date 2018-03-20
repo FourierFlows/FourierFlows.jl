@@ -116,8 +116,6 @@ function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, ν=1e-7, nν
 
   residual = dEdt - total
 
-
-
   if message
     @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n",
             prob.step, prob.t, cfl, tc)
@@ -126,10 +124,6 @@ function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, ν=1e-7, nν
   isapprox(mean(abs.(residual)), 0, atol=1e-4)
 end
 
-# -----------------------------------------------------------------------------
-# Running the tests
-
-
+# Run the tests
 @test lambdipoletest(256, 1e-3)
-
 @test stochasticforcingbudgetstest()

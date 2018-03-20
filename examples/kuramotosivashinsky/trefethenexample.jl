@@ -1,33 +1,27 @@
 using FourierFlows, FourierFlows.KuramotoSivashinsky, PyPlot
 
-nx = 256
+nx = 512
 Lx = 32π
-dt = 0.01
-nt = 20000
+dt = 0.1
+nt = 2000
 prob = InitialValueProblem(nx=nx, Lx=Lx, dt=dt, stepper="ETDRK4")
 
 x = prob.grid.x
 u0 = @. cos(x/16) * (1 + sin(x/16))
 set_u!(prob, u0)
 
-sub = 10
-T = [ dt*j for i=1:nx, j=sub:sub:nt ]
-X = [ x[i] for i=1:nx, j=sub:sub:nt ]
+T = [ dt*j for i=1:nx, j=1:nt ]
+X = [ x[i] for i=1:nx, j=1:nt ]
+u = zeros(nx, nt)
 
-u = zeros(nx, round(Int, nt/sub))
-
-count = 1
 for i = 1:nt
-  println(i)
   stepforward!(prob)
   updatevars!(prob)
-  if i % sub == 0
-    u[:, count] .= prob.vars.u
-    count += 1
-  end
+  u[:, i] .= prob.vars.u
 end
 
 close("all")
-fig, ax = subplots()
-pcolormesh(X, T, u)
+fig, ax = subplots(figsize=(6, 8))
+pcolormesh(X/2π, T, u)
+ax[:tick_params](bottom=false, left=false, labelbottom=false, labelleft=false)
 show()

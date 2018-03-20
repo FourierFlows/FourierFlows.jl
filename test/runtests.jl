@@ -43,5 +43,8 @@ end
     include("test_barotropicqg.jl")
 end
 
+@testset "Physics: Kuramoto-Sivashinsky" begin
+    include("test_kuramotosivashinsky.jl")
+end
 
 println("Total test time: ", toq())
