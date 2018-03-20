@@ -1,4 +1,4 @@
-using FourierFlows, FourierFlows.KuramotoSivashinsky, PyPlot
+using FourierFlows, FourierFlows.KuramotoSivashinsky
 
 function growingwavetest()
   nx, Lx = 256, 4π
@@ -10,7 +10,7 @@ function growingwavetest()
   a = 1e-4
   u0 = @. a*cos(x/2)
   ua(x, t) = a*exp(3t/16)*cos(x/2) + a^2*2/3*(exp(3t/8)-1)*sin(x)
-  set_u!(prob, u0) 
+  set_u!(prob, u0)
 
   stepforward!(prob, nt)
   updatevars!(prob)
