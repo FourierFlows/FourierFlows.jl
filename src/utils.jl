@@ -166,7 +166,6 @@ function lambdipole(Ue::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
   end
 
   # Wavenumber corresponding to radius R and the first bessel func zero.
-  # k = 3.8317 / R
   k = 3.8317059702075123156 / R
   q0 = -2*Ue*k/SpecialFunctions.besselj(0, k*R)
 

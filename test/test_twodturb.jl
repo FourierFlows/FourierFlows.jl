@@ -1,13 +1,10 @@
 import FourierFlows.TwoDTurb
 import FourierFlows.TwoDTurb: energy, enstrophy, dissipation, work, drag
 
-# -----------------------------------------------------------------------------
-# TWODTURB's TEST FUNCTIONS
-
 cfl(prob) = maximum([maximum(abs.(prob.vars.U)), maximum(abs.(prob.vars.V))]*
               prob.ts.dt/prob.grid.dx)
 
-# LAMB DIPOLE TEST
+# Lamb dipole test
 function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, ν=0, nν=1, ti=L/Ue*0.01,
   nm=3, message=false)
 
@@ -124,6 +121,69 @@ function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, ν=1e-7, nν
   isapprox(mean(abs.(residual)), 0, atol=1e-4)
 end
 
+"""
+    testnonlinearterms(dt, stepper; kwargs...)
+
+Tests the advection term in the twodturb module by timestepping a
+test problem with timestep dt and timestepper identified by the string stepper.
+The test problem is derived by picking a solution ζf (with associated
+streamfunction ψf) for which the advection term J(ψf, ζf) is non-zero. Next, a
+forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - νΔζf. One solution
+to the vorticity equation forced by this Ff is then ζf. (This solution may not
+be realized, at least at long times, if it is unstable.)
+"""
+function testnonlinearterms(dt, stepper; n=128, L=2π, ν=1e-2, nν=1,
+                                         μ=0.0, nμ=0, message=false)
+
+  n, L  = 128, 2π
+  ν, nν = 1e-2, 1
+  μ, nμ = 0.0, 0
+  tf = 1.0
+  nt = round(Int, tf/dt)
+
+  gr  = TwoDGrid(n, L)
+
+  x, y = gr.X, gr.Y
+
+  psif = @. sin(2x)*cos(2y) + 2sin(x)*cos(3y)
+  qf = @. -8sin(2x)*cos(2y) - 20sin(x)*cos(3y)
+
+  Ff = @. -(
+    ν*( 64sin(2x)*cos(2y) + 200sin(x)*cos(3y) )
+    + 8*( cos(x)*cos(3y)*sin(2x)*sin(2y) - 3cos(2x)*cos(2y)*sin(x)*sin(3y) )
+  )
+
+  Ffh = rfft(Ff)
+
+  # Forcing
+  function calcF!(Fh, sol, t, s, v, p, g)
+    Fh .= Ffh
+    nothing
+  end
+
+  prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
+    stepper=stepper, calcF=calcF!)
+
+  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
+
+  TwoDTurb.set_q!(prob, qf)
+
+  # Step forward
+  stepforward!(prob, round(Int, nt))
+  TwoDTurb.updatevars!(prob)
+
+  cfl = prob.ts.dt*maximum(
+    [maximum(v.V)/g.dx, maximum(v.U)/g.dy])
+
+  if message
+    @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n",
+            prob.step, prob.t, cfl, tc)
+  end
+
+  isapprox(norm(v.q - qf)/norm(qf), 0, atol=1e-13)
+end
+
 # Run the tests
+@test testnonlinearterms(0.0005, "ForwardEuler")
 @test lambdipoletest(256, 1e-3)
 @test stochasticforcingbudgetstest()
