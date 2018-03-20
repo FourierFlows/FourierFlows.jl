@@ -29,15 +29,13 @@ Returns a time-stepper type defined by the prefix 'stepper', timestep dt
 solution sol (used to construct variables with identical type and size as
 the solution vector), and grid g.
 """
-function autoconstructtimestepper(stepper, dt, sol,
-                                  g::AbstractGrid=ZeroDGrid(1))
+function autoconstructtimestepper(stepper, dt, sol, g::AbstractGrid=ZeroDGrid(1))
   fullsteppername = Symbol(stepper, :TimeStepper)
   if stepper ∈ filteredsteppers
     tsexpr = Expr(:call, fullsteppername, dt, sol, g)
   else
     tsexpr = Expr(:call, fullsteppername, dt, sol)
   end
-
   eval(tsexpr)
 end
 
@@ -67,13 +65,9 @@ end
 This function returns an expression that defines a Composite Type
 of the AbstractVars variety.
 """
-function structvarsexpr(name, physfields, transfields; soldims=2, vardims=2,
-                          parent=:AbstractVars)
-
-  physexprs = [:( $fld::Array{Float64,$vardims} )
-    for fld in physfields]
-  transexprs = [:( $fld::Array{Complex{Float64},$vardims} )
-    for fld in transfields]
+function structvarsexpr(name, physfields, transfields; vardims=2, parent=:AbstractVars, T=Float64)
+  physexprs = [:($fld::Array{$T,$vardims}) for fld in physfields]
+  transexprs = [:($fld::Array{Complex{$T},$vardims}) for fld in transfields]
 
   if parent != nothing
     expr = quote
@@ -130,18 +124,18 @@ function peaked_isotropic_spectrum(nkl::Tuple{Int, Int}, kpeak::Real;
 
   K = zeros(Float64, nk, nl)
   for j = 1:nl, i = 1:nk
-    K[i, j] = sqrt(k[i]^2.0 + l[j]^2.0)
+    K[i, j] = sqrt(k[i]^2 + l[j]^2)
   end
 
   # Generate random spectrum and then normalize
-  phih = exp.(2.0*im*pi*rand(nk, nl)) ./ (1.0 .+ K./kpeak).^ord
+  phih = @. exp(2π*im*rand(nk, nl)) / (1 + K/kpeak)^ord
 
   # Normalize by maximum value if specified
   if maxval > 0
     phi = real.(ifft(phih))
     phi = maxval * phi / maximum(abs.(phi))
   else
-    phih .*= rms ./ sqrt.(sum(abs.(phih).^2.0))
+    phih .*= rms ./ sqrt.(sum(abs.(phih).^2))
     phi = real.(ifft(phih))
   end
 
