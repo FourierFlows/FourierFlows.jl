@@ -184,6 +184,17 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx;
            fftplan, ifftplan, rfftplan, irfftplan, ialias, iralias, jalias)
 end
 
+function dealias!(a::Array{Complex{Float64},dim}, g::OneDGrid) where {dim}
+  if size(a)[1] == g.nkr
+    @views @. a[g.iralias, :] = 0
+  else
+    @views @. a[g.ialias, :] = 0
+  end
+  nothing
+end
+
+
+
 function dealias!(a::Array{Complex{Float64},dim}, g) where {dim}
   if size(a)[1] == g.nkr
     @views @. a[g.iralias, g.jalias, :] = 0

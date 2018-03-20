@@ -1,13 +1,10 @@
 import FourierFlows.TwoDTurb
 import FourierFlows.TwoDTurb: energy, enstrophy, dissipation, work, drag
 
-# -----------------------------------------------------------------------------
-# TWODTURB's TEST FUNCTIONS
-
 cfl(prob) = maximum([maximum(abs.(prob.vars.U)), maximum(abs.(prob.vars.V))]*
               prob.ts.dt/prob.grid.dx)
 
-# LAMB DIPOLE TEST
+# Lamb dipole test
 function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, ν=0, nν=1, ti=L/Ue*0.01,
   nm=3, message=false)
 
@@ -116,8 +113,6 @@ function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, ν=1e-7, nν
 
   residual = dEdt - total
 
-
-
   if message
     @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n",
             prob.step, prob.t, cfl, tc)
@@ -125,7 +120,6 @@ function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, ν=1e-7, nν
   # println(mean(abs.(residual)))
   isapprox(mean(abs.(residual)), 0, atol=1e-4)
 end
-
 
 """
     testnonlinearterms(dt, stepper; kwargs...)
@@ -186,7 +180,6 @@ function testnonlinearterms(dt, stepper; n=128, L=2π, ν=1e-2, nν=1,
             prob.step, prob.t, cfl, tc)
   end
 
-  # println(norm(v.q - qf)/norm(qf))
   isapprox(norm(v.q - qf)/norm(qf), 0, atol=1e-13)
 end
 
