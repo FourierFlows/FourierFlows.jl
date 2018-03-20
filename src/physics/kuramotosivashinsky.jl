@@ -1,21 +1,14 @@
 module KuramotoSivashinsky
 using FourierFlows
 
-#=
-Solves the KuramotoSivashinsky equation
-
-∂t u + ν∂ₓ⁴u + λ∂ₓ²u + 1/2 * (∂ₓu)² = 0 ,
-
-with ν = λ = 1.
-
-=#
-
 export InitialValueProblem, updatevars!, set_u!
 
 """
     InitialValueProblem(; parameters...)
 
-Construct an initial-value Kuramoto-Sivashinky problem.
+Construct an initial-value Kuramoto-Sivashinky problem that solves the equation
+
+∂t u + ∂ₓ⁴u + ∂ₓ²u + u ∂ₓu = 0.
 """
 function InitialValueProblem(;
        nx = 256,
@@ -59,16 +52,11 @@ end
 function calcN!(N, sol, t, s, v, p, g)
   @. v.uh = sol
   @. v.uxh = im*g.kr*sol
-
   A_mul_B!(v.u, g.irfftplan, v.uh)
   A_mul_B!(v.ux, g.irfftplan, v.uxh)
-
   @. v.uux = v.u*v.ux
-
   A_mul_B!(v.uuxh, g.rfftplan, v.uux)
-
   @. N = -v.uuxh
-
   dealias!(N, g)
   nothing
 end
@@ -86,7 +74,6 @@ function updatevars!(v, s, g)
 end
 
 updatevars!(prob::AbstractProblem) = updatevars!(prob.vars, prob.state, prob.grid)
-
 
 """
     set_u!(prob, u)
