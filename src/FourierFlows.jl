@@ -2,6 +2,8 @@ __precompile__()
 
 module FourierFlows
 
+using Requires
+
 export AbstractGrid,
        AbstractParams,
        AbstractVars,
@@ -18,13 +20,6 @@ abstract type AbstractEquation end
 abstract type AbstractState end
 abstract type AbstractProblem end
 
-"""
-    cxeltype(a)
-Returns Complex{eltype(a)} if eltype(a) <: Real; eltype(a) otherwise.
-"""
-cxeltype(a) = eltype(a) <: Real ? Complex{eltype(a)} : eltype(a)
-
-
 # Include base functionality
 include("problemstate.jl")
 include("domains.jl")
@@ -40,5 +35,13 @@ include("physics/twomodeboussinesq.jl")
 include("physics/traceradvdiff.jl")
 include("physics/tracerpatcheqn.jl")
 include("physics/kuramotosivashinsky.jl")
+
+@require CuArrays begin
+  using CuArrays
+  include("gpu/gpu_problemstate.jl")
+  include("gpu/gpu_domains.jl")
+  include("gpu/gpu_utils.jl")
+  include("gpu/gpu_timesteppers.jl")
+end
 
 end # module

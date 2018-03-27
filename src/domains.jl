@@ -1,5 +1,8 @@
 export OneDGrid, TwoDGrid, dealias!
 
+abstract type AbstractTwoDGrid <: AbstractGrid
+abstract type AbstractOneDGrid <: AbstractGrid
+
 """
     ZeroDGrid(nvars)
 
@@ -19,7 +22,7 @@ Constrcut a OneDGrid object. The one-dimensional domain has size Lx,
 resolution nx, and leftmost grid point x0. FFT plans are generated 
 which use nthreads threads with the specified planning effort. 
 """
-struct OneDGrid{T} <: AbstractGrid
+struct OneDGrid{T} <: AbstractOneGrid
   nx::Int
   nk::Int
   nkr::Int
@@ -32,11 +35,9 @@ struct OneDGrid{T} <: AbstractGrid
   invkrsq::Array{T,1}
 
   fftplan::Base.DFT.FFTW.cFFTWPlan{Complex{T},-1,false,1}
-  ifftplan::Base.DFT.ScaledPlan{Complex{T},
-              Base.DFT.FFTW.cFFTWPlan{Complex{T},1,false,1},T}
+  ifftplan::Base.DFT.ScaledPlan{Complex{T},Base.DFT.FFTW.cFFTWPlan{Complex{T},1,false,1},T}
   rfftplan::Base.DFT.FFTW.rFFTWPlan{T,-1,false,1}
-  irfftplan::Base.DFT.ScaledPlan{Complex{T},
-              Base.DFT.FFTW.rFFTWPlan{Complex{T},1,false, 1},T}
+  irfftplan::Base.DFT.ScaledPlan{Complex{T},Base.DFT.FFTW.rFFTWPlan{Complex{T},1,false, 1},T}
 
   # Range objects that access the aliased part of the wavenumber range
   ialias::UnitRange{Int}
@@ -86,7 +87,7 @@ Constrcut a TwoDGrid object. The two-dimensional domain has size (Lx, Ly),
 resolution (nx, ny) and bottom left corner at (x0, y0). FFT plans are generated 
 which use nthreads threads with the specified planning effort. 
 """
-struct TwoDGrid{T} <: AbstractGrid
+struct TwoDGrid{T} <: AbstractTwoDGrid
   nx::Int
   ny::Int
   nk::Int
@@ -113,11 +114,9 @@ struct TwoDGrid{T} <: AbstractGrid
   invKKrsq::Array{T,2}  # 1/KKrsq, invKKrsq[1, 1]=0
 
   fftplan::Base.DFT.FFTW.cFFTWPlan{Complex{T},-1,false,2}
-  ifftplan::Base.DFT.ScaledPlan{Complex{T},
-              Base.DFT.FFTW.cFFTWPlan{Complex{T},1,false,2},T}
+  ifftplan::Base.DFT.ScaledPlan{Complex{T},Base.DFT.FFTW.cFFTWPlan{Complex{T},1,false,2},T}
   rfftplan::Base.DFT.FFTW.rFFTWPlan{T,-1,false,2}
-  irfftplan::Base.DFT.ScaledPlan{Complex{T},
-              Base.DFT.FFTW.rFFTWPlan{Complex{T},1,false,2},T}
+  irfftplan::Base.DFT.ScaledPlan{Complex{T},Base.DFT.FFTW.rFFTWPlan{Complex{T},1,false,2},T}
 
   # Range objects that access the aliased part of the wavenumber range
   ialias::UnitRange{Int}
@@ -184,53 +183,48 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx;
            fftplan, ifftplan, rfftplan, irfftplan, ialias, iralias, jalias)
 end
 
-function dealias!(a::Array{Complex{Float64},dim}, g::OneDGrid) where {dim}
-  if size(a)[1] == g.nkr
-    @views @. a[g.iralias, :] = 0
-  else
-    @views @. a[g.ialias, :] = 0
+function dealias!(a, g::OneDGrid)
+  if size(a)[1] == g.nkr; @views @. a[g.iralias, :] = 0
+  else;                   @views @. a[g.ialias, :] = 0
   end
   nothing
 end
 
-
-
-function dealias!(a::Array{Complex{Float64},dim}, g) where {dim}
-  if size(a)[1] == g.nkr
-    @views @. a[g.iralias, g.jalias, :] = 0
-  else
-    @views @. a[g.ialias, g.jalias, :] = 0
+function dealias!(a, g::AbstractTwoDGrid)
+  if size(a)[1] == g.nkr; @views @. a[g.iralias, g.jalias, :] = 0
+  else;                   @views @. a[g.ialias, g.jalias, :] = 0
   end
   nothing
 end
 
 
 """
-Returns an filter with an exponentially-decaying profile that, when multiplied
-removes high-wavenumber content from a spectrum.
+    makefilter(K; order=4, innerK=0.65, outerK=1)
+
+Returns a filter acting on the non-dimensional wavenumber K that decays exponentially
+for K>innerK, thus removing high-wavenumber content from a spectrum it is multiplied with. 
+The decay rate is determined by order and outerK determines the outer wavenumber at which 
+the filter is smaller than machine precision.
 """
-function makefilter(g::TwoDGrid; order=4.0, innerK=0.65, outerK=1.0,
-  realvars=true)
-
-  # Get decay rate for filter
-  decay = 15.0*log(10.0) / (outerK-innerK)^order
-
-  # Non-dimensional square wavenumbers
-  if realvars
-    KK = sqrt.( (g.Kr*g.dx/π).^2 + (g.Lr*g.dy/π).^2 )
-  else
-    KK = sqrt.( (g.K*g.dx/π).^2  + (g.L*g.dy/π).^2  )
-  end
-
-  filt = exp.( -decay*(KK-innerK).^order )
-  filt[ real.(KK) .< innerK ] = 1
-
-  return filt
+function makefilter(K; order=4, innerK=0.65, outerK=1)
+  decay = 15*log(10) / (outerK-innerK)^order # decay rate for filtering function
+  filt = @. exp( -decay*(KK-innerK)^order )
+  filt[real.(KK) .< innerK] .= 1
+  filt
 end
 
-function makefilter(g, T, sz; kwargs...)
-  if sz[1] == g.nkr; realvars = true
-  else;              realvars = false
+function makefilter(g::AbstractTwoDGrid; realvars=true, kwargs...)
+  if realvars; K = @. sqrt( (g.Kr*g.dx/π)^2 + (g.Lr*g.dy/π)^2 ) # non-dimensional square wavenumber
+  else;        K = @. sqrt( (g.K*g.dx/π)^2 + (g.L*g.dy/π)^2  )
   end
-  ones(T, sz) .* makefilter(g; realvars=realvars, kwargs...)
+  makefilter(K; kwargs...)
 end
+
+function makefilter(g::AbstractOneDGrid; realvars=true, kwargs...)
+  if realvars; K = @. g.kr*g.dx/π
+  else;        K = @. abs(g.k*g.dx/π)
+  end
+  makefilter(K; kwargs...)
+end
+
+makefilter(g, T, sz; kwargs...) = ones(T, sz).*makefilter(g; realvars=sz[1]==g.nkr, kwargs...)

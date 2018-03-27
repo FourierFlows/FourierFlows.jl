@@ -3,7 +3,11 @@ import SpecialFunctions
 
 export @createarrays
 
-# Utility for generating time-steppers.
+"""
+    cxeltype(a)
+Returns Complex{eltype(a)} if eltype(a) <: Real; eltype(a) otherwise.
+"""
+cxeltype(a) = eltype(a) <: Real ? Complex{eltype(a)} : eltype(a)
 
 # Time-steppers lists
 steppers = [
@@ -45,8 +49,6 @@ function autoconstructtimestepper(stepper, dt, solc, solr)
   eval(tsexpr)
 end
 
-
-
 """
     @createarrays T dims a b c
 
@@ -55,39 +57,22 @@ a, b, c (for example). An arbitrary number of arrays may be created.
 """
 macro createarrays(T, dims, vars...)
   expr = Expr(:block)
-  append!(expr.args,
-    [:( $(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
+  append!(expr.args, [:($(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
   expr
 end
 
-
-"""
-This function returns an expression that defines a Composite Type
-of the AbstractVars variety.
-"""
-function structvarsexpr(name, physfields, transfields; vardims=2, parent=:AbstractVars, T=Float64)
-  physexprs = [:($fld::Array{$T,$vardims}) for fld in physfields]
-  transexprs = [:($fld::Array{Complex{$T},$vardims}) for fld in transfields]
-
-  if parent != nothing
-    expr = quote
-      mutable struct $name <: $parent
-        $(physexprs...)
-        $(transexprs...)
-      end
-    end
-  else
-    expr = quote
-      mutable struct $name
-        $(physexprs...)
-        $(transexprs...)
-      end
+"Returns an expression that defines a Composite Type of the AbstractVars variety."
+function structvarsexpr(name, physfields, transfields; vardims=2, parent=:AbstractVars, T=Float64, arraytype=:Array)
+  physexprs = [:($fld::$arraytype{$T,$vardims}) for fld in physfields]
+  transexprs = [:($fld::$arraytype{Complex{$T},$vardims}) for fld in transfields]
+  expr = quote
+    struct $name <: $parent
+      $(physexprs...)
+      $(transexprs...)
     end
   end
-
   expr
 end
-
 
 """
     fftwavenums(n; L=1)
@@ -96,14 +81,12 @@ Return the fftwavenumber vector with length n and domain size L.
 """
 fftwavenums(n::Int; L=1) = 2π/L*cat(1, 0:n/2, -n/2+1:-1)
 
-
 """
     rms(q)
 
 Return the root-mean-square of an array.
 """
 rms(q) = sqrt(mean(q.^2))
-
 
 """
     peaked_isotropic_spectrum(nkl, kpeak; ord=4, rms=1, maxval=1)
@@ -115,18 +98,12 @@ with the keyword 'rms', or the maximum value of phi with the keyword 'maxval'.
 
     peaked_isotropic_spectrum(nx, npeak; ord=4, rms=1, maxval=1)
 """
-function peaked_isotropic_spectrum(nkl::Tuple{Int, Int}, kpeak::Real;
-  ord=4.0, rms=1.0, maxval=0.0)
+function peaked_isotropic_spectrum(nkl::Tuple{Int, Int}, kpeak::Real; ord=4.0, rms=1.0, maxval=0.0)
 
-  # Non-dimensional wavenumbers
   nk, nl = nkl
-  k, l   = fftwavenums(nk), fftwavenums(nl)
-
-  K = zeros(Float64, nk, nl)
-  for j = 1:nl, i = 1:nk
-    K[i, j] = sqrt(k[i]^2 + l[j]^2)
-  end
-
+  k, l = fftwavenums(nk), fftwavenums(nl)
+  K = [ sqrt(k[i]^2 + l[j]^2) for i=1:nk, j=1:nl ]
+  
   # Generate random spectrum and then normalize
   phih = @. exp(2π*im*rand(nk, nl)) / (1 + K/kpeak)^ord
 
@@ -139,14 +116,12 @@ function peaked_isotropic_spectrum(nkl::Tuple{Int, Int}, kpeak::Real;
     phi = real.(ifft(phih))
   end
 
-  return phi
+  phi
 end
 
-function peaked_isotropic_spectrum(nx::Int, npeak::Real; ord=4.0, rms=1.0,
-  maxval=0.0)
+function peaked_isotropic_spectrum(nx::Int, npeak::Real; ord=4.0, rms=1.0, maxval=0.0)
   peaked_isotropic_spectrum((nx, nx), npeak; ord=ord, rms=rms, maxval=maxval)
 end
-
 
 """
     lambdipole(Ue, R, g; center=(x0, y0))
@@ -178,7 +153,6 @@ function lambdipole(Ue::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
   return q
 end
 
-
 """
     gaussianvortex(q0, R, G; center=(x0, y0))
 
@@ -186,9 +160,7 @@ Return a vorticity field with magnitude q0, radius R, and center at
 center[1], center[2] on a TwoDGrid g corresponding to a 'Gaussian vortex' with
 Gaussian streamfunction.
 """
-function gaussianvortex(q0::Real, R::Real, g::TwoDGrid;
-  center=(nothing, nothing))
-
+function gaussianvortex(q0::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
   if center == (nothing, nothing)
     xc = mean(g.x)
     yc = mean(g.y)
@@ -196,11 +168,8 @@ function gaussianvortex(q0::Real, R::Real, g::TwoDGrid;
     xc = center[1]
     yc = center[2]
   end
-
-  ( q0/R^2.0 * ( (g.X-xc).^2.0 + (g.Y-yc).^2.0 - 2*R^2.0 )
-        .* exp.( -((g.X-xc).^2.0 + (g.Y-yc).^2.0) / (2.0*R^2.0)) )
+  @. q0/R^2*((g.X-xc)^2 + (g.Y-yc)^2 - 2*R^2)*exp( -((g.X-xc)^2 + (g.Y-yc)^2) / (2*R^2)) 
 end
-
 
 """
     rmsrand(g, rmsval)
@@ -210,10 +179,8 @@ specifed rms value.
 """
 function rmsrand(g::TwoDGrid, rmsval::Real)
   q = rand(g.nx, g.ny)
-  q .*= rmsval / rms(q)
-  return q
+  q.*rmsval/rms(q)
 end
-
 
 """
     parsevalsum2(uh, g)
@@ -255,7 +222,6 @@ function parsevalsum(uh, g::TwoDGrid)
   norm*real(U)
 end
 
-
 """
     jacobianh(a, b, g)
 
@@ -276,7 +242,6 @@ function jacobianh(a, b, g::TwoDGrid)
   end
 end
 
-
 """
     jacobian(a, b, g)
 
@@ -289,7 +254,6 @@ function jacobian(a, b, g::TwoDGrid)
    return ifft(jacobianh(a, b, g))
   end
 end
-
 
 """
     radialspectrum(ah, g; nr=nothing, nθ=nothing, refinement=4)
