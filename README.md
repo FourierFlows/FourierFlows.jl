@@ -45,18 +45,17 @@ Here's an overview of the code structure:
         - 3rd-order Adams-Bashforth (AB3)
         - 4th-order Runge-Kutta (RK4)
         - 4th-order Runge-Kutta Exponential Time Differencing
-        
-        For each time-stepper exists also a "filtered" version that 
-        high-wavenumber spectral components of the solution.
+
+        For each time-stepper exists also a "filtered" version that filters
+        out high-wavenumber spectral components of the solution.
     - `physics/`
+        - `kuramotosivashinsky.jl`: Defines a `KuramotoSivashinsky` module that
+                provides the one-dimensional Kuramoto-Sivashinsky equation.
         - `twodturb.jl`: Defines a `TwoDTurb` module that provides a
                 solver for the two-dimensional vorticity equation.
         - `barotropicqg.jl`: Defines a `BarotropicQG` module that provides
                 several solvers for the barotropic QG model that permit beta,
                 topography, beta + topography, and forcing.
-        - `twomodeboussinesq.jl`: Defines a `TwoModeBoussinesq` module
-                that provides solvers for a two-mode truncation of the
-                rotating, stratified Boussinesq equation.
         - `traceradvdiff.jl`: Defines a `TracerAdvDiff` module that
                 provides a solver for a two-dimensional and periodic tracer
                 field in a given 2D flow (u, w), which can be an arbitrary
