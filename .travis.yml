@@ -11,7 +11,7 @@ julia:
 
 before_script:
  - julia -e 'Pkg.add("JLD2"); Pkg.add("SpecialFunctions");'
- - julia -e 'Pkg.add("Interpolations");'
+ - julia -e 'Pkg.add("Interpolations"); Pkg.add("Requires");'
  # - julia -e 'ENV["PYTHON"]=""; Pkg.build("PyCall"); using PyPlot;'
 
 # this was the old way of running tests before runtests.jl
