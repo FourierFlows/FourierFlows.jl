@@ -46,8 +46,8 @@ Here's an overview of the code structure:
         - 4th-order Runge-Kutta (RK4)
         - 4th-order Runge-Kutta Exponential Time Differencing
         
-        For each time-stepper exists also a "filtered" version that 
-        high-wavenumber spectral components of the solution.
+        For each time-stepper exists also a "filtered" version that filters
+        out high-wavenumber spectral components of the solution.
     - `physics/`
         - `twodturb.jl`: Defines a `TwoDTurb` module that provides a
                 solver for the two-dimensional vorticity equation.
