@@ -1,5 +1,5 @@
 module TwoDTurb
-using FourierFlows, Require
+using FourierFlows, Requires
 
 """
     InitialValueProblem(; parameters...)
