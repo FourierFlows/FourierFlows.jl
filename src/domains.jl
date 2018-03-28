@@ -1,7 +1,7 @@
 export OneDGrid, TwoDGrid, dealias!
 
-abstract type AbstractTwoDGrid <: AbstractGrid
-abstract type AbstractOneDGrid <: AbstractGrid
+abstract type AbstractTwoDGrid <: AbstractGrid end
+abstract type AbstractOneDGrid <: AbstractGrid end
 
 """
     ZeroDGrid(nvars)
@@ -22,7 +22,7 @@ Constrcut a OneDGrid object. The one-dimensional domain has size Lx,
 resolution nx, and leftmost grid point x0. FFT plans are generated 
 which use nthreads threads with the specified planning effort. 
 """
-struct OneDGrid{T} <: AbstractOneGrid
+struct OneDGrid{T} <: AbstractOneDGrid
   nx::Int
   nk::Int
   nkr::Int
@@ -79,9 +79,7 @@ end
 
 """
     TwoDGrid(nx, Lx)
-
-    TwoDGrid(nx, Lx, ny, Ly; 
-             x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_CORES, effort=FFTW.MEASURE)
+    TwoDGrid(nx, Lx, ny, Ly; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_CORES, effort=FFTW.MEASURE)
 
 Constrcut a TwoDGrid object. The two-dimensional domain has size (Lx, Ly), 
 resolution (nx, ny) and bottom left corner at (x0, y0). FFT plans are generated 
@@ -124,9 +122,7 @@ struct TwoDGrid{T} <: AbstractTwoDGrid
   jalias::UnitRange{Int}
 end
 
-function TwoDGrid(nx, Lx, ny=nx, Ly=Lx;
-                  x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU_CORES, effort=FFTW.MEASURE)
-
+function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU_CORES, effort=FFTW.MEASURE)
   T = typeof(Lx)
   dx = Lx/nx
   dy = Ly/ny
@@ -214,16 +210,13 @@ function makefilter(K; order=4, innerK=0.65, outerK=1)
 end
 
 function makefilter(g::AbstractTwoDGrid; realvars=true, kwargs...)
-  if realvars; K = @. sqrt( (g.Kr*g.dx/π)^2 + (g.Lr*g.dy/π)^2 ) # non-dimensional square wavenumber
-  else;        K = @. sqrt( (g.K*g.dx/π)^2 + (g.L*g.dy/π)^2  )
-  end
+  K = realvars ? 
+      @.(sqrt((g.Kr*g.dx/π)^2 + (g.Lr*g.dy/π)^2)) : @.(sqrt((g.K*g.dx/π)^2 + (g.L*g.dy/π)^2))
   makefilter(K; kwargs...)
 end
 
 function makefilter(g::AbstractOneDGrid; realvars=true, kwargs...)
-  if realvars; K = @. g.kr*g.dx/π
-  else;        K = @. abs(g.k*g.dx/π)
-  end
+  K = realvars ? g.kr*g.dx/π : @.(abs(g.k*g.dx/π))
   makefilter(K; kwargs...)
 end
 

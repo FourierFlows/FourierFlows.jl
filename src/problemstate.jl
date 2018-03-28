@@ -1,6 +1,11 @@
 export Equation, Problem, State, DualState
 
-# Problem type and associated functions
+"""
+    Problem(g, v, p, eq, ts)
+
+Initialize a FourierFlows problem on grid g, with variables v, parameters p,
+equation eq, and timestepper ts.
+"""
 mutable struct Problem <: AbstractProblem
   grid::AbstractGrid
   vars::AbstractVars
@@ -11,6 +16,9 @@ mutable struct Problem <: AbstractProblem
   t::Float64
   step::Int
 end
+
+Problem(g, v, p, eq, ts, st) = Problem(g, v, p, eq, ts, st, st.t, st.step)
+Problem(g, v, p, eq, ts) = Problem(g, v, p, eq, ts, State{eltype(eq.LC),ndims(eq.LC)}(0.0, 0, ts.dt, zeros(eq.LC)))
 
 #=
 For Julia v1.0 release:
@@ -31,17 +39,6 @@ function getfield(prob::AbstractProblem, name)
 end
 =#
 
-function Problem(g, v, p, eq, ts, st)
-  Problem(g, v, p, eq, ts, st, st.t, st.step)
-end
-
-function Problem(g, v, p, eq, ts)
-  st = State{eltype(eq.LC),ndims(eq.LC)}(0.0, 0, ts.dt, zeros(eq.LC))
-  Problem(g, v, p, eq, ts, st)
-end
-
-
-# Problem state 
 mutable struct State{T,dim} <: AbstractState
   t::Float64
   step::Int
@@ -49,10 +46,7 @@ mutable struct State{T,dim} <: AbstractState
   sol::Array{T,dim}
 end
 
-function State(T::DataType, sz::Tuple, dt)
-  sol = zeros(T, sz)
-  State(0.0, 0, dt, sol)
-end
+State(T::DataType, sz::Tuple, dt) = State(0, 0, dt, zeros(T, sz))
 
 mutable struct DualState{T,dimc,dimr} <: AbstractState
   t::Float64
@@ -62,27 +56,21 @@ mutable struct DualState{T,dimc,dimr} <: AbstractState
   solr::Array{T,dimr}
 end
 
-function DualState(T::DataType, sizec, sizer, dt)
-  solc = zeros(T, sizec)
-  solr = zeros(T, sizer)
-  DualState(0.0, 0, dt, solc, solr)
-end
+DualState(T::DataType, sizec, sizer, dt) = DualState(0, 0, dt, zeros(T, sizec), zeros(T, sizer))
 
-
-# Equation Composite Type
 """
 This type defines the linear implicit and explicit components of an equation.
 The linear implicit part of an equation is defined by an array of coefficients
 which multiply the solution. The explicit part of an equation is calculated
 by a function that may define linear and nonlinear parts.
 """
-struct Equation{dim} <: AbstractEquation
-  LC::Array{Complex{Float64},dim} # Coeffs of the eqn's implicit linear part
+struct Equation{T,dim} <: AbstractEquation
+  LC::Array{T,dim} # Coeffs of the eqn's implicit linear part
   calcN!::Function # Function that calcs linear & nonlinear parts
 end
 
-struct DualEquation{dimc,dimr} <: AbstractEquation
-  LCc::Array{Complex{Float64},dimc}
-  LCr::Array{Complex{Float64},dimr}
+struct DualEquation{T,dimc,dimr} <: AbstractEquation
+  LCc::Array{T,dimc}
+  LCr::Array{T,dimr}
   calcN!::Function
 end

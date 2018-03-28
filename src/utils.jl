@@ -29,28 +29,28 @@ filteredsteppers = [
 ]
 
 """
+    autoconstructtimestepper(stepper, dt, sol)
+    autoconstructtimestepper(stepper, dt, solc, solr)
+    autoconstructtimestepper(filteredstepper, dt, sol, g)
+
 Returns a time-stepper type defined by the prefix 'stepper', timestep dt
 solution sol (used to construct variables with identical type and size as
 the solution vector), and grid g.
 """
 function autoconstructtimestepper(stepper, dt, sol, g::AbstractGrid=ZeroDGrid(1))
   fullsteppername = Symbol(stepper, :TimeStepper)
-  if stepper ∈ filteredsteppers
-    tsexpr = Expr(:call, fullsteppername, dt, sol, g)
-  else
-    tsexpr = Expr(:call, fullsteppername, dt, sol)
-  end
+  tsexpr = stepper ∈ filteredsteppers ? 
+      Expr(:call, fullsteppername, dt, sol, g) : Expr(:call, fullsteppername, dt, sol)
   eval(tsexpr)
 end
 
 function autoconstructtimestepper(stepper, dt, solc, solr)
   fullsteppername = Symbol(stepper, :TimeStepper)
-  tsexpr = Expr(:call, fullsteppername, dt, solc, solr)
-  eval(tsexpr)
+  eval(Expr(:call, fullsteppername, dt, solc, solr))
 end
 
 """
-    @createarrays T dims a b c
+    @createarrays T dims a b c...
 
 Create arrays of all zeros with element type T, size dims, and global names
 a, b, c (for example). An arbitrary number of arrays may be created.
@@ -89,39 +89,33 @@ Return the root-mean-square of an array.
 rms(q) = sqrt(mean(q.^2))
 
 """
-    peaked_isotropic_spectrum(nkl, kpeak; ord=4, rms=1, maxval=1)
+    peakedisotropicspectrum(nkl, kpeak; order=4, rms=1, maxval=1)
+    peakedisotropicspectrum(nx, npeak; order=4, rms=1, maxval=1)
 
 Generate a real and random two-dimensional distribution phi(x, y) with
 a Fourier spectrum peaked around a central non-dimensional wavenumber kpeak.
 The spectrum is normalized either by setting the root-mean-square value of phi
 with the keyword 'rms', or the maximum value of phi with the keyword 'maxval'.
-
-    peaked_isotropic_spectrum(nx, npeak; ord=4, rms=1, maxval=1)
 """
-function peaked_isotropic_spectrum(nkl::Tuple{Int, Int}, kpeak::Real; ord=4.0, rms=1.0, maxval=0.0)
-
+function peakedisotropicspectrum(nkl::Tuple{Int, Int}, kpeak::Real; order=4, rms=1, maxval=0)
   nk, nl = nkl
-  k, l = fftwavenums(nk), fftwavenums(nl)
-  K = [ sqrt(k[i]^2 + l[j]^2) for i=1:nk, j=1:nl ]
+  k = reshape(fftwavenums(nk), (nk, 1))
+  l = reshape(fftwavenums(nl), (1, nl))
+  K = @. sqrt(k^2+l^2)
   
-  # Generate random spectrum and then normalize
-  phih = @. exp(2π*im*rand(nk, nl)) / (1 + K/kpeak)^ord
-
-  # Normalize by maximum value if specified
-  if maxval > 0
+  phih = @. exp(2π*im*rand(nk, nl)) / (1 + K/kpeak)^order # unnormalized random spectrum
+  if maxval > 0 # normalize phih to specify the maximum value of phi
     phi = real.(ifft(phih))
     phi = maxval * phi / maximum(abs.(phi))
-  else
-    phih .*= rms ./ sqrt.(sum(abs.(phih).^2))
+  else # normalize phih to specify the rms value of phi
+    phih *= rms / sqrt(sum(abs.(phih).^2))
     phi = real.(ifft(phih))
   end
 
   phi
 end
 
-function peaked_isotropic_spectrum(nx::Int, npeak::Real; ord=4.0, rms=1.0, maxval=0.0)
-  peaked_isotropic_spectrum((nx, nx), npeak; ord=ord, rms=rms, maxval=maxval)
-end
+peakedisotropicspectrum(nx::Int, npeak::Real; kwargs...) = peakedisotropicspectrum((nx, nx), npeak; kwargs...)
 
 """
     lambdipole(Ue, R, g; center=(x0, y0))
@@ -131,21 +125,13 @@ strength Ue, radius R, and centered around
 (xc, yc)=center. The default value of 'center' is the middle of the grid.
 """
 function lambdipole(Ue::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
+  xc, yc = center == (nothing, nothing) ? (mean(g.x), mean(g.y)) : (center[1], center[2])
 
-  if center == (nothing, nothing)
-    xc = mean(g.x)
-    yc = mean(g.y)
-  else
-    xc = center[1]
-    yc = center[2]
-  end
+  k = 3.8317059702075123156 / R # dipole wavenumber for radius R in terms of first zero of besselj
+  q0 = -2Ue*k/SpecialFunctions.besselj(0, k*R)
 
-  # Wavenumber corresponding to radius R and the first bessel func zero.
-  k = 3.8317059702075123156 / R
-  q0 = -2*Ue*k/SpecialFunctions.besselj(0, k*R)
-
-  r = sqrt.((g.X-xc).^2.0 + (g.Y-yc).^2.0)
-  q = q0 * SpecialFunctions.besselj.(1, k*r) .* (g.Y-yc)./r
+  r = @. sqrt((g.x-xc)^2 + (g.y-yc)^2)
+  q = @. q0*SpecialFunctions.besselj(1, k*r)*(g.y-yc)/r
 
   q[r .== 0.0] = 0.0 # just in case.
   q[r .> R] = 0.0
@@ -161,14 +147,8 @@ center[1], center[2] on a TwoDGrid g corresponding to a 'Gaussian vortex' with
 Gaussian streamfunction.
 """
 function gaussianvortex(q0::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
-  if center == (nothing, nothing)
-    xc = mean(g.x)
-    yc = mean(g.y)
-  else
-    xc = center[1]
-    yc = center[2]
-  end
-  @. q0/R^2*((g.X-xc)^2 + (g.Y-yc)^2 - 2*R^2)*exp( -((g.X-xc)^2 + (g.Y-yc)^2) / (2*R^2)) 
+  xc, yc = center == (nothing, nothing) ? (mean(g.x), mean(g.y)) : (center[1], center[2])
+  @. q0/R^2*((g.x-xc)^2+(g.y-yc)^2-2*R^2)*exp(-((g.x-xc)^2 + (g.y-yc)^2)/(2*R^2)) 
 end
 
 """

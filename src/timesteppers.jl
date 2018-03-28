@@ -19,38 +19,20 @@ function stepforward!(prob::Problem)
     prob.step = prob.state.step
 end
 
-function stepforward!(prob::Problem, nsteps)
-  for step = 1:nsteps
-    stepforward!(prob)
-  end
-  nothing
-end
+stepforward!(prob::Problem, nsteps) = for step=1:nsteps; stepforward!(prob); end
 
 function stepforward!(prob::Problem, diags::AbstractArray, nsteps)
-
-  # Initialize diagnostics for speed
-  for diag in diags
-    newnum = ceil(Int, (diag.count+nsteps)/diag.freq)
-    if newnum > diag.num
-      warn("Resizing diags before stepping forward...")
-      resize!(diag, newnum)
-    end
-  end
-
   for step = 1:nsteps
     stepforward!(prob)
     for diag in diags
-      if (prob.step+1) % diag.freq == 0.0
+      if (prob.step+1) % diag.freq == 0
         increment!(diag)
       end
     end
   end
-
   nothing
 end
 
-
-# Timestepper utilities
 """
     getetdcoeffs(dt, LC; ncirc=32, rcirc=1)
 
@@ -92,28 +74,30 @@ function getetdcoeffs(dt, LC; ncirc=32, rcirc=1)
 end
 
 
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
+# ------------
 # Timesteppers
-# -----------------------------------------------------------------------------
-# -----------------------------------------------------------------------------
+# ------------
 
-abstract type AbstractForwardEulerTimeStepper <: AbstractTimeStepper
-abstract type AbstractFilteredForwardEulerTimeStepper <: AbstractTimeStepper
-abstract type AbstractETDRK4TimeStepper <: AbstractTimeStepper
-abstract type AbstractFilteredETDRK4TimeStepper <: AbstractTimeStepper
-abstract type AbstractRK4TimeStepper <: AbstractTimeStepper
-abstract type AbstractFilteredRK4TimeStepper <: AbstractTimeStepper
-abstract type AbstractAB3TimeStepper <: AbstractTimeStepper
-abstract type AbstractFilteredAB3TimeStepper <: AbstractTimeStepper
-
+abstract type AbstractForwardEulerTimeStepper <: AbstractTimeStepper end
+abstract type AbstractFilteredForwardEulerTimeStepper <: AbstractTimeStepper end
+abstract type AbstractETDRK4TimeStepper <: AbstractTimeStepper end
+abstract type AbstractFilteredETDRK4TimeStepper <: AbstractTimeStepper end
+abstract type AbstractRK4TimeStepper <: AbstractTimeStepper end
+abstract type AbstractFilteredRK4TimeStepper <: AbstractTimeStepper end
+abstract type AbstractAB3TimeStepper <: AbstractTimeStepper end
+abstract type AbstractFilteredAB3TimeStepper <: AbstractTimeStepper end
 
 
-# Forward Euler ---------------------------------------------------------------
-# The simplest time-stepping method in the books. Explicit and 1st-order
-# accurate.
-abstract type AbstractForwardEulerTimeStepper <: AbstractTimeStepper
+# -------------
+# Forward Euler
+# -------------
 
+"""
+    ForwardEulerTimeStepper(dt, LC)
+
+Initialize a forward Euler timestepper. The forward Euler method is 
+the simplest time-stepping method in the books and is explicit and 1st-order accurate.
+"""
 struct ForwardEulerTimeStepper{dim} <: AbstractForwardEulerTimeStepper
   dt::Float64
   N::Array{Complex{Float64},dim}    # Explicit linear and nonlinear terms
@@ -128,11 +112,16 @@ function stepforward!(s, ts::AbstractForwardEulerTimeStepper, eq, v, p, g)
   nothing
 end
 
+# ----------------------
+# Filtered Forward Euler
+# ----------------------
 
-# Filtered Forward Euler ------------------------------------------------------
-# The simplest time-stepping method in the books. Explicit and 1st-order
-# accurate.
+"""
+    FilteredForwardEulerTimeStepper(dt, LC, g; filterkwargs...)
 
+Initialize a forward Euler timestepper with spectral filtering. The forward Euler method is 
+the simplest time-stepping method in the books and is explicit and 1st-order accurate.
+"""
 struct FilteredForwardEulerTimeStepper{dim} <: AbstractFilteredForwardEulerTimeStepper
   dt::Float64
   N::Array{Complex{Float64},dim}    # Explicit linear and nonlinear terms
@@ -154,11 +143,17 @@ function stepforward!(s, ts::AbstractFilteredForwardEulerTimeStepper, eq, v, p, 
 end
 
 
-# ETDRK4 ----------------------------------------------------------------------
-# The Rolls-Royce of time-stepping. Exact treatment of the implicit linear part
-# of the equation, explicit and 4th-order accurate integration of nonlinear
-# parts of equation.
+# ------
+# ETDRK4 
+# ------
 
+"""
+    ETDRK4TimeStepper(dt, LC)
+
+The Rolls-Royce of time-stepping. Exact treatment of the implicit linear part
+of the equation, explicit and 4th-order accurate integration of nonlinear
+parts of equation.
+"""
 struct ETDRK4TimeStepper{dim} <: AbstractETDRK4TimeStepper
   dt::Float64
   LC::Array{Complex{Float64},dim}          # Linear coefficient
@@ -178,12 +173,24 @@ struct ETDRK4TimeStepper{dim} <: AbstractETDRK4TimeStepper
   N₄::Array{Complex{Float64},dim}
 end
 
+struct DualETDRK4TimeStepper{dimc, dimr} <: AbstractTimeStepper
+  dt::Float64
+  c::ETDRK4TimeStepper{dimc}
+  r::ETDRK4TimeStepper{dimr}
+end
+
 function ETDRK4TimeStepper(dt, LC)
   expLCdt  = exp.(dt*LC)
   expLCdt2 = exp.(0.5*dt*LC)
   ζ, α, β, Γ = getetdcoeffs(dt, LC)
   @createarrays eltype(LC) size(LC) sol₁ sol₂ N₁ N₂ N₃ N₄
   ETDRK4TimeStepper{ndims(LC)}(dt, LC, ζ, α, β, Γ, expLCdt, expLCdt2, sol₁, sol₂, N₁, N₂, N₃, N₄)
+end
+
+function ETDRK4TimeStepper(dt, LCc, LCr)
+  c = ETDRK4TimeStepper(dt, LCc)
+  r = ETDRK4TimeStepper(dt, LCr)
+  DualETDRK4TimeStepper{ndims(LCc), ndims(LCr)}(dt, c, r)
 end
 
 function stepforward!(s, ts::AbstractETDRK4TimeStepper, eq, v, p, g)
@@ -211,10 +218,41 @@ function stepforward!(s, ts::AbstractETDRK4TimeStepper, eq, v, p, g)
   nothing
 end
 
-# Filtered ETDRK4 --------------------------------------------------------------
-# The Rolls-Royce of time-stepping. Exact treatment of linear part of
-# the equation, explicit and 4th-order accurate integration of nonlinear
-# parts of equation.
+function stepforward!(s::DualState, ts::DualETDRK4TimeStepper, eq, v, p, g)
+  # Substep 1
+  eq.calcN!(ts.c.N₁, ts.r.N₁, s.solc, s.solr, s.t, s, v, p, g)
+  @. ts.c.sol₁ = ts.c.expLCdt2*s.solc + ts.c.ζ*ts.c.N₁
+  @. ts.r.sol₁ = ts.r.expLCdt2*s.solr + ts.r.ζ*ts.r.N₁
+  # Substep 2
+  t2 = s.t + 0.5*ts.c.dt
+  eq.calcN!(ts.c.N₂, ts.r.N₂, ts.c.sol₁, ts.r.sol₁, t2, s, v, p, g)
+  @. ts.c.sol₂ = ts.c.expLCdt2*s.solc + ts.c.ζ*ts.c.N₂
+  @. ts.r.sol₂ = ts.r.expLCdt2*s.solr + ts.r.ζ*ts.r.N₂
+  # Substep 3
+  eq.calcN!(ts.c.N₃, ts.r.N₃, ts.c.sol₂, ts.r.sol₂, t2, s, v, p, g)
+  @. ts.c.sol₂ = (ts.c.expLCdt2*ts.c.sol₁ + ts.c.ζ*(2*ts.c.N₃ - ts.c.N₁))
+  @. ts.r.sol₂ = (ts.r.expLCdt2*ts.r.sol₁ + ts.r.ζ*(2*ts.r.N₃ - ts.r.N₁))
+  # Substep 4
+  t3 = s.t + ts.c.dt
+  eq.calcN!(ts.c.N₄, ts.r.N₄, ts.c.sol₂, ts.r.sol₂, t3, s, v, p, g)
+
+  # Update
+  @. s.solc = (ts.c.expLCdt.*s.solc +   ts.c.α * ts.c.N₁
+                                    + 2*ts.c.β * (ts.c.N₂ + ts.c.N₃)
+                                    +   ts.c.Γ * ts.c.N₄ )
+  @. s.solr = (ts.r.expLCdt.*s.solr +   ts.r.α * ts.r.N₁
+                                    + 2*ts.r.β * (ts.r.N₂ + ts.r.N₃)
+                                    +   ts.r.Γ * ts.r.N₄ )
+  s.t += ts.dt
+  s.step += 1
+
+  nothing
+end
+
+
+# ---------------
+# Filtered ETDRK4
+# ---------------
 
 struct FilteredETDRK4TimeStepper{dim} <: AbstractFilteredETDRK4TimeStepper
   dt::Float64
@@ -235,6 +273,7 @@ struct FilteredETDRK4TimeStepper{dim} <: AbstractFilteredETDRK4TimeStepper
   N₄::Array{Complex{Float64},dim}
   filter::Array{Complex{Float64},dim}    # Filter for solution
 end
+
 
 function FilteredETDRK4TimeStepper(dt, LC, g; filterkwargs...)
   expLCdt  = exp.(dt*LC)
@@ -271,58 +310,20 @@ function stepforward!(s, ts::AbstractFilteredETDRK4TimeStepper, eq, v, p, g)
 end
 
 
-struct DualETDRK4TimeStepper{dimc, dimr} <: AbstractTimeStepper
-  dt::Float64
-  c::ETDRK4TimeStepper{dimc}
-  r::ETDRK4TimeStepper{dimr}
-end
+# ---
+# RK4
+# ---
 
-function ETDRK4TimeStepper(dt, LCc, LCr)
-  c = ETDRK4TimeStepper(dt, LCc)
-  r = ETDRK4TimeStepper(dt, LCr)
-  DualETDRK4TimeStepper{ndims(LCc), ndims(LCr)}(dt, c, r)
-end
+"""
+    RK4TimeStepper(dt, LC)
 
-function stepforward!(s::DualState, ts::DualETDRK4TimeStepper, eq, v, p, g)
-  # Substep 1
-  eq.calcN!(ts.c.N₁, ts.r.N₁, s.solc, s.solr, s.t, s, v, p, g)
-  @. ts.c.sol₁ = ts.c.expLCdt2*s.solc + ts.c.ζ*ts.c.N₁
-  @. ts.r.sol₁ = ts.r.expLCdt2*s.solr + ts.r.ζ*ts.r.N₁
-  # Substep 2
-  t2 = s.t + 0.5*ts.c.dt
-  eq.calcN!(ts.c.N₂, ts.r.N₂, ts.c.sol₁, ts.r.sol₁, t2, s, v, p, g)
-  @. ts.c.sol₂ = ts.c.expLCdt2*s.solc + ts.c.ζ*ts.c.N₂
-  @. ts.r.sol₂ = ts.r.expLCdt2*s.solr + ts.r.ζ*ts.r.N₂
-  # Substep 3
-  eq.calcN!(ts.c.N₃, ts.r.N₃, ts.c.sol₂, ts.r.sol₂, t2, s, v, p, g)
-  @. ts.c.sol₂ = (ts.c.expLCdt2*ts.c.sol₁ + ts.c.ζ*(2*ts.c.N₃ - ts.c.N₁))
-  @. ts.r.sol₂ = (ts.r.expLCdt2*ts.r.sol₁ + ts.r.ζ*(2*ts.r.N₃ - ts.r.N₁))
-  # Substep 4
-  t3 = s.t + ts.c.dt
-  eq.calcN!(ts.c.N₄, ts.r.N₄, ts.c.sol₂, ts.r.sol₂, t3, s, v, p, g)
-
-  # Update
-  @. s.solc = (ts.c.expLCdt.*s.solc +   ts.c.α * ts.c.N₁
-                                    + 2*ts.c.β * (ts.c.N₂ + ts.c.N₃)
-                                    +   ts.c.Γ * ts.c.N₄ )
-  @. s.solr = (ts.r.expLCdt.*s.solr +   ts.r.α * ts.r.N₁
-                                    + 2*ts.r.β * (ts.r.N₂ + ts.r.N₃)
-                                    +   ts.r.Γ * ts.r.N₄ )
-  s.t += ts.dt
-  s.step += 1
-
-  nothing
-end
-
-
-# RK4 -------------------------------------------------------------------------
-# RK4 is the classical explicit 4th-order Runge-Kutta time-stepping
-# method. It uses a series of substeps/estimators to achieve 4th-order
-# accuracy over each individual time-step, at the cost of requiring
-# relatively more evaluations of the nonlinear right hand side.
-# It is described, among other places, in Bewley's Numerical
-# Renaissance.
-
+RK4 is the classical explicit 4th-order Runge-Kutta time-stepping
+method. It uses a series of substeps/estimators to achieve 4th-order
+accuracy over each individual time-step, at the cost of requiring
+relatively more evaluations of the nonlinear right hand side.
+It is described, among other places, in Bewley's Numerical
+Renaissance.
+"""
 struct RK4TimeStepper{T,dim} <: AbstractRK4TimeStepper
   dt::T
   sol₁::Array{T,dim}
@@ -359,10 +360,13 @@ function stepforward!(s, ts::AbstractRK4TimeStepper, eq, v, p, g)
   @. s.sol += ts.dt*(1/6*ts.RHS₁ + 1/3*ts.RHS₂ + 1/3*ts.RHS₃ + 1/6*ts.RHS₄)
   s.t += ts.dt
   s.step += 1
-
   nothing
 end
 
+
+# ------------
+# Filtered RK4
+# ------------
 
 struct FilteredRK4TimeStepper{T,dim} <: AbstractFilteredRK4TimeStepper
   dt::Float64
@@ -407,10 +411,16 @@ function stepforward!(s, ts::AbstractFilteredRK4TimeStepper, eq, v, p, g)
 end
 
 
-# AB3 -------------------------------------------------------------------------
-# 3rd order Adams-Bashforth time stepping is an explicit scheme that uses
-# solutions from two previous time-steps to achieve 3rd order accuracy.
+# ---
+# AB3
+# ---
 
+"""
+    AB3TimeStepper(dt, LC)
+
+3rd order Adams-Bashforth time stepping is an explicit scheme that uses
+solutions from two previous time-steps to achieve 3rd order accuracy.
+"""
 struct AB3TimeStepper{T,dim} <: AbstractTimeStepper
   dt::Float64
   RHS::Array{T,dim}
@@ -435,18 +445,22 @@ function stepforward!(s, ts::AbstractAB3TimeStepper, eq, v, p, g)
 
   s.t += ts.dt
   s.step += 1
-
   ts.RHS₋₂ .= ts.RHS₋₁          # Store
   ts.RHS₋₁ .= ts.RHS            # ... previous values of RHS
-
   nothing
 end
 
 
-# Filtered AB3 ----------------------------------------------------------------
-# 3rd order Adams-Bashforth time stepping is an explicit scheme that uses
-# solutions from two previous time-steps to achieve 3rd order accuracy.
+# ------------
+# Filtered AB3
+# ------------
 
+"""
+    FilteredAB3TimeStepper(dt, LC, g; filterkwargs...)
+
+3rd order Adams-Bashforth time stepping is an explicit scheme that uses
+solutions from two previous time-steps to achieve 3rd order accuracy.
+"""
 struct FilteredAB3TimeStepper{T,dim} <: AbstractTimeStepper
   dt::Float64
   RHS::Array{T,dim}
@@ -473,9 +487,7 @@ function stepforward!(s, ts::AbstractFilteredAB3TimeStepper, eq, v, p, g)
 
   s.t += ts.dt
   s.step += 1
-
   ts.RHS₋₂ .= ts.RHS₋₁          # Store
   ts.RHS₋₁ .= ts.RHS            # ... previous values of RHS
-
   nothing
 end

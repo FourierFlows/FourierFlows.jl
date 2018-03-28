@@ -11,7 +11,10 @@ export AbstractGrid,
        AbstractTimeStepper,
        AbstractProblem
 
+# -------------------
 # Abstract supertypes
+# -------------------
+
 abstract type AbstractGrid end
 abstract type AbstractParams end
 abstract type AbstractVars end
@@ -20,7 +23,11 @@ abstract type AbstractEquation end
 abstract type AbstractState end
 abstract type AbstractProblem end
 
-# Include base functionality
+
+# --------------------------
+# Base functionality
+# --------------------------
+
 include("problemstate.jl")
 include("domains.jl")
 include("diagnostics.jl")
@@ -28,7 +35,11 @@ include("output.jl")
 include("utils.jl")
 include("timesteppers.jl")
 
-# Include physics modules
+
+# --------------------------
+# Physics
+# --------------------------
+
 include("physics/twodturb.jl")
 include("physics/barotropicqg.jl")
 include("physics/twomodeboussinesq.jl")
@@ -36,12 +47,17 @@ include("physics/traceradvdiff.jl")
 include("physics/tracerpatcheqn.jl")
 include("physics/kuramotosivashinsky.jl")
 
+
+# --------------------------
+# CUDA/GPU functionality
+# --------------------------
+
 @require CuArrays begin
   using CuArrays
-  include("gpu/gpu_problemstate.jl")
-  include("gpu/gpu_domains.jl")
-  include("gpu/gpu_utils.jl")
-  include("gpu/gpu_timesteppers.jl")
+  include("cuda/cuproblemstate.jl")
+  include("cuda/cudomains.jl")
+  include("cuda/cuutils.jl")
+  include("cuda/cutimesteppers.jl")
 end
 
 end # module
