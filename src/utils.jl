@@ -5,12 +5,12 @@ export @createarrays
 
 """
     cxeltype(a)
+
 Returns Complex{eltype(a)} if eltype(a) <: Real; eltype(a) otherwise.
 """
 cxeltype(a) = eltype(a) <: Real ? Complex{eltype(a)} : eltype(a)
 
-# Time-steppers lists
-steppers = [
+const steppers = [
   "ForwardEuler",
   "FilteredForwardEuler",
   "AB3",
@@ -21,7 +21,7 @@ steppers = [
   "FilteredETDRK4",
 ]
 
-filteredsteppers = [
+const filteredsteppers = [
   "FilteredForwardEuler",
   "FilteredAB3",
   "FilteredRK4",
@@ -295,11 +295,7 @@ end
 domainaverage(c, g) = g.dx*g.dy*sum(c)/(g.Lx*g.Ly)
 moment_x(c, g, n) = g.dx*g.dy*sum(g.X.^n.*c)
 moment_y(c, g, n) = g.dx*g.dy*sum(g.Y.^n.*c)
-
 cumulant_1x(c, g) = g.dx*g.dy*sum(g.X.*c) / domainaverage(c, g)
 cumulant_1y(c, g) = g.dx*g.dy*sum(g.Y.*c) / domainaverage(c, g)
-
-cumulant_2x(c, g) = (g.dx*g.dy*sum((g.X-cumulant_1x(c, g)).^2.0.*c)
-  / domainaverage(c, g))
-cumulant_2y(c, g) = (g.dx*g.dy*sum((g.Y.-cumulant_1y(c, g)).^2.0.*c)
-  / domainaverage(c, g))
+cumulant_2x(c, g) = g.dx*g.dy*sum((g.X-cumulant_1x(c, g)).^2.0.*c) / domainaverage(c, g)
+cumulant_2y(c, g) = g.dx*g.dy*sum((g.Y.-cumulant_1y(c, g)).^2.0.*c) / domainaverage(c, g)

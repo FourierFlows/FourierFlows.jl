@@ -13,7 +13,7 @@ function Problem(; nx=256, Lx=2π, ny=nx, Ly=Lx, nu=0.0, nnu=1, mu=0.0, nmu=0, d
     vs = TwoDTurb.ForcedVars(g)
     eq = TwoDTurb.Equation(pr, g)
     ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
-  else
+  else # initial value problem
      g = TwoDGrid(nx, Lx, ny, Ly)
     pr = TwoDTurb.Params(nu, nnu, mu, nmu)
     vs = TwoDTurb.Vars(g)
@@ -22,6 +22,9 @@ function Problem(; nx=256, Lx=2π, ny=nx, Ly=Lx, nu=0.0, nnu=1, mu=0.0, nmu=0, d
   end
   FourierFlows.Problem(g, vs, pr, eq, ts)
 end
+
+InitialValueProblem(; kwargs...) = Problem(; kwargs...)
+ForcedProblem(; kwargs...) = Problem(; kwargs...)
 
 """
     Params(nu, nnu, mu, nmu)
@@ -32,7 +35,7 @@ struct Params{T} <: AbstractParams
   nu::T      # Vorticity viscosity
   nnu::Int   # Vorticity hyperviscous order
   mu::T      # Bottom drag or hypoviscosity
-  nmu::T     # Order of hypodrag
+  nmu::Int   # Order of hypodrag
 end
 Params(nu, nnu) = Params(nu, nnu, 0, 0)
 
@@ -45,7 +48,7 @@ struct ForcedParams{T} <: AbstractParams
   nu::T              # Vorticity viscosity
   nnu::Int           # Vorticity hyperviscous order
   mu::T              # Bottom drag or hypoviscosity
-  nmu::T             # Order of hypodrag
+  nmu::Int           # Order of hypodrag
   calcF!::Function   # Function that calculates the forcing F
 end
 
@@ -57,13 +60,13 @@ Returns the equation for two-dimensional turbulence with params p and grid g.
 function Equation(p::Params, g)
   LC = -p.nu*g.KKrsq.^p.nnu .- p.mu*g.KKrsq.^p.nmu
   LC[1, 1] = 0
-  FourierFlows.Equation{2}(LC, calcN_advection!)
+  FourierFlows.Equation{typeof(p.nu),2}(LC, calcN_advection!)
 end
 
 function Equation(p::ForcedParams, g)
   LC = -p.nu*g.KKrsq.^p.nnu - p.mu*g.KKrsq.^p.nmu
   LC[1, 1] = 0
-  FourierFlows.Equation{2}(LC, calcN_forced!)
+  FourierFlows.Equation{typeof(p.nu),2}(LC, calcN_forced!)
 end
 
 # Construct Vars types
@@ -100,6 +103,7 @@ end
 # ------------------
 # CUDA functionality
 # ------------------
+
 @require CuArrays begin
 
 function CuInitialValueProblem(; stepper="RK4", kwargs...)
@@ -131,14 +135,9 @@ end # CUDA stuff
 # -------
 
 function calcN_advection!(N, sol, t, s, v, p, g)
-  #@. v.Uh =  im * g.l  * g.invKKrsq * sol
-  #@. v.Vh = -im * g.kr * g.invKKrsq * sol
-
+  @. v.Uh =  im * g.l  * g.invKKrsq * sol
+  @. v.Vh = -im * g.kr * g.invKKrsq * sol
   @. v.qh = sol
-  @. v.Uh =  im * sol * g.l  / (g.kr^2 + g.l^2)
-  @. v.Vh = -im * sol * g.kr / (g.kr^2 + g.l^2)
-  v.Uh[1, 1] = 0
-  v.Vh[1, 1] = 0
 
   A_mul_B!(v.U, g.irfftplan, v.Uh)
   A_mul_B!(v.V, g.irfftplan, v.Vh)
@@ -176,12 +175,8 @@ Update the vars in v on the grid g with the solution in s.sol.
 """
 function updatevars!(v, s, g)
   v.qh .= s.sol
-
-  @. v.Uh =  im * sol * g.l  / (g.kr^2 + g.l^2)
-  @. v.Vh = -im * sol * g.kr / (g.kr^2 + g.l^2)
-  v.Uh[1, 1] = 0
-  v.Vh[1, 1] = 0
-
+  @. v.Uh =  im * g.l  * g.invKKrsq * s.sol
+  @. v.Vh = -im * g.kr * g.invKKrsq * s.sol
   A_mul_B!(v.q, g.irfftplan, deepcopy(v.qh))
   A_mul_B!(v.U, g.irfftplan, deepcopy(v.Uh))
   A_mul_B!(v.V, g.irfftplan, deepcopy(v.Vh))
@@ -203,7 +198,6 @@ function set_q!(s, v, g, q)
   updatevars!(v, s, g)
   nothing
 end
-
 set_q!(prob::AbstractProblem, q) = set_q!(prob.state, prob.vars, prob.grid, q)
 
 """

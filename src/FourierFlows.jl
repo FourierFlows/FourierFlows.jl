@@ -24,9 +24,9 @@ abstract type AbstractState end
 abstract type AbstractProblem end
 
 
-# --------------------------
+# ------------------
 # Base functionality
-# --------------------------
+# ------------------
 
 include("problemstate.jl")
 include("domains.jl")
@@ -36,9 +36,9 @@ include("utils.jl")
 include("timesteppers.jl")
 
 
-# --------------------------
+# -------
 # Physics
-# --------------------------
+# -------
 
 include("physics/twodturb.jl")
 include("physics/barotropicqg.jl")
@@ -46,9 +46,9 @@ include("physics/traceradvdiff.jl")
 include("physics/kuramotosivashinsky.jl")
 
 
-# --------------------------
+# ----------------------
 # CUDA/GPU functionality
-# --------------------------
+# ----------------------
 
 @require CuArrays begin
   using CuArrays

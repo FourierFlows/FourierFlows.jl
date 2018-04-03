@@ -204,8 +204,8 @@ the filter is smaller than machine precision.
 """
 function makefilter(K; order=4, innerK=0.65, outerK=1)
   decay = 15*log(10) / (outerK-innerK)^order # decay rate for filtering function
-  filt = @. exp( -decay*(KK-innerK)^order )
-  filt[real.(KK) .< innerK] .= 1
+  filt = @. exp( -decay*(K-innerK)^order )
+  filt[real.(K) .< innerK] .= 1
   filt
 end
 

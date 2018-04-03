@@ -98,10 +98,11 @@ abstract type AbstractFilteredAB3TimeStepper <: AbstractTimeStepper end
 Initialize a forward Euler timestepper. The forward Euler method is 
 the simplest time-stepping method in the books and is explicit and 1st-order accurate.
 """
-struct ForwardEulerTimeStepper{dim} <: AbstractForwardEulerTimeStepper
+struct ForwardEulerTimeStepper{T,dim} <: AbstractForwardEulerTimeStepper
   dt::Float64
-  N::Array{Complex{Float64},dim}    # Explicit linear and nonlinear terms
-  ForwardEulerTimeStepper(dt::Float64, N::Array{Complex{Float64},dim}) where dim = new{dim}(dt, zeros(size(N)))
+  N::Array{T,dim}    # Explicit linear and nonlinear terms
+  ForwardEulerTimeStepper(dt, N::Array{T,dim}) where {T,dim} = (
+    new{cxeltype(N),ndims(N)}(dt, zeros(cxeltype(N), size(N))))
 end
 
 function stepforward!(s, ts::AbstractForwardEulerTimeStepper, eq, v, p, g)
@@ -325,7 +326,7 @@ It is described, among other places, in Bewley's Numerical
 Renaissance.
 """
 struct RK4TimeStepper{T,dim} <: AbstractRK4TimeStepper
-  dt::T
+  dt::Float64
   sol₁::Array{T,dim}
   RHS₁::Array{T,dim}
   RHS₂::Array{T,dim}
@@ -333,9 +334,10 @@ struct RK4TimeStepper{T,dim} <: AbstractRK4TimeStepper
   RHS₄::Array{T,dim}
 end
 
-function RK4TimeStepper(dt, LC)
-  @createarrays eltype(LC) size(LC) sol₁ RHS₁ RHS₂ RHS₃ RHS₄
-  RK4TimeStepper{eltype(LC),ndims(LC)}(dt, sol₁, RHS₁, RHS₂, RHS₃, RHS₄)
+function RK4TimeStepper(dt, LC; cxsol=true)
+  T = cxsol ? cxeltype(LC) : eltype(LC)
+  @createarrays T size(LC) sol₁ RHS₁ RHS₂ RHS₃ RHS₄
+  RK4TimeStepper{T,ndims(LC)}(dt, sol₁, RHS₁, RHS₂, RHS₃, RHS₄)
 end
 
 function stepforward!(s, ts::AbstractRK4TimeStepper, eq, v, p, g)
@@ -378,10 +380,11 @@ struct FilteredRK4TimeStepper{T,dim} <: AbstractFilteredRK4TimeStepper
   filter::Array{T,dim}    # Filter for solution
 end
 
-function FilteredRK4TimeStepper(dt, LC, g; filterkwargs...)
-  @createarrays eltype(LC) size(LC) sol₁ RHS₁ RHS₂ RHS₃ RHS₄
+function FilteredRK4TimeStepper(dt, LC, g; cxsol=true, filterkwargs...)
+  T = cxsol ? cxeltype(LC) : eltype(LC)
+  @createarrays T size(LC) sol₁ RHS₁ RHS₂ RHS₃ RHS₄
   filter = makefilter(g, typeof(dt), size(LC); filterkwargs...)
-  FilteredRK4TimeStepper{eltype(LC),ndims(LC)}(dt, sol₁, RHS₁, RHS₂, RHS₃, RHS₄, filter)
+  FilteredRK4TimeStepper{T,ndims(LC)}(dt, sol₁, RHS₁, RHS₂, RHS₃, RHS₄, filter)
 end
 
 function stepforward!(s, ts::AbstractFilteredRK4TimeStepper, eq, v, p, g)
@@ -421,16 +424,17 @@ end
 3rd order Adams-Bashforth time stepping is an explicit scheme that uses
 solutions from two previous time-steps to achieve 3rd order accuracy.
 """
-struct AB3TimeStepper{T,dim} <: AbstractTimeStepper
+struct AB3TimeStepper{T,dim} <: AbstractAB3TimeStepper
   dt::Float64
   RHS::Array{T,dim}
   RHS₋₁::Array{T,dim}
   RHS₋₂::Array{T,dim}
 end
 
-function AB3TimeStepper(dt, LC)
-  @createarrays eltype(LC) size(LC) RHS RHS₋₁ RHS₋₂
-  AB3TimeStepper{eltype(LC),ndims(LC)}(dt, RHS, RHS₋₁, RHS₋₂)
+function AB3TimeStepper(dt, LC; cxsol=true)
+  T = cxsol ? cxeltype(LC) : eltype(LC)
+  @createarrays T size(LC) RHS RHS₋₁ RHS₋₂
+  AB3TimeStepper{T,ndims(LC)}(dt, RHS, RHS₋₁, RHS₋₂)
 end
 
 function stepforward!(s, ts::AbstractAB3TimeStepper, eq, v, p, g)
@@ -461,7 +465,7 @@ end
 3rd order Adams-Bashforth time stepping is an explicit scheme that uses
 solutions from two previous time-steps to achieve 3rd order accuracy.
 """
-struct FilteredAB3TimeStepper{T,dim} <: AbstractTimeStepper
+struct FilteredAB3TimeStepper{T,dim} <: AbstractFilteredAB3TimeStepper
   dt::Float64
   RHS::Array{T,dim}
   RHS₋₁::Array{T,dim}
@@ -469,10 +473,11 @@ struct FilteredAB3TimeStepper{T,dim} <: AbstractTimeStepper
   filter::Array{T,dim}    # Filter for solution
 end
 
-function FilteredAB3TimeStepper(dt, LC, g; filterkwargs...)
-  @createarrays eltype(LC) size(LC) RHS RHS₋₁ RHS₋₂
+function FilteredAB3TimeStepper(dt, LC, g; cxsol=true, filterkwargs...)
+  T = cxsol ? cxeltype(LC) : eltype(LC)
+  @createarrays T size(LC) RHS RHS₋₁ RHS₋₂
   filter = makefilter(g, typeof(dt), size(LC); filterkwargs...)
-  FilteredAB3TimeStepper{eltype(LC),ndims(LC)}(dt, RHS, RHS₋₁, RHS₋₂, filter)
+  FilteredAB3TimeStepper{T,ndims(LC)}(dt, RHS, RHS₋₁, RHS₋₂, filter)
 end
 
 function stepforward!(s, ts::AbstractFilteredAB3TimeStepper, eq, v, p, g)
