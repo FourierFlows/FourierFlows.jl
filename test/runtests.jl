@@ -1,5 +1,6 @@
 #!/usr/bin/env julia
 
+#using CuArrays
 using Requires
 using FourierFlows
 using Base.Test
@@ -29,9 +30,6 @@ end
   include("test_timesteppers.jl")
 end
 
-# @testset "BarotropicQG Stepper tests" begin
-#     include("test_BarotropicQG_timesteppers.jl")
-# end
 
 println("-- Physics tests --")
 
@@ -47,11 +45,15 @@ end
   include("test_kuramotosivashinsky.jl")
 end
 
-println("-- CUDA tests --")
+@require CuArrays begin
 
-@testset "CuGrid tests" begin
-  using CuArrays
-  include("test_cugrid.jl")
+  println("-- CUDA tests --")
+
+  @testset "CuGrid tests" begin
+    using CuArrays
+    include("test_cugrid.jl")
+  end
+
 end
 
 println("Total test time: ", toq())
