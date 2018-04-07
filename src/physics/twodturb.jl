@@ -108,8 +108,8 @@ end
 
 using CuArrays
 
-function CuInitialValueProblem(; stepper="RK4", kwargs...)
-  prob = InitialValueProblem(; kwargs...)
+function CuProblem(; stepper="RK4", kwargs...)
+  prob = Problem(; kwargs...)
   dt = prob.ts.dt
 
    g = CuTwoDGrid(prob.grid)
@@ -117,13 +117,14 @@ function CuInitialValueProblem(; stepper="RK4", kwargs...)
   eq = CuEquation(prob.eqn)
   ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
 
-  FourierFlows.Problem(g, vs, prob.params, eq, ts)
+  FourierFlows.CuProblem(g, vs, prob.params, eq, ts)
 end
 
 eval(FourierFlows.structvarsexpr(:CuVars, physicalvars, transformvars, arraytype=:CuArray))
 eval(FourierFlows.structvarsexpr(:CuForcedVars, physicalvars, transformvars, arraytype=:CuArray))
 
 CuVars(v::Vars) = CuVars(getfield.(v, fieldnames(v))...)
+CuVars(v::ForcedVars) = CuForcedVars(getfield.(v, fieldnames(v))...)
 CuVars(g::AbstractGrid) = CuVars(Vars(g))
 
 CuForcedVars(v::Vars) = CuForcedVars(getfield.(v, fieldnames(v))...)
@@ -217,16 +218,19 @@ end
 @inline energy(prob) = energy(prob.state, prob.vars, prob.grid)
 
 """
-    enstrophy(prob)
     enstrophy(s, g)
 
 Returns the domain-averaged enstrophy in the Fourier-transformed vorticity
-solution s.sol.
+solution `s.sol`.
 """
-@inline function enstrophy(s, g)
-  1/(2*g.Lx*g.Ly)*FourierFlows.parsevalsum2(s.sol, g)
-end
+@inline enstrophy(s, g) = 1/(2*g.Lx*g.Ly)*FourierFlows.parsevalsum2(s.sol, g)
 
+"""
+    enstrophy(prob)
+
+Returns the domain-averaged enstrophy in the Fourier-transformed vorticity
+solution `prob.state.sol`.
+"""
 @inline enstrophy(prob) = enstrophy(prob.state, prob.grid)
 
 """

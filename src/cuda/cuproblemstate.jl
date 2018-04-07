@@ -1,21 +1,18 @@
 export CuEquation, CuProblem, CuState, CuDualState
 
 function CuProblem(g, v, p, eq, ts)
-  st = CuState{eltype(eq.LC),ndims(eq.LC)}(0, 0, ts.dt, CuArray(zeros(eq.LC)))
+  st = CuState(cxeltype(eq.LC), size(eq.LC), ts.dt)
   Problem(g, v, p, eq, ts, st)
 end
 
 mutable struct CuState{T,dim} <: AbstractState
-  t::T
+  t::Float64
   step::Int
-  dt::T
+  dt::Float64
   sol::CuArray{T,dim}
 end
 
-function CuState(T::DataType, sz::Tuple, dt)
-  sol = CuArray(zeros(T, sz))
-  CuState(0, 0, dt, sol)
-end
+CuState(T::DataType, sz::Tuple, dt) = CuState(0.0, 0, dt, CuArray(zeros(T, sz)))
 
 mutable struct CuDualState{T,dimc,dimr} <: AbstractState
   t::T
@@ -39,7 +36,7 @@ which multiply the solution. The explicit part of an equation is calculated
 by a function that may define linear and nonlinear parts.
 """
 struct CuEquation{T,dim} <: AbstractEquation
-  LC::CuArray{Complex{T},dim} # Coeffs of the eqn's implicit linear part
+  LC::CuArray{T,dim} # Coeffs of the eqn's implicit linear part
   calcN!::Function # Function that calcs linear & nonlinear parts
 end
 
@@ -49,4 +46,5 @@ struct DualCuEquation{T,dimc,dimr} <: AbstractEquation
   calcN!::Function
 end
 
-CuEquation(eq::AbstractEquation) = CuEquation(eq.LC, eq.calcN!)
+CuEquation(eq::AbstractEquation) = CuEquation(CuArray(eq.LC), eq.calcN!)
+#CuEquation(eq::AbstractEquation) = CuEquation(eq.LC, eq.calcN!)

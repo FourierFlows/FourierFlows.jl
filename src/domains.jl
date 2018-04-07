@@ -4,23 +4,18 @@ abstract type AbstractTwoDGrid <: AbstractGrid end
 abstract type AbstractOneDGrid <: AbstractGrid end
 
 """
-    ZeroDGrid(nvars)
+    ZeroDGrid()
 
-Constructs a placeholder grid object for "0D" problems (in other words, systems of
-ODEs) with nvars variables.
+Constructs a placeholder grid object for "0D" problems (in other words, systems of ODEs).
 """
-struct ZeroDGrid <: AbstractGrid
-  nvars::Int
-end
+struct ZeroDGrid <: AbstractGrid end
 
 """
-    OneDGrid(nx, Lx)
-
     OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_CORES, effort=FFTW.MEASURE)
 
-Constrcut a OneDGrid object. The one-dimensional domain has size Lx, 
-resolution nx, and leftmost grid point x0. FFT plans are generated 
-which use nthreads threads with the specified planning effort. 
+Constrcut a OneDGrid object with size `Lx`, resolution `nx`, and leftmost
+position `x0`. FFT plans are generated for `nthreads` CPUs using 
+FFTW flag `effort`.
 """
 struct OneDGrid{T} <: AbstractOneDGrid
   nx::Int
@@ -203,10 +198,12 @@ The decay rate is determined by order and outerK determines the outer wavenumber
 the filter is smaller than machine precision.
 """
 function makefilter(K; order=4, innerK=0.65, outerK=1)
+  TK = typeof(K)
+  K = Array(K)
   decay = 15*log(10) / (outerK-innerK)^order # decay rate for filtering function
   filt = @. exp( -decay*(K-innerK)^order )
   filt[real.(K) .< innerK] .= 1
-  filt
+  TK(filt)
 end
 
 function makefilter(g::AbstractTwoDGrid; realvars=true, kwargs...)

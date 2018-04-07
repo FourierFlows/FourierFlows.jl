@@ -2,9 +2,9 @@ using PyPlot, FourierFlows
 import FourierFlows.TwoDTurb
 import FourierFlows.TwoDTurb: energy, dissipation, injection, drag
 
-n, L  =  128, 2π
-ν, nν = 1e-4,  1
-μ, nμ = 1e-2, -1
+  n, L  =  128, 2π
+nu, nnu = 1e-4,  1
+mu, nmu = 1e-2, -1
 
 dt = 1e-1   # Time step
 tf = 0.1
@@ -26,7 +26,7 @@ function calcF!(F, sol, t, s, v, p, g)
   nothing
 end
 
-prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, 
+prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, 
   calcF=calcF!, stepper="RK4")
 
 function runtest(prob, nt)
@@ -83,9 +83,7 @@ function makeplot(prob, diags)
   xlabel(L"t")
   ylabel(L"E")
 
-  axs[1][:tick_params](bottom=false, labelbottom=false, 
-    left=false, labelleft=false)
-
+  axs[1][:tick_params](bottom=false, labelbottom=false, left=false, labelleft=false)
   tight_layout()
   show()
 end

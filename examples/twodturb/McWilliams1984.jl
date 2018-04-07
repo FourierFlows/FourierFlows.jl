@@ -3,16 +3,14 @@ using FourierFlows, PyPlot, JLD2
 import FourierFlows.TwoDTurb
 import FourierFlows.TwoDTurb: energy, enstrophy
 
-# Physical parameters
- n = 128
- L = 2π
- nν = 2
-  ν = 0e-8
-
-# Time-stepping
-dt = 5e-3
+# Parameters
+  n = 128
+  L = 2π
+nnu = 2
+ nu = 0e-8
+ dt = 5e-3
 nsteps = 8000
-nsubs  = 200
+nsubs = 200
 
 # Files
 filepath = "."
@@ -25,9 +23,7 @@ if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
 
 # Initialize problem
-prob = TwoDTurb.InitialValueProblem(;nx = n, Lx = L, ny = n, Ly = L, ν = ν,
-                                     nν = nν, dt = dt, stepper = "FilteredRK4")
-
+prob = TwoDTurb.Problem(; nx=n, Lx=L, ny=n, Ly=L, nu=nu, nnu=nnu, dt=dt, stepper="FilteredRK4")
 g = prob.grid
 
 # Initial condition closely following pyqg barotropic example
@@ -84,33 +80,24 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   pause(0.01)
 end
 
-
-
-
 # Step forward
 startwalltime = time()
 
-
 fig, axs = subplots(ncols=2, nrows=1, figsize=(12, 4))
 plot_output(prob, fig, axs; drawcolorbar=true)
-
 
 while prob.step < nsteps
   stepforward!(prob, diags, nsubs)
 
   # Message
   log = @sprintf("step: %04d, t: %d, ΔE: %.4f, ΔZ: %.4f, τ: %.2f min",
-    prob.step, prob.t, E.value/E.data[1], Z.value/Z.data[1],
-    (time()-startwalltime)/60)
+    prob.step, prob.t, E.value/E.data[1], Z.value/Z.data[1], (time()-startwalltime)/60)
 
   println(log)
-
   plot_output(prob, fig, axs; drawcolorbar=false)
-
 end
 
 plot_output(prob, fig, axs; drawcolorbar=true)
-
 
 savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), prob.step)
 savefig(savename, dpi=240)

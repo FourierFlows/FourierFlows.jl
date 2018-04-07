@@ -117,3 +117,6 @@ CuTwoDGrid(T::DataType, nx, Lx, args...; kwargs...) = CuTwoDGrid(nx, T(Lx), args
 Construct a CuTwoDGrid object with the same type and size as the TwoDGrid object `g`.
 """
 CuTwoDGrid(g::TwoDGrid) = CuTwoDGrid(g.nx, g.Lx, g.ny, g.Ly; x0=g.x[1], y0=g.y[1])
+TwoDGrid(g::CuTwoDGrid) = TwoDGrid(g.nx, g.Lx, g.ny, g.Ly; x0=g.x[1], y0=g.y[1])
+
+makefilter(g::CuTwoDGrid, T, sz; kwargs...) = CuArray(ones(T, sz)).*makefilter(g; realvars=sz[1]==g.nkr, kwargs...)

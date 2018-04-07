@@ -39,7 +39,7 @@ the solution vector), and grid g.
 """
 function autoconstructtimestepper(stepper, dt, sol, g::AbstractGrid=ZeroDGrid(1))
   fullsteppername = Symbol(stepper, :TimeStepper)
-  tsexpr = stepper ∈ filteredsteppers ? 
+  tsexpr = contains(stepper, "Filtered") ?
       Expr(:call, fullsteppername, dt, sol, g) : Expr(:call, fullsteppername, dt, sol)
   eval(tsexpr)
 end
