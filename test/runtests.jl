@@ -1,6 +1,6 @@
 #!/usr/bin/env julia
 
-# Start Test Script
+using Requires
 using FourierFlows
 using Base.Test
 
@@ -10,23 +10,23 @@ tic()
 println("-- Core tests --")
 
 @testset "Grid tests" begin
-    include("test_grid.jl")
+  include("test_grid.jl")
 end
 
 @testset "FFT tests" begin
-    include("test_fft.jl")
+  include("test_fft.jl")
 end
 
 @testset "IFFT tests" begin
-    include("test_ifft.jl")
+  include("test_ifft.jl")
 end
 
 @testset "Utils tests" begin
-    include("test_utils.jl")
+  include("test_utils.jl")
 end
 
 @testset "Timestepper tests" begin
-    include("test_timesteppers.jl")
+  include("test_timesteppers.jl")
 end
 
 # @testset "BarotropicQG Stepper tests" begin
@@ -40,11 +40,18 @@ println("-- Physics tests --")
 end
 
 @testset "Physics: BarotropicQG" begin
-    include("test_barotropicqg.jl")
+  include("test_barotropicqg.jl")
 end
 
 @testset "Physics: Kuramoto-Sivashinsky" begin
-    include("test_kuramotosivashinsky.jl")
+  include("test_kuramotosivashinsky.jl")
+end
+
+println("-- CUDA tests --")
+
+@testset "CuGrid tests" begin
+  using CuArrays
+  include("test_cugrid.jl")
 end
 
 println("Total test time: ", toq())

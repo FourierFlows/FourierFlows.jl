@@ -1,10 +1,5 @@
-"""
-    CuTwoDGrid(nx, Lx)
-    CuTwoDGrid(nx, Lx, ny, Ly;  x0=-Lx/2, y0=-Ly/2)
+export CuTwoDGrid
 
-Constrcut a CuTwoDGrid object. The two-dimensional domain has size (Lx, Ly), 
-resolution (nx, ny) and bottom left corner at (x0, y0).
-"""
 struct CuTwoDGrid{T} <: AbstractTwoDGrid
   nx::Int
   ny::Int
@@ -34,7 +29,7 @@ struct CuTwoDGrid{T} <: AbstractTwoDGrid
   fftplan::CuArrays.FFT.cCuFFTPlan{Complex{T},-1,false,2}
   ifftplan::Base.DFT.ScaledPlan{Complex{T},CuArrays.FFT.cCuFFTPlan{Complex{T},1,false,2},T}
   rfftplan::CuArrays.FFT.rCuFFTPlan{T,-1,false,2}
-  irfftplan::Base.DFT.ScaledPlan{Complex{T},CuCuArrays.FFT.rCuFFTPlan{Complex{T},1,false,2},T}
+  irfftplan::Base.DFT.ScaledPlan{Complex{T},CuArrays.FFT.rCuFFTPlan{Complex{T},1,false,2},T}
 
   # Range objects that access the aliased part of the wavenumber range
   ialias::UnitRange{Int}
@@ -42,6 +37,13 @@ struct CuTwoDGrid{T} <: AbstractTwoDGrid
   jalias::UnitRange{Int}
 end
 
+"""
+    CuTwoDGrid(nx, Lx, ny=nx, Ly=Lx;  x0=-Lx/2, y0=-Ly/2)
+
+Construct a CuTwoDGrid object. The two-dimensional domain has size `(Lx, Ly)`, 
+resolution `(nx, ny)` and bottom left corner at `(x0, y0)`. The type of `CuTwoDGrid` is
+inferred from the type of `Lx`.
+"""
 function CuTwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly)
   T = typeof(Lx)
   dx = Lx/nx
@@ -83,10 +85,10 @@ function CuTwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly)
   @cuconvertarrays x y X Y k kr l K L Kr Lr KKsq invKKsq KKrsq invKKrsq
 
   # FFT plans
-    fftplan = plan_fft(CuArray{Complex{T},2}(nx, ny); flags=effort)
-   ifftplan = plan_ifft(CuArray{Complex{T},2}(nk, nl); flags=effort)
-   rfftplan = plan_rfft(CuArray{T,2}(nx, ny); flags=effort)
-  irfftplan = plan_irfft(CuArray{Complex{T},2}(nkr, nl), nx; flags=effort)
+    fftplan = plan_fft(CuArray{Complex{T},2}(nx, ny))
+   ifftplan = plan_ifft(CuArray{Complex{T},2}(nk, nl))
+   rfftplan = plan_rfft(CuArray{T,2}(nx, ny))
+  irfftplan = plan_irfft(CuArray{Complex{T},2}(nkr, nl), nx)
 
   # Index endpoints for aliased i, j wavenumbers
   iaL, iaR = Int(floor(nk/3))+1, 2*Int(ceil(nk/3))-1
@@ -101,5 +103,17 @@ function CuTwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly)
              fftplan, ifftplan, rfftplan, irfftplan, ialias, iralias, jalias)
 end
 
+"""
+    CuTwoDGrid(T, args...; kwargs...)
+
+Construct a CuTwoDGrid object with type T. The other args and kwargs are identical
+to the constructor for CuTwoDGrid with no explicit type.
+"""
 CuTwoDGrid(T::DataType, nx, Lx, args...; kwargs...) = CuTwoDGrid(nx, T(Lx), args...; kwargs...)
+
+"""
+    CuTwoDGrid(g)
+
+Construct a CuTwoDGrid object with the same type and size as the TwoDGrid object `g`.
+"""
 CuTwoDGrid(g::TwoDGrid) = CuTwoDGrid(g.nx, g.Lx, g.ny, g.Ly; x0=g.x[1], y0=g.y[1])

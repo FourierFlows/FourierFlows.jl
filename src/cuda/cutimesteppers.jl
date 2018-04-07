@@ -1,5 +1,5 @@
 export CuForwardEulerTimeStepper, CuFilteredForwardEulerTimeStepper,
-       CuRK4TimeStepper, CuFilteredRK4TimeStepper,
+       CuRK4TimeStepper, CuFilteredRK4TimeStepper
 
 struct CuForwardEulerTimeStepper{T,dim} <: AbstractForwardEulerTimeStepper
   dt::T
@@ -10,7 +10,7 @@ end
 
 CuForwardEulerTimeStepper(dt, N::Array{Complex{T},dim}) where {T,dim} = CuForwardEulerTimeStepper(dt, CuArray(N))
 
-struct CuFilteredForwardEulerTimeStepper{dim} <: AbstractFilteredForwardEulerTimeStepper
+struct CuFilteredForwardEulerTimeStepper{T,dim} <: AbstractFilteredForwardEulerTimeStepper
   dt::T
   N::CuArray{Complex{T},dim}    # Explicit linear and nonlinear terms
   filter::CuArray{T,dim}        # Filter for solution
@@ -32,7 +32,7 @@ struct CuRK4TimeStepper{T,dim} <: AbstractRK4TimeStepper
 end
 
 function CuRK4TimeStepper(dt, LC)
-  @cucreatearrays eltype(LC) size(LC) sol₁ RHS₁ RHS₂ RHS₃ RHS₄
+  @createcuarrays eltype(LC) size(LC) sol₁ RHS₁ RHS₂ RHS₃ RHS₄
   CuRK4TimeStepper{eltype(LC),ndims(LC)}(dt, sol₁, RHS₁, RHS₂, RHS₃, RHS₄)
 end
 
@@ -48,7 +48,7 @@ struct CuFilteredRK4TimeStepper{T,dim} <: AbstractFilteredRK4TimeStepper
 end
 
 function CuFilteredRK4TimeStepper(dt, LC, g; filterkwargs...)
-  @cucreatearrays eltype(LC) size(LC) sol₁ RHS₁ RHS₂ RHS₃ RHS₄
+  @createcuarrays eltype(LC) size(LC) sol₁ RHS₁ RHS₂ RHS₃ RHS₄
   filter = makefilter(g, typeof(dt), size(LC); filterkwargs...)
   CuFilteredRK4TimeStepper{eltype(LC),ndims(LC)}(dt, sol₁, RHS₁, RHS₂, RHS₃, RHS₄, filter)
 end

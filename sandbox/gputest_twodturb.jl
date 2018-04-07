@@ -132,25 +132,24 @@ function speedtest(vs, nu, dt, nsteps; dmsg=1000)
     @. qh += dt*rhs
     t += dt
   end
-  A_mul_B!(q, irfftplan, qsh)
+  A_mul_B!(q, irfftplan, qh)
   q
 end
 
 # Parameters
-nx = 128            # Resolution 
-Lx = 2π         # Physical box size
-nu = 8e-5           # Laplacian viscosity
-dt = 1e-2           # Time step
-nstepss = [100, 200]# Number of time steps
-nsteps = 100
-T = Float64
+nx = 128      # Resolution 
+Lx = 2π       # Physical box size
+nu = 8e-5     # Laplacian viscosity
+dt = 1e-2     # Time step
+nsteps = 100  # Number of time steps
+T = Float64   # Computational precision
 
 vcpu = Vars(T, nx, Lx; usegpu=false)
 vgpu = Vars(T, nx, Lx; usegpu=true)
-q = speedtest(vcpu, nu, dt, 1)
-q = speedtest(vgpu, nu, dt, 1)
+qc = speedtest(vcpu, nu, dt, 1)
+qg = speedtest(vgpu, nu, dt, 1)
 
-for nx in [64, 128, 256, 512]
+for nx in [64, 128, 256, 512, 1024, 2048, 4096]
   vcpu = Vars(T, nx, Lx; usegpu=false)
   vgpu = Vars(T, nx, Lx; usegpu=true)
 
@@ -160,23 +159,3 @@ for nx in [64, 128, 256, 512]
   @printf "n=%d, GPU" nx
   @btime qg = speedtest(vgpu, nu, dt, nsteps)
 end
-
-#=
-for nsteps in nstepss
-  q = speedtest(vcpu, nu, dt, 1)
-  @btime q = speedtest(vcpu, nu, dt, nsteps)
-end
-
-for nsteps in nstepss
-  q = speedtest(vgpu, nu, dt, 1)
-  @btime q = speedtest(vgpu, nu, dt, nsteps)
-end
-=#
-
-
-
-
-
-#fig, axs = subplots()
-#imshow(q)
-#show()

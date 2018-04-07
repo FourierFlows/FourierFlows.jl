@@ -106,6 +106,8 @@ end
 
 @require CuArrays begin
 
+using CuArrays
+
 function CuInitialValueProblem(; stepper="RK4", kwargs...)
   prob = InitialValueProblem(; kwargs...)
   dt = prob.ts.dt

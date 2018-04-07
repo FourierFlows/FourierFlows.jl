@@ -52,9 +52,9 @@ include("physics/kuramotosivashinsky.jl")
 
 @require CuArrays begin
   using CuArrays
+  include("cuda/cuutils.jl")
   include("cuda/cuproblemstate.jl")
   include("cuda/cudomains.jl")
-  include("cuda/cuutils.jl")
   include("cuda/cutimesteppers.jl")
 end
 
