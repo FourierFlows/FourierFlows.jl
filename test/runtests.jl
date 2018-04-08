@@ -1,6 +1,6 @@
 #!/usr/bin/env julia
 
-#using CuArrays
+using CuArrays
 using Requires
 using FourierFlows
 using Base.Test
