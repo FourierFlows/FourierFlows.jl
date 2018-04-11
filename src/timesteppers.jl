@@ -174,10 +174,16 @@ struct ETDRK4TimeStepper{dim} <: AbstractETDRK4TimeStepper
   N₄::Array{Complex{Float64},dim}
 end
 
-struct DualETDRK4TimeStepper{dimc, dimr} <: AbstractTimeStepper
+struct DualETDRK4TimeStepper{dimc,dimr} <: AbstractTimeStepper
   dt::Float64
   c::ETDRK4TimeStepper{dimc}
   r::ETDRK4TimeStepper{dimr}
+end
+
+function ETDRK4TimeStepper(dt, LCc, LCr)
+  c = ETDRK4TimeStepper(dt, LCc)
+  r = ETDRK4TimeStepper(dt, LCr)
+  DualETDRK4TimeStepper{ndims(LCc), ndims(LCr)}(dt, c, r)
 end
 
 function ETDRK4TimeStepper(dt, LC)
@@ -186,12 +192,6 @@ function ETDRK4TimeStepper(dt, LC)
   ζ, α, β, Γ = getetdcoeffs(dt, LC)
   @createarrays eltype(LC) size(LC) sol₁ sol₂ N₁ N₂ N₃ N₄
   ETDRK4TimeStepper{ndims(LC)}(dt, LC, ζ, α, β, Γ, expLCdt, expLCdt2, sol₁, sol₂, N₁, N₂, N₃, N₄)
-end
-
-function ETDRK4TimeStepper(dt, LCc, LCr)
-  c = ETDRK4TimeStepper(dt, LCc)
-  r = ETDRK4TimeStepper(dt, LCr)
-  DualETDRK4TimeStepper{ndims(LCc), ndims(LCr)}(dt, c, r)
 end
 
 function stepforward!(s, ts::AbstractETDRK4TimeStepper, eq, v, p, g)
@@ -365,6 +365,54 @@ function stepforward!(s, ts::AbstractRK4TimeStepper, eq, v, p, g)
   nothing
 end
 
+struct DualRK4TimeStepper{Tc,Tr,dimc,dimr} <: AbstractTimeStepper
+  dt::Float64
+  c::RK4TimeStepper{Tc,dimc}
+  r::RK4TimeStepper{Tr,dimr}
+end
+
+function RK4TimeStepper(dt, LCc, LCr)
+  c = RK4TimeStepper(dt, LCc)
+  r = RK4TimeStepper(dt, LCr)
+  DualRK4TimeStepper{cxeltype(LCc),cxeltype(LCr),ndims(LCc),ndims(LCr)}(dt, c, r)
+end
+
+function stepforward!(s, ts::DualRK4TimeStepper, eq, v, p, g)
+  eq.calcN!(ts.c.RHS₁, ts.r.RHS₁, s.solc, s.solr, s.t, s, v, p, g)
+  @. ts.c.RHS₁ += eq.LCc*s.solc
+  @. ts.r.RHS₁ += eq.LCr*s.solr
+  # Substep 1
+  t2 = s.t + 0.5*ts.c.dt
+  @. ts.c.sol₁ = s.solc + 0.5*ts.c.dt*ts.c.RHS₁
+  @. ts.r.sol₁ = s.solr + 0.5*ts.r.dt*ts.r.RHS₁
+  eq.calcN!(ts.c.RHS₂, ts.c.RHS₂, ts.c.sol₁, ts.r.sol₁, t2, s, v, p, g)
+  @. ts.c.RHS₂ += eq.LCc*ts.c.sol₁
+  @. ts.r.RHS₂ += eq.LCr*ts.r.sol₁
+  # Substep 2
+  @. ts.c.sol₁ = s.solc + 0.5*ts.c.dt*ts.c.RHS₂
+  @. ts.r.sol₁ = s.solr + 0.5*ts.r.dt*ts.r.RHS₂
+  eq.calcN!(ts.c.RHS₃, ts.r.RHS₃, ts.c.sol₁, ts.r.sol₁, t2, s, v, p, g)
+  @. ts.c.RHS₃ += eq.LCc*ts.c.sol₁
+  @. ts.r.RHS₃ += eq.LCr*ts.r.sol₁
+  # Substep 3
+  t3 = s.t + ts.c.dt
+  @. ts.c.sol₁ = s.solc + ts.c.dt*ts.c.RHS₃
+  @. ts.r.sol₁ = s.solr + ts.r.dt*ts.r.RHS₃
+  eq.calcN!(ts.c.RHS₄, ts.r.RHS₄, ts.c.sol₁, ts.r.sol₁, t3, s, v, p, g)
+  @. ts.c.RHS₄ += eq.LCc*ts.c.sol₁
+  @. ts.r.RHS₄ += eq.LCr*ts.r.sol₁
+
+  # Substep 4 and final step
+  @. s.solc += ts.c.dt*(1/6*ts.c.RHS₁ + 1/3*ts.c.RHS₂ + 1/3*ts.c.RHS₃ + 1/6*ts.c.RHS₄)
+  @. s.solr += ts.r.dt*(1/6*ts.r.RHS₁ + 1/3*ts.r.RHS₂ + 1/3*ts.r.RHS₃ + 1/6*ts.r.RHS₄)
+  s.t += ts.c.dt
+  s.step += 1
+  nothing
+end
+
+
+
+
 
 # ------------
 # Filtered RK4
@@ -412,6 +460,53 @@ function stepforward!(s, ts::AbstractFilteredRK4TimeStepper, eq, v, p, g)
 
   nothing
 end
+
+struct DualFilteredRK4TimeStepper{Tc,Tr,dimc,dimr} <: AbstractTimeStepper
+  dt::Float64
+  c::FilteredRK4TimeStepper{Tc,dimc}
+  r::FilteredRK4TimeStepper{Tr,dimr}
+end
+
+function FilteredRK4TimeStepper(dt, LCc, LCr, g)
+  c = FilteredRK4TimeStepper(dt, LCc, g)
+  r = FilteredRK4TimeStepper(dt, LCr, g)
+  DualFilteredRK4TimeStepper{cxeltype(LCc),cxeltype(LCr),ndims(LCc),ndims(LCr)}(dt, c, r)
+end
+
+function stepforward!(s, ts::DualFilteredRK4TimeStepper, eq, v, p, g)
+  eq.calcN!(ts.c.RHS₁, ts.r.RHS₁, s.solc, s.solr, s.t, s, v, p, g)
+  @. ts.c.RHS₁ += eq.LCc*s.solc
+  @. ts.r.RHS₁ += eq.LCr*s.solr
+  # Substep 1
+  t2 = s.t + 0.5*ts.c.dt
+  @. ts.c.sol₁ = s.solc + 0.5*ts.c.dt*ts.c.RHS₁
+  @. ts.r.sol₁ = s.solr + 0.5*ts.r.dt*ts.r.RHS₁
+  eq.calcN!(ts.c.RHS₂, ts.r.RHS₂, ts.c.sol₁, ts.r.sol₁, t2, s, v, p, g)
+  @. ts.c.RHS₂ += eq.LCc*ts.c.sol₁
+  @. ts.r.RHS₂ += eq.LCr*ts.r.sol₁
+  # Substep 2
+  @. ts.c.sol₁ = s.solc + 0.5*ts.c.dt*ts.c.RHS₂
+  @. ts.r.sol₁ = s.solr + 0.5*ts.r.dt*ts.r.RHS₂
+  eq.calcN!(ts.c.RHS₃, ts.r.RHS₃, ts.c.sol₁, ts.r.sol₁, t2, s, v, p, g)
+  @. ts.c.RHS₃ += eq.LCc*ts.c.sol₁
+  @. ts.r.RHS₃ += eq.LCr*ts.r.sol₁
+  # Substep 3
+  t3 = s.t + ts.c.dt
+  @. ts.c.sol₁ = s.solc + ts.c.dt*ts.c.RHS₃
+  @. ts.r.sol₁ = s.solr + ts.r.dt*ts.r.RHS₃
+  eq.calcN!(ts.c.RHS₄, ts.r.RHS₄, ts.c.sol₁, ts.r.sol₁, t3, s, v, p, g)
+  @. ts.c.RHS₄ += eq.LCc*ts.c.sol₁
+  @. ts.r.RHS₄ += eq.LCr*ts.r.sol₁
+
+  # Substep 4 and final step
+  @. s.solc = ts.c.filter*(s.solc + ts.c.dt*(1/6*ts.c.RHS₁ + 1/3*ts.c.RHS₂ + 1/3*ts.c.RHS₃ + 1/6*ts.c.RHS₄))
+  @. s.solr = ts.r.filter*(s.solr + ts.r.dt*(1/6*ts.r.RHS₁ + 1/3*ts.r.RHS₂ + 1/3*ts.r.RHS₃ + 1/6*ts.r.RHS₄))
+  s.t += ts.c.dt
+  s.step += 1
+  nothing
+end
+
+
 
 
 # ---

@@ -1,4 +1,4 @@
-export Equation, Problem, State, DualState
+export Equation, DualEquation, Problem, State, DualState
 
 mutable struct State{T,dim} <: AbstractState
   t::Float64
