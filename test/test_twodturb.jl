@@ -5,12 +5,12 @@ cfl(prob) = maximum([maximum(abs.(prob.vars.U)), maximum(abs.(prob.vars.V))]*
               prob.ts.dt/prob.grid.dx)
 
 # Lamb dipole test
-function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, ν=0, nν=1, ti=L/Ue*0.01,
+function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu=0.0, nnu=1, ti=L/Ue*0.01,
   nm=3, message=false)
 
   nt = round(Int, ti/dt)
 
-  prob = TwoDTurb.InitialValueProblem(nx=n, Lx=L, ν=ν, nν=nν, dt=dt,
+  prob = TwoDTurb.InitialValueProblem(nx=n, Lx=L, nu=nu, nnu=nnu, dt=dt,
                                         stepper="FilteredRK4")
   x, y, q = prob.grid.X, prob.grid.Y, prob.vars.q # nicknames
 
@@ -43,13 +43,13 @@ end
 
 
 # ISOTROPIC RING FORCING BUDGETS
-function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, ν=1e-7, nν=2,
-                                         μ = 1e-1, nμ = 0, message=false)
+function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, nu=1e-7, nnu=2,
+                                         mu = 1e-1, nmu = 0, message=false)
 
   n, L  = 256, 2π
-  ν, nν = 1e-7, 2
-  μ, nμ = 1e-1, 0
-  dt, tf = 0.005, 0.1/μ
+  nu, nnu = 1e-7, 2
+  mu, nmu = 1e-1, 0
+  dt, tf = 0.005, 0.1/mu
   nt = round(Int, tf/dt)
   ns = 1
 
@@ -75,7 +75,7 @@ function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, ν=1e-7, nν
     nothing
   end
 
-  prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
+  prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt,
    stepper="RK4", calcF=calcF!)
 
   s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
@@ -98,7 +98,7 @@ function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, ν=1e-7, nν
 
   E, D, W, R = diags
 
-  t = round(μ*prob.state.t, 2)
+  t = round(mu*prob.state.t, 2)
 
   i₀ = 1
   dEdt = (E[(i₀+1):E.count] - E[i₀:E.count-1])/prob.ts.dt
@@ -128,16 +128,16 @@ Tests the advection term in the twodturb module by timestepping a
 test problem with timestep dt and timestepper identified by the string stepper.
 The test problem is derived by picking a solution ζf (with associated
 streamfunction ψf) for which the advection term J(ψf, ζf) is non-zero. Next, a
-forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - νΔζf. One solution
+forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - nuΔζf. One solution
 to the vorticity equation forced by this Ff is then ζf. (This solution may not
 be realized, at least at long times, if it is unstable.)
 """
-function testnonlinearterms(dt, stepper; n=128, L=2π, ν=1e-2, nν=1,
-                                         μ=0.0, nμ=0, message=false)
+function testnonlinearterms(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1,
+                                         mu=0.0, nmu=0, message=false)
 
   n, L  = 128, 2π
-  ν, nν = 1e-2, 1
-  μ, nμ = 0.0, 0
+  nu, nnu = 1e-2, 1
+  mu, nmu = 0.0, 0
   tf = 1.0
   nt = round(Int, tf/dt)
 
@@ -149,7 +149,7 @@ function testnonlinearterms(dt, stepper; n=128, L=2π, ν=1e-2, nν=1,
   qf = @. -8sin(2x)*cos(2y) - 20sin(x)*cos(3y)
 
   Ff = @. -(
-    ν*( 64sin(2x)*cos(2y) + 200sin(x)*cos(3y) )
+    nu*( 64sin(2x)*cos(2y) + 200sin(x)*cos(3y) )
     + 8*( cos(x)*cos(3y)*sin(2x)*sin(2y) - 3cos(2x)*cos(2y)*sin(x)*sin(3y) )
   )
 
@@ -161,9 +161,7 @@ function testnonlinearterms(dt, stepper; n=128, L=2π, ν=1e-2, nν=1,
     nothing
   end
 
-  prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt,
-    stepper=stepper, calcF=calcF!)
-
+  prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper=stepper, calcF=calcF!)
   s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
 
   TwoDTurb.set_q!(prob, qf)

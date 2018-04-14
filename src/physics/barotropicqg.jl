@@ -3,64 +3,60 @@ using FourierFlows
 Grid = TwoDGrid
 
 # Params
-struct Params <: AbstractParams
-  f0::Float64      # Constant planetary vorticity
-  beta::Float64    # Planetary vorticity y-gradient
-  FU::Function     # Time-dependent forcing of domain average flow
-  eta::Array{Float64,2}            # Topographic PV
-  etah::Array{Complex{Float64},2}  # FFT of Topographic PV
-  μ::Float64       # Linear drag
-  ν::Float64       # Viscosity coefficient
-  νn::Int          # Hyperviscous order (νn=1 is plain old viscosity)
+struct Params{T} <: AbstractParams
+  f0::T                      # Constant planetary vorticity
+  beta::T                    # Planetary vorticity y-gradient
+  FU::Function               # Time-dependent forcing of domain average flow
+  eta::Array{T,2}            # Topographic PV
+  etah::Array{Complex{T},2}  # FFT of Topographic PV
+  mu::T                      # Linear drag
+  nu::T                      # Viscosity coefficient
+  nun::Int                   # Hyperviscous order (nun=1 is plain old viscosity)
 end
 
 """
 Constructor that accepts generating function for the topographic height, eta.
 """
-function Params(g::TwoDGrid, f0::Float64, beta::Float64, FU::Function,
-  eta::Function, μ::Float64, ν::Float64, νn::Int)
+function Params(g::TwoDGrid, f0, beta, FU, eta, mu, nu, nun)
   etagrid = eta(g.X, g.Y)
   etah = rfft(etagrid)
-  Params(f0, beta, FU, etagrid, etah, μ, ν, νn)
+  Params(f0, beta, FU, etagrid, etah, mu, nu, nun)
 end
 
 # Equations
-function Equation(p::Params, g::TwoDGrid)
-  LC = -p.μ - p.ν * g.KKrsq.^p.νn + im*p.beta*g.Kr.*g.invKKrsq
-  FourierFlows.Equation{2}(LC, calcN!)
+function Equation(p, g)
+  LC = @. -p.mu - p.nu*g.KKrsq^p.nun + im*p.beta*g.kr*g.invKKrsq
+  FourierFlows.Equation(LC, calcN!)
 end
 
 # Vars
-mutable struct Vars <: AbstractVars
-  q::Array{Float64,2}
-  U::Float64
-  u::Array{Float64,2}
-  v::Array{Float64,2}
-  uUq::Array{Float64,2}
-  vq::Array{Float64,2}
-  psi::Array{Float64,2}
-  zeta::Array{Float64,2}
-  qh::Array{Complex{Float64},2}
-  uh::Array{Complex{Float64},2}
-  vh::Array{Complex{Float64},2}
-  uUqh::Array{Complex{Float64},2}
-  vqh::Array{Complex{Float64},2}
-  psih::Array{Complex{Float64},2}
-  zetah::Array{Complex{Float64},2}
+mutable struct Vars{T} <: AbstractVars
+  q::Array{T,2}
+  U::T
+  u::Array{T,2}
+  v::Array{T,2}
+  uUq::Array{T,2}
+  vq::Array{T,2}
+  psi::Array{T,2}
+  zeta::Array{T,2}
+  qh::Array{Complex{T},2}
+  uh::Array{Complex{T},2}
+  vh::Array{Complex{T},2}
+  uUqh::Array{Complex{T},2}
+  vqh::Array{Complex{T},2}
+  psih::Array{Complex{T},2}
+  zetah::Array{Complex{T},2}
 end
 
 function Vars(g::TwoDGrid)
-  U     = 0.0
-  @createarrays Float64 (g.nx, g.ny) q u v uUq vq psi zeta
-  @createarrays Complex{Float64} (g.nkr, g.nl) qh uh vh uUqh vqh psih zetah
- return Vars(q, U, u, v, uUq, vq, psi, zeta, qh, uh, vh,
-    uUqh, vqh, psih, zetah)
+  T = typeof(g.Lx)
+  @createarrays T (g.nx, g.ny) q u v uUq vq psi zeta
+  @createarrays Complex{T} (g.nkr, g.nl) qh uh vh uUqh vqh psih zetah
+ Vars(q, 0.0, u, v, uUq, vq, psi, zeta, qh, uh, vh, uUqh, vqh, psih, zetah)
 end
 
 # Solvers
-function calcN!(N::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
-  t::Float64, s::State, v::Vars, p::Params, g::TwoDGrid)
-
+function calcN!(N, sol, t, s, v, p, g)
   # Note that U = sol[1, 1]. For all other elements ζ = sol
   v.U = sol[1, 1].re
   @. v.zetah = sol
@@ -97,7 +93,7 @@ function calcN!(N::Array{Complex{Float64}, 2}, sol::Array{Complex{Float64}, 2},
 end
 
 # Helper functions
-function updatevars!(s::State, v::Vars, p::Params, g::TwoDGrid)
+function updatevars!(s, v, p, g)
   v.U = s.sol[1, 1].re
   @. v.zetah = s.sol
   v.zetah[1, 1] = 0.0
@@ -119,14 +115,11 @@ function updatevars!(s::State, v::Vars, p::Params, g::TwoDGrid)
   nothing
 end
 
-function updatevars!(prob::AbstractProblem)
-  s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
-  updatevars!(s, v, p, g)
-end
+updatevars!(prob) = updatevars!(prob.state, prob.vars, prob.params, prob.grid)
 
 
-function set_zeta!(s::State, v::AbstractVars, p::AbstractParams, g::TwoDGrid,
-  zeta::Array{Float64, 2})
+function set_zeta!(s, v, p, g, zeta)
+  #zeta = similar(v.u)
 
   A_mul_B!(v.zetah, g.rfftplan, zeta)
   v.zetah[1, 1] = 0.0
@@ -136,10 +129,7 @@ function set_zeta!(s::State, v::AbstractVars, p::AbstractParams, g::TwoDGrid,
   nothing
 end
 
-function set_zeta!(prob::AbstractProblem, zeta)
-  set_zeta!(prob.state, prob.vars, prob.params, prob.grid, zeta)
-  nothing
-end
+set_zeta!(prob::AbstractProblem, zeta) = set_zeta!(prob.state, prob.vars, prob.params, prob.grid, zeta)
 
 
 """
@@ -155,7 +145,7 @@ end
 """
 Returns the domain-averaged enstrophy.
 """
-function enstrophy(prob::AbstractProblem)
+function enstrophy(prob)
   s, g = prob.state, prob.grid
   0.5*FourierFlows.parsevalsum2(s.sol, g)/(g.Lx*g.Ly)
 end
@@ -163,21 +153,9 @@ end
 """
 Returns the domain-averaged enstrophy.
 """
-
-function U00(prob::AbstractProblem)
-  s = prob.state
-  s.sol[1, 1]
-end
-
-function energy00(prob::AbstractProblem)
-  s = prob.state
-  0.5*s.sol[1, 1].^2
-end
-
-function enstrophy00(prob::AbstractProblem)
-  s, p = prob.state, prob.params
-  p.beta*s.sol[1, 1]
-end
+U00(prob) = s.sol[1, 1]
+energy00(prob) = 0.5*prob.state.sol[1, 1].^2
+enstrophy00(prob) = prob.params.beta*prob.state.sol[1, 1]
 
 
 

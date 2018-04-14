@@ -18,9 +18,7 @@ mutable struct Output
 end
 
 function Output(prob::Problem, filename::String, fields::Dict{Symbol,Function})
-
-  # Initialize output: first remove trailing ".jld2" to form 'basefilename'
-  if filename[end-4:end] == ".jld2"
+  if filename[end-4:end] == ".jld2" # Initialize output: remove trailing ".jld2" to form 'basefilename'
     basefilename = filename[1:end-5]
   else
     basefilename = filename
@@ -45,7 +43,6 @@ end
 
 getindex(out::Output, key) = out.fields[key](out.prob)
 
-
 """ 
     saveoutput(out)
 
@@ -62,7 +59,6 @@ function saveoutput(out::Output)
   nothing
 end
 
-
 """ 
     saveproblem(prob, filename)
 
@@ -70,41 +66,34 @@ Save certain aspects of a problem timestepper, grid, and params. Functions
 that are fields in params are not saved.
 """
 function saveproblem(prob::AbstractProblem, filename::String)
-
   jldopen(filename, "a+") do file
-      file["timestepper/dt"] = prob.ts.dt   # Timestepper
+    file["timestepper/dt"] = prob.ts.dt   # Timestepper
 
-      for field in gridfieldstosave         # Grid
-        file["grid/$field"] = getfield(prob.grid, field)
+    for field in gridfieldstosave         # Grid
+      file["grid/$field"] = getfield(prob.grid, field)
+    end
+
+    for name in fieldnames(prob.params)   # Params
+      field = getfield(prob.params, name)
+      if !(typeof(field) <: Function)
+        file["params/$name"] = field
       end
-
-      for name in fieldnames(prob.params)   # Params
-        field = getfield(prob.params, name)
-        if !(typeof(field) <: Function)
-          file["params/$name"] = field
-        end
-      end
-
+    end
   end
-
   nothing
 end
 
 saveproblem(out::Output) = saveproblem(out.prob, out.filename)
-
 
 """
     savediagnostic(diag, diagname)
 
 Save diagnostics to file, labeled by the string diagname.
 """
-function savediagnostic(diag::AbstractDiagnostic, diagname::String,
-  filename::String) 
-
+function savediagnostic(diag::AbstractDiagnostic, diagname::String, filename::String) 
   jldopen(filename, "a+") do file
     file["diags/$diagname/time"] = diag.time
     file["diags/$diagname/data"] = diag.data
   end
-
   nothing
 end

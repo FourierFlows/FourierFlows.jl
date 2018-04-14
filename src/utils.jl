@@ -3,10 +3,14 @@ import SpecialFunctions
 
 export @createarrays
 
-# Utility for generating time-steppers.
+"""
+    cxeltype(a)
 
-# Time-steppers lists
-steppers = [
+Returns Complex{eltype(a)} if eltype(a) <: Real; eltype(a) otherwise.
+"""
+cxeltype(a) = eltype(a) <: Real ? Complex{eltype(a)} : eltype(a)
+
+const steppers = [
   "ForwardEuler",
   "FilteredForwardEuler",
   "AB3",
@@ -17,7 +21,7 @@ steppers = [
   "FilteredETDRK4",
 ]
 
-filteredsteppers = [
+const filteredsteppers = [
   "FilteredForwardEuler",
   "FilteredAB3",
   "FilteredRK4",
@@ -25,69 +29,50 @@ filteredsteppers = [
 ]
 
 """
+    autoconstructtimestepper(stepper, dt, sol)
+    autoconstructtimestepper(stepper, dt, solc, solr)
+    autoconstructtimestepper(filteredstepper, dt, sol, g)
+
 Returns a time-stepper type defined by the prefix 'stepper', timestep dt
 solution sol (used to construct variables with identical type and size as
 the solution vector), and grid g.
 """
 function autoconstructtimestepper(stepper, dt, sol, g::AbstractGrid=ZeroDGrid(1))
   fullsteppername = Symbol(stepper, :TimeStepper)
-  if stepper ∈ filteredsteppers
-    tsexpr = Expr(:call, fullsteppername, dt, sol, g)
-  else
-    tsexpr = Expr(:call, fullsteppername, dt, sol)
-  end
+  tsexpr = contains(stepper, "Filtered") ?
+      Expr(:call, fullsteppername, dt, sol, g) : Expr(:call, fullsteppername, dt, sol)
   eval(tsexpr)
 end
 
 function autoconstructtimestepper(stepper, dt, solc, solr)
   fullsteppername = Symbol(stepper, :TimeStepper)
-  tsexpr = Expr(:call, fullsteppername, dt, solc, solr)
-  eval(tsexpr)
+  eval(Expr(:call, fullsteppername, dt, solc, solr))
 end
 
-
-
 """
-    @createarrays T dims a b c
+    @createarrays T dims a b c...
 
 Create arrays of all zeros with element type T, size dims, and global names
 a, b, c (for example). An arbitrary number of arrays may be created.
 """
 macro createarrays(T, dims, vars...)
   expr = Expr(:block)
-  append!(expr.args,
-    [:( $(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
+  append!(expr.args, [:($(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
   expr
 end
 
-
-"""
-This function returns an expression that defines a Composite Type
-of the AbstractVars variety.
-"""
-function structvarsexpr(name, physfields, transfields; vardims=2, parent=:AbstractVars, T=Float64)
-  physexprs = [:($fld::Array{$T,$vardims}) for fld in physfields]
-  transexprs = [:($fld::Array{Complex{$T},$vardims}) for fld in transfields]
-
-  if parent != nothing
-    expr = quote
-      mutable struct $name <: $parent
-        $(physexprs...)
-        $(transexprs...)
-      end
-    end
-  else
-    expr = quote
-      mutable struct $name
-        $(physexprs...)
-        $(transexprs...)
-      end
+"Returns an expression that defines a Composite Type of the AbstractVars variety."
+function structvarsexpr(name, physfields, transfields; vardims=2, parent=:AbstractVars, T=Float64, arraytype=:Array)
+  physexprs = [:($fld::$arraytype{$T,$vardims}) for fld in physfields]
+  transexprs = [:($fld::$arraytype{Complex{$T},$vardims}) for fld in transfields]
+  expr = quote
+    struct $name <: $parent
+      $(physexprs...)
+      $(transexprs...)
     end
   end
-
   expr
 end
-
 
 """
     fftwavenums(n; L=1)
@@ -96,7 +81,6 @@ Return the fftwavenumber vector with length n and domain size L.
 """
 fftwavenums(n::Int; L=1) = 2π/L*cat(1, 0:n/2, -n/2+1:-1)
 
-
 """
     rms(q)
 
@@ -104,49 +88,34 @@ Return the root-mean-square of an array.
 """
 rms(q) = sqrt(mean(q.^2))
 
-
 """
-    peaked_isotropic_spectrum(nkl, kpeak; ord=4, rms=1, maxval=1)
+    peakedisotropicspectrum(nkl, kpeak; order=4, rms=1, maxval=1)
+    peakedisotropicspectrum(nx, npeak; order=4, rms=1, maxval=1)
 
 Generate a real and random two-dimensional distribution phi(x, y) with
 a Fourier spectrum peaked around a central non-dimensional wavenumber kpeak.
 The spectrum is normalized either by setting the root-mean-square value of phi
 with the keyword 'rms', or the maximum value of phi with the keyword 'maxval'.
-
-    peaked_isotropic_spectrum(nx, npeak; ord=4, rms=1, maxval=1)
 """
-function peaked_isotropic_spectrum(nkl::Tuple{Int, Int}, kpeak::Real;
-  ord=4.0, rms=1.0, maxval=0.0)
-
-  # Non-dimensional wavenumbers
+function peakedisotropicspectrum(nkl::Tuple{Int, Int}, kpeak::Real; order=4, rms=1, maxval=0)
   nk, nl = nkl
-  k, l   = fftwavenums(nk), fftwavenums(nl)
-
-  K = zeros(Float64, nk, nl)
-  for j = 1:nl, i = 1:nk
-    K[i, j] = sqrt(k[i]^2 + l[j]^2)
-  end
-
-  # Generate random spectrum and then normalize
-  phih = @. exp(2π*im*rand(nk, nl)) / (1 + K/kpeak)^ord
-
-  # Normalize by maximum value if specified
-  if maxval > 0
+  k = reshape(fftwavenums(nk), (nk, 1))
+  l = reshape(fftwavenums(nl), (1, nl))
+  K = @. sqrt(k^2+l^2)
+  
+  phih = @. exp(2π*im*rand(nk, nl)) / (1 + K/kpeak)^order # unnormalized random spectrum
+  if maxval > 0 # normalize phih to specify the maximum value of phi
     phi = real.(ifft(phih))
     phi = maxval * phi / maximum(abs.(phi))
-  else
-    phih .*= rms ./ sqrt.(sum(abs.(phih).^2))
+  else # normalize phih to specify the rms value of phi
+    phih *= rms / sqrt(sum(abs.(phih).^2))
     phi = real.(ifft(phih))
   end
 
-  return phi
+  phi
 end
 
-function peaked_isotropic_spectrum(nx::Int, npeak::Real; ord=4.0, rms=1.0,
-  maxval=0.0)
-  peaked_isotropic_spectrum((nx, nx), npeak; ord=ord, rms=rms, maxval=maxval)
-end
-
+peakedisotropicspectrum(nx::Int, npeak::Real; kwargs...) = peakedisotropicspectrum((nx, nx), npeak; kwargs...)
 
 """
     lambdipole(Ue, R, g; center=(x0, y0))
@@ -156,28 +125,19 @@ strength Ue, radius R, and centered around
 (xc, yc)=center. The default value of 'center' is the middle of the grid.
 """
 function lambdipole(Ue::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
+  xc, yc = center == (nothing, nothing) ? (mean(g.x), mean(g.y)) : (center[1], center[2])
 
-  if center == (nothing, nothing)
-    xc = mean(g.x)
-    yc = mean(g.y)
-  else
-    xc = center[1]
-    yc = center[2]
-  end
+  k = 3.8317059702075123156 / R # dipole wavenumber for radius R in terms of first zero of besselj
+  q0 = -2Ue*k/SpecialFunctions.besselj(0, k*R)
 
-  # Wavenumber corresponding to radius R and the first bessel func zero.
-  k = 3.8317059702075123156 / R
-  q0 = -2*Ue*k/SpecialFunctions.besselj(0, k*R)
-
-  r = sqrt.((g.X-xc).^2.0 + (g.Y-yc).^2.0)
-  q = q0 * SpecialFunctions.besselj.(1, k*r) .* (g.Y-yc)./r
+  r = @. sqrt((g.x-xc)^2 + (g.y-yc)^2)
+  q = @. q0*SpecialFunctions.besselj(1, k*r)*(g.y-yc)/r
 
   q[r .== 0.0] = 0.0 # just in case.
   q[r .> R] = 0.0
 
   return q
 end
-
 
 """
     gaussianvortex(q0, R, G; center=(x0, y0))
@@ -186,21 +146,10 @@ Return a vorticity field with magnitude q0, radius R, and center at
 center[1], center[2] on a TwoDGrid g corresponding to a 'Gaussian vortex' with
 Gaussian streamfunction.
 """
-function gaussianvortex(q0::Real, R::Real, g::TwoDGrid;
-  center=(nothing, nothing))
-
-  if center == (nothing, nothing)
-    xc = mean(g.x)
-    yc = mean(g.y)
-  else
-    xc = center[1]
-    yc = center[2]
-  end
-
-  ( q0/R^2.0 * ( (g.X-xc).^2.0 + (g.Y-yc).^2.0 - 2*R^2.0 )
-        .* exp.( -((g.X-xc).^2.0 + (g.Y-yc).^2.0) / (2.0*R^2.0)) )
+function gaussianvortex(q0::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
+  xc, yc = center == (nothing, nothing) ? (mean(g.x), mean(g.y)) : (center[1], center[2])
+  @. q0/R^2*((g.x-xc)^2+(g.y-yc)^2-2*R^2)*exp(-((g.x-xc)^2 + (g.y-yc)^2)/(2*R^2)) 
 end
-
 
 """
     rmsrand(g, rmsval)
@@ -210,10 +159,8 @@ specifed rms value.
 """
 function rmsrand(g::TwoDGrid, rmsval::Real)
   q = rand(g.nx, g.ny)
-  q .*= rmsval / rms(q)
-  return q
+  q.*rmsval/rms(q)
 end
-
 
 """
     parsevalsum2(uh, g)
@@ -255,7 +202,6 @@ function parsevalsum(uh, g::TwoDGrid)
   norm*real(U)
 end
 
-
 """
     jacobianh(a, b, g)
 
@@ -276,7 +222,6 @@ function jacobianh(a, b, g::TwoDGrid)
   end
 end
 
-
 """
     jacobian(a, b, g)
 
@@ -289,7 +234,6 @@ function jacobian(a, b, g::TwoDGrid)
    return ifft(jacobianh(a, b, g))
   end
 end
-
 
 """
     radialspectrum(ah, g; nr=nothing, nθ=nothing, refinement=4)
@@ -351,11 +295,7 @@ end
 domainaverage(c, g) = g.dx*g.dy*sum(c)/(g.Lx*g.Ly)
 moment_x(c, g, n) = g.dx*g.dy*sum(g.X.^n.*c)
 moment_y(c, g, n) = g.dx*g.dy*sum(g.Y.^n.*c)
-
 cumulant_1x(c, g) = g.dx*g.dy*sum(g.X.*c) / domainaverage(c, g)
 cumulant_1y(c, g) = g.dx*g.dy*sum(g.Y.*c) / domainaverage(c, g)
-
-cumulant_2x(c, g) = (g.dx*g.dy*sum((g.X-cumulant_1x(c, g)).^2.0.*c)
-  / domainaverage(c, g))
-cumulant_2y(c, g) = (g.dx*g.dy*sum((g.Y.-cumulant_1y(c, g)).^2.0.*c)
-  / domainaverage(c, g))
+cumulant_2x(c, g) = g.dx*g.dy*sum((g.X-cumulant_1x(c, g)).^2.0.*c) / domainaverage(c, g)
+cumulant_2y(c, g) = g.dx*g.dy*sum((g.Y.-cumulant_1y(c, g)).^2.0.*c) / domainaverage(c, g)

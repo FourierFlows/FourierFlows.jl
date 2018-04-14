@@ -32,7 +32,7 @@ struct Params <: AbstractParams; end
 "Returns the Equation type for Kuramoto-Sivashinsky."
 function Equation(p, g)
   LC = @. g.kr^2 - g.kr^4
-  FourierFlows.Equation{1}(LC, calcN!)
+  FourierFlows.Equation(LC, calcN!)
 end
 
 # Construct Vars type

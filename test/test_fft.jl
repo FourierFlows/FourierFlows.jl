@@ -159,7 +159,6 @@ g2 = TwoDGrid(nx, Lx, ny, Ly)
 @test test_rfft_AmulB_cosmx(g1)
 
 @test test_fft_cosmxcosny(g2)
-@test test_fft_cosmxcosny(g2)
 @test test_rfft_cosmxcosny(g2)
 @test test_rfft_AmulB_cosmxcosny(g2)
 @test test_fft_sinmxny(g2)

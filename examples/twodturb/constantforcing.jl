@@ -2,10 +2,10 @@ using PyPlot, FourierFlows
 import FourierFlows.TwoDTurb
 import FourierFlows.TwoDTurb: energy, dissipation, injection, drag
 
- n, L  =  128, 2π
- ν, nν = 2e-4,  1
- μ, nμ = 1e-1, -1
-dt, tf = 2e-1, 1000
+  n, L  =  128, 2π
+nu, nnu = 2e-4,  1
+mu, nmu = 1e-1, -1
+ dt, tf = 2e-1, 1000
 
 nt = round(Int, tf/dt)
 
@@ -25,8 +25,7 @@ function calcF!(F, sol, t, s, v, p, g)
   nothing
 end
 
-prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, 
-  calcF=calcF!, stepper="RK4")
+prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, calcF=calcF!, stepper="RK4")
 
 function runtest(prob, nt)
   TwoDTurb.set_q!(prob, rand(prob.grid.nx, prob.grid.ny))
@@ -45,9 +44,7 @@ function runtest(prob, nt)
 end
 
 function makeplot(prob, diags)
-
   E, D, I, R = diags
-
   TwoDTurb.updatevars!(prob)  
 
   close("all")

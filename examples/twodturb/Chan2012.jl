@@ -4,9 +4,9 @@ import FourierFlows.TwoDTurb: energy, enstrophy, dissipation, injection
 
   n = 128
   L = 2π
-  μ = 0.0    # Bottom drag
-  ν = 1e-3   # Laplacian viscosity
- nν = 1
+ mu = 0.0    # Bottom drag
+ nu = 1e-3   # Laplacian viscosity
+nnu = 1
  dt = 1e-2   # Time step
  tf = 10000  # final time
 ndp = 5000   # Timesteps between plots
@@ -34,9 +34,7 @@ function calcF!(F, sol, t, s, v, p, g)
   nothing
 end
 
-prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, dt=dt, 
-  calcF=calcF!, 
-  stepper="FilteredRK4")
+prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, dt=dt, calcF=calcF!, stepper="FilteredRK4")
 
 E = Diagnostic(energy, prob, nsteps=round(Int, tf/dt))
 Z = Diagnostic(enstrophy, prob, nsteps=round(Int, tf/dt))
@@ -52,10 +50,8 @@ for i = 1:round(Int, tf/dt/ndp)
   stepforward!(prob, diags, ndp)
   TwoDTurb.updatevars!(prob)  
 
-  cfl = prob.ts.dt*maximum(
-    [maximum(prob.vars.V)/prob.grid.dx, maximum(prob.vars.U)/prob.grid.dy])
-  @printf("step: %04d, t: %.1f, cfl: %.2f, time: %.3f s\n", prob.step, prob.t, 
-    cfl, toq())
+  cfl = prob.ts.dt*maximum([maximum(prob.vars.V)/prob.grid.dx, maximum(prob.vars.U)/prob.grid.dy])
+  @printf("step: %04d, t: %.1f, cfl: %.2f, time: %.3f s\n", prob.step, prob.t, cfl, toq())
 
   sca(axs[1]); cla()
   pcolormesh(prob.grid.X, prob.grid.Y, prob.vars.q)
@@ -67,7 +63,7 @@ for i = 1:round(Int, tf/dt/ndp)
 
   plot(E.time[ii], dEdt)
   plot(E.time[ii], -D[ii])
-  plot(E.time[ii], -μ*E[ii])
+  plot(E.time[ii], -mu*E[ii])
   plot(E.time[ii], I[ii], "k.", markersize=0.1)
   xlabel(L"t")
 

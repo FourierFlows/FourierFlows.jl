@@ -2,10 +2,10 @@ using PyPlot, FourierFlows
 import FourierFlows.TwoDTurb
 import FourierFlows.TwoDTurb: energy, enstrophy, dissipation, injection, drag
 
- n, L  =  256, 2π
- ν, nν = 1e-3,  1
- μ, nμ = 1e-1, -1
-dt, tf = 2e-3, 1000
+  n, L  =  256, 2π
+nu, nnu = 1e-3,  1
+mu, nmu = 1e-1, -1
+ dt, tf = 2e-3, 1000
 
 nt = round(Int, tf/dt)
 ns = 100
@@ -37,8 +37,7 @@ function calcF!(F, sol, t, s, v, p, g)
   nothing
 end
 
-prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, ν=ν, nν=nν, μ=μ, nμ=nμ, dt=dt, 
-  calcF=calcF!, stepper="RK4")
+prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, calcF=calcF!, stepper="RK4")
 
 E = Diagnostic(energy,      prob, nsteps=nt) 
 D = Diagnostic(dissipation, prob, nsteps=nt)
@@ -52,7 +51,6 @@ out = Output(prob, filename, (:sol, getsol))
 
 function makeplot(prob, diags)
   E, D, I, R = diags
-
   TwoDTurb.updatevars!(prob)  
 
   close("all")
@@ -102,15 +100,11 @@ for i = 1:ns
   TwoDTurb.updatevars!(prob)  
   saveoutput(out)
 
-  cfl = prob.ts.dt*maximum(
-    [maximum(prob.vars.V)/prob.grid.dx, maximum(prob.vars.U)/prob.grid.dy])
-
+  cfl = prob.ts.dt*maximum([maximum(prob.vars.V)/prob.grid.dx, maximum(prob.vars.U)/prob.grid.dy])
   res = makeplot(prob, diags)
+  @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s, mean(res) = %.3e\n", prob.step, prob.t, cfl, tc, mean(res))
   pause(0.1)
 
-  @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s, mean(res) = %.3e\n", 
-    prob.step, prob.t, cfl, tc, mean(res))
-    
   savename = @sprintf("./plots/stochastictest_ki%d_%06d.png", ki, prob.step)
   savefig(savename, dpi=240)
 end
