@@ -5,5 +5,7 @@
 **/*.mp4
 **/*.DS_Store
 
+.nfs*
+
 docs/build/
 docs/site/
