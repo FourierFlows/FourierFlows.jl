@@ -217,9 +217,9 @@ function calcN!(Nc, Nr, solc, solr, t, s, v, p, g)
   # Zeroth-mode nonlinear term
   calcN_linearterms!(Nc, Nr, solc, solr, t, s, v, p, g)
   @. Nr = - im*g.kr*v.UZuzvwh - im*g.l*v.VZvzuwh
-  #@views @. Nc[:, :, 1] += -im*g.k*v.Uuh - im*g.l*v.Vuh - v.uUxvUyh # u
-  #@views @. Nc[:, :, 2] += -im*g.l*v.Vvh - im*g.k*v.Uvh - v.uVxvVyh # v
-  #@views @. Nc[:, :, 3] += -im*g.k*v.Uph - im*g.l*v.Vph             # p
+  @views @. Nc[:, :, 1] += -im*g.k*v.Uuh - im*g.l*v.Vuh - v.uUxvUyh # u
+  @views @. Nc[:, :, 2] += -im*g.l*v.Vvh - im*g.k*v.Uvh - v.uVxvVyh # v
+  @views @. Nc[:, :, 3] += -im*g.k*v.Uph - im*g.l*v.Vph             # p
   nothing
 end
 
