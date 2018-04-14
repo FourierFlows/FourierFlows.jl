@@ -1,9 +1,9 @@
 # TwoDTurb Module
 
 This module solves two-dimensional incompressible turbulence. The flow is given
-through a streamfunction $\psi$ as $(u,v) = (-\partial_y\psi, \partial_x\psi)$.
+through a streamfunction $\psi$ as $(u,\upsilon) = (-\partial_y\psi, \partial_x\psi)$.
 The dynamical variable used here is the component of the vorticity of the flow
-normal to the plane of motion, $q=\partial_x v- \partial_y u = \nabla^2\psi$.
+normal to the plane of motion, $q=\partial_x \upsilon- \partial_y u = \nabla^2\psi$.
 The equation solved by the module is:
 
 $$\partial_t q + J(\psi, q) = \underbrace{-\left[\mu(-1)^{n_\mu} \nabla^{2n_\mu}
@@ -26,4 +26,4 @@ Thus:
 
 $$\mathcal{L} = -\mu k^{-2n_\mu} - \nu k^{2n_\nu}\ ,$$
 $$\mathcal{N}(\widehat{q}) = - \mathrm{i}k_x \mathrm{FFT}(u q)-
-	\mathrm{i}k_y \mathrm{FFT}(v q)\ .$$
+	\mathrm{i}k_y \mathrm{FFT}(\upsilon q)\ .$$

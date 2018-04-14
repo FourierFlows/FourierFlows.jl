@@ -2,11 +2,11 @@
 
 This module solves the quasi-geostrophic barotropic vorticity equation on a
 beta-plane of variable fluid depth $H-h(x,y)$. The flow is obtained through a
-streamfunction $\psi$ as $(u,v) = (-\partial_y\psi, \partial_x\psi)$. All flow
+streamfunction $\psi$ as $(u,\upsilon) = (-\partial_y\psi, \partial_x\psi)$. All flow
 fields can be obtained from the quasi-geostrophic potential vorticity (QGPV).
 Here the QGPV is
 
-$$\underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{(\partial_x v
+$$\underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{(\partial_x \upsilon
 	- \partial_y u)}_{\text{relative vorticity}} +
 	\underbrace{\frac{f_0 h}{H}}_{\text{topographic PV}}.$$
 
@@ -37,4 +37,4 @@ Thus:
 
 $$\mathcal{L} = \beta\frac{\mathrm{i}k_x}{k^2} - \mu - \nu k^{2n_\nu}\ ,$$
 $$\mathcal{N}(\widehat{\zeta}) = - \mathrm{i}k_x \mathrm{FFT}(u q)-
-	\mathrm{i}k_y \mathrm{FFT}(v q)\ .$$
+	\mathrm{i}k_y \mathrm{FFT}(\upsilon q)\ .$$
