@@ -10,7 +10,9 @@ tic()
 
 println("-- Core tests --")
 
-@testset "Grid tests" begin include("test_grid.jl") end
+@testset "Grid tests" begin
+  include("test_grid.jl")
+end
 
 @testset "FFT tests" begin
   include("test_fft.jl")
