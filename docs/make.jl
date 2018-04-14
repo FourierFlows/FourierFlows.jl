@@ -7,7 +7,9 @@ makedocs(modules=[FourierFlows],
           "Home" => "index.md",
           "Modules" => Any[
               "modules/twodturb.md",
-              "modules/barotropicqg.md"
+              "modules/barotropicqg.md",
+              "modules/kuramotosivashinsky.md",
+              "modules/traceradvdiff.md"
               ],
           "DocStrings" => Any[
               "man/docstrings.md"

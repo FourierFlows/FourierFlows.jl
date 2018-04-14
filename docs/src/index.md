@@ -73,8 +73,6 @@ Here's an overview of the code structure:
                 provides a solver for a two-dimensional and periodic tracer
                 field in a given 2D flow (u, w), which can be an arbitrary
                 function of x, z, and t.
-        - `tracerpatcheqn.jl`: ...
-
 
 ## Writing fast solvers
 
@@ -105,6 +103,8 @@ fastest possible code.
 Pages = [
     "modules/twodturb.md",
     "modules/barotropicqg.md"
+    "modules/kuramotosivashinsky.md"
+    "modules/traceradvdiff.md"
         ]
 Depth = 1
 ```
@@ -141,7 +141,9 @@ Depth = 2
 ```@index
 Pages = [
     "modules/twodturb.md",
-    "modules/barotropicqg.md",
+    "modules/barotropicqg.md"
+    "modules/kuramotosivashinsky.md"
+    "modules/traceradvdiff.md"
     "man/docstrings.md",
     ]
 ```
