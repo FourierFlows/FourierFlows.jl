@@ -1,43 +1,42 @@
-__precompile__()
 module VerticallyCosineBoussinesq
 using FourierFlows
 
 import FourierFlows: autoconstructtimestepper, parsevalsum, parsevalsum2
 
-export updatevars!, set_Z!, set_C!, set_uvp!, set_planewave!, 
+export updatevars!, set_Z!, set_C!, set_uvp!, set_planewave!,
        totalenergy, mode0energy, mode0enstrophy, mode1ke, mode1pe, mode1energy,
        mode0dissipation, mode1dissipation, mode0drag, mode1drag, mode0apv
 
-""" 
+"""
     Problem(; parameters...)
 
 Construct a VerticallyCosineBoussinesq problem.
 """
 function Problem(;
   # Numerical parameters
-  nx = 128, 
-  Lx = 2π, 
-  ny = nx,
-  Ly = Lx,
-  dt = 0.01, 
+    nx = 128,
+    Lx = 2π,
+    ny = nx,
+    Ly = Lx,
+    dt = 0.01,
   # Drag and/or hyper-/hypo-viscosity
    nu0 = 0, # barotropic viscosity
-  nnu0 = 1, 
+  nnu0 = 1,
    nu1 = 0, # baroclinic viscosity
-  nnu1 = 1, 
+  nnu1 = 1,
    mu0 = 0, # barotropic drag / hypoviscosity
-  nmu0 = 0, 
+  nmu0 = 0,
    mu1 = 0, # baroclinic drag / hypoviscosity
   nmu1 = 0,
    kap = 0,
   nkap = 1,
   # Physical parameters
-  f = 1,
-  N = 1,
-  m = 1,
+    f = 1,
+    N = 1,
+    m = 1,
   # Optional uniform and steady background flow
-  Ub = 0,
-  Vb = 0,
+   Ub = 0,
+   Vb = 0,
   # Timestepper and eqn options
   stepper = "RK4",
   calcF = nothing,
@@ -77,10 +76,10 @@ end
 abstract type VerticallyCosineParams <: AbstractParams end
 
 """
-    Params(nu0, nnu0, nu1, nnu1, mu0, nmu0, mu1, nmu1, f, N, m; Ub=0, Vb=0) 
+    Params(nu0, nnu0, nu1, nnu1, mu0, nmu0, mu1, nmu1, f, N, m; Ub=0, Vb=0)
 
 Construct parameters for the Two-Fourier-mode Boussinesq problem. Suffix 0
-refers to zeroth mode; 1 to first mode. f, N, m are Coriolis frequency, 
+refers to zeroth mode; 1 to first mode. f, N, m are Coriolis frequency,
 buoyancy frequency, and vertical wavenumber of the first mode, respectively.
 The optional constant background velocity (Ub, Vb) is set to zero by default.
 The viscosity is applied only to the first-mode horizontal velocities.
@@ -90,9 +89,9 @@ struct Params{T<:AbstractFloat} <: VerticallyCosineParams
   nnu0::Int   # Mode-0 hyperviscous order
   nu1::T      # Mode-1 viscosity
   nnu1::Int   # Mode-1 hyperviscous order
-  mu0::T      # Hypoviscosity/bottom drag 
+  mu0::T      # Hypoviscosity/bottom drag
   nmu0::T     # Order of hypoviscosity (nmu=0 for bottom drag)
-  mu1::T      # Hypoviscosity/bottom drag 
+  mu1::T      # Hypoviscosity/bottom drag
   nmu1::T     # Order of hypoviscosity (nmu=0 for bottom drag)
   f::T        # Planetary vorticity
   N::T        # Buoyancy frequency
@@ -109,9 +108,9 @@ struct ForcedParams{T<:AbstractFloat} <: VerticallyCosineParams
   nnu0::Int   # Mode-0 hyperviscous order
   nu1::T      # Mode-1 viscosity
   nnu1::Int   # Mode-1 hyperviscous order
-  mu0::T      # Hypoviscosity/bottom drag 
+  mu0::T      # Hypoviscosity/bottom drag
   nmu0::T     # Order of hypoviscosity (nmu=0 for bottom drag)
-  mu1::T      # Hypoviscosity/bottom drag 
+  mu1::T      # Hypoviscosity/bottom drag
   nmu1::T     # Order of hypoviscosity (nmu=0 for bottom drag)
   f::T        # Planetary vorticity
   N::T        # Buoyancy frequency
@@ -122,7 +121,7 @@ struct ForcedParams{T<:AbstractFloat} <: VerticallyCosineParams
 end
 
 ForcedParams(nu0, nnu0, nu1, nnu1, mu0, nmu0, mu1, nmu1, f, N, m,
-   calcF::Function) = ForcedParams(nu0, nnu0, nu1, nnu1, mu0, nmu0, 
+   calcF::Function) = ForcedParams(nu0, nnu0, nu1, nnu1, mu0, nmu0,
     mu1, nmu1, f, N, m, typeof(nu0)(0), typeof(nu0)(0), calcF)
 
 struct TracerForcedParams{T<:AbstractFloat} <: VerticallyCosineParams
@@ -130,9 +129,9 @@ struct TracerForcedParams{T<:AbstractFloat} <: VerticallyCosineParams
   nnu0::Int   # Mode-0 hyperviscous order
   nu1::T      # Mode-1 viscosity
   nnu1::Int   # Mode-1 hyperviscous order
-  mu0::T      # Hypoviscosity/bottom drag 
+  mu0::T      # Hypoviscosity/bottom drag
   nmu0::T     # Order of hypoviscosity (nmu=0 for bottom drag)
-  mu1::T      # Hypoviscosity/bottom drag 
+  mu1::T      # Hypoviscosity/bottom drag
   nmu1::T     # Order of hypoviscosity (nmu=0 for bottom drag)
   kap::T
   nkap::Int
@@ -145,7 +144,7 @@ struct TracerForcedParams{T<:AbstractFloat} <: VerticallyCosineParams
 end
 
 TracerForcedParams(nu0, nnu0, nu1, nnu1, mu0, nmu0, mu1, nmu1, kap, nkap, f, N, m,
-   calcF::Function) = TracerForcedParams(nu0, nnu0, nu1, nnu1, 
+   calcF::Function) = TracerForcedParams(nu0, nnu0, nu1, nnu1,
     mu0, nmu0, mu1, nmu1, kap, nkap, f, N, m, typeof(nu0)(0), typeof(nu0)(0), calcF)
 
 # Equations
@@ -178,7 +177,7 @@ end
 
 abstract type VerticallyCosineVars <: AbstractVars end
 
-       physicalvars = [:Z, :U, :V, :UZuz, :VZvz, :Ux, :Uy, :Vx, :Vy, :Psi, 
+       physicalvars = [:Z, :U, :V, :UZuz, :VZvz, :Ux, :Uy, :Vx, :Vy, :Psi,
                        :u, :v, :w, :p, :zeta, :Uu, :Uv, :Up, :Vu, :Vv, :Vp, :uUxvUy, :uVxvVy]
       transformvars = [ Symbol(var, :h) for var in physicalvars ]
           forcedvar = [:Fh]
@@ -205,9 +204,9 @@ eval(FourierFlows.structvarsexpr(:TracerForcedVars, tracerforcedvarspecs; parent
 # Define Vars type for unforced problem
 #eval(FourierFlows.structvarsexpr(:Vars, physicalvars, transformvars; parent=:VerticallyCosineVars))
 #eval(FourierFlows.structvarsexpr(:ForcedVars, physicalvars, forcedtransformvars; parent=:VerticallyCosineVars))
-#eval(FourierFlows.structvarsexpr(:TracerForcedVars, tracerphysicalvars, cat(1, tracertransformvars, [:Fh]; 
+#eval(FourierFlows.structvarsexpr(:TracerForcedVars, tracerphysicalvars, cat(1, tracertransformvars, [:Fh];
 #                                 parent=:VerticallyCosineVars))
-  
+
 """
     Vars(g)
 
@@ -220,7 +219,7 @@ function Vars(g)
   @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) Uuh Uvh Uph Vuh Vvh Vph uUxvUyh uVxvVyh
 
   Vars(Z, U, V, UZuz, VZvz, Ux, Uy, Vx, Vy, Psi, u, v, w, p, zeta, Uu, Uv, Up, Vu, Vv, Vp, uUxvUy, uVxvVy,
-       Zh, Uh, Vh, UZuzh, VZvzh, Uxh, Uyh, Vxh, Vyh, Psih, 
+       Zh, Uh, Vh, UZuzh, VZvzh, Uxh, Uyh, Vxh, Vyh, Psih,
        uh, vh, wh, ph, zetah, Uuh, Uvh, Uph, Vuh, Vvh, Vph, uUxvUyh, uVxvVyh)
 end
 
@@ -237,7 +236,7 @@ function ForcedVars(g)
   @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl, 4) F
 
   ForcedVars(Z, U, V, UZuz, VZvz, Ux, Uy, Vx, Vy, Psi, u, v, w, p, zeta, Uu, Uv, Up, Vu, Vv, Vp, uUxvUy, uVxvVy,
-    Zh, Uh, Vh, UZuzh, VZvzh, Uxh, Uyh, Vxh, Vyh, Psih, 
+    Zh, Uh, Vh, UZuzh, VZvzh, Uxh, Uyh, Vxh, Vyh, Psih,
     uh, vh, wh, ph, zetah, Uuh, Uvh, Uph, Vuh, Vvh, Vph, uUxvUyh, uVxvVyh, F)
 end
 
@@ -248,16 +247,16 @@ Returns the vars for forced two-vertical-cosine-mode Boussinesq dynamics
 on the grid g.
 """
 function TracerForcedVars(g)
-  @createarrays typeof(g.Lx) (g.nx, g.ny) Z U V UZuz VZvz Ux Uy Vx Vy Psi u v w p zeta Uu Uv Up Vu Vv Vp uUxvUy uVxvVy 
+  @createarrays typeof(g.Lx) (g.nx, g.ny) Z U V UZuz VZvz Ux Uy Vx Vy Psi u v w p zeta Uu Uv Up Vu Vv Vp uUxvUy uVxvVy
   @createarrays typeof(g.Lx) (g.nx, g.ny) C UCuc VCvc c UcuC VcvC wC
   @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) Zh Uh Vh UZuzh VZvzh Uxh Uyh Vxh Vyh Psih uh vh wh ph zetah
-  @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) Uuh Uvh Uph Vuh Vvh Vph uUxvUyh uVxvVyh 
+  @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) Uuh Uvh Uph Vuh Vvh Vph uUxvUyh uVxvVyh
   @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) Ch UCuch VCvch ch UcuCh VcvCh wCh
   @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl, 6) F
 
-  TracerForcedVars(Z, U, V, UZuz, VZvz, Ux, Uy, Vx, Vy, Psi, u, v, w, p, zeta, Uu, Uv, Up, Vu, Vv, Vp, uUxvUy, uVxvVy, 
-                   C, UCuc, VCvc, c, UcuC, VcvC, wC, Zh, Uh, Vh, UZuzh, VZvzh, Uxh, Uyh, Vxh, Vyh, Psih, 
-                   uh, vh, wh, ph, zetah, Uuh, Uvh, Uph, Vuh, Vvh, Vph, uUxvUyh, uVxvVyh, 
+  TracerForcedVars(Z, U, V, UZuz, VZvz, Ux, Uy, Vx, Vy, Psi, u, v, w, p, zeta, Uu, Uv, Up, Vu, Vv, Vp, uUxvUy, uVxvVy,
+                   C, UCuc, VCvc, c, UcuC, VcvC, wC, Zh, Uh, Vh, UZuzh, VZvzh, Uxh, Uyh, Vxh, Vyh, Psih,
+                   uh, vh, wh, ph, zetah, Uuh, Uvh, Uph, Vuh, Vvh, Vph, uUxvUyh, uVxvVyh,
                    Ch, UCuch, VCvch, ch, UcuCh, VcvCh, wCh, F)
 end
 
@@ -315,8 +314,8 @@ function calcN!(N, sol, t, s, v, p, g)
   A_mul_B!(v.Vy, g.irfftplan, v.Vyh)
 
   # Multiplies
-  @. v.UZuz = v.U*v.Z + 0.5*v.u*v.zeta - 0.5*p.m*v.v*v.w 
-  @. v.VZvz = v.V*v.Z + 0.5*v.v*v.zeta + 0.5*p.m*v.u*v.w 
+  @. v.UZuz = v.U*v.Z + 0.5*v.u*v.zeta - 0.5*p.m*v.v*v.w
+  @. v.VZvz = v.V*v.Z + 0.5*v.v*v.zeta + 0.5*p.m*v.u*v.w
 
   @. v.Uu = v.U * v.u
   @. v.Vu = v.V * v.u
@@ -386,7 +385,7 @@ function calcN_tracer!(N, sol, t, s, v, p, g)
 
   p.calcF!(v.Fh, sol, t, s, v, p, g)
   @. N += v.Fh
-  
+
   nothing
 end
 
@@ -447,7 +446,7 @@ updatevars!(prob) = updatevars!(prob.vars, prob.state, prob.params, prob.grid)
 """
     set_Z!(prob, Z)
 
-Set zeroth mode vorticity and update vars. 
+Set zeroth mode vorticity and update vars.
 """
 function set_Z!(s, v, p, g, Z)
   @views A_mul_B!(s.sol[:, :, 1], g.rfftplan, Z)
@@ -468,7 +467,7 @@ function set_C!(s, v, p, g, C)
 end
 set_C!(prob, C) = set_C!(prob.state, prob.vars, prob.params, prob.grid, C)
 
-""" 
+"""
     set_uvp!(prob)
 
 Set first mode u, v, and p and update vars.
@@ -480,14 +479,14 @@ function set_uvp!(s, vs, pr, g, u, v, p)
   updatevars!(vs, s, pr, g)
   nothing
 end
-set_uvp!(prob, u, v, p) = set_uvp!(prob.state, prob.vars, prob.params, 
+set_uvp!(prob, u, v, p) = set_uvp!(prob.state, prob.vars, prob.params,
                                    prob.grid, u, v, p)
 
-""" 
+"""
     set_planewave!(prob, u₀, κ, θ=0)
 
 Set a plane wave solution with initial speed u₀, non-dimensional wave
-number κ, and angle θ with the horizontal. The non-dimensional wavenumber 
+number κ, and angle θ with the horizontal. The non-dimensional wavenumber
 vector is (k, l) = (κ cos θ, κ sin θ), is normalized by 2π/Lx, and is rounded
 to the nearest integer.
 """
@@ -513,7 +512,7 @@ function set_planewave!(s, vs, pr, g, u₀, κ, θ=0; envelope=nothing)
     @. v *= envelope(x, y)
     @. p *= envelope(x, y)
   end
-  
+
   set_uvp!(s, vs, pr, g, u, v, p)
   nothing
 end
@@ -523,7 +522,7 @@ set_planewave!(prob, uw, nkw, θ=0; kwargs...) = set_planewave!(
 # -----------
 # Diagnostics
 # -----------
-""" 
+"""
     mode0energy(prob)
 
 Returns the domain-averaged energy in the zeroth mode.
@@ -569,10 +568,10 @@ end
 
 Returns the domain-averaged kinetic energy in the first mode.
 """
-@inline function mode1ke(s, g) 
-  @views 1/(4*g.Lx*g.Ly)*(parsevalsum2(s.sol[:, :, 2], g) 
+@inline function mode1ke(s, g)
+  @views 1/(4*g.Lx*g.Ly)*(parsevalsum2(s.sol[:, :, 2], g)
     + parsevalsum2(s.sol[:, :, 3], g))
-end 
+end
 
 """
     mode1pe(prob)
@@ -592,31 +591,31 @@ Returns the domain-averaged total energy in the first mode.
 """
     mode1dissipation(prob)
 
-Returns the domain-averaged kinetic energy dissipation of the first mode 
+Returns the domain-averaged kinetic energy dissipation of the first mode
 by horizontal viscosity.
 """
 @inline function mode1dissipation(s, v, p, g)
   @views @. v.Uuh = g.kr^p.nnu1*s.sol[:, :, 2]
   @views @. v.Vuh =  g.l^p.nnu1*s.sol[:, :, 3]
-  p.nu1/(2*g.Lx*g.Ly)*(parsevalsum2(v.Uuh, g) + parsevalsum2(v.Vuh, g))    
+  p.nu1/(2*g.Lx*g.Ly)*(parsevalsum2(v.Uuh, g) + parsevalsum2(v.Vuh, g))
 end
 
 """
     mode1drag(prob)
 
-Returns the domain-averaged kinetic energy dissipation of the first mode 
+Returns the domain-averaged kinetic energy dissipation of the first mode
 by horizontal viscosity.
 """
 @inline function mode1drag(s, v, p, g)
   @views @. v.Uuh = g.kr^p.nmu1*s.sol[:, :, 2]
   @views @. v.Vuh =  g.l^p.nmu1*s.sol[:, :, 3]
   if p.nmu1 != 0 # zero out zeroth mode
-    @views @. v.Uuh[1, :] = 0 
+    @views @. v.Uuh[1, :] = 0
     @views @. v.Vuh[:, 1] = 0
   end
   p.mu1/(2*g.Lx*g.Ly)*(parsevalsum2(v.Uuh, g) + parsevalsum2(v.Vuh, g))
 end
-                                                  
+
 """
     totalenergy(prob)
 
@@ -627,7 +626,7 @@ Returns the total energy projected onto the zeroth mode.
 @inline mode0energy(pb) = mode0energy(pb.state, pb.vars, pb.grid)
 @inline mode0enstrophy(pb) = mode0enstrophy(pb.state, pb.grid)
 @inline mode0dissipation(pb) = mode0dissipation(pb.state, pb.vars, pb.params, pb.grid)
-@inline mode0drag(pb) = mode0drag(pb.state, pb.vars, pb.params, pb.grid) 
+@inline mode0drag(pb) = mode0drag(pb.state, pb.vars, pb.params, pb.grid)
 @inline mode1ke(pb) = mode1ke(pb.state, pb.grid)
 @inline mode1pe(pb) = mode1pe(pb.state, pb.params, pb.grid)
 @inline mode1energy(pb) = mode1energy(pb.state, pb.params, pb.grid)
@@ -672,12 +671,12 @@ Returns the barotropic available potential vorticity.
   A_mul_B!(v.Vuh, g.rfftplan, v.Vu)
 
   @. v.uUxvUyh = im*g.kr*v.Vuh - im*g.l*v.Uuh
-  
+
   A_mul_B!(v.uUxvUy, g.irfftplan, v.uUxvUyh)
 
   @. v.Z - p.m^2/(2*p.N^2)*v.uUxvUy
 end
 
 @inline mode0apv(prob) = mode0apv(prob.state, prob.vars, prob.params, prob.grid)
-                                        
+
 end # module

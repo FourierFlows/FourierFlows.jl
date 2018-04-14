@@ -7,7 +7,7 @@ e1(u, v, p, m, N) = @. abs2(u) + abs2(v) + m^2*abs2(p)/N^2
 e1(prob) = e1(prob.vars.u, prob.vars.v, prob.vars.p, prob.params.m, prob.params.N)
 wavecentroid(prob) = (FourierFlows.xmoment(e1(prob), prob.grid), FourierFlows.ymoment(e1(prob), prob.grid))
 
-function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1, 
+function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1,
   ti=L/Ue*0.01, nm=3, message=false)
 
   nt = round(Int, ti/dt)
@@ -25,7 +25,7 @@ function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1,
   for i = 1:nm
     tic()
     stepforward!(prob, nt)
-    VerticallyFourierBoussinesq.updatevars!(prob)  
+    VerticallyFourierBoussinesq.updatevars!(prob)
     xZ[i] = mean(abs.(Z).*x) / mean(abs.(Z))
 
     if i > 1
@@ -43,7 +43,6 @@ function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1,
   isapprox(Ue, mean(Ue_m[2:end]), atol=0.02)
 end
 
-using FourierFlows, PyPlot
 import FourierFlows.VerticallyFourierBoussinesq: mode1u
 
 function test_groupvelocity(nkw; n=128, L=2π, f=1.0, N=1.0, m=4.0, uw=1e-2, rtol=1e-3, del=L/10)
@@ -60,15 +59,15 @@ function test_groupvelocity(nkw; n=128, L=2π, f=1.0, N=1.0, m=4.0, uw=1e-2, rto
 
   t₋₁ = prob.t
   xw₋₁, yw₋₁ = wavecentroid(prob)
-    
+
   stepforward!(prob, nt)
   VerticallyFourierBoussinesq.updatevars!(prob)
   xw, yw = wavecentroid(prob)
   cgn = (xw-xw₋₁) / (prob.t-t₋₁)
 
-  close("all")
-  fig, ax = subplots()
-  imshow(mode1u(prob))
+  # close("all")
+  # fig, ax = subplots()
+  # imshow(mode1u(prob))
 
   isapprox(cga, cgn, rtol=rtol)
 end
