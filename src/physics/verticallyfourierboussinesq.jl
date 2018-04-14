@@ -143,9 +143,9 @@ end
 # -------
 
 function calcN_linearterms!(Nc, Nr, solc, solr, t, s, v, p, g)
-  @views @. Nc[:, :, 1] = p.f*solc[:, :, 2] - im*g.k*solc[:, :, 3]                 # u
-  @views @. Nc[:, :, 2] = -p.f*solc[:, :, 1] - im*g.l*solc[:, :, 3]                # v
-  @views @. Nc[:, :, 3] = -im*p.N^2/p.m^2*(g.k*solc[:, :, 1] + g.l*solc[:, :, 2])  # p
+  @views @. Nc[:, :, 1] =  p.f*solc[:, :, 2] - im*g.k*solc[:, :, 3]               # u
+  @views @. Nc[:, :, 2] = -p.f*solc[:, :, 1] - im*g.l*solc[:, :, 3]               # v
+  @views @. Nc[:, :, 3] = -im*p.N^2/p.m^2*(g.k*solc[:, :, 1] + g.l*solc[:, :, 2]) # p
   nothing
 end
 
@@ -217,9 +217,9 @@ function calcN!(Nc, Nr, solc, solr, t, s, v, p, g)
   # Zeroth-mode nonlinear term
   calcN_linearterms!(Nc, Nr, solc, solr, t, s, v, p, g)
   @. Nr = - im*g.kr*v.UZuzvwh - im*g.l*v.VZvzuwh
-  @views @. Nc[:, :, 1] += -im*g.k*v.Uuh - im*g.l*v.Vuh - v.uUxvUyh # u
-  @views @. Nc[:, :, 2] += -im*g.l*v.Vvh - im*g.k*v.Uvh - v.uVxvVyh # v
-  @views @. Nc[:, :, 3] += -im*g.k*v.Uph - im*g.l*v.Vph             # p
+  #@views @. Nc[:, :, 1] += -im*g.k*v.Uuh - im*g.l*v.Vuh - v.uUxvUyh # u
+  #@views @. Nc[:, :, 2] += -im*g.l*v.Vvh - im*g.k*v.Uvh - v.uVxvVyh # v
+  #@views @. Nc[:, :, 3] += -im*g.k*v.Uph - im*g.l*v.Vph             # p
   nothing
 end
 
@@ -301,25 +301,35 @@ set_uvp!(prob, u, v, p) = set_uvp!(prob.state, prob.vars, prob.params, prob.grid
 Set a plane wave solution with initial speed uw and non-dimensional wave
 number nkw. The dimensional wavenumber will be 2π*nkw/Lx.
 """
-function set_planewave!(s, vs, pr, g, uw, nkw)
+function set_planewave!(s, vs, pr, g, uw, κ, θ=0; envelope=nothing)
+  k = 2π/g.Lx*round(Int, κ*cos(θ))
+  l = 2π/g.Lx*round(Int, κ*sin(θ))
   x, y = g.X, g.Y
+
   # Wave parameters
-  kw = 2π*nkw/g.Lx
-  σ = sqrt(pr.f^2 + pr.N^2*kw^2/pr.m^2)
-  alpha = pr.N^2*kw^2/(pr.f^2*pr.m^2) # also (sig^2-f^2)/f^2
+  f, N, m = pr.f, pr.N, pr.m
+  σ = sqrt(f^2 + N^2*(k^2 + l^2)/m^2)
 
   u0 = uw/2
-  v0 = -uw * im*pr.f/2σ
-  p0 = uw * kw*pr.N^2/(2σ*pr.m^2)
+  v0 = u0 * (σ*l - im*f*k)/(σ*k + im*f*l)
+  p0 = u0 * (σ^2 - f^2)/(σ*k + im*f*l)
 
-  u = u0 * exp.(im*kw*x)
-  v = v0 * exp.(im*kw*x)
-  p = p0 * exp.(im*kw*x)
+  Φ = @. k*x + l*y
+  u = u0 * exp.(im*Φ)
+  v = v0 * exp.(im*Φ)
+  p = p0 * exp.(im*Φ)
+
+  if envelope != nothing
+    @. u *= envelope(x, y)
+    @. v *= envelope(x, y)
+    @. p *= envelope(x, y)
+  end
 
   set_uvp!(s, vs, pr, g, u, v, p)
   nothing
 end
-set_planewave!(prob, uw, nkw) = set_planewave!(prob.state, prob.vars, prob.params, prob.grid, uw::Real, nkw::Int)
+set_planewave!(prob, uw, nkw; kwargs...) = set_planewave!(
+  prob.state, prob.vars, prob.params, prob.grid, uw::Real, nkw::Int; kwargs...)
 
 """
     set_isotropicwavefield!(prob, amplitude; KE=1.0, maxspeed=nothing)

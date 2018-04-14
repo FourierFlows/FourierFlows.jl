@@ -77,8 +77,7 @@ end
 abstract type VerticallyCosineParams <: AbstractParams end
 
 """
-    Params(nu0, nnu0, nu1, nnu1, mu0, nmu0, mu1, nmu1, f, N, m; 
-           Ub=0, Vb=0) 
+    Params(nu0, nnu0, nu1, nnu1, mu0, nmu0, mu1, nmu1, f, N, m; Ub=0, Vb=0) 
 
 Construct parameters for the Two-Fourier-mode Boussinesq problem. Suffix 0
 refers to zeroth mode; 1 to first mode. f, N, m are Coriolis frequency, 
@@ -123,8 +122,8 @@ struct ForcedParams{T<:AbstractFloat} <: VerticallyCosineParams
 end
 
 ForcedParams(nu0, nnu0, nu1, nnu1, mu0, nmu0, mu1, nmu1, f, N, m,
-   calcF::Function; Ub=0, Vb=0) = ForcedParams(nu0, nnu0, nu1, nnu1, mu0, nmu0, 
-    mu1, nmu1, f, N, m, Ub, Vb, calcF)
+   calcF::Function) = ForcedParams(nu0, nnu0, nu1, nnu1, mu0, nmu0, 
+    mu1, nmu1, f, N, m, typeof(nu0)(0), typeof(nu0)(0), calcF)
 
 struct TracerForcedParams{T<:AbstractFloat} <: VerticallyCosineParams
   nu0::T      # Mode-0 viscosity
@@ -146,8 +145,8 @@ struct TracerForcedParams{T<:AbstractFloat} <: VerticallyCosineParams
 end
 
 TracerForcedParams(nu0, nnu0, nu1, nnu1, mu0, nmu0, mu1, nmu1, kap, nkap, f, N, m,
-   calcF::Function; Ub=0, Vb=0) = TracerForcedParams(nu0, nnu0, nu1, nnu1, 
-    mu0, nmu0, mu1, nmu1, kap, nkap, f, N, m, Ub, Vb, calcF)
+   calcF::Function) = TracerForcedParams(nu0, nnu0, nu1, nnu1, 
+    mu0, nmu0, mu1, nmu1, kap, nkap, f, N, m, typeof(nu0)(0), typeof(nu0)(0), calcF)
 
 # Equations
 function Equation(p, g)
@@ -499,12 +498,12 @@ function set_planewave!(s, vs, pr, g, u₀, κ, θ=0; envelope=nothing)
 
   # Wave parameters
   f, N, m = pr.f, pr.N, pr.m
-  σ = sqrt( f^2 + N^2*(k^2 + l^2)/m^2 )
+  σ = sqrt(f^2 + N^2*(k^2 + l^2)/m^2)
 
   v₀ = u₀ * (f*k - σ*l)/(σ*k - f*l)
   p₀ = u₀ * (σ^2 - f^2)/(σ*k - f*l)
 
-  Φ = k*x + l*y
+  Φ = @. k*x + l*y
   u = u₀ * cos.(Φ)
   v = v₀ * sin.(Φ)
   p = p₀ * cos.(Φ)

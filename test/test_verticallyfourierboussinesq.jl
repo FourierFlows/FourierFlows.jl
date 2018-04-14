@@ -1,7 +1,11 @@
-import FourierFlows.VerticallyFourierBoussinesq
+import FourierFlows, FourierFlows.VerticallyFourierBoussinesq
 
 cfl(prob) = maximum([maximum(abs.(prob.vars.U)), maximum(abs.(prob.vars.V))]*
               prob.ts.dt/prob.grid.dx)
+
+e1(u, v, p, m, N) = @. abs2(u) + abs2(v) + m^2*abs2(p)/N^2
+e1(prob) = e1(prob.vars.u, prob.vars.v, prob.vars.p, prob.params.m, prob.params.N)
+wavecentroid(prob) = (FourierFlows.xmoment(e1(prob), prob.grid), FourierFlows.ymoment(e1(prob), prob.grid))
 
 function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1, 
   ti=L/Ue*0.01, nm=3, message=false)
@@ -39,4 +43,35 @@ function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1,
   isapprox(Ue, mean(Ue_m[2:end]), atol=0.02)
 end
 
+using FourierFlows, PyPlot
+import FourierFlows.VerticallyFourierBoussinesq: mode1u
+
+function test_groupvelocity(nkw; n=128, L=2π, f=1.0, N=1.0, m=4.0, uw=1e-2, rtol=1e-3, del=L/10)
+  kw = nkw*2π/L
+   σ = f*sqrt(1 + (N*kw/m)^2)
+  tσ = 2π/σ
+  dt = tσ/100
+  nt = round(Int, 3tσ/(2dt)) # 3/2 a wave period
+  cga = N^2*kw/(σ*m^2) # analytical group velocity
+
+  prob = VerticallyFourierBoussinesq.Problem(f=f, N=N, m=m, nx=n, Lx=L, dt=dt, stepper="FilteredRK4")
+  envelope(x, y) = exp(-x^2/(2*del^2))
+  VerticallyFourierBoussinesq.set_planewave!(prob, uw, nkw; envelope=envelope)
+
+  t₋₁ = prob.t
+  xw₋₁, yw₋₁ = wavecentroid(prob)
+    
+  stepforward!(prob, nt)
+  VerticallyFourierBoussinesq.updatevars!(prob)
+  xw, yw = wavecentroid(prob)
+  cgn = (xw-xw₋₁) / (prob.t-t₋₁)
+
+  close("all")
+  fig, ax = subplots()
+  imshow(mode1u(prob))
+
+  isapprox(cga, cgn, rtol=rtol)
+end
+
 @test lambdipoletest(256, 1e-3)
+@test test_groupvelocity(16)
