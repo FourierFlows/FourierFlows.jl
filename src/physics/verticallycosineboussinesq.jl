@@ -7,6 +7,10 @@ export updatevars!, set_Z!, set_C!, set_uvp!, set_planewave!,
        totalenergy, mode0energy, mode0enstrophy, mode1ke, mode1pe, mode1energy,
        mode0dissipation, mode1dissipation, mode0drag, mode1drag, mode0apv
 
+# -------
+# Problem
+# -------
+
 """
     Problem(; parameters...)
 
