@@ -1,0 +1,177 @@
+# Thin-layer Boussinesq modules
+
+```math
+\newcommand{\bcdot}{\boldsymbol \cdot}
+\newcommand{\bnabla}{\boldsymbol \nabla}
+\newcommand{\pnabla}{\bnabla_{\! \perp}}
+
+\newcommand{\com}{\, ,}
+\newcommand{\per}{\, .}
+
+\newcommand{\bu}{\boldsymbol u}
+\newcommand{\bU}{\boldsymbol U}
+\newcommand{\buu}{\boldsymbol{\hat{u}}}
+\newcommand{\bb}{\hat{b}}
+\newcommand{\pp}{\hat{p}}
+\newcommand{\ww}{\hat{w}}
+\newcommand{\uu}{\hat{u}}
+\newcommand{\vv}{\hat{v}}
+\newcommand{\zzeta}{\hat{\zeta}}
+\newcommand{\oomega}{\hat{\omega}}
+\newcommand{\boomega}{\boldsymbol{\oomega}}
+
+\newcommand{\bxh}{\mathbf{\hat{x}}}
+\newcommand{\byh}{\mathbf{\hat{y}}}
+\newcommand{\bzh}{\mathbf{\hat{z}}}
+\newcommand{\ii}{\mathrm{i}}
+\newcommand{\ee}{\mathrm{e}}
+\newcommand{\cc}{\mathrm{c}}
+\newcommand{\J}{\mathrm{J}}
+
+\newcommand{\p}{\partial}
+```
+
+These modules solve various thin-layer approximations to the hydrostatic Boussinesq
+equations. A thin-layer approximation is one that is appropriate for dynamics with
+small aspect ratios, or small vertical scales and large horizontal scales. 
+Thin layer approximations include the shallow-water system, layered system, and 
+spectral approximations that apply a Fourier or Sin/Cos eigenfunction expansion in the
+vertical coordinate to the Boussinesq equations, and truncate the expansion at just 
+two or three modes. Approximations of this last flavor are described in this documentation.
+
+The three-dimensional rotating, stratified, hydrostatic Boussinesq equations are
+
+```math
+\buu_t + \left ( \buu \bcdot \bnabla \right ) \buu + f \bzh \times \buu + \bnabla p = D^{\buu} \com \\
+\pp_z = \bb \com \\
+\bb_t + \ww N^2 = D^b \com \\
+\uu_x + \vv_y + \ww_z = 0 \com
+```
+
+where $\bu = (u, v, w)$ is the three-dimensional velocity, $b$ is buoyancy, $p$ is pressure, $N^2$ is the 
+buoyancy frequency, and $f$ is the rotation or 'Coriolis' frequency. The operators $D^{\buu}$ and $D^{\bb}$ are 
+arbitrary dissipation operators which we define only after projecting onto vertical Fourier or Sin/Cos modes.
+Taking the curl of the horizontal momentum equation yields an evolution
+equation for vertical vorticity, $\zzeta = \vv_x - \uu_y$:
+
+```math
+\zzeta_t + \buu \bcdot \bnabla \zzeta - \left (f \bzh + \boomega \right )
+    \bcdot \bnabla \ww = D^{\zeta} \per
+```
+
+## Vertically Fourier Boussinesq
+
+The vertically-Fourier Boussinesq module solves the Boussinesq system obtained by expanding the hydrostatic
+Boussinesq equations in a Fourier series. The horizontal velocity $\uu$, for example, is expanded with
+
+```math
+\uu(x, y, z, t) = U(x, y, t) + \ee^{\ii m z} u(x, y, t) + \ee^{-\ii m z} u^*(x, y, t) \com
+```
+
+The other variables $\vv$, $\bb$, $\pp$, $\zzeta$, and $\boomega$ are expanded identically. The barotropic 
+horizontal velocity is $V$ and the barotropic vertical vorticity is $Z = V_x - U_y$. The barotropic
+vorticity obeys
+```math
+Z_t + \J \left ( \Psi, Z \right ) 
+    + \bnabla \bcdot \left ( \bu \zeta^* \right ) + \ii m \pnabla \bcdot \left ( \bu w^* \right ) + \cc
+    = D^{Z} \com
+```
+
+where $\cc$ denotes the complex conjugate and contraction with $\pnabla = -\p_y \bxh + \p_x \byh$ 
+gives the vertical component of the curl.
+
+The baroclinic components obey
+
+```math
+u_t - f v + p_x = - J \left ( \Psi, u \right ) - \bu \bcdot \bnabla U + D^u \com \\
+v_t + f u + p_y = - J \left ( \Psi, v \right ) - \bu \bcdot \bnabla V + D^v \com \\
+p_t - \tfrac{N^2}{m} w = - J \left ( \Psi, p \right ) + D^p \per
+```
+
+The dissipation operators are defined
+
+```math
+D^Z = \nu_0 (-1)^{n_0} \bnabla^{2n_0} Z + \mu_0 (-1)^{m_0} \bnabla^{2m_0} Z \com \\
+D^u = \nu_1 (-1)^{n_1} \bnabla^{2n_1} u + \mu_1 (-1)^{m_1} \bnabla^{2m_1} u \com \\
+D^v = \nu_1 (-1)^{n_1} \bnabla^{2n_1} v + \mu_1 (-1)^{m_1} \bnabla^{2m_1} v \com 
+```
+
+where $U$ is the barotropic velocity and $u$ is the amplitude of the first baroclinic mode with periodic 
+vertical structure $\mathrm{e}^{\mathrm{i} m z}$. Using the The barotropic vertical vorticity $Z$
+
+### Implementation
+
+Coming soon.
+
+
+## Vertically Cosine Boussinesq
+
+The vertically-Cosine Boussinesq module solves the Boussinesq system obtained by expanding the 
+hydrostatic Boussinesq equations in a Sin/Cos series. The horizontal velocity, for example, becomes
+
+```math
+\uu(x, y, z, t) = U(x, y, t) + \cos(mz) u(x, y, t) \per
+```
+
+The horizontal velocity $\vv$, pressure $\pp$, and vertical vorticity $\zzeta$ are also expanded in $\cos(mz)$, 
+where $Z = V_x - U_y$ denotes the barotropic component of the vertical vorticity. The vertical velocity $\ww$ 
+and buoyancy $\bb$ are expanded with $\sin(mz)$. 
+
+### Basic governing equations
+
+Projecting the vertical vorticity equation onto Sin/Cos modes an equation for the evolution of $Z$,
+
+```math
+Z_t + \J \left ( \Psi, Z \right ) 
+    + \tfrac{1}{2} \bnabla \bcdot \left ( \bu \zeta \right ) + \tfrac{m}{2} \pnabla \bcdot \left ( \bu w \right )
+    = D^{Z} \com
+```
+
+where $\J(a, b) = a_x b_y - a_y b_x$ is the Jacobian operator, contraction with $\pnabla = -\p_y \bxh + \p_x \byh$ 
+gives the vertical component of the curl, and $\Psi$ is the barotropic streamfunction defined so that
+
+```math
+\bU = -\Psi_y \bxh + \Psi_x \byh \qquad \text{and} \qquad Z = \bnabla^2 \Psi \per
+```
+
+The baroclinic components obey
+
+```math
+u_t - f v + p_x = - J \left ( \Psi, u \right ) - \bu \bcdot \bnabla U + D^u \com \\
+v_t + f u + p_y = - J \left ( \Psi, v \right ) - \bu \bcdot \bnabla V + D^v \com \\
+p_t - \tfrac{N^2}{m} w = - J \left ( \Psi, p \right ) + D^p \per
+```
+
+The dissipation operators are defined
+
+```math
+D^Z = \nu_0 (-1)^{n_0} \bnabla^{2n_0} Z + \mu_0 (-1)^{m_0} \bnabla^{2m_0} Z \com \\
+D^u = \nu_1 (-1)^{n_1} \bnabla^{2n_1} u + \mu_1 (-1)^{m_1} \bnabla^{2m_1} u \com \\
+D^v = \nu_1 (-1)^{n_1} \bnabla^{2n_1} v + \mu_1 (-1)^{m_1} \bnabla^{2m_1} v \com 
+```
+
+where $2n_0$ and $2m_0$ are the hyperviscous orders of the arbitrary barotropic dissipation operators 
+with coefficients $\nu_0$ and $\mu_0$, while $2n_1$ and $2m_1$ are the orders of the baroclinic 
+dissipation operators.
+
+A passive tracer in the Vertically Cosine Boussinesq system is assumed to satisfy a no-flux condition
+at the upper and lower boundaries, and thus expanded in cosine modes so that
+
+```math
+c(x, y, z, t) = C(x, y, t) + \cos(mz) c(x, y, t) \per
+```
+
+The barotropic and baroclinic passive tracer components then obey
+
+```math
+C_t + \J(\Psi, C) + \tfrac{1}{2} \bnabla \bcdot \left ( \bu c \right ) = 
+    \kappa (-1)^{n_{\kappa}} \bnabla^{2{n_{\kappa}}} C \com \\
+c_t + \J(\Psi, c) + \bu \bcdot \bnabla C = \kappa (-1)^{n_{\kappa}} \bnabla^{2{n_{\kappa}}} c \com
+```
+
+where $\kappa$ and $n_{\kappa}$ are the tracer hyperdiffusivity and order of the hyperdiffusivity, respectively. 
+The choice $n_{\kappa} = 1$ corresponds to ordinary Fickian diffusivity.
+
+### Implementation
+
+Coming soon.

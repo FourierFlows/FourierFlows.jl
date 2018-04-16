@@ -117,13 +117,15 @@ is to permit the use of shared memory parallelism in the compute-intensive
 routines (shared-memory parallelism provided already by FFTW/MKLFFT, but
 is not yet native to Julia for things like element-wise matrix multiplication,
 addition, and assignment). This feature may possibly be enabled by
-Intel Lab's
-[ParallelAccelerator](https://github.com/IntelLabs/ParallelAccelerator.jl)
+Intel Lab's [ParallelAccelerator](https://github.com/IntelLabs/ParallelAccelerator.jl)
 package.
+
 
 ## Developers
 
-FourierFlows is currently being developed by [Gregory L. Wagner](https://glwagner.github.io) and [Navid C. Constantinou](http://www.navidconstantinou.com).
+FourierFlows is currently being developed by [Gregory L. Wagner](https://glwagner.github.io) and 
+[Navid C. Constantinou](http://www.navidconstantinou.com).
+
 
 ## DocStrings
 
@@ -142,6 +144,7 @@ Depth = 2
 Pages = [
     "modules/twodturb.md",
     "modules/barotropicqg.md",
+    "modules/boussinesq.md",
     "man/docstrings.md",
     ]
 ```

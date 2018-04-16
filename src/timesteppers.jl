@@ -1,5 +1,6 @@
 export ForwardEulerTimeStepper, FilteredForwardEulerTimeStepper,
        RK4TimeStepper, FilteredRK4TimeStepper,
+       DualRK4TimeStepper, DualFilteredRK4TimeStepper,
        ETDRK4TimeStepper, FilteredETDRK4TimeStepper,
        AB3TimeStepper, FilteredAB3TimeStepper
 
@@ -7,11 +8,8 @@ export stepforward!
 
 """
     stepforward!(prob)
-    stepforward!(prob, nsteps)
-    stepforward!(prob, diags, nsteps)
 
-Step forward the Problem prob for one timestep. If nsteps is provided, loop for nsteps. If diagnostics are provided,
-in diags, increment diagnostics while stepping the solution forward.
+Step forward the Problem `prob` for one timestep.
 """
 function stepforward!(prob::Problem)
     stepforward!(prob.state, prob.ts, prob.eqn, prob.vars, prob.params, prob.grid)
@@ -19,8 +17,18 @@ function stepforward!(prob::Problem)
     prob.step = prob.state.step
 end
 
+"""
+    stepforward!(prob, nsteps)
+
+Step forward `prob` for `nsteps`.
+"""
 stepforward!(prob::Problem, nsteps) = for step=1:nsteps; stepforward!(prob); end
 
+"""
+    stepforward!(prob, diags, nsteps)
+
+Step forward `prob` for `nsteps`, incrementing diagnostics in the array `diags` along the way.
+"""
 function stepforward!(prob::Problem, diags::AbstractArray, nsteps)
   for step = 1:nsteps
     stepforward!(prob)
@@ -80,10 +88,16 @@ end
 
 abstract type AbstractForwardEulerTimeStepper <: AbstractTimeStepper end
 abstract type AbstractFilteredForwardEulerTimeStepper <: AbstractTimeStepper end
+
 abstract type AbstractETDRK4TimeStepper <: AbstractTimeStepper end
 abstract type AbstractFilteredETDRK4TimeStepper <: AbstractTimeStepper end
+
 abstract type AbstractRK4TimeStepper <: AbstractTimeStepper end
 abstract type AbstractFilteredRK4TimeStepper <: AbstractTimeStepper end
+
+abstract type AbstractDualRK4TimeStepper <: AbstractTimeStepper end
+abstract type AbstractDualFilteredRK4TimeStepper <: AbstractTimeStepper end
+
 abstract type AbstractAB3TimeStepper <: AbstractTimeStepper end
 abstract type AbstractFilteredAB3TimeStepper <: AbstractTimeStepper end
 
@@ -365,19 +379,21 @@ function stepforward!(s, ts::AbstractRK4TimeStepper, eq, v, p, g)
   nothing
 end
 
-struct DualRK4TimeStepper{Tc,Tr,dimc,dimr} <: AbstractTimeStepper
+struct DualRK4TimeStepper{Tc,Tr,dimc,dimr} <: AbstractDualRK4TimeStepper
   dt::Float64
   c::RK4TimeStepper{Tc,dimc}
   r::RK4TimeStepper{Tr,dimr}
 end
 
-function RK4TimeStepper(dt, LCc, LCr)
+function DualRK4TimeStepper(dt, LCc, LCr)
   c = RK4TimeStepper(dt, LCc)
   r = RK4TimeStepper(dt, LCr)
   DualRK4TimeStepper{cxeltype(LCc),cxeltype(LCr),ndims(LCc),ndims(LCr)}(dt, c, r)
 end
 
-function stepforward!(s, ts::DualRK4TimeStepper, eq, v, p, g)
+RK4TimeStepper(dt, LCc, LCr) = DualRK4TimeStepper(dt, LCc, LCr)
+
+function stepforward!(s, ts::AbstractDualRK4TimeStepper, eq, v, p, g)
   eq.calcN!(ts.c.RHS₁, ts.r.RHS₁, s.solc, s.solr, s.t, s, v, p, g)
   @. ts.c.RHS₁ += eq.LCc*s.solc
   @. ts.r.RHS₁ += eq.LCr*s.solr
@@ -385,7 +401,7 @@ function stepforward!(s, ts::DualRK4TimeStepper, eq, v, p, g)
   t2 = s.t + 0.5*ts.c.dt
   @. ts.c.sol₁ = s.solc + 0.5*ts.c.dt*ts.c.RHS₁
   @. ts.r.sol₁ = s.solr + 0.5*ts.r.dt*ts.r.RHS₁
-  eq.calcN!(ts.c.RHS₂, ts.c.RHS₂, ts.c.sol₁, ts.r.sol₁, t2, s, v, p, g)
+  eq.calcN!(ts.c.RHS₂, ts.r.RHS₂, ts.c.sol₁, ts.r.sol₁, t2, s, v, p, g)
   @. ts.c.RHS₂ += eq.LCc*ts.c.sol₁
   @. ts.r.RHS₂ += eq.LCr*ts.r.sol₁
   # Substep 2
@@ -461,19 +477,20 @@ function stepforward!(s, ts::AbstractFilteredRK4TimeStepper, eq, v, p, g)
   nothing
 end
 
-struct DualFilteredRK4TimeStepper{Tc,Tr,dimc,dimr} <: AbstractTimeStepper
+struct DualFilteredRK4TimeStepper{Tc,Tr,dimc,dimr} <: AbstractDualFilteredRK4TimeStepper
   dt::Float64
   c::FilteredRK4TimeStepper{Tc,dimc}
   r::FilteredRK4TimeStepper{Tr,dimr}
 end
 
-function FilteredRK4TimeStepper(dt, LCc, LCr, g)
+function DualFilteredRK4TimeStepper(dt, LCc, LCr, g)
   c = FilteredRK4TimeStepper(dt, LCc, g)
   r = FilteredRK4TimeStepper(dt, LCr, g)
   DualFilteredRK4TimeStepper{cxeltype(LCc),cxeltype(LCr),ndims(LCc),ndims(LCr)}(dt, c, r)
 end
+FilteredRK4TimeStepper(dt, LCc, LCr, g) = DualFilteredRK4TimeStepper(dt, LCc, LCr, g)
 
-function stepforward!(s, ts::DualFilteredRK4TimeStepper, eq, v, p, g)
+function stepforward!(s, ts::AbstractDualFilteredRK4TimeStepper, eq, v, p, g)
   eq.calcN!(ts.c.RHS₁, ts.r.RHS₁, s.solc, s.solr, s.t, s, v, p, g)
   @. ts.c.RHS₁ += eq.LCc*s.solc
   @. ts.r.RHS₁ += eq.LCr*s.solr
