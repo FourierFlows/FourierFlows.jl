@@ -1,8 +1,8 @@
-# BarotropicQG Modules
+# BarotropicQG Module
 
 This module solves the quasi-geostrophic barotropic vorticity equation on a
 beta-plane of variable fluid depth $H-h(x,y)$. The flow is obtained through a
-streamfunction $\psi$ as $(u,\upsilon) = (-\partial_y\psi, \partial_x\psi)$. All flow
+streamfunction $\psi$ as $(u, \upsilon) = (-\partial_y\psi, \partial_x\psi)$. All flow
 fields can be obtained from the quasi-geostrophic potential vorticity (QGPV).
 Here the QGPV is
 
@@ -11,7 +11,7 @@ $$\underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{(\partial_x \up
 	\underbrace{\frac{f_0 h}{H}}_{\text{topographic PV}}.$$
 
 The dynamical variable is the component of the vorticity of the flow normal to
-the plane of motion, $\zeta\equiv \partial_x v- \partial_y u = \nabla^2\psi$.
+the plane of motion, $\zeta\equiv \partial_x \upsilon- \partial_y u = \nabla^2\psi$.
 Also, we denote the topographic PV with $\eta\equiv f_0 h/H$. Thus, the
 equation solved by the module is:
 

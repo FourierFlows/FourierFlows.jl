@@ -66,20 +66,17 @@ Here's an overview of the code structure:
         - `barotropicqg.jl`: Defines a `BarotropicQG` module that provides
                 several solvers for the barotropic QG model that permit beta,
                 topography, beta + topography, and forcing.
-        - `twomodeboussinesq.jl`: Defines a `TwoModeBoussinesq` module
-                that provides solvers for a two-mode truncation of the
-                rotating, stratified Boussinesq equation.
+        - `kuramotosivashinsky.jl`: Defines a `KuramotoSivashinsky` module that
+                solves the Kuramoto-Sivashinsky.
         - `traceradvdiff.jl`: Defines a `TracerAdvDiff` module that
                 provides a solver for a two-dimensional and periodic tracer
                 field in a given 2D flow (u, w), which can be an arbitrary
                 function of x, z, and t.
-        - `tracerpatcheqn.jl`: ...
-
 
 ## Writing fast solvers
 
 The performance-intensive part of the code involves just two functions: the
-timestepping scheme `stepforward!`, and the function `calcN!` that
+time-stepping scheme `stepforward!`, and the function `calcN!` that
 calculates the nonlinear part of the given equation's right-hand side.
 Optimization of these two functions for a given problem will produce the
 fastest possible code.
@@ -91,11 +88,11 @@ fastest possible code.
 
   > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. *J. Fluid Mech.*, **146**, 21-43
 
-- `examples/barotropicqg/decayingbetaturb.jl`: An example script that simulates decaying quasi-geostrophic flow on a beta-plane.
+- `examples/barotropicqg/decayingbetaturb.jl`: An example script that simulates decaying quasi-geostrophic flow on a beta-plane demonstrating zonation.
 
 - `examples/barotropicqg/ACConelayer.jl`: A script that simulates barotropic quasi-geostrophic flow above topography reproducing the results of the paper by
 
-  > Constantinou, N. C. (2018). A barotropic model of eddy saturation. *J. Phys. Oceanogr.*, in press, doi:10.1175/JPO-D-17-0182.1
+  > Constantinou, N. C. (2018). A barotropic model of eddy saturation. *J. Phys. Oceanogr.*, **48 (2)**, 397-411
 
 
 
@@ -105,6 +102,8 @@ fastest possible code.
 Pages = [
     "modules/twodturb.md",
     "modules/barotropicqg.md"
+    "modules/kuramotosivashinsky.md"
+    "modules/traceradvdiff.md"
         ]
 Depth = 1
 ```
@@ -141,7 +140,9 @@ Depth = 2
 ```@index
 Pages = [
     "modules/twodturb.md",
-    "modules/barotropicqg.md",
+    "modules/barotropicqg.md"
+    "modules/kuramotosivashinsky.md"
+    "modules/traceradvdiff.md"
     "man/docstrings.md",
     ]
 ```
