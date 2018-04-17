@@ -10,6 +10,8 @@ makedocs(
                 "modules/twodturb.md",
                 "modules/barotropicqg.md",
                 "modules/boussinesq.md",
+                "modules/kuramotosivashinsky.md",
+                "modules/traceradvdiff.md"
               ],
               "DocStrings" => Any["man/docstrings.md"]
              ]

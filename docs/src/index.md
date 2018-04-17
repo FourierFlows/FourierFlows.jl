@@ -55,31 +55,39 @@ Here's an overview of the code structure:
         - Includes all sources files and physics files.
    - `timesteppers.jl`: defines modules and `stepforward!` routines for
         various time-steppers. Current implemented time-steppers are:
-        - Forward Euler (+ Filtered Forward Euler)
+        - Forward Euler
         - 3rd-order Adams-Bashforth (AB3)
-        - 4th-order Runge-Kutta (RK4) (+ Filtered RK4)
+        - 4th-order Runge-Kutta (RK4)
         - 4th-order Runge-Kutta Exponential Time Differencing (ETDRK4)
-        (+ Filtered ETDRK4)
+        - 4th-order Dual Runge-Kutta (DualRK4)
+        - 4th-order Dual Runge-Kutta Exponential Time Differencing (Dual ETDRK4)
+
+        For each time-stepper exists also a "filtered" version that filters
+        out high-wavenumber spectral components of the solution. The `Dual`
+        time-steppers evolve a state variable that comprises both of real valued
+        and complex valued fields.
+
     - `physics/`
         - `twodturb.jl`: Defines a `TwoDTurb` module that provides a
                 solver for the two-dimensional vorticity equation.
         - `barotropicqg.jl`: Defines a `BarotropicQG` module that provides
                 several solvers for the barotropic QG model that permit beta,
                 topography, beta + topography, and forcing.
-        - `twomodeboussinesq.jl`: Defines a `TwoModeBoussinesq` module
-                that provides solvers for a two-mode truncation of the
-                rotating, stratified Boussinesq equation.
+        - `kuramotosivashinsky.jl`: Defines a `KuramotoSivashinsky` module that
+                solves the Kuramoto-Sivashinsky.
+        - `verticallyfourierboussinesq.jl`: Defines a `VerticallyFourierBoussinesq` module that
+                solves the two-mode truncation of the Fourier series thin-layer approximation to the hydrostatic Boussinesq equations.
+        - `verticallycosinerboussinesq.jl`: Defines a `VerticallyCosineBoussinesq` module that
+                solves the two-mode truncation of the Sin/Cos series thin-layer approximation to the hydrostatic Boussinesq equations.
         - `traceradvdiff.jl`: Defines a `TracerAdvDiff` module that
                 provides a solver for a two-dimensional and periodic tracer
                 field in a given 2D flow (u, w), which can be an arbitrary
                 function of x, z, and t.
-        - `tracerpatcheqn.jl`: ...
-
 
 ## Writing fast solvers
 
 The performance-intensive part of the code involves just two functions: the
-timestepping scheme `stepforward!`, and the function `calcN!` that
+time-stepping scheme `stepforward!`, and the function `calcN!` that
 calculates the nonlinear part of the given equation's right-hand side.
 Optimization of these two functions for a given problem will produce the
 fastest possible code.
@@ -91,11 +99,11 @@ fastest possible code.
 
   > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. *J. Fluid Mech.*, **146**, 21-43
 
-- `examples/barotropicqg/decayingbetaturb.jl`: An example script that simulates decaying quasi-geostrophic flow on a beta-plane.
+- `examples/barotropicqg/decayingbetaturb.jl`: An example script that simulates decaying quasi-geostrophic flow on a beta-plane demonstrating zonation.
 
 - `examples/barotropicqg/ACConelayer.jl`: A script that simulates barotropic quasi-geostrophic flow above topography reproducing the results of the paper by
 
-  > Constantinou, N. C. (2018). A barotropic model of eddy saturation. *J. Phys. Oceanogr.*, in press, doi:10.1175/JPO-D-17-0182.1
+  > Constantinou, N. C. (2018). A barotropic model of eddy saturation. *J. Phys. Oceanogr.*, **48 (2)**, 397-411
 
 
 
@@ -105,6 +113,8 @@ fastest possible code.
 Pages = [
     "modules/twodturb.md",
     "modules/barotropicqg.md"
+    "modules/kuramotosivashinsky.md"
+    "modules/traceradvdiff.md"
         ]
 Depth = 1
 ```
@@ -123,7 +133,7 @@ package.
 
 ## Developers
 
-FourierFlows is currently being developed by [Gregory L. Wagner](https://glwagner.github.io) and 
+FourierFlows is currently being developed by [Gregory L. Wagner](https://glwagner.github.io) and
 [Navid C. Constantinou](http://www.navidconstantinou.com).
 
 
@@ -133,6 +143,9 @@ FourierFlows is currently being developed by [Gregory L. Wagner](https://glwagne
 Pages = [
     "modules/twodturb.md",
     "modules/barotropicqg.md",
+    "modules/boussinesq.md",
+    "modules/kuramotosivashinsky.md",
+    "modules/traceradvdiff.md",
     "man/docstrings.md",
     ]
 Depth = 2
@@ -145,6 +158,8 @@ Pages = [
     "modules/twodturb.md",
     "modules/barotropicqg.md",
     "modules/boussinesq.md",
+    "modules/kuramotosivashinsky.md",
+    "modules/traceradvdiff.md",
     "man/docstrings.md",
     ]
 ```
