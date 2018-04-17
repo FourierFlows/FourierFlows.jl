@@ -1,5 +1,7 @@
 # BarotropicQG Modules
 
+### Basic Equations
+
 This module solves the quasi-geostrophic barotropic vorticity equation on a
 beta-plane of variable fluid depth $H-h(x,y)$. The flow is obtained through a
 streamfunction $\psi$ as $(u,\upsilon) = (-\partial_y\psi, \partial_x\psi)$. All flow
@@ -24,6 +26,7 @@ the right hand side, $f(x,y,t)$ is forcing, $\mu$ is linear drag, and $\nu$ is
 hyperviscosity. Plain old viscosity corresponds to $n_{\nu}=1$. The sum of
 relative vorticity and topographic PV is denoted with $q\equiv\zeta+\eta$.
 
+### Implementation
 
 The equation is time-stepped forward in Fourier space:
 

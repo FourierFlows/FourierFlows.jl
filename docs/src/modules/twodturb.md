@@ -1,5 +1,7 @@
 # TwoDTurb Module
 
+### Basic Equations
+
 This module solves two-dimensional incompressible turbulence. The flow is given
 through a streamfunction $\psi$ as $(u,\upsilon) = (-\partial_y\psi, \partial_x\psi)$.
 The dynamical variable used here is the component of the vorticity of the flow
@@ -13,6 +15,8 @@ where $J(f,g) = (\partial_xf)(\partial_y g)-(\partial_x g)(\partial_y f)$. On
 the right hand side, $f(x,y,t)$ is forcing, $\mu$ is hypoviscosity, and $\nu$ is
 hyperviscosity. Plain old linear drag corresponds to $n_{\mu}=0$, while normal
 viscosity corresponds to $n_{\nu}=1$.
+
+### Implementation
 
 The equation is time-stepped forward in Fourier space:
 
