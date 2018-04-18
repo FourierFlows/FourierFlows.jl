@@ -18,14 +18,16 @@ steppersteps = Dict([
 dualsteppersteps = Dict([
   ("DualRK4", 40),
   ("DualFilteredRK4", 40),
+  ("DualETDRK4", 40),
+  ("DualFilteredETDRK4", 40),
 ])
 
 """
     testtwodturbstepforward(n, L, nu, nnu; kwargs...)
 
 Build a twodturb initial value problem and use it to test time-stepping methods.
-We integrate a random IC from 0 to t=tf. The amplitude of the initial condition 
-is kept low (e.g. multiplied by 1e-5) so that nonlinear terms do not come into play. 
+We integrate a random IC from 0 to t=tf. The amplitude of the initial condition
+is kept low (e.g. multiplied by 1e-5) so that nonlinear terms do not come into play.
 This way we can compare the final state qh(t=tf) with qh(t=0)*exp(-nu k^nnu tf).
 We choose linear drag (nnu=0) so that we can test the energy since in that
 case E(t=tf) = E(t=0)*exp(-2nu tf).
@@ -61,7 +63,7 @@ end
 """
     testverticallyfourierstepforward(n, L, nu, nnu; kwargs...)
 
-Build a Vertically Fourier Boussinesq initial value problem and use it to test 
+Build a Vertically Fourier Boussinesq initial value problem and use it to test
 time-stepping methods.
 """
 function testverticallyfourierstepforward(n=64, L=2π, nu=1e-2, nnu=0; nsteps=100, stepper="DualRK4")
