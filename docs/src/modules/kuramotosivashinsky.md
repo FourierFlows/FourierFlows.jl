@@ -1,8 +1,12 @@
 # Kuramoto-Sivashinsky Module
 
+### Basic Equations
+
 This module solves the Kuramoto-Sivashinsky equation for $u(x,t)$:
 
 $$\partial_t u + \partial_x^4 u + \partial_x^2 u + u\partial_x u = 0\ .$$
+
+### Implementation
 
 The equation is time-stepped forward in Fourier space:
 

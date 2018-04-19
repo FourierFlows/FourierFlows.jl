@@ -45,6 +45,14 @@ end
   include("test_kuramotosivashinsky.jl")
 end
 
+@testset "Physics: Vertically Cosine Boussinesq" begin
+  include("test_verticallycosineboussinesq.jl")
+end
+
+@testset "Physics: Vertically Fourier Boussinesq" begin
+  include("test_verticallyfourierboussinesq.jl")
+end
+
 @require CuArrays begin
 
   println("-- CUDA tests --")

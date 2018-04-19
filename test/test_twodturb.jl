@@ -1,27 +1,19 @@
 import FourierFlows.TwoDTurb
 import FourierFlows.TwoDTurb: energy, enstrophy, dissipation, work, drag
 
-cfl(prob) = maximum([maximum(abs.(prob.vars.U)), maximum(abs.(prob.vars.V))]*
-              prob.ts.dt/prob.grid.dx)
+cfl(prob) = maximum([maximum(abs.(prob.vars.U)), maximum(abs.(prob.vars.V))]*prob.ts.dt/prob.grid.dx)
 
-# Lamb dipole test
-function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu=0.0, nnu=1, ti=L/Ue*0.01,
-  nm=3, message=false)
-
+function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu=0.0, nnu=1, ti=L/Ue*0.01, nm=3)
   nt = round(Int, ti/dt)
-
-  prob = TwoDTurb.InitialValueProblem(nx=n, Lx=L, nu=nu, nnu=nnu, dt=dt,
-                                        stepper="FilteredRK4")
-  x, y, q = prob.grid.X, prob.grid.Y, prob.vars.q # nicknames
-
+  prob = TwoDTurb.InitialValueProblem(nx=n, Lx=L, nu=nu, nnu=nnu, dt=dt, stepper="FilteredRK4")
   q0 = FourierFlows.lambdipole(Ue, Re, prob.grid)
   TwoDTurb.set_q!(prob, q0)
 
   xq = zeros(nm)   # centroid of abs(q)
   Ue_m = zeros(nm) # measured dipole speed
+  x, y, q = prob.grid.X, prob.grid.Y, prob.vars.q # nicknames
 
-  # Step forward
-  for i = 1:nm
+  for i = 1:nm # step forward
     tic()
     stepforward!(prob, nt)
     TwoDTurb.updatevars!(prob)
@@ -30,22 +22,11 @@ function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu=0.0, nnu=1, ti=L/Ue*0.01
     if i > 1
       Ue_m[i] = (xq[i]-xq[i-1]) / ((nt-1)*dt)
     end
-
-    if message
-      @printf("     step: %04d, t: %3.3f, time: %.3f, cfl: %.2f\n",
-        prob.step, prob.t, toq(), cfl(prob))
-    end
   end
-  # println(Ue_m)
-  # println(abs(Ue - mean(Ue_m[2:end]))/abs(Ue))
   isapprox(Ue, mean(Ue_m[2:end]), rtol=1e-2)
 end
 
-
-# ISOTROPIC RING FORCING BUDGETS
-function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, nu=1e-7, nnu=2,
-                                         mu = 1e-1, nmu = 0, message=false)
-
+function stochasticforcingbudgetstest(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, mu=1e-1, nmu=0, message=false)
   n, L  = 256, 2π
   nu, nnu = 1e-7, 2
   mu, nmu = 1e-1, 0
@@ -56,7 +37,6 @@ function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, nu=1e-7, nnu
   # Forcing
   kf, dkf = 12.0, 2.0
   σ = 0.1
-
   gr  = TwoDGrid(n, L)
 
   force2k = exp.(-(sqrt.(gr.KKrsq)-kf).^2/(2*dkf^2))
@@ -114,8 +94,7 @@ function stochasticforcingbudgetstest( ; n = 256, dt = 0.01, L=2π, nu=1e-7, nnu
   residual = dEdt - total
 
   if message
-    @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n",
-            prob.step, prob.t, cfl, tc)
+    @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", prob.step, prob.t, cfl, tc)
   end
   # println(mean(abs.(residual)))
   isapprox(mean(abs.(residual)), 0, atol=1e-4)
@@ -132,9 +111,7 @@ forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - nuΔζf. One
 to the vorticity equation forced by this Ff is then ζf. (This solution may not
 be realized, at least at long times, if it is unstable.)
 """
-function testnonlinearterms(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1,
-                                         mu=0.0, nmu=0, message=false)
-
+function testnonlinearterms(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, nmu=0, message=false)
   n, L  = 128, 2π
   nu, nnu = 1e-2, 1
   mu, nmu = 0.0, 0
@@ -142,7 +119,6 @@ function testnonlinearterms(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1,
   nt = round(Int, tf/dt)
 
   gr  = TwoDGrid(n, L)
-
   x, y = gr.X, gr.Y
 
   psif = @. sin(2x)*cos(2y) + 2sin(x)*cos(3y)
@@ -163,21 +139,11 @@ function testnonlinearterms(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1,
 
   prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, nmu=nmu, dt=dt, stepper=stepper, calcF=calcF!)
   s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
-
   TwoDTurb.set_q!(prob, qf)
 
   # Step forward
   stepforward!(prob, round(Int, nt))
   TwoDTurb.updatevars!(prob)
-
-  cfl = prob.ts.dt*maximum(
-    [maximum(v.V)/g.dx, maximum(v.U)/g.dy])
-
-  if message
-    @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n",
-            prob.step, prob.t, cfl, tc)
-  end
-
   isapprox(norm(v.q - qf)/norm(qf), 0, atol=1e-13)
 end
 

@@ -55,11 +55,18 @@ Here's an overview of the code structure:
         - Includes all sources files and physics files.
    - `timesteppers.jl`: defines modules and `stepforward!` routines for
         various time-steppers. Current implemented time-steppers are:
-        - Forward Euler (+ Filtered Forward Euler)
+        - Forward Euler
         - 3rd-order Adams-Bashforth (AB3)
-        - 4th-order Runge-Kutta (RK4) (+ Filtered RK4)
+        - 4th-order Runge-Kutta (RK4)
         - 4th-order Runge-Kutta Exponential Time Differencing (ETDRK4)
-        (+ Filtered ETDRK4)
+        - 4th-order Dual Runge-Kutta (DualRK4)
+        - 4th-order Dual Runge-Kutta Exponential Time Differencing (DualETDRK4)
+
+        For each time-stepper exists also a "filtered" version that filters
+        out high-wavenumber spectral components of the solution. The `Dual`
+        time-steppers evolve a state variable that comprises both of real valued
+        and complex valued fields.
+
     - `physics/`
         - `twodturb.jl`: Defines a `TwoDTurb` module that provides a
                 solver for the two-dimensional vorticity equation.
@@ -68,6 +75,10 @@ Here's an overview of the code structure:
                 topography, beta + topography, and forcing.
         - `kuramotosivashinsky.jl`: Defines a `KuramotoSivashinsky` module that
                 solves the Kuramoto-Sivashinsky.
+        - `verticallyfourierboussinesq.jl`: Defines a `VerticallyFourierBoussinesq` module that
+                solves the two-mode truncation of the Fourier series thin-layer approximation to the hydrostatic Boussinesq equations.
+        - `verticallycosinerboussinesq.jl`: Defines a `VerticallyCosineBoussinesq` module that
+                solves the two-mode truncation of the Sin/Cos series thin-layer approximation to the hydrostatic Boussinesq equations.
         - `traceradvdiff.jl`: Defines a `TracerAdvDiff` module that
                 provides a solver for a two-dimensional and periodic tracer
                 field in a given 2D flow (u, w), which can be an arbitrary
@@ -116,13 +127,15 @@ is to permit the use of shared memory parallelism in the compute-intensive
 routines (shared-memory parallelism provided already by FFTW/MKLFFT, but
 is not yet native to Julia for things like element-wise matrix multiplication,
 addition, and assignment). This feature may possibly be enabled by
-Intel Lab's
-[ParallelAccelerator](https://github.com/IntelLabs/ParallelAccelerator.jl)
+Intel Lab's [ParallelAccelerator](https://github.com/IntelLabs/ParallelAccelerator.jl)
 package.
+
 
 ## Developers
 
-FourierFlows is currently being developed by [Gregory L. Wagner](https://glwagner.github.io) and [Navid C. Constantinou](http://www.navidconstantinou.com).
+FourierFlows is currently being developed by [Gregory L. Wagner](https://glwagner.github.io) and
+[Navid C. Constantinou](http://www.navidconstantinou.com).
+
 
 ## DocStrings
 
@@ -130,6 +143,9 @@ FourierFlows is currently being developed by [Gregory L. Wagner](https://glwagne
 Pages = [
     "modules/twodturb.md",
     "modules/barotropicqg.md",
+    "modules/boussinesq.md",
+    "modules/kuramotosivashinsky.md",
+    "modules/traceradvdiff.md",
     "man/docstrings.md",
     ]
 Depth = 2
@@ -140,9 +156,10 @@ Depth = 2
 ```@index
 Pages = [
     "modules/twodturb.md",
-    "modules/barotropicqg.md"
-    "modules/kuramotosivashinsky.md"
-    "modules/traceradvdiff.md"
+    "modules/barotropicqg.md",
+    "modules/boussinesq.md",
+    "modules/kuramotosivashinsky.md",
+    "modules/traceradvdiff.md",
     "man/docstrings.md",
     ]
 ```

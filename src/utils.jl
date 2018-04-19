@@ -44,9 +44,11 @@ function autoconstructtimestepper(stepper, dt, sol, g::AbstractGrid=ZeroDGrid(1)
   eval(tsexpr)
 end
 
-function autoconstructtimestepper(stepper, dt, solc, solr)
+function autoconstructtimestepper(stepper, dt, solc, solr, g::AbstractGrid=ZeroDGrid(1))
   fullsteppername = Symbol(stepper, :TimeStepper)
-  eval(Expr(:call, fullsteppername, dt, solc, solr))
+  tsexpr = contains(stepper, "Filtered") ?
+    Expr(:call, fullsteppername, dt, solc, solr, g) : Expr(:call, fullsteppername, dt, solc, solr)
+  eval(tsexpr)
 end
 
 """
@@ -63,10 +65,10 @@ end
 
 "Returns an expression that defines a Composite Type of the AbstractVars variety."
 function structvarsexpr(name, physfields, transfields; vardims=2, parent=:AbstractVars, T=Float64, arraytype=:Array)
-  physexprs = [:($fld::$arraytype{$T,$vardims}) for fld in physfields]
-  transexprs = [:($fld::$arraytype{Complex{$T},$vardims}) for fld in transfields]
+  physexprs = [:($fld::$arraytype{T,$vardims}) for fld in physfields]
+  transexprs = [:($fld::$arraytype{Complex{T},$vardims}) for fld in transfields]
   expr = quote
-    struct $name <: $parent
+    struct $name{T} <: $parent
       $(physexprs...)
       $(transexprs...)
     end
@@ -74,6 +76,44 @@ function structvarsexpr(name, physfields, transfields; vardims=2, parent=:Abstra
   expr
 end
 
+"""
+    structvarsexpr(name, fieldspecs; parent=nothing)
+
+Returns an expression that defines a composite type whose fields are given by
+the name::type pairs specifed by the tuples in fieldspecs. The convention is
+name = fieldspecs[i][1] and type = fieldspecs[i][2] for the ith element of 
+fieldspecs.
+"""
+function structvarsexpr(name, fieldspecs; parent=nothing)
+  # name = spec[1]; type = spec[2]
+  # example: fieldspecs[1] = (:u, Array{Float64,2})
+  fieldexprs = [ :( $(spec[1])::$(spec[2]) ) for spec in fieldspecs ]
+  if parent == nothing
+    expr = quote
+      struct $name{T}
+        $(fieldexprs...)
+      end
+    end
+  else
+    expr = quote
+      struct $name{T} <: $parent
+        $(fieldexprs...)
+      end
+    end
+  end
+  expr
+end
+
+
+"""
+    getfieldspecs(fieldnames, fieldtype)
+
+Returns an array of (fieldname[i], fieldtype) tuples that can be given to the 
+function getstructexpr. This function makes it convenient to construct 
+fieldspecs for lists of variables of the same type.
+"""
+getfieldspecs(fieldnames, fieldtype) = collect(zip(fieldnames, [ fieldtype for name in fieldnames ]))
+  
 """
     fftwavenums(n; L=1)
 
@@ -291,6 +331,19 @@ function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=4)
   ρ, ahρ
 end
 
+
+# Moments and cumulants
+domainaverage(c, g) = g.dx*g.dy*sum(c)/(g.Lx*g.Ly)
+xmoment(c, g::TwoDGrid, n=1) = sum(g.X.^n.*c)/sum(c)
+ymoment(c, g::TwoDGrid, n=1) = sum(g.Y.^n.*c)/sum(c)
+
+cumulant_1x(c, g) = g.dx*g.dy*sum(g.X.*c) / domainaverage(c, g)
+cumulant_1y(c, g) = g.dx*g.dy*sum(g.Y.*c) / domainaverage(c, g)
+
+cumulant_2x(c, g) = g.dx*g.dy*sum((g.X.-cumulant_1x(c, g)).^2.*c) / domainaverage(c, g)
+cumulant_2y(c, g) = g.dx*g.dy*sum((g.Y.-cumulant_1y(c, g)).^2.*c) / domainaverage(c, g)
+  
+#=
 # Moments and cumulants
 domainaverage(c, g) = g.dx*g.dy*sum(c)/(g.Lx*g.Ly)
 moment_x(c, g, n) = g.dx*g.dy*sum(g.X.^n.*c)
@@ -299,3 +352,4 @@ cumulant_1x(c, g) = g.dx*g.dy*sum(g.X.*c) / domainaverage(c, g)
 cumulant_1y(c, g) = g.dx*g.dy*sum(g.Y.*c) / domainaverage(c, g)
 cumulant_2x(c, g) = g.dx*g.dy*sum((g.X-cumulant_1x(c, g)).^2.0.*c) / domainaverage(c, g)
 cumulant_2y(c, g) = g.dx*g.dy*sum((g.Y.-cumulant_1y(c, g)).^2.0.*c) / domainaverage(c, g)
+=#

@@ -1,5 +1,11 @@
 # BarotropicQG Module
 
+```math
+\newcommand{\J}{\mathsf{J}}
+```
+
+### Basic Equations
+
 This module solves the quasi-geostrophic barotropic vorticity equation on a
 beta-plane of variable fluid depth $H-h(x,y)$. The flow is obtained through a
 streamfunction $\psi$ as $(u, \upsilon) = (-\partial_y\psi, \partial_x\psi)$. All flow
@@ -15,22 +21,23 @@ the plane of motion, $\zeta\equiv \partial_x \upsilon- \partial_y u = \nabla^2\p
 Also, we denote the topographic PV with $\eta\equiv f_0 h/H$. Thus, the
 equation solved by the module is:
 
-$$\partial_t \zeta + J(\psi, \underbrace{\zeta + \eta}_{\equiv q}) +
+$$\partial_t \zeta + \J(\psi, \underbrace{\zeta + \eta}_{\equiv q}) +
 \beta\partial_x\psi = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu}
 \right] \zeta }_{\textrm{dissipation}} + f\ .$$
 
-where $J(f,g) = (\partial_xf)(\partial_y g)-(\partial_x g)(\partial_y f)$. On
+where $\J(a, b) = (\partial_x a)(\partial_y b)-(\partial_y a)(\partial_x b)$. On
 the right hand side, $f(x,y,t)$ is forcing, $\mu$ is linear drag, and $\nu$ is
 hyperviscosity. Plain old viscosity corresponds to $n_{\nu}=1$. The sum of
 relative vorticity and topographic PV is denoted with $q\equiv\zeta+\eta$.
 
+### Implementation
 
 The equation is time-stepped forward in Fourier space:
 
-$$\partial_t \widehat{\zeta} = - \widehat{J(\psi, q)} +\beta\frac{\mathrm{i}k_x}{k^2}\widehat{\zeta} -\left(\mu
+$$\partial_t \widehat{\zeta} = - \widehat{\J(\psi, q)} +\beta\frac{\mathrm{i}k_x}{k^2}\widehat{\zeta} -\left(\mu
 +\nu k^{2n_\nu}\right) \widehat{\zeta}  + \widehat{f}\ .$$
 
-In doing so the Jacobian is computed in the conservative form: $J(f,g) =
+In doing so the Jacobian is computed in the conservative form: $\J(f,g) =
 \partial_y [ (\partial_x f) g] -\partial_x[ (\partial_y f) g]$.
 
 Thus:

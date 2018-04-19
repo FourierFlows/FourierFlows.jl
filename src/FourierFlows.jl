@@ -44,6 +44,8 @@ include("physics/twodturb.jl")
 include("physics/barotropicqg.jl")
 include("physics/traceradvdiff.jl")
 include("physics/kuramotosivashinsky.jl")
+include("physics/verticallycosineboussinesq.jl")
+include("physics/verticallyfourierboussinesq.jl")
 
 
 # ----------------------
