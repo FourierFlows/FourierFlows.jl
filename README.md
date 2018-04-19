@@ -46,7 +46,7 @@ Here's an overview of the code structure:
         - 4th-order Runge-Kutta (RK4)
         - 4th-order Runge-Kutta Exponential Time Differencing (ETDRK4)
         - 4th-order Dual Runge-Kutta (DualRK4)
-        - 4th-order Dual Runge-Kutta Exponential Time Differencing (Dual ETDRK4)
+        - 4th-order Dual Runge-Kutta Exponential Time Differencing (DualETDRK4)
 
         For each time-stepper exists also a "filtered" version that filters
         out high-wavenumber spectral components of the solution. The `Dual`

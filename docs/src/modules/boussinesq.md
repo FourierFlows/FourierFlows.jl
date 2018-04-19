@@ -10,15 +10,15 @@
 
 \newcommand{\bu}{\boldsymbol u}
 \newcommand{\bU}{\boldsymbol U}
-\newcommand{\buu}{\widehat{\boldsymbol{u}}}
-\newcommand{\bb}{\widehat{b}}
-\newcommand{\pp}{\widehat{p}}
-\newcommand{\ww}{\widehat{w}}
-\newcommand{\uu}{\widehat{u}}
+\newcommand{\buu}{{\boldsymbol{u}}}
+\newcommand{\bb}{{b}}
+\newcommand{\pp}{{p}}
+\newcommand{\ww}{{w}}
+\newcommand{\uu}{{u}}
 \newcommand{\v}{\upsilon}
-\newcommand{\vv}{\widehat{\upsilon}}
-\newcommand{\zzeta}{\widehat{\zeta}}
-\newcommand{\oomega}{\widehat{\omega}}
+\newcommand{\vv}{{\upsilon}}
+\newcommand{\zzeta}{{\zeta}}
+\newcommand{\oomega}{{\omega}}
 \newcommand{\boomega}{\boldsymbol{\oomega}}
 
 \newcommand{\bxh}{\widehat{\boldsymbol{x}}}
@@ -26,7 +26,7 @@
 \newcommand{\bzh}{\widehat{\boldsymbol{z}}}
 \newcommand{\ii}{\mathrm{i}}
 \newcommand{\ee}{\mathrm{e}}
-\newcommand{\cc}{\mathrm{c}}
+\newcommand{\cc}{\mathrm{c.c.}}
 \newcommand{\J}{\mathsf{J}}
 
 \newcommand{\p}{\partial}
@@ -43,20 +43,20 @@ two or three modes. Approximations of this last flavor are described here.
 The three-dimensional rotating, stratified, hydrostatic Boussinesq equations are
 
 ```math
-\p_t\buu + \left ( \buu \bcdot \bnabla \right ) \buu + f \bzh \times \buu + \bnabla p = D^{\buu} \com \\
+\p_t\buu + \left ( \buu \bcdot \bnabla \right ) \buu + f \bzh \times \buu + \bnabla \pp = D^{\buu} \com \\
 \p_z \pp = \bb \com \\
-\p_t\bb + \ww N^2 = D^b \com \\
-\p_x\uu + \p_y\vv + \p_z\ww = 0 \com
+\p_t\bb + \ww N^2 = D^\bb \com \\
+\bnabla \bcdot \buu = 0 \com
 ```
 
 where $\bu = (u, \v, w)$ is the three-dimensional velocity, $b$ is buoyancy, $p$ is pressure, $N^2$ is the
-buoyancy frequency (constant), and $f$ is the rotation or Coriolis frequency. The operators $D^{\buu}$ and $D^{\bb}$ are arbitrary dissipation operators which we define only after projecting onto vertical Fourier or Sin/Cos modes.
+buoyancy frequency (constant), and $f$ is the rotation or Coriolis frequency. The operators $D^{\buu}$ and $D^{\bb}$ are arbitrary dissipation that we define only after projecting onto vertical Fourier or Sin/Cos modes.
 Taking the curl of the horizontal momentum equation yields an evolution
 equation for vertical vorticity, $\zzeta = \p_x \vv - \p_y \uu$:
 
 ```math
 \p_t\zzeta + \buu \bcdot \bnabla \zzeta - \left (f \bzh + \boomega \right )
-    \bcdot \bnabla \ww = D^{\zeta} \per
+    \bcdot \bnabla \ww = D^{\zzeta} \per
 ```
 
 ## Vertically Fourier Boussinesq
@@ -65,7 +65,7 @@ The vertically-Fourier Boussinesq module solves the Boussinesq system obtained b
 Boussinesq equations in a Fourier series. The horizontal velocity $\uu$, for example, is expanded with
 
 ```math
-\uu(x, y, z, t) = U(x, y, t) + \ee^{\ii m z} u(x, y, t) + \ee^{-\ii m z} u^*(x, y, t) \com
+\uu(x, y, z, t) \mapsto U(x, y, t) + \ee^{\ii m z} u(x, y, t) + \ee^{-\ii m z} u^*(x, y, t) \com
 ```
 
 The other variables $\vv$, $\bb$, $\pp$, $\zzeta$, and $\boomega$ are expanded identically. The barotropic
@@ -74,7 +74,7 @@ vorticity obeys
 ```math
 \p_t Z + \J \left ( \Psi, Z \right )
     + \bnabla \bcdot \left ( \bu \zeta^* \right ) + \ii m \pnabla \bcdot \left ( \bu w^* \right ) + \cc
-    = D^{Z} \com
+    = D_0 Z \com
 ```
 
 where $\cc$ denotes the complex conjugate and contraction with $\pnabla = -\p_y \bxh + \p_x \byh$
@@ -83,17 +83,16 @@ gives the vertical component of the curl.
 The baroclinic components obey
 
 ```math
-\p_t u - f \v + \p_x p = - \J \left ( \Psi, u \right ) - \bu \bcdot \bnabla U + D^u \com \\
-\p_t \v + f u + \p_y p = - \J \left ( \Psi, \v \right ) - \bu \bcdot \bnabla V + D^\v \com \\
-\p_t p - \tfrac{N^2}{m} w = - \J \left ( \Psi, p \right ) + D^p \per
+\p_t u - f \v + \p_x p = - \J \left ( \Psi, u \right ) - \bu \bcdot \bnabla U + D_1 u \com \\
+\p_t \v + f u + \p_y p = - \J \left ( \Psi, \v \right ) - \bu \bcdot \bnabla V + D_1 \v \com \\
+\p_t p - \tfrac{N^2}{m} w = - \J \left ( \Psi, p \right ) + D_1 p \per
 ```
 
 The dissipation operators are defined
 
 ```math
-D^Z = \nu_0 (-1)^{n_0} \nabla^{2n_0} Z + \mu_0 (-1)^{m_0} \nabla^{2m_0} Z \com \\
-D^u = \nu_1 (-1)^{n_1} \nabla^{2n_1} u + \mu_1 (-1)^{m_1} \nabla^{2m_1} u \com \\
-D^\v = \nu_1 (-1)^{n_1} \nabla^{2n_1} \v + \mu_1 (-1)^{m_1} \nabla^{2m_1} \v \com
+D_0 = \nu_0 (-1)^{n_0} \nabla^{2n_0} + \mu_0 (-1)^{m_0} \nabla^{2m_0} \com \\
+D_1 = \nu_1 (-1)^{n_1} \nabla^{2n_1} + \mu_1 (-1)^{m_1} \nabla^{2m_1}
 ```
 
 where $U$ is the barotropic velocity and $u$ is the amplitude of the first baroclinic mode with periodic
@@ -110,7 +109,7 @@ The vertically-Cosine Boussinesq module solves the Boussinesq system obtained by
 hydrostatic Boussinesq equations in a Sin/Cos series. The horizontal velocity, for example, becomes
 
 ```math
-\uu(x, y, z, t) = U(x, y, t) + \cos(mz) u(x, y, t) \per
+\uu(x, y, z, t) \mapsto U(x, y, t) + \cos(mz) u(x, y, t) \per
 ```
 
 The horizontal velocity $\vv$, pressure $\pp$, and vertical vorticity $\zzeta$ are also expanded in $\cos(mz)$,
@@ -124,7 +123,7 @@ Projecting the vertical vorticity equation onto Sin/Cos modes an equation for th
 ```math
 \p_t Z + \J \left ( \Psi, Z \right )
     + \tfrac{1}{2} \bnabla \bcdot \left ( \bu \zeta \right ) + \tfrac{m}{2} \pnabla \bcdot \left ( \bu w \right )
-    = D^{Z} \com
+    = D_0 Z \com
 ```
 
 where $\J(a, b) = (\p_x a)(\p_y b) - (\p_y a)(\p_x b)$ is the Jacobian operator, contraction with $\pnabla = -\p_y \bxh + \p_x \byh$ gives the vertical component of the curl, and $\Psi$ is the barotropic streamfunction defined so that
@@ -136,17 +135,16 @@ where $\J(a, b) = (\p_x a)(\p_y b) - (\p_y a)(\p_x b)$ is the Jacobian operator,
 The baroclinic components obey
 
 ```math
-\p_t u - f \v + \p_x p = - \J \left ( \Psi, u \right ) - \bu \bcdot \bnabla U + D^u \com \\
-\p_t \v + f u + \p_y p = - \J \left ( \Psi, \v \right ) - \bu \bcdot \bnabla V + D^\v \com \\
-\p_t p - \tfrac{N^2}{m} w = - \J \left ( \Psi, p \right ) + D^p \per
+\p_t u - f \v + \p_x p = - \J \left ( \Psi, u \right ) - \bu \bcdot \bnabla U + D_1u \com \\
+\p_t \v + f u + \p_y p = - \J \left ( \Psi, \v \right ) - \bu \bcdot \bnabla V + D_1\v \com \\
+\p_t p - \tfrac{N^2}{m} w = - \J \left ( \Psi, p \right ) + D_1p \per
 ```
 
 The dissipation operators are defined
 
 ```math
-D^Z = \nu_0 (-1)^{n_0} \nabla^{2n_0} Z + \mu_0 (-1)^{m_0} \nabla^{2m_0} Z \com \\
-D^u = \nu_1 (-1)^{n_1} \nabla^{2n_1} u + \mu_1 (-1)^{m_1} \nabla^{2m_1} u \com \\
-D^\v = \nu_1 (-1)^{n_1} \nabla^{2n_1} \v + \mu_1 (-1)^{m_1} \nabla^{2m_1} \v \com
+D_0 = \nu_0 (-1)^{n_0} \nabla^{2n_0} + \mu_0 (-1)^{m_0} \nabla^{2m_0} \com \\
+D_1 = \nu_1 (-1)^{n_1} \nabla^{2n_1} + \mu_1 (-1)^{m_1} \nabla^{2m_1} \com
 ```
 
 where $2n_0$ and $2m_0$ are the hyperviscous orders of the arbitrary barotropic dissipation operators
