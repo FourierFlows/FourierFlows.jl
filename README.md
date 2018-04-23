@@ -21,6 +21,13 @@ The code is written in [Julia][].
 
 For more details refer to the [documentation](https://fourierflows.github.io/FourierFlows.jl/latest/).
 
+## Installation
+
+The package is registered in `METADATA.jl` and can be installed with `Pkg.add`.
+
+```julia
+julia> Pkg.add("FourierFlows")
+```
 
 ## Source code organization
 
