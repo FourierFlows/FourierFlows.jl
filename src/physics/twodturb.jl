@@ -37,7 +37,7 @@ struct Params{T} <: AbstractParams
   mu::T      # Bottom drag or hypoviscosity
   nmu::Int   # Order of hypodrag
 end
-Params(nu, nnu) = Params(nu, nnu, 0, 0)
+Params(nu, nnu) = Params(nu, nnu, 0.0, 0)
 
 """
     ForcedParams(nu, nnu, mu, nmu, calcF!)
