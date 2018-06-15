@@ -91,57 +91,57 @@ end
 # -----------------------------------------------------------------------------
 # FFT's TEST FUNCTIONS
 
-tolerance = 1e-12
+rtol = 1e-12
 
 function test_fft_cosmx(g::OneDGrid)
     f1, f1h, f1hr, f1hr_mul, f1h_th, f1hr_th = create_testfuncs(g)
-    norm(f1h-f1h_th)/norm(f1h_th) < tolerance
+    isapprox(f1h, f1h_th, rtol=rtol)
 end
 
 function test_rfft_cosmx(g::OneDGrid)
     f1, f1h, f1hr, f1hr_mul, f1h_th, f1hr_th = create_testfuncs(g)
-    norm(f1hr-f1hr_th)/norm(f1hr_th) < tolerance
+    isapprox(f1hr, f1hr_th, rtol=rtol)
 end
 
 function test_rfft_AmulB_cosmx(g::OneDGrid)
     f1, f1h, f1hr, f1hr_mul, f1h_th, f1hr_th = create_testfuncs(g)
-    norm(f1hr_mul-f1hr_th)/norm(f1hr_th) < tolerance
+    isapprox(f1hr_mul, f1hr_th, rtol=rtol)
 end
 
 function test_fft_cosmxcosny(g::TwoDGrid)
     f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mul, f2hr_mul,
             f1h_th, f1hr_th, f2h_th, f2hr_th = create_testfuncs(g)
-    norm(f1h-f1h_th)/norm(f1h_th) < tolerance
+    isapprox(f1h, f1h_th, rtol=rtol)
 end
 
 function test_rfft_cosmxcosny(g::TwoDGrid)
     f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mul, f2hr_mul,
             f1h_th, f1hr_th, f2h_th, f2hr_th = create_testfuncs(g)
-    norm(f1hr-f1hr_th)/norm(f1hr_th) < tolerance
+    isapprox(f1hr, f1hr_th, rtol=rtol)
 end
 
 function test_rfft_AmulB_cosmxcosny(g::TwoDGrid)
     f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mul, f2hr_mul,
             f1h_th, f1hr_th, f2h_th, f2hr_th = create_testfuncs(g)
-    norm(f1hr_mul-f1hr_th)/norm(f1hr_th) < tolerance
+    isapprox(f1hr_mul, f1hr_th, rtol=rtol)
 end
 
 function test_fft_sinmxny(g::TwoDGrid)
     f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mul, f2hr_mul,
             f1h_th, f1hr_th, f2h_th, f2hr_th = create_testfuncs(g)
-    norm(f2h-f2h_th)/norm(f2h_th) < tolerance
+    isapprox(f2h, f2h_th, rtol=rtol)
 end
 
 function test_rfft_sinmxny(g::TwoDGrid)
     f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mul, f2hr_mul,
             f1h_th, f1hr_th, f2h_th, f2hr_th = create_testfuncs(g)
-    norm(f2hr-f2hr_th)/norm(f2hr_th) < tolerance
+    isapprox(f2hr, f2hr_th, rtol=rtol)
 end
 
 function test_rfft_AmulB_sinmxny(g::TwoDGrid)
     f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mul, f2hr_mul,
             f1h_th, f1hr_th, f2h_th, f2hr_th = create_testfuncs(g)
-    norm(f2hr_mul-f2hr_th)/norm(f2hr_th) < tolerance
+    isapprox(f2hr_mul, f2hr_th, rtol=rtol)
 end
 
 # Test 1D grid

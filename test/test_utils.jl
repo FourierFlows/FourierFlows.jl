@@ -1,6 +1,6 @@
 # import FourierFlows.TwoDTurb
 
-test_fftwavenums() = FourierFlows.fftwavenums(6; L=2π) == [0, 1, 2, 3, -2, -1]  
+test_fftwavenums() = FourierFlows.fftwavenums(6; L=2π) == [0, 1, 2, 3, -2, -1]
 
 function test_domainaverage(n; xdir=true)
   g = TwoDGrid(n, 2π)
@@ -64,7 +64,9 @@ end
 Compute the J(a,b) and compare with analytic_answer.
 """
 function test_jacobian(a, b, analytic_answer, grid)
-    isapprox(norm(FourierFlows.jacobian(a, b, grid)), norm(analytic_answer); 
+    # it's important to use atol for this test since when analytic_answer=0
+    # the rtol is not conclusive (e.g., isapprox(1e-5, 0, rtol=1e-10) is false)
+    isapprox(FourierFlows.jacobian(a, b, grid), analytic_answer;
              atol=g.nx*g.ny*1e-14)
 end
 
@@ -86,9 +88,9 @@ k0, l0 = 2π/Lx, 2π/Ly
 # Real and complex-valued functions
 σ = 0.5
 f1 = exp.(-(x.^2 + y.^2)/(2σ^2))
-f2 = exp.( im*(2k0*x + 3l0*y.^2) ).*( 
+f2 = exp.( im*(2k0*x + 3l0*y.^2) ).*(
       exp.(-(x.^2 + y.^2)/(2σ^2)) + 2im*exp.(-(x.^2 + y.^2)/(5σ^2)) )
-                                        
+
 # Sine waves
 k1, l1 = 2*k0, 6*l0
 k2, l2 = 3*k0, -3*l0

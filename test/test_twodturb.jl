@@ -144,7 +144,7 @@ function testnonlinearterms(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, n
   # Step forward
   stepforward!(prob, round(Int, nt))
   TwoDTurb.updatevars!(prob)
-  isapprox(norm(v.q - qf)/norm(qf), 0, atol=1e-13)
+  isapprox(v.q, qf, rtol=1e-13)
 end
 
 # Run the tests

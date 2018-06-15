@@ -3,12 +3,12 @@ import FourierFlows.VerticallyCosineBoussinesq
 cfl(prob) = maximum([maximum(abs.(prob.vars.U)), maximum(abs.(prob.vars.V))]*
               prob.ts.dt/prob.grid.dx)
 
-function test_lambdipole(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1, 
+function test_lambdipole(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1,
   ti=L/Ue*0.01, nm=3, message=false, atol=1e-2)
 
   nt = round(Int, ti/dt)
 
-  prob = VerticallyCosineBoussinesq.Problem(nx=n, Lx=L, 
+  prob = VerticallyCosineBoussinesq.Problem(nx=n, Lx=L,
     nu0=nu0, nnu0=nnu0, dt=dt, stepper="FilteredRK4")
   x, y, Z = prob.grid.X, prob.grid.Y, prob.vars.Z # nicknames
 
@@ -22,7 +22,7 @@ function test_lambdipole(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1,
   for i = 1:nm
     tic()
     stepforward!(prob, nt)
-    VerticallyCosineBoussinesq.updatevars!(prob)  
+    VerticallyCosineBoussinesq.updatevars!(prob)
     xZ[i] = mean(abs.(Z).*x) / mean(abs.(Z))
 
     if i > 1
@@ -73,7 +73,7 @@ function testnonlinearterms(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, n
   # Step forward
   stepforward!(prob, round(Int, nt))
   VerticallyCosineBoussinesq.updatevars!(prob)
-  isapprox(norm(v.Z - Zf)/norm(Zf), 0, atol=1e-13)
+  isapprox(v.Z, Zf, rtol=1e-13)
 end
 
 
@@ -95,7 +95,7 @@ function test_groupvelocity(kw; n=128, L=2π, f=1.0, N=1.0, m=4.0, uw=1e-2, rtol
 
   t₋₁ = prob.t
   xw₋₁, yw₋₁ = wavecentroid(prob)
-    
+
   stepforward!(prob, nt)
   VerticallyCosineBoussinesq.updatevars!(prob)
   xw, yw = wavecentroid(prob)
