@@ -1,5 +1,6 @@
 using PyPlot
 using FourierFlows
+import FourierFlows.BarotropicQG
 
 
 function test_baroQG_RossbyWave(stepper, dt, nsteps, g, p, v, eq)
@@ -25,7 +26,7 @@ function test_baroQG_RossbyWave(stepper, dt, nsteps, g, p, v, eq)
     ζ_theory = ampl*cos.(kwave*(g.X-ω/kwave*s.t)).*cos.(lwave*g.Y)
     # println(norm(ζ_theory - v.zeta)/norm(ζ_theory))
     # isapprox(ζ_theory, v.zeta, rtol=g.nx*g.ny*nsteps*1e-12)
-    residual = norm(ζ_theory - v.zeta)/norm(ζ_theory)
+    residual = vecnorm(ζ_theory - v.zeta)/vecnorm(ζ_theory)
     residual
 end
 

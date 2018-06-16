@@ -4,13 +4,13 @@
 # -----------------------------------------------------------------------------
 # IFFT's TEST FUNCTIONS
 
-tolerance = 1e-12
+rtol = 1e-12
 
 function test_ifft_cosmx(g::OneDGrid)
     # test fft for cos(mx+φ)
     f1, f1h, f1hr, f1hr_mul, f1h_th, f1hr_th = create_testfuncs(g)
     f1b = real(ifft(f1h))
-    norm(f1-f1b)/norm(f1) < tolerance
+    isapprox(f1, f1b, rtol=rtol)
 end
 
 function test_irfft_cosmx(g::OneDGrid)
@@ -19,7 +19,7 @@ function test_irfft_cosmx(g::OneDGrid)
     f1hr_c = deepcopy(f1hr)
     # deepcopy is needed because FFTW irfft messes up with input!
     f1b = irfft(f1hr_c, nx)
-    norm(f1-f1b)/norm(f1) < tolerance
+    isapprox(f1, f1b, rtol=rtol)
 end
 
 function test_irfft_AmulB_cosmx(g::OneDGrid)
@@ -29,7 +29,7 @@ function test_irfft_AmulB_cosmx(g::OneDGrid)
     # deepcopy is needed because FFTW irfft messes up with input!
     f1b = Array{Float64}(g.nx)
     A_mul_B!( f1b, g.irfftplan, f1hr_c )
-    norm(f1-f1b)/norm(f1) < tolerance
+    isapprox(f1, f1b, rtol=rtol)
 end
 
 function test_ifft_cosmxcosny(g::TwoDGrid)
@@ -37,7 +37,7 @@ function test_ifft_cosmxcosny(g::TwoDGrid)
     f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mul, f2hr_mul,
             f1h_th, f1hr_th, f2h_th, f2hr_th = create_testfuncs(g)
     f1b = real(ifft(f1h))
-    norm(f1-f1b)/norm(f1) < tolerance
+    isapprox(f1, f1b, rtol=rtol)
 end
 
 function test_irfft_cosmxcosny(g::TwoDGrid)
@@ -47,7 +47,7 @@ function test_irfft_cosmxcosny(g::TwoDGrid)
     f1hr_c = deepcopy(f1hr)
     # deepcopy is needed because FFTW irfft messes up with input!
     f1b = irfft(f1hr_c, nx)
-    norm(f1-f1b)/norm(f1) < tolerance
+    isapprox(f1, f1b, rtol=rtol)
 end
 
 function test_irfft_AmulB_cosmxcosny(g::TwoDGrid)
@@ -58,7 +58,7 @@ function test_irfft_AmulB_cosmxcosny(g::TwoDGrid)
     # deepcopy is needed because FFTW irfft messes up with input!
     f1b = Array{Float64}(g.nx, g.ny)
     A_mul_B!( f1b, g.irfftplan, f1hr_c )
-    norm(f1-f1b)/norm(f1) < tolerance
+    isapprox(f1, f1b, rtol=rtol)
 end
 
 function test_ifft_sinmxny(g::TwoDGrid)
@@ -68,7 +68,7 @@ function test_ifft_sinmxny(g::TwoDGrid)
     f2hr_c = deepcopy(f2hr)
     # deepcopy is needed because FFTW irfft messes up with input!
     f2b3 = irfft(f2hr_c, g.nx)
-    norm(f2-f2b3)/norm(f2) < tolerance
+    isapprox(f2, f2b3, rtol=rtol)
 end
 
 function test_irfft_sinmxny(g::TwoDGrid)
@@ -76,7 +76,7 @@ function test_irfft_sinmxny(g::TwoDGrid)
     f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mul, f2hr_mul,
             f1h_th, f1hr_th, f2h_th, f2hr_th = create_testfuncs(g)
     f2b4 = real(ifft(f2h))
-    norm(f2-f2b4)/norm(f2) < tolerance
+    isapprox(f2, f2b4, rtol=rtol)
 end
 
 function test_irfft_AmulB_sinmxny(g::TwoDGrid)
@@ -86,8 +86,8 @@ function test_irfft_AmulB_sinmxny(g::TwoDGrid)
     f2hr_c = deepcopy(f2hr)
     # deepcopy is needed because FFTW irfft messes up with input!
     f2b = Array{Float64}(g.nx, g.ny)
-    A_mul_B!( f2b, g.irfftplan, f2hr_c )
-    norm(f2-f2b)/norm(f2) < tolerance
+    A_mul_B!(f2b, g.irfftplan, f2hr_c)
+    isapprox(f2, f2b, rtol=rtol)
 end
 
 
