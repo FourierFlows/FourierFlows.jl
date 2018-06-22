@@ -1,7 +1,7 @@
 using PyPlot, FourierFlows
 import FourierFlows.TwoDTurb
 
-   n, L = 2048, 2π   # Domain
+   n, L = 256, 2π   # Domain
 nu, nnu = 1e-6, 1  # Viscosity
  dt, nt = 1, 100   # Time step
 
@@ -12,7 +12,7 @@ TwoDTurb.set_q!(prob, rand(n, n))
 fig = figure(); tic()
 for i = 1:10
   stepforward!(prob, nt)
-  TwoDTurb.updatevars!(prob)  
+  TwoDTurb.updatevars!(prob)
 
   cfl = maximum(prob.vars.U)*prob.grid.dx/prob.ts.dt
   @printf("step: %04d, t: %6.1f, cfl: %.2f, ", prob.step, prob.t, cfl)
