@@ -5,41 +5,31 @@ import FourierFlows.BarotropicQG: energy, enstrophy
 
 # Physical parameters
 nx  = 256
-Lx = 2π     # domain size
-ν  = 0e-05  # viscosity
-νn = 1      # viscosity order
+Lx  = 2π     # domain size
+nu  = 0e-05  # viscosity
+nnu = 1      # viscosity order
 
-f0 = 1.0    # Coriolis parameter
-β = 15.0    # planetary PV gradient
-μ = 0e-1    # bottom drag
-
-F = 0.0     # large-scale flow U(t) forcing;
-FU(t) = F   # not applicable here
-η(x, y) = 0*x   # bottom topography
-
-g  = BarotropicQG.Grid(nx, Lx)
-p  = BarotropicQG.Params(g, f0, β, FU, η, μ, ν, νn)
-v  = BarotropicQG.Vars(g)
-eq = BarotropicQG.Equation(p, g)
-
-
+f0   = 1.0    # Coriolis parameter
+beta = 15.0    # planetary PV gradient
+mu   = 0e-1    # bottom drag
 
 # Time-stepping
+stepper = "FilteredETDRK4"
 dt = 0.02
 nsteps = 8000
 nsubs  = 500
 
 
-ts = FourierFlows.autoconstructtimestepper("FilteredETDRK4", dt, eq.LC, g)
-prob = FourierFlows.Problem(g, v, p, eq, ts)
-s = prob.state
+prob = BarotropicQG.InitialValueProblem(nx=nx, Lx=Lx, f0=f0, beta=beta, nu=nu,
+nnu=nnu, mu=mu, dt=dt, stepper=stepper)
+s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
 
 
 # Files
 filepath = "."
 plotpath = "./plots"
 plotname = "testplots"
-filename = joinpath(filepath, "testdata.jld2")
+filename = joinpath(filepath, "decayingbetaturb.jld2")
 
 # File management
 if isfile(filename); rm(filename); end
