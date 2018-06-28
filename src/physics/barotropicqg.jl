@@ -141,24 +141,20 @@ mutable struct Vars{T} <: AbstractVars
   U::T
   u::Array{T,2}
   v::Array{T,2}
-  uUq::Array{T,2}
-  vq::Array{T,2}
   psi::Array{T,2}
   zeta::Array{T,2}
   qh::Array{Complex{T},2}
   uh::Array{Complex{T},2}
   vh::Array{Complex{T},2}
-  uUqh::Array{Complex{T},2}
-  vqh::Array{Complex{T},2}
   psih::Array{Complex{T},2}
   zetah::Array{Complex{T},2}
 end
 
 function Vars(g::TwoDGrid)
   T = typeof(g.Lx)
-  @createarrays T (g.nx, g.ny) q u v uUq vq psi zeta
-  @createarrays Complex{T} (g.nkr, g.nl) qh uh vh uUqh vqh psih zetah
-  Vars(q, 0.0, u, v, uUq, vq, psi, zeta, qh, uh, vh, uUqh, vqh, psih, zetah)
+  @createarrays T (g.nx, g.ny) q u v psi zeta
+  @createarrays Complex{T} (g.nkr, g.nl) qh uh vh psih zetah
+  Vars(q, 0.0, u, v, psi, zeta, qh, uh, vh, psih, zetah)
 end
 
 """
@@ -171,15 +167,11 @@ mutable struct ForcedVars{T} <: AbstractVars
   U::T
   u::Array{T,2}
   v::Array{T,2}
-  uUq::Array{T,2}
-  vq::Array{T,2}
   psi::Array{T,2}
   zeta::Array{T,2}
   qh::Array{Complex{T},2}
   uh::Array{Complex{T},2}
   vh::Array{Complex{T},2}
-  uUqh::Array{Complex{T},2}
-  vqh::Array{Complex{T},2}
   psih::Array{Complex{T},2}
   zetah::Array{Complex{T},2}
   Fqh::Array{Complex{T},2}
@@ -188,9 +180,9 @@ end
 
 function ForcedVars(g::TwoDGrid)
   T = typeof(g.Lx)
-  @createarrays T (g.nx, g.ny) q u v uUq vq psi zeta
-  @createarrays Complex{T} (g.nkr, g.nl) qh uh vh uUqh vqh psih zetah Fqh prevsol
-  ForcedVars(q, 0.0, u, v, uUq, vq, psi, zeta, qh, uh, vh, uUqh, vqh, psih, zetah, Fqh, prevsol)
+  @createarrays T (g.nx, g.ny) q u v psi zeta
+  @createarrays Complex{T} (g.nkr, g.nl) qh uh vh psih zetah Fqh prevsol
+  ForcedVars(q, 0.0, u, v, psi, zeta, qh, uh, vh, psih, zetah, Fqh, prevsol)
 end
 
 
@@ -209,19 +201,17 @@ function calcN_advection!(N, sol, t, s, v, p, g)
 
   A_mul_B!(v.zeta, g.irfftplan, v.zetah)
   A_mul_B!(v.u, g.irfftplan, v.uh)
-  vh = deepcopy(v.vh)   # FFTW's irfft destroys its input; v.vh is needed for N
-  A_mul_B!(v.v, g.irfftplan, vh)
-
+  A_mul_B!(v.v, g.irfftplan, v.vh)
 
   @. v.q = v.zeta + p.eta
-  @. v.uUq = (v.U + v.u)*v.q
-  @. v.vq  = v.v*v.q
+  @. v.u = (v.U + v.u)*v.q
+  @. v.v = v.v*v.q
 
-  A_mul_B!(v.uUqh, g.rfftplan, v.uUq)
-  A_mul_B!(v.vqh,  g.rfftplan, v.vq)
+  A_mul_B!(v.uh, g.rfftplan, v.u)
+  A_mul_B!(v.vh, g.rfftplan, v.v)
 
   # Nonlinear advection term for q
-  @. N = -im*g.kr*v.uUqh - im*g.l*v.vqh
+  @. N = -im*g.kr*v.uh - im*g.l*v.vh
 end
 
 function calcN_forced!(N, sol, t, s, v, p, g)
