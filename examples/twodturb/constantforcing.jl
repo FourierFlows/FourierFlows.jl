@@ -1,6 +1,6 @@
 using PyPlot, FourierFlows
 import FourierFlows.TwoDTurb
-import FourierFlows.TwoDTurb: energy, dissipation, injection, drag
+import FourierFlows.TwoDTurb: energy, dissipation, work, drag
 
   n, L  =  128, 2π
 nu, nnu = 2e-4,  1
@@ -33,8 +33,8 @@ function runtest(prob, nt)
   E = Diagnostic(energy,      prob, nsteps=nt)
   D = Diagnostic(dissipation, prob, nsteps=nt)
   R = Diagnostic(drag,        prob, nsteps=nt)
-  I = Diagnostic(injection,   prob, nsteps=nt)
-  diags = [E, D, I, R]
+  W = Diagnostic(work,   prob, nsteps=nt)
+  diags = [E, D, W, R]
 
   tic()
   stepforward!(prob, diags, round(Int, nt))
@@ -44,8 +44,8 @@ function runtest(prob, nt)
 end
 
 function makeplot(prob, diags)
-  E, D, I, R = diags
-  TwoDTurb.updatevars!(prob)  
+  E, D, W, R = diags
+  TwoDTurb.updatevars!(prob)
 
   close("all")
   E, D, I, R = diags
@@ -62,14 +62,14 @@ function makeplot(prob, diags)
   dEdt = (E[(i₀+1):E.count] - E[i₀:E.count-1])/prob.ts.dt
   ii = (i₀+1):E.count
 
-  # dEdt = I - D - R?
-  total = I[ii] - D[ii] - R[ii]
+  # dEdt = W - D - R?
+  total = W[ii] - D[ii] - R[ii]
   residual = dEdt - total
 
-  plot(E.time[ii], I[ii], label="injection (\$I\$)")
+  plot(E.time[ii], W[ii], label="work (\$W\$)")
   plot(E.time[ii], -D[ii], label="dissipation (\$D\$)")
   plot(E.time[ii], -R[ii], label="drag (\$R\$)")
-  plot(E.time[ii], total, label=L"I-D-R")
+  plot(E.time[ii], total, label=L"W-D-R")
   plot(E.time[ii], dEdt, "k:", label=L"E_t")
   plot(E.time[ii], residual, "c-", label="residual")
 
