@@ -207,8 +207,8 @@ function calcN_advection!(N, sol, t, s, v, p, g)
   @. v.u = (v.U + v.u)*v.q
   @. v.v = v.v*v.q
 
-  A_mul_B!(v.uh, g.rfftplan, v.u)
-  A_mul_B!(v.vh, g.rfftplan, v.v)
+  A_mul_B!(v.uh, g.rfftplan, v.u) # \hat{(u+U)*q}
+  A_mul_B!(v.vh, g.rfftplan, v.v) # \hat{v*q}
 
   # Nonlinear advection term for q
   @. N = -im*g.kr*v.uh - im*g.l*v.vh
