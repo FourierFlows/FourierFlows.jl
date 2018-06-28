@@ -148,7 +148,7 @@ startwalltime = time()
 
 while prob.step < nsteps
   stepforward!(prob, diags, nsubs)
-  cfl = maximum(sqrt.(v.u.^2+v.v.^2))*ts.dt/g.dx
+  cfl = prob.ts.dt*maximum([maximum(v.v)/g.dx, maximum(v.u)/g.dy])
 
   # Message
   log = @sprintf("step: %04d, t: %d, cfl: %.2f, E: %.4f, Q: %.4f, τ: %.2f min",

@@ -27,7 +27,7 @@ function Problem(; nx=256, Lx=2π, ny=nx, Ly=Lx, f0 = 1.0, beta=0.0, eta=nothing
       calcFU_fun = calcFU
     end
     if calcFq==nothing
-      function calcFq!(Fh, sol, t, s, v, p, g)
+      function calcFq!(Fqh, sol, t, s, v, p, g)
         nothing
       end
       calcFq_fun = calcFq!
@@ -59,7 +59,7 @@ InitialValueProblem(; kwargs...) = Problem(; kwargs...)
 ForcedProblem(; kwargs...) = Problem(; kwargs...)
 
 """
-    Params(g::TwoDGrid, f0, beta, FU, eta, mu, nu, nun)
+    Params(g::TwoDGrid, f0, beta, FU, eta, mu, nu, nnu)
 
 Returns the params for an unforced two-dimensional barotropic QG problem.
 """
@@ -70,22 +70,22 @@ struct Params{T} <: AbstractParams
   etah::Array{Complex{T},2}  # FFT of Topographic PV
   mu::T                      # Linear drag
   nu::T                      # Viscosity coefficient
-  nun::Int                   # Hyperviscous order (nun=1 is plain old viscosity)
+  nnu::Int                   # Hyperviscous order (nnu=1 is plain old viscosity)
 end
 
 """
-    Params(g::TwoDGrid, f0, beta, eta::Function, mu, nu, nun)
+    Params(g::TwoDGrid, f0, beta, eta::Function, mu, nu, nnu)
 
 Constructor for Params that accepts a generating function for the topographic PV.
 """
-function Params(g::TwoDGrid, f0, beta, eta::Function, mu, nu, nun)
+function Params(g::TwoDGrid, f0, beta, eta::Function, mu, nu, nnu)
   etagrid = eta(g.X, g.Y)
   etah = rfft(etagrid)
-  Params(f0, beta, etagrid, etah, mu, nu, nun)
+  Params(f0, beta, etagrid, etah, mu, nu, nnu)
 end
 
 """
-    ForcedParams(g::TwoDGrid, f0, beta, FU, eta, mu, nu, nun)
+    ForcedParams(g::TwoDGrid, f0, beta, FU, eta, mu, nu, nnu)
 
 Returns the params for an forced two-dimensional barotropic QG problem.
 """
@@ -96,21 +96,21 @@ struct ForcedParams{T} <: AbstractParams
   etah::Array{Complex{T},2}  # FFT of Topographic PV
   mu::T                      # Linear drag
   nu::T                      # Viscosity coefficient
-  nun::Int                   # Hyperviscous order (nun=1 is plain old viscosity)
+  nnu::Int                   # Hyperviscous order (nnu=1 is plain old viscosity)
   calcFU::Function   # Function that calculates the forcing F(t) on
                       # domain-averaged zonal flow U(t)
   calcFq!::Function   # Function that calculates the forcing on QGPV q
 end
 
 """
-    ForcedParams(g::TwoDGrid, f0, beta, eta::Function, mu, nu, nun, calcFU, calcFq)
+    ForcedParams(g::TwoDGrid, f0, beta, eta::Function, mu, nu, nnu, calcFU, calcFq)
 
 Constructor for Params that accepts a generating function for the topographic PV.
 """
-function ForcedParams(g::TwoDGrid, f0, beta, eta::Function, mu, nu, nun, calcFU::Function, calcFq::Function)
+function ForcedParams(g::TwoDGrid, f0, beta, eta::Function, mu, nu, nnu, calcFU::Function, calcFq::Function)
   etagrid = eta(g.X, g.Y)
   etah = rfft(etagrid)
-  ForcedParams(f0, beta, etagrid, etah, mu, nu, nun, calcFU, calcFq)
+  ForcedParams(f0, beta, etagrid, etah, mu, nu, nnu, calcFU, calcFq)
 end
 
 
@@ -120,13 +120,13 @@ end
 Returns the equation for two-dimensional barotropic QG problem with params p and grid g.
 """
 function Equation(p::Params, g)
-  LC = @. -p.mu - p.nu*g.KKrsq^p.nun + im*p.beta*g.kr*g.invKKrsq
+  LC = @. -p.mu - p.nu*g.KKrsq^p.nnu + im*p.beta*g.kr*g.invKKrsq
   LC[1, 1] = 0
   FourierFlows.Equation{typeof(LC[1, 1]),2}(LC, calcN_advection!)
 end
 
 function Equation(p::ForcedParams, g)
-  LC = @. -p.mu - p.nu*g.KKrsq^p.nun + im*p.beta*g.kr*g.invKKrsq
+  LC = @. -p.mu - p.nu*g.KKrsq^p.nnu + im*p.beta*g.kr*g.invKKrsq
   LC[1, 1] = 0
   FourierFlows.Equation{typeof(LC[1, 1]),2}(LC, calcN_forced!)
 end
@@ -323,6 +323,47 @@ U00(prob) = real(s.sol[1, 1])
 energy00(prob) = real(0.5*prob.state.sol[1, 1].^2)
 enstrophy00(prob) = real(prob.params.beta*prob.state.sol[1, 1])
 
+"""
+    dissipation(prob)
+    dissipation(s, v, p, g)
+
+Returns the domain-averaged dissipation rate. nnu must be >= 1.
+"""
+@inline function dissipation(s, v, p, g)
+  @. v.uh = g.KKrsq^(p.nnu-1) * abs2(s.sol)
+  @. v.uh[1, 1] = 0
+  p.nu/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.uh, g)
+end
+
+@inline dissipation(prob::AbstractProblem) = dissipation(prob.state, prob.vars, prob.params, prob.grid)
+
+"""
+    work(prob)
+    work(s, v, p, g)
+
+Returns the domain-averaged rate of work of energy by the forcing Fqh.
+"""
+@inline function work(s, v::ForcedVars, g)
+  @. v.uh = g.invKKrsq * (v.prevsol + s.sol)/2.0 * conj(v.Fqh) # Stratonovich
+  # @. v.uh = g.invKKrsq * v.prevsol * conj(v.Fqh)             # Ito
+  1/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.uh, g)
+end
+
+@inline work(prob::AbstractProblem) = work(prob.state, prob.vars, prob.grid)
+
+"""
+    drag(prob)
+    drag(s, v, p, g)
+
+Returns the extraction of domain-averaged energy by drag mu.
+"""
+@inline function drag(s, v, p, g)
+  @. v.uh = g.KKrsq^(-1) * abs2(s.sol)
+  @. v.uh[1, 1] = 0
+  p.mu/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.uh, g)
+end
+
+@inline drag(prob::AbstractProblem) = drag(prob.state, prob.vars, prob.params, prob.grid)
 
 
 end # module

@@ -1,5 +1,4 @@
 import FourierFlows.TwoDTurb
-import FourierFlows.TwoDTurb: energy, enstrophy, dissipation, work, drag
 
 cfl(prob) = maximum([maximum(abs.(prob.vars.U)), maximum(abs.(prob.vars.V))]*prob.ts.dt/prob.grid.dx)
 
@@ -61,10 +60,10 @@ function stochasticforcingbudgetstest(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, m
   s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
 
   TwoDTurb.set_q!(prob, 0*g.X)
-  E = Diagnostic(energy,      prob, nsteps=nt)
-  D = Diagnostic(dissipation, prob, nsteps=nt)
-  R = Diagnostic(drag,        prob, nsteps=nt)
-  W = Diagnostic(work,        prob, nsteps=nt)
+  E = Diagnostic(FourierFlows.TwoDTurb.energy,      prob, nsteps=nt)
+  D = Diagnostic(FourierFlows.TwoDTurb.dissipation, prob, nsteps=nt)
+  R = Diagnostic(FourierFlows.TwoDTurb.drag,        prob, nsteps=nt)
+  W = Diagnostic(FourierFlows.TwoDTurb.work,        prob, nsteps=nt)
   diags = [E, D, W, R]
 
   # Step forward
