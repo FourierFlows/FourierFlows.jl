@@ -23,14 +23,14 @@ mu   = 1.0e-2  # linear drag
                # zonal flow U(t) flow
 
 # Topographic PV
-eta(x, y) = 2*cos.(10x).*cos.(10y)
+topoPV(x, y) = 2*cos.(10x).*cos.(10y)
 
 # Forcing on the domain-averaged U equation
 calcFU(t) = F
 
 
 # Initialize problem
-prob = BarotropicQG.ForcedProblem(nx=nx, Lx=Lx, f0=f0, beta=beta, eta=eta,
+prob = BarotropicQG.ForcedProblem(nx=nx, Lx=Lx, f0=f0, beta=beta, eta=topoPV,
                   calcFU=calcFU, nu=nu, nnu=nnu, mu=mu, dt=dt, stepper=stepper)
 s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
 

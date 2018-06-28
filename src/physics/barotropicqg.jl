@@ -201,17 +201,18 @@ function calcN_advection!(N, sol, t, s, v, p, g)
 
   A_mul_B!(v.zeta, g.irfftplan, v.zetah)
   A_mul_B!(v.u, g.irfftplan, v.uh)
-  A_mul_B!(v.v, g.irfftplan, v.vh)
+  v.psih = deepcopy(v.vh) # FFTW's irfft destroys its input; v.vh is needed for N[1, 1]
+  A_mul_B!(v.v, g.irfftplan, v.psih)
 
   @. v.q = v.zeta + p.eta
-  @. v.u = (v.U + v.u)*v.q
-  @. v.v = v.v*v.q
+  @. v.u = (v.U + v.u)*v.q # (U+u)*q
+  @. v.v = v.v*v.q # v*q
 
   A_mul_B!(v.uh, g.rfftplan, v.u) # \hat{(u+U)*q}
-  A_mul_B!(v.vh, g.rfftplan, v.v) # \hat{v*q}
-
-  # Nonlinear advection term for q
-  @. N = -im*g.kr*v.uh - im*g.l*v.vh
+  # Nonlinear advection term for q (part 1)
+  @. N = -im*g.kr*v.uh # -∂[(U+u)q]/∂x
+  A_mul_B!(v.uh, g.rfftplan, v.v) # \hat{v*q}
+  @. N += - im*g.l*v.uh # -∂[vq]/∂y
 end
 
 function calcN_forced!(N, sol, t, s, v, p, g)

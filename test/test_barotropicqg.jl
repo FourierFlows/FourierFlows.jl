@@ -109,7 +109,7 @@ function test_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, 
 end
 
 """
-    testnonlinearterms(dt, stepper; kwargs...)
+    testnonlineartermsQGPV(dt, stepper; kwargs...)
 
 Tests the advection term in the twodturb module by timestepping a
 test problem with timestep dt and timestepper identified by the string stepper.
@@ -119,7 +119,7 @@ forcing Ff is derived according to Ff = ∂ζf/∂t + J(ψf, ζf) - nuΔζf. One
 to the vorticity equation forced by this Ff is then ζf. (This solution may not
 be realized, at least at long times, if it is unstable.)
 """
-function testnonlinearterms(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, message=false)
+function testnonlineartermsQGPV(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, message=false)
   n, L  = 128, 2π
   nu, nnu = 1e-2, 1
   mu = 0.0
@@ -153,6 +153,39 @@ function testnonlinearterms(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, m
   stepforward!(prob, round(Int, nt))
   BarotropicQG.updatevars!(prob)
   isapprox(v.q, qf, rtol=1e-13)
+end
+
+"""
+    testnonlineartermsU(dt, stepper; kwargs...)
+
+Tests the form stress term that forces the domain-averaged zonal flow U(t).
+"""
+function testnonlineartermsU(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, message=false)
+  n, L  = 128, 2π
+  nu, nnu = 1e-2, 1
+  mu = 0.0
+  tf = 1.0
+  nt = 1
+
+
+
+  gr  = TwoDGrid(n, L)
+  x, y = gr.X, gr.Y
+
+  zetai = -20*sin.(10*x).*cos.(10*y)
+  topoPV(x, y) = cos.(10x).*cos.(10y)
+  F(t) = 0 #no forcing
+
+  answer = 0.25 # this is what <v*eta> should be
+
+  prob = BarotropicQG.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, dt=dt, stepper=stepper, eta=topoPV, calcFU = F, calcFq=nothing)
+  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
+  BarotropicQG.set_zeta!(prob, zetai)
+  BarotropicQG.updatevars!(prob)
+
+  # Step forward
+  stepforward!(prob, nt)
+  isapprox(prob.ts.N[1, 1], answer, rtol=1e-13)
 end
 
 # -----------------------------------------------------------------------------
@@ -200,4 +233,5 @@ dt, nsteps  = 1e-4, 2000
 
 @test test_stochasticforcingbudgets()
 
-@test testnonlinearterms(0.0005, "ForwardEuler")
+@test testnonlineartermsQGPV(0.0005, "ForwardEuler")
+@test testnonlineartermsU(0.01, "ForwardEuler")
