@@ -44,10 +44,9 @@ Lx = 2π
  μ = 0.0
 
 η(x,y) = zeros(nx, nx)
-FU(t)  = 0
 
 g  = BarotropicQG.Grid(nx, Lx)
-p  = BarotropicQG.Params(g, f0, β, FU, η, μ, ν, νn)
+p  = BarotropicQG.Params(g, f0, β, η, μ, ν, νn)
 v  = BarotropicQG.Vars(g)
 eq = BarotropicQG.Equation(p, g)
 

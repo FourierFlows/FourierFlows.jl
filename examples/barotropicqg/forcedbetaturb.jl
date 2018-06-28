@@ -3,24 +3,50 @@ using FourierFlows, PyPlot, JLD2
 import FourierFlows.BarotropicQG
 import FourierFlows.BarotropicQG: energy, enstrophy
 
+
 # Numerical parameters and time-stepping parameters
-nx  = 256      # 2D resolution = nx^2
-stepper = "FilteredETDRK4"   # timestepper
-dt  = 0.02     # timestep
-nsteps = 8000  # total number of time-steps
-nsubs  = 500   # number of time-steps for plotting
-               # (nsteps must be multiple of nsubs)
+nx  = 256       # 2D resolution = nx^2
+stepper = "FilteredRK4"   # timestepper
+dt  = 0.02      # timestep
+nsteps = 20000  # total number of time-steps
+nsubs  = 1000   # number of time-steps for plotting
+                # (nsteps must be multiple of nsubs)
 
 # Physical parameters
 Lx  = 2π       # domain size
 nu  = 0e-05    # viscosity
 nnu = 1        # viscosity order
 beta = 15.0    # planetary PV gradient
-mu   = 0e-1    # bottom drag
+mu   = 0.02    # bottom drag
+
+
+# Forcing
+kf, dkf = 12.0, 2.0     # forcing wavenumber and width of
+                        # forcing ring in wavenumber space
+σ = 0.005               # energy input rate by the forcing
+gr  = TwoDGrid(nx, Lx)
+force2k = exp.(-(sqrt.(gr.KKrsq)-kf).^2/(2*dkf^2))
+force2k[gr.KKrsq .< 2.0^2 ] = 0
+force2k[gr.KKrsq .> 20.0^2 ] = 0
+force2k[gr.Kr.<2π/Lx] = 0
+σ0 = FourierFlows.parsevalsum(force2k.*gr.invKKrsq/2.0, gr)/(gr.Lx*gr.Ly)
+force2k .= σ/σ0 * force2k  # normalization so that forcing injects
+                           # energy ε per domain area per unit time
+
+# reset of the random number generator for reproducibility
+srand(1234)
+
+# the function that updates the forcing realization
+function calcFq!(Fh, sol, t, s, v, p, g)
+  ξ = exp.(2π*im*rand(size(sol)))/sqrt(s.dt)
+  ξ[1, 1] = 0
+  @. Fh = ξ*sqrt(force2k)
+  nothing
+end
 
 # Initialize problem
-prob = BarotropicQG.InitialValueProblem(nx=nx, Lx=Lx, beta=beta, nu=nu,
-                                        nnu=nnu, mu=mu, dt=dt, stepper=stepper)
+prob = BarotropicQG.ForcedProblem(nx=nx, Lx=Lx, beta=beta, nu=nu, nnu=nnu,
+                                  mu=mu, dt=dt, stepper=stepper, calcFq=calcFq!)
 s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
 
 
@@ -35,24 +61,8 @@ if isfile(filename); rm(filename); end
 if !isdir(plotpath); mkdir(plotpath); end
 
 
-
-
-# Initial condition that has power only at wavenumbers with
-# 8<L/(2π)*sqrt(kx^2+ky^2)<10 and initial energy E0
-srand(1234)
-E0 = 0.1
-modk = ones(g.nkr, g.nl)
-modk[real(g.KKrsq).<(8*2*pi/g.Lx)^2]=0
-modk[real(g.KKrsq).>(10*2*pi/g.Lx)^2]=0
-modk[1, :]=0
-psih = (randn(g.nkr, g.nl)+im*randn(g.nkr, g.nl)).*modk
-psih = psih.*prob.ts.filter
-Ein = real(sum(g.KKrsq.*abs2.(psih)/(g.nx*g.ny)^2))
-psih = psih*sqrt(E0/Ein)
-qi = -irfft(g.KKrsq.*psih, g.nx)
-E0 = FourierFlows.parsevalsum(g.KKrsq.*abs2.(psih), g)
-
-BarotropicQG.set_zeta!(prob, qi)
+# Zero initial condition
+BarotropicQG.set_zeta!(prob, 0*g.X)
 
 # Create Diagnostic -- "energy" and "enstrophy" are functions imported at the top.
 E = Diagnostic(energy, prob; nsteps=nsteps)
@@ -104,7 +114,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   plot(mean(v.zeta, 1).', g.Y[1,:])
   plot(0*g.Y[1,:], g.Y[1,:], "k--")
   ylim(-Lx/2, Lx/2)
-  xlim(-2, 2)
+  xlim(-4, 4)
   title(L"zonal mean $\zeta$")
 
   sca(axs[4])
@@ -112,15 +122,25 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   plot(mean(v.u, 1).', g.Y[1,:])
   plot(0*g.Y[1,:], g.Y[1,:], "k--")
   ylim(-Lx/2, Lx/2)
-  xlim(-0.5, 0.5)
+  xlim(-0.7, 0.7)
   title(L"zonal mean $u$")
+
+  sca(axs[5])
+  cla()
+  plot(mu*E.time[1:E.prob.step], E.data[1:prob.step], label="energy")
+  xlabel(L"\mu t")
+  legend()
+
+  sca(axs[6])
+  cla()
+  plot(mu*Z.time[1:E.prob.step], Z.data[1:prob.step], label="enstrophy")
+  xlabel(L"\mu t")
+  legend()
 
   pause(0.001)
 end
 
-
-
-fig, axs = subplots(ncols=2, nrows=2, figsize=(8, 8))
+fig, axs = subplots(ncols=3, nrows=2, figsize=(14, 8))
 plot_output(prob, fig, axs; drawcolorbar=false)
 
 # Step forward
@@ -128,10 +148,11 @@ startwalltime = time()
 
 while prob.step < nsteps
   stepforward!(prob, diags, nsubs)
+  cfl = maximum(sqrt.(v.u.^2+v.v.^2))*ts.dt/g.dx
 
   # Message
-  log = @sprintf("step: %04d, t: %d, E: %.4f, Q: %.4f, τ: %.2f min",
-    prob.step, prob.t, E.value, Z.value,
+  log = @sprintf("step: %04d, t: %d, cfl: %.2f, E: %.4f, Q: %.4f, τ: %.2f min",
+    prob.step, prob.t, cfl, E.value, Z.value,
     (time()-startwalltime)/60)
 
   println(log)
