@@ -18,7 +18,7 @@ $\partial_t u = \mathcal{L}u + \mathcal{N}(u)\ .$
 
 We decompose the right hand side of the above in a linear part ($\mathcal{L}u$)
 and a nonlinear part ($\mathcal{N}(u)$). The nonlinear part may include external
-forcing. The time steppers treat the linear and nonlinear parts differently.
+forcing, e.g., $\mathcal{N}(u) = -u\partial_x u + f$.
 
 
 ## Installation

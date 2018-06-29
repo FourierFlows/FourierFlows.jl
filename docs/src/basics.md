@@ -1,23 +1,23 @@
 # Code Basics
 
 
-
 ## Basic Notation
 
 The code solves partial differential equations of the general form:
 
 $\partial_t u = \mathcal{L}u + \mathcal{N}(u)\ .$
 
-Boundary conditions in all spatial dimensions are periodic.
-
-Of course, ODEs are special cases of the above. Thus the code also solves ODEs.
-
 We decompose the right hand side of the above in a linear part ($\mathcal{L}u$)
 and a nonlinear part ($\mathcal{N}(u)$). The time steppers treat the linear and
 nonlinear parts differently.
 
-The coefficients for the linear operator $\mathcal{L}$ are stored in an array called `LC`. The term $\mathcal{N}(u)$ is computed for by calling the function `calcN!`.
+Boundary conditions in all spatial dimensions are periodic. That allows us to use
+a Fourier base. The equation is time-stepped forward in Fourier space. That way
+$u$ becomes an array with all Fourier coefficients of the solution. The coefficients
+for the linear operator $\mathcal{L}$ are stored in an array called `LC`. The term
+$\mathcal{N}(u)$ is computed for by calling the function `calcN!`.
 
+ODEs are special cases of the above. Thus the code also solves ODEs.
 
 
 
@@ -32,23 +32,38 @@ in `/src/physics`.
 
 Below is a list of all Abstract Supertypes used by the code:
 
-- `AbstractGrid`: Includes all variables that have to do with the grid, both in physical space as well as in wavenumber space. Currently implemented are: `ZeroGrid` for ODEs, `OneGrid` for PDEs with one spatial dimension, and `TwoGrid` for PDEs with two spatial dimensions. Grids are generic and work for any problem of that particular dimension.
+- `AbstractGrid`: Includes all variables that have to do with the grid, both in
+physical space as well as in wavenumber space. Currently implemented are:
+`ZeroGrid` for ODEs, `OneGrid` for PDEs with one spatial dimension, and `TwoGrid`
+for PDEs with two spatial dimensions. Grids are generic and work for any problem
+of that particular dimension.
 
-- `AbstractParams`: Includes all parameters or functions related with the problem do not vary throughout the integration.
+- `AbstractParams`: Includes all parameters or functions related with the problem
+do not vary throughout the integration.
 
-- `AbstractVars`: Includes all variables of the problem that change along the integration.
+- `AbstractVars`: Includes all variables of the problem that change along the
+integration.
 
-- `AbstractEquation`: Includes the array with the coefficients of the linear part of the equation, `LC` as well as function `calcN!` that computes the nonlinear part of the equation.
+- `AbstractEquation`: Includes the array with the coefficients of the linear part
+of the equation, `LC` as well as function `calcN!` that computes the nonlinear
+part of the equation.
 
-- `AbstractState`: Includes the solution `sol` at current time-step as well as the time-step `dt`, the time `t`, and `step` which counts the number of time-steps taken.
+- `AbstractState`: Includes the solution `sol` at current time-step as well as
+the time-step `dt`, the time `t`, and `step` which counts the number of
+time-steps taken.
 
-- `AbstractTimeStepper`: Includes all details for the time-stepper (e.g., `dt`, various coefficients, `sol` at intermediate time-step values). Time-steppers are generic and work for any problem.
+- `AbstractTimeStepper`: Includes all details for the time-stepper (e.g., `dt`,
+  various coefficients, `sol` at intermediate time-step values). Time-steppers
+  are generic and work for any problem.
 
-- `AbstractProblem`: A super-supertype that includes all of the above. That is `problem` includes `grid`, `vars`, `params`, `eqn`, `ts`, `state`, and also `t` and `step`.
+- `AbstractProblem`: A super-supertype that includes all of the above. That is
+`problem` includes `grid`, `vars`, `params`, `eqn`, `ts`, `state`, and also `t`
+and `step`.
 
-Grids and time-steppers are generic and work for any problem of that particular dimension. State and Problem just gathers things together. Thus, to code up a new equation you only need to prescribe `params`, `vars`, `LC`, and `calcN!`.
-
-
+Grids and time-steppers are generic and work for any problem of that particular
+dimension. State and Problem just gathers things together. Thus, to write a solver
+for a new physical problem you only need to prescribe `params`, `vars`, the
+coefficients of the linear part, `LC`, and function `calcN!`.
 
 
 ## Source code organization
@@ -99,58 +114,65 @@ Here's an overview of the code structure:
                 field in a given 2D flow (u, w), which can be an arbitrary
                 function of x, z, and t.
 
-## Examples
 
-- `examples/twodturb/McWilliams.jl`: A script that simulates decaying two-dimensional turbulence reproducing the results of the paper by
 
-  > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. *J. Fluid Mech.*, **146**, 21-43
+## Basic steps for solving a problem
 
-- `examples/barotropicqg/decayingbetaturb.jl`: An example script that simulates decaying quasi-geostrophic flow on a beta-plane demonstrating zonation.
+To illustrate the basic steps for solving a problem consider the 1D
+Kuramoto-Sivashinsky equation for $u(x, t)$:
 
-- `examples/barotropicqg/ACConelayer.jl`: A script that simulates barotropic quasi-geostrophic flow above topography reproducing the results of the paper by
+$$\partial_t u + \partial_x^4 u + \partial_x^2 u + u\partial_x u = 0\ ,$$
 
-  > Constantinou, N. C. (2018). A barotropic model of eddy saturation. *J. Phys. Oceanogr.*, **48 (2)**, 397-411
+which in Fourier base reads:
 
+$$\partial_t \widehat{u} = \underbrace{(- k_x^4 + k_x^2) \widehat{u}}_{\mathcal{L}\widehat{u}}
++ \underbrace{\widehat{ -u\partial_x u }}_{\mathcal{N}(\widehat{u})}\ .$$
+
+
+To an `AbstractProblem` for the above we need to:
+- Construct an `AbstractGrid`; for this problem we use the `OneGrid`.
+- Construct an `AbstractParams`; for this problem `params` is be empty as
+there are no parameters in the equation. (Note that e.g., the domain size `Lx`
+  and the number of gridpoints `nx` are part of the grid.)
+- Construct an `AbstractVars`; for this problem `vars` includes $u$, $\partial_xu$,
+$u\partial_xu$ and their Fourier transforms $\widehat{u}$, $\widehat{\partial_xu}$, $\widehat{u\partial_xu}$.
+- Construct the equations by prescribing coefficients for the linear part as an
+array `LC` and a function `calcN!` that computes $\mathcal{N}(\widehat{u})..
+- Construct the time-stepper which includes function `stepforward!` that time-steps the solution.
+- Construct the `state` and gather everything as an `AbstractProblem`.
+
+
+The example script found in  `examples/kuramotosivashinsky/trefethenexample.jl`
+demonstrates the above steps needed to construct an `AbstractProblem`. The `prob` 
+is constructed by calling `prob = InitialValueProblem(nx=nx, Lx=Lx, dt=dt, stepper="ETDRK4")`.
+Looking into the  `InitialValueProblem` function we can see the above steps:
+```julia
+function InitialValueProblem(;
+     nx = 256,
+     Lx = 2π,
+     dt = 0.01,
+stepper = "RK4"
+)
+
+g  = OneDGrid(nx, Lx)
+pr = Params()
+vs = Vars(g)
+eq = Equation(pr, g)
+ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
+
+FourierFlows.Problem(g, vs, pr, eq, ts)
+end
+```
 
 
 ## Tutorials
 
 ```@contents
 Pages = [
+    "modules/kuramotosivashinsky.md",
     "modules/twodturb.md",
-    "modules/barotropicqg.md"
-    "modules/kuramotosivashinsky.md"
+    "modules/barotropicqg.md",
     "modules/traceradvdiff.md"
         ]
 Depth = 1
-```
-
-
-
-## DocStrings
-
-```@contents
-Pages = [
-    "general/general.md",
-    "modules/twodturb.md",
-    "modules/barotropicqg.md",
-    "modules/boussinesq.md",
-    "modules/kuramotosivashinsky.md",
-    "modules/traceradvdiff.md",
-    "man/docstrings.md",
-    ]
-Depth = 2
-```
-
-## Index
-
-```@index
-Pages = [
-    "modules/twodturb.md",
-    "modules/barotropicqg.md",
-    "modules/boussinesq.md",
-    "modules/kuramotosivashinsky.md",
-    "modules/traceradvdiff.md",
-    "man/docstrings.md",
-    ]
 ```
