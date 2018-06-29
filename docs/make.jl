@@ -6,6 +6,7 @@ makedocs(
   sitename = "FourierFlows.jl",
      pages = Any[
               "Home" => "index.md",
+              "Code Basics" => "basics.md",
               "Modules" => Any[
                 "modules/twodturb.md",
                 "modules/barotropicqg.md",
@@ -20,7 +21,7 @@ makedocs(
 deploydocs(
        repo = "github.com/FourierFlows/FourierFlows.jl.git",
      target = "build",
-      julia = "0.6.2",
+      julia = "0.6.3",
      osname = "linux",
        deps = nothing,
        make = nothing
