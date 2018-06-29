@@ -8,10 +8,10 @@ makedocs(
               "Home" => "index.md",
               "Code Basics" => "basics.md",
               "Modules" => Any[
+                "modules/kuramotosivashinsky.md",
                 "modules/twodturb.md",
                 "modules/barotropicqg.md",
                 "modules/boussinesq.md",
-                "modules/kuramotosivashinsky.md",
                 "modules/traceradvdiff.md"
               ],
               "DocStrings" => Any["man/docstrings.md"]
