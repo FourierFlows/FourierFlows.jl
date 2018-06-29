@@ -129,21 +129,17 @@ $$\partial_t \widehat{u} = \underbrace{(- k_x^4 + k_x^2) \widehat{u}}_{\mathcal{
 + \underbrace{\widehat{ -u\partial_x u }}_{\mathcal{N}(\widehat{u})}\ .$$
 
 
-To an `AbstractProblem` for the above we need to:
+The steps to construct an `AbstractProblem` for the above are:
 - Construct an `AbstractGrid`; for this problem we use the `OneGrid`.
-- Construct an `AbstractParams`; for this problem `params` is be empty as
-there are no parameters in the equation. (Note that e.g., the domain size `Lx`
-  and the number of gridpoints `nx` are part of the grid.)
-- Construct an `AbstractVars`; for this problem `vars` includes $u$, $\partial_xu$,
-$u\partial_xu$ and their Fourier transforms $\widehat{u}$, $\widehat{\partial_xu}$, $\widehat{u\partial_xu}$.
-- Construct the equations by prescribing coefficients for the linear part as an
-array `LC` and a function `calcN!` that computes $\mathcal{N}(\widehat{u})..
+- Construct an `AbstractParams`; for this problem `params` is be empty as there are no parameters in the equation. (Note that e.g., the domain size `Lx` and the number of gridpoints `nx` belong to the grid.)
+- Construct an `AbstractVars`; for this problem `vars` includes $u$, $\partial_x u$, $u\partial_x u$ and their Fourier transforms $\widehat{u}$, $\widehat{\partial_x u}$, $\widehat{u\partial_xu}$.
+- Construct the equations by prescribing coefficients for the linear part as an array `LC` and a function `calcN!` that computes $\mathcal{N}(\widehat{u})$.
 - Construct the time-stepper which includes function `stepforward!` that time-steps the solution.
 - Construct the `state` and gather everything as an `AbstractProblem`.
 
 
 The example script found in  `examples/kuramotosivashinsky/trefethenexample.jl`
-demonstrates the above steps needed to construct an `AbstractProblem`. The `prob` 
+demonstrates the above steps needed to construct an `AbstractProblem`. The `prob`
 is constructed by calling `prob = InitialValueProblem(nx=nx, Lx=Lx, dt=dt, stepper="ETDRK4")`.
 Looking into the  `InitialValueProblem` function we can see the above steps:
 ```julia
