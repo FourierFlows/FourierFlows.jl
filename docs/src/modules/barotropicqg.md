@@ -45,3 +45,14 @@ Thus:
 $$\mathcal{L} = \beta\frac{\mathrm{i}k_x}{k^2} - \mu - \nu k^{2n_\nu}\ ,$$
 $$\mathcal{N}(\widehat{\zeta}) = - \mathrm{i}k_x \mathrm{FFT}(u q)-
 	\mathrm{i}k_y \mathrm{FFT}(\upsilon q)\ .$$
+
+
+## Examples
+
+- `examples/barotropicqg/decayingbetaturb.jl`: An script that simulates decaying quasi-geostrophic flow on a beta-plane demonstrating zonation.
+
+- `examples/barotropicqg/forcedbetaturb.jl`: An script that simulates forced-dissipative quasi-geostrophic flow on a beta-plane demonstrating zonation. The forcing is temporally delta-corraleted and its spatial structure is isotropic with power in a narrow annulus of total radius `kf` in wavenumber space.
+
+- `examples/barotropicqg/ACConelayer.jl`: A script that simulates barotropic quasi-geostrophic flow above topography reproducing the results of the paper by
+
+  > Constantinou, N. C. (2018). A barotropic model of eddy saturation. *J. Phys. Oceanogr.*, **48 (2)**, 397-411

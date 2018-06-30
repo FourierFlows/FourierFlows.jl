@@ -35,3 +35,12 @@ Thus:
 $$\mathcal{L} = -\mu k^{-2n_\mu} - \nu k^{2n_\nu}\ ,$$
 $$\mathcal{N}(\widehat{q}) = - \mathrm{i}k_x \mathrm{FFT}(u q)-
 	\mathrm{i}k_y \mathrm{FFT}(\upsilon q)\ .$$
+
+
+## Examples
+
+- `examples/twodturb/McWilliams.jl`: A script that simulates decaying two-dimensional turbulence reproducing the results of the paper by
+
+  > McWilliams, J. C. (1984). The emergence of isolated coherent vortices in turbulent flow. *J. Fluid Mech.*, **146**, 21-43
+
+- `examples/twodturb/IsotropicRingForcing.jl`: A script that simulates stochastically forced two-dimensional turbulence. The forcing is temporally delta-corraleted and its spatial structure is isotropic with power in a narrow annulus of total radius `kf` in wavenumber space.
