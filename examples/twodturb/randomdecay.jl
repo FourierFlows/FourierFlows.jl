@@ -1,7 +1,7 @@
 using PyPlot, FourierFlows
 import FourierFlows.TwoDTurb
 
-   n, L = 256, 2π   # Domain
+   n, L = 256, 2π  # Domain
 nu, nnu = 1e-6, 1  # Viscosity
  dt, nt = 1, 100   # Time step
 

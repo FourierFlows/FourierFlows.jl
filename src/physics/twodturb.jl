@@ -2,7 +2,7 @@ module TwoDTurb
 using FourierFlows, Requires
 
 """
-    InitialValueProblem(; parameters...)
+    Problem(; parameters...)
 
 Construct an 2D turbulence problem.
 """
@@ -91,7 +91,7 @@ end
 """
     ForcedVars(g)
 
-Returns the vars for unforced two-dimensional turbulence with grid g.
+Returns the vars for forced two-dimensional turbulence with grid g.
 """
 function ForcedVars(g)
   @createarrays typeof(g.Lx) (g.nx, g.ny) q U V
@@ -246,7 +246,7 @@ Returns the domain-averaged dissipation rate. nnu must be >= 1.
 end
 
 @inline dissipation(prob::AbstractProblem) = dissipation(prob.state, prob.vars, prob.params, prob.grid)
-  
+
 """
     work(prob)
     work(s, v, p, g)

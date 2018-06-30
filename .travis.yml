@@ -7,7 +7,7 @@ os:
 julia:
   # - nightly
   # - 0.6.0
-  - 0.6.2
+  - 0.6.3
 
 before_script:
  - julia -e 'Pkg.add("JLD2"); Pkg.add("SpecialFunctions"); Pkg.add("CuArrays");'

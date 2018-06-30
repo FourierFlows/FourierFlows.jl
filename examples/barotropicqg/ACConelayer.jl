@@ -4,37 +4,35 @@ using FourierFlows, PyPlot, JLD2
 import FourierFlows.BarotropicQG
 import FourierFlows.BarotropicQG: energy, energy00, enstrophy, enstrophy00
 
-nx  = 512
-ν  = 8.0e-10
-νn = 2
-f0 = -1.0
+# Numerical parameters and time-stepping parameters
+nx  = 512      # 2D resolution = nx^2
+stepper = "FilteredETDRK4"   # timestepper
+dt  = 2e-2     # timestep
+nsteps = 20000 # total number of time-steps
+nsubs  = 500   # number of time-steps for plotting
+               # (nsteps must be multiple of nsubs)
 
-β = 1.4015
-Lx = 2π
-μ = 1.0e-2
-F = 0.0012
+# Physical parameters
+Lx  = 2π       # domain size
+nu  = 8.0e-10  # viscosity
+nnu = 2        # viscosity order
+f0  = -1.0     # Coriolis parameter
+beta = 1.4015  # the y-gradient of planetary PV
+mu   = 1.0e-2  # linear drag
+   F = 0.0012  # normalized wind stress forcing on domain-averaged
+               # zonal flow U(t) flow
 
-FU(t) = F
+# Topographic PV
+topoPV(x, y) = 2*cos.(10x).*cos.(10y)
 
-η(x, y) = 2*cos.(10x).*cos.(10y)
-
-
-g  = BarotropicQG.Grid(nx, Lx)
-p  = BarotropicQG.Params(g, f0, β, FU, η, μ, ν, νn)
-v  = BarotropicQG.Vars(g)
-eq = BarotropicQG.Equation(p, g)
-
-
-# Time-stepping
-dt  = 2e-2
-nsteps = 20000
-nsubs  = 500
+# Forcing on the domain-averaged U equation
+calcFU(t) = F
 
 
-# ts = FilteredETDRK4TimeStepper(dt, eq.LC, g)
-ts = ETDRK4TimeStepper(dt, eq.LC)
-prob = FourierFlows.Problem(g, v, p, eq, ts)
-s = prob.state
+# Initialize problem
+prob = BarotropicQG.ForcedProblem(nx=nx, Lx=Lx, f0=f0, beta=beta, eta=topoPV,
+                  calcFU=calcFU, nu=nu, nnu=nnu, mu=mu, dt=dt, stepper=stepper)
+s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
 
 
 # Files
@@ -67,7 +65,8 @@ out = Output(prob, filename, (:sol, get_sol), (:u, get_u))
 
 
 function plot_output(prob, fig, axs; drawcolorbar=false)
-  # Plot the vorticity field and the evolution of energy and enstrophy.
+
+  # Plot the PV field and the evolution of energy and enstrophy.
 
   s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
   BarotropicQG.updatevars!(prob)
@@ -76,24 +75,27 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   pcolormesh(g.X, g.Y, v.q)
   axis("square")
   xlim(0, 2)
+  xticks(0:0.5:2)
   ylim(0, 2)
-  # axis("off")
+  yticks(0:0.5:2)
+  title(L"$\nabla^2\psi + \eta$ (part of the domain)")
   if drawcolorbar==true
     colorbar()
   end
 
   sca(axs[2])
   cla()
-  plot(μ*E.time[1:E.prob.step], E.data[1:prob.step], label=L"$E_{\psi}$")
-  plot(μ*E.time[1:E00.prob.step], E00.data[1:prob.step], label=L"$E_U$")
+  plot(mu*E.time[1:E.prob.step], E.data[1:prob.step], label=L"$E_{\psi}$")
+  plot(mu*E.time[1:E00.prob.step], E00.data[1:prob.step], label=L"$E_U$")
+
   xlabel(L"\mu t")
   ylabel(L"E")
   legend()
 
   sca(axs[3])
   cla()
-  plot(μ*Q.time[1:Q.prob.step], Q.data[1:prob.step], label=L"$Q_{\psi}$")
-  plot(μ*Q00.time[1:Q00.prob.step], Q00.data[1:prob.step], label=L"$Q_U$")
+  plot(mu*Q.time[1:Q.prob.step], Q.data[1:prob.step], label=L"$Q_{\psi}$")
+  plot(mu*Q00.time[1:Q00.prob.step], Q00.data[1:prob.step], label=L"$Q_U$")
   xlabel(L"\mu t")
   ylabel(L"Q")
   legend()

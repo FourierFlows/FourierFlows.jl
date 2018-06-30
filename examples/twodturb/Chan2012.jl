@@ -18,7 +18,7 @@ norm = n^2/4
 function calcF!(F, sol, t, s, v, p, g)
   if t == s.t # not a substep
     F .= 0.0
-    θ, ξ = 2π*rand(2) 
+    θ, ξ = 2π*rand(2)
     i₁ = round(Int, abs(ki*cos(θ))) + 1
     j₁ = round(Int, abs(ki*sin(θ))) + 1 # j₁ >= 1
     j₂ = n + 2 - j₁ # e.g. j₁ = 1 => j₂ = nl+1
@@ -39,8 +39,8 @@ prob = TwoDTurb.ForcedProblem(nx=n, Lx=L, nu=nu, nnu=nnu, mu=mu, dt=dt, calcF=ca
 E = Diagnostic(energy, prob, nsteps=round(Int, tf/dt))
 Z = Diagnostic(enstrophy, prob, nsteps=round(Int, tf/dt))
 D = Diagnostic(dissipation, prob, nsteps=round(Int, tf/dt))
-I = Diagnostic(injection, prob, nsteps=round(Int, tf/dt))
-diags = [E, Z, D, I]
+W = Diagnostic(work, prob, nsteps=round(Int, tf/dt))
+diags = [E, Z, D, W]
 
 # Step forward
 fig, axs = subplots(ncols=3, figsize=(12, 4))
@@ -48,7 +48,7 @@ for i = 1:round(Int, tf/dt/ndp)
 
   tic()
   stepforward!(prob, diags, ndp)
-  TwoDTurb.updatevars!(prob)  
+  TwoDTurb.updatevars!(prob)
 
   cfl = prob.ts.dt*maximum([maximum(prob.vars.V)/prob.grid.dx, maximum(prob.vars.U)/prob.grid.dy])
   @printf("step: %04d, t: %.1f, cfl: %.2f, time: %.3f s\n", prob.step, prob.t, cfl, toq())
@@ -64,7 +64,7 @@ for i = 1:round(Int, tf/dt/ndp)
   plot(E.time[ii], dEdt)
   plot(E.time[ii], -D[ii])
   plot(E.time[ii], -mu*E[ii])
-  plot(E.time[ii], I[ii], "k.", markersize=0.1)
+  plot(E.time[ii], W[ii], "k.", markersize=0.1)
   xlabel(L"t")
 
   sca(axs[3]); cla()
@@ -72,7 +72,7 @@ for i = 1:round(Int, tf/dt/ndp)
   xlabel(L"t")
   ylabel(L"E")
 
-  axs[1][:tick_params](bottom=false, labelbottom=false, 
+  axs[1][:tick_params](bottom=false, labelbottom=false,
     left=false, labelleft=false)
 
   pause(0.01)
