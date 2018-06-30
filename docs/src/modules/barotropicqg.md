@@ -6,29 +6,19 @@
 
 ### Basic Equations
 
-This module solves the quasi-geostrophic barotropic vorticity equation on a
-beta-plane of variable fluid depth $H-h(x,y)$. The flow is obtained through a
-streamfunction $\psi$ as $(u, \upsilon) = (-\partial_y\psi, \partial_x\psi)$. All flow
-fields can be obtained from the quasi-geostrophic potential vorticity (QGPV).
-Here the QGPV is
+This module solves the quasi-geostrophic barotropic vorticity equation on a beta-plane of variable fluid depth $H-h(x,y)$. The flow is obtained through a streamfunction $\psi$ as $(u, \upsilon) = (-\partial_y\psi, \partial_x\psi)$. All flow fields can be obtained from the quasi-geostrophic potential vorticity (QGPV). Here the QGPV is
 
 $$\underbrace{f_0 + \beta y}_{\text{planetary PV}} + \underbrace{(\partial_x \upsilon
 	- \partial_y u)}_{\text{relative vorticity}} +
 	\underbrace{\frac{f_0 h}{H}}_{\text{topographic PV}}.$$
 
-The dynamical variable is the component of the vorticity of the flow normal to
-the plane of motion, $\zeta\equiv \partial_x \upsilon- \partial_y u = \nabla^2\psi$.
-Also, we denote the topographic PV with $\eta\equiv f_0 h/H$. Thus, the
-equation solved by the module is:
+The dynamical variable is the component of the vorticity of the flow normal to the plane of motion, $\zeta\equiv \partial_x \upsilon- \partial_y u = \nabla^2\psi$. Also, we denote the topographic PV with $\eta\equiv f_0 h/H$. Thus, the equation solved by the module is:
 
 $$\partial_t \zeta + \J(\psi, \underbrace{\zeta + \eta}_{\equiv q}) +
 \beta\partial_x\psi = \underbrace{-\left[\mu + \nu(-1)^{n_\nu} \nabla^{2n_\nu}
 \right] \zeta }_{\textrm{dissipation}} + f\ .$$
 
-where $\J(a, b) = (\partial_x a)(\partial_y b)-(\partial_y a)(\partial_x b)$. On
-the right hand side, $f(x,y,t)$ is forcing, $\mu$ is linear drag, and $\nu$ is
-hyperviscosity. Plain old viscosity corresponds to $n_{\nu}=1$. The sum of
-relative vorticity and topographic PV is denoted with $q\equiv\zeta+\eta$.
+where $\J(a, b) = (\partial_x a)(\partial_y b)-(\partial_y a)(\partial_x b)$. On the right hand side, $f(x,y,t)$ is forcing, $\mu$ is linear drag, and $\nu$ is hyperviscosity. Plain old viscosity corresponds to $n_{\nu}=1$. The sum of relative vorticity and topographic PV is denoted with $q\equiv\zeta+\eta$.
 
 ### Implementation
 
