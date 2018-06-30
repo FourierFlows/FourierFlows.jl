@@ -221,11 +221,7 @@ function calcN_forced!(N, sol, t, s, v, p, g)
     # 'Nonlinear' term for U with topographic correlation.
     # Note: < v*eta > = sum( conj(vh)*eta ) / (nx^2*ny^2) if fft is used
     # while < v*eta > = 2*sum( conj(vh)*eta ) / (nx^2*ny^2) if rfft is used
-    if size(sol)[1] == g.nkr
-      N[1, 1] = p.calcFU(t) + 2*sum(conj(v.vh).*p.etah).re / (g.nx^2.0*g.ny^2.0)
-    else
-      N[1, 1] = p.calcFU(t) + sum(conj(v.vh).*p.etah).re / (g.nx^2.0*g.ny^2.0)
-    end
+    N[1, 1] = p.calcFU(t) + 2*sum(conj(v.vh).*p.etah).re / (g.nx^2.0*g.ny^2.0)
   end
   if t == s.t # not a substep
     v.prevsol .= s.sol # used to compute budgets when forcing is stochastic
