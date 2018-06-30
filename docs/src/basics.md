@@ -70,7 +70,7 @@ Here's an overview of the code structure:
 
 
 
-## Basic steps for solving a problem
+## Basic steps for solving a problem: step through an example script
 
 To illustrate the basic steps for solving a problem consider the 1D Kuramoto-Sivashinsky equation for $u(x, t)$:
 
@@ -109,6 +109,42 @@ ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
 FourierFlows.Problem(g, vs, pr, eq, ts)
 end
 ```
+
+The `OneDGrid` function is called for the grid. Within grid the wavenumber array is constructed:
+```julia
+i1 = 0:Int(nx/2)
+i2 = Int(-nx/2+1):-1
+k = Array{T}(2π/Lx*cat(1, i1, i2))
+kr = Array{T}(2π/Lx*cat(1, i1))
+```
+For real-valued fields we use `rfft` and thus only positive wavenumbers are involved: array `kr`.
+
+Function `Vars(g)` initialize variables `u`, `ux`, and `uux` as real valued arrays of length `nx` and variables `uh`, `uxh`, and `uuxh` as complex valued arrays of length `nkr = Int(nx/2+1)` (the same length as `kr`). As a general convention variable names with `h` denote the Fourier transforms of the corresponding variable (`h` stands for 'hat').
+
+The array `LC` is constructed by `Equation` function
+```julia
+function Equation(p, g)
+  LC = @. g.kr^2 - g.kr^4
+  FourierFlows.Equation(LC, calcN!)
+end
+```
+Also `eq` includes function `calcN!` which computes the nonlinear term $\mathcal{N}(\widehat{u})$:
+```julia
+function calcN!(N, sol, t, s, v, p, g)
+  @. v.uh = sol
+  @. v.uxh = im*g.kr*sol
+  A_mul_B!(v.u, g.irfftplan, v.uh)
+  A_mul_B!(v.ux, g.irfftplan, v.uxh)
+  @. v.uux = v.u*v.ux
+  A_mul_B!(v.uuxh, g.rfftplan, v.uux)
+  @. N = -v.uuxh
+  dealias!(N, g)
+  nothing
+end
+```
+
+The time-stepper is constructed and stored as `ts`. Finally, all supertypes are gathered together as an `AbstractProblem`.
+
 
 
 ## Tutorials
