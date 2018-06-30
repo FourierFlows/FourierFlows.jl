@@ -61,13 +61,13 @@ Here's an overview of the code structure:
         and complex valued fields.
 
     - `physics/`
+        - `kuramotosivashinsky.jl`: Defines a `KuramotoSivashinsky` module that
+                solves the 1D Kuramoto-Sivashinsky equation.
         - `twodturb.jl`: Defines a `TwoDTurb` module that provides a
                 solver for the two-dimensional vorticity equation.
         - `barotropicqg.jl`: Defines a `BarotropicQG` module that provides
                 several solvers for the barotropic QG model that permit beta,
                 topography, beta + topography, and forcing.
-        - `kuramotosivashinsky.jl`: Defines a `KuramotoSivashinsky` module that
-                solves the Kuramoto-Sivashinsky.
         - `verticallyfourierboussinesq.jl`: Defines a `VerticallyFourierBoussinesq` module that
                 solves the two-mode truncation of the Fourier series thin-layer approximation to the hydrostatic Boussinesq equations.
         - `verticallycosinerboussinesq.jl`: Defines a `VerticallyCosineBoussinesq` module that
