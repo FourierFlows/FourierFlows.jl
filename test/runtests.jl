@@ -33,16 +33,16 @@ end
 
 println("-- Physics tests --")
 
+@testset "Physics: Kuramoto-Sivashinsky" begin
+  include("test_kuramotosivashinsky.jl")
+end
+
 @testset "Physics: TwoDTurb" begin
   include("test_twodturb.jl")
 end
 
 @testset "Physics: BarotropicQG" begin
   include("test_barotropicqg.jl")
-end
-
-@testset "Physics: Kuramoto-Sivashinsky" begin
-  include("test_kuramotosivashinsky.jl")
 end
 
 @testset "Physics: Vertically Cosine Boussinesq" begin
