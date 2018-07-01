@@ -15,6 +15,8 @@ function test_baroQG_RossbyWave(stepper, dt, nsteps)
     mu = 0.0
     nu = 0.0
 
+  # the following if statement is called so that all the cases of
+  # Problem() fuction are tested
   if stepper=="ForwardEuler"
     eta = zeros(nx, nx)
   else
