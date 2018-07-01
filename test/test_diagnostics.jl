@@ -114,9 +114,8 @@ function testsimplediagnostics()
     update!(Z)
     Z.count += 1
     stepforward!(prob, 1)
-    update!(E)
+    update!([E, Z])
     E.count += 1
-    update!(Z)
     Z.count += 1
 
     (
