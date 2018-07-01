@@ -14,7 +14,7 @@ struct ZeroDGrid <: AbstractGrid end
     OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_CORES, effort=FFTW.MEASURE)
 
 Constrcut a OneDGrid object with size `Lx`, resolution `nx`, and leftmost
-position `x0`. FFT plans are generated for `nthreads` CPUs using 
+position `x0`. FFT plans are generated for `nthreads` CPUs using
 FFTW flag `effort`.
 """
 struct OneDGrid{T} <: AbstractOneDGrid
@@ -76,9 +76,9 @@ end
     TwoDGrid(nx, Lx)
     TwoDGrid(nx, Lx, ny, Ly; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_CORES, effort=FFTW.MEASURE)
 
-Constrcut a TwoDGrid object. The two-dimensional domain has size (Lx, Ly), 
-resolution (nx, ny) and bottom left corner at (x0, y0). FFT plans are generated 
-which use nthreads threads with the specified planning effort. 
+Constrcut a TwoDGrid object. The two-dimensional domain has size (Lx, Ly),
+resolution (nx, ny) and bottom left corner at (x0, y0). FFT plans are generated
+which use nthreads threads with the specified planning effort.
 """
 struct TwoDGrid{T} <: AbstractTwoDGrid
   nx::Int
@@ -167,7 +167,7 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU
 
   ialias  = iaL:iaR
   iralias = iaL:nkr
-  jalias  = iaL:iaR
+  jalias  = jaL:jaR
 
   TwoDGrid(nx, ny, nk, nl, nkr, Lx, Ly, dx, dy, x, y, X, Y,
            k, l, kr, K, L, Kr, Lr, KKsq, invKKsq, KKrsq, invKKrsq,
@@ -181,20 +181,19 @@ function dealias!(a, g::OneDGrid)
   nothing
 end
 
-function dealias!(a, g::AbstractTwoDGrid)
+function dealias!(a, g::TwoDGrid)
   if size(a)[1] == g.nkr; @views @. a[g.iralias, g.jalias, :] = 0
   else;                   @views @. a[g.ialias, g.jalias, :] = 0
   end
   nothing
 end
 
-
 """
     makefilter(K; order=4, innerK=0.65, outerK=1)
 
 Returns a filter acting on the non-dimensional wavenumber K that decays exponentially
-for K>innerK, thus removing high-wavenumber content from a spectrum it is multiplied with. 
-The decay rate is determined by order and outerK determines the outer wavenumber at which 
+for K>innerK, thus removing high-wavenumber content from a spectrum it is multiplied with.
+The decay rate is determined by order and outerK determines the outer wavenumber at which
 the filter is smaller than machine precision.
 """
 function makefilter(K; order=4, innerK=0.65, outerK=1)
@@ -207,7 +206,7 @@ function makefilter(K; order=4, innerK=0.65, outerK=1)
 end
 
 function makefilter(g::AbstractTwoDGrid; realvars=true, kwargs...)
-  K = realvars ? 
+  K = realvars ?
       @.(sqrt((g.Kr*g.dx/π)^2 + (g.Lr*g.dy/π)^2)) : @.(sqrt((g.K*g.dx/π)^2 + (g.L*g.dy/π)^2))
   makefilter(K; kwargs...)
 end

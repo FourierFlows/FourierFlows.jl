@@ -23,9 +23,11 @@ function test_baroQG_RossbyWave(stepper, dt, nsteps, g, p, v, eq)
     BarotropicQG.set_zeta!(prob, ζ0)
 
     stepforward!(prob, nsteps)
+    dealias!(s.sol, g)
     BarotropicQG.updatevars!(prob)
 
     ζ_theory = ampl*cos.(kwave*(g.X-ω/kwave*s.t)).*cos.(lwave*g.Y)
+
     isapprox(ζ_theory, v.zeta, rtol=g.nx*g.ny*nsteps*1e-12)
 end
 

@@ -3,7 +3,7 @@ using FourierFlows, FourierFlows.KuramotoSivashinsky
 function growingwavetest()
   nx, Lx = 256, 4π
   dt, nt = 1e-6, 100
-  prob = InitialValueProblem(nx=nx, Lx=Lx, dt=dt, stepper="ETDRK4")
+  prob = InitialValueProblem(nx=nx, Lx=Lx, dt=dt, stepper="FilteredETDRK4")
   x = prob.grid.x
 
   # Initial condition
