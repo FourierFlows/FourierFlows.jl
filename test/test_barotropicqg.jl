@@ -3,32 +3,44 @@ import FourierFlows.BarotropicQG
 # -----------------------------------------------------------------------------
 # BAROQG's TEST FUNCTIONS
 
-""" Test that the time-stepper is not doing anything wild by evolving a random
-initial condition for dt=1e-16 looking at relative error of the norm. """
-function test_baroQG_RossbyWave(stepper, dt, nsteps, g, p, v, eq)
+"""
+    test_baroQG_RossbyWave(; kwargs...)
 
-    ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
-    prob = FourierFlows.Problem(g, v, p, eq, ts)
+Evolvesa a Rossby wave and compares with the analytic solution.
+"""
+function test_baroQG_RossbyWave(stepper, dt, nsteps)
+    nx = 64
+  beta = 2.0
+    Lx = 2π
+    mu = 0.0
+    nu = 0.0
 
-    s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
+  if stepper=="ForwardEuler"
+    eta = zeros(nx, nx)
+  else
+    eta(x, y) = 0*x
+  end
 
-    # the Rossby wave initial condition
-     ampl = 1e-2
-    kwave = 3.0*2π/g.Lx
-    lwave = 2.0*2π/g.Ly
-        ω = -p.beta*kwave/(kwave^2.0 + lwave^2.0)
-       ζ0 = ampl*cos.(kwave*g.X).*cos.(lwave*g.Y)
-      ζ0h = rfft(ζ0)
+  prob = BarotropicQG.InitialValueProblem(nx=nx, Lx=Lx, eta=eta, beta=beta, mu=mu, nu=nu, stepper=stepper, dt=dt)
+  s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
 
-    BarotropicQG.set_zeta!(prob, ζ0)
+  # the Rossby wave initial condition
+   ampl = 1e-2
+  kwave = 3.0*2π/g.Lx
+  lwave = 2.0*2π/g.Ly
+      ω = -p.beta*kwave/(kwave^2.0 + lwave^2.0)
+     ζ0 = ampl*cos.(kwave*g.X).*cos.(lwave*g.Y)
+    ζ0h = rfft(ζ0)
 
-    stepforward!(prob, nsteps)
-    dealias!(s.sol, g)
-    BarotropicQG.updatevars!(prob)
+  BarotropicQG.set_zeta!(prob, ζ0)
 
-    ζ_theory = ampl*cos.(kwave*(g.X-ω/kwave*s.t)).*cos.(lwave*g.Y)
+  stepforward!(prob, nsteps)
+  dealias!(s.sol, g)
+  BarotropicQG.updatevars!(prob)
 
-    isapprox(ζ_theory, v.zeta, rtol=g.nx*g.ny*nsteps*1e-12)
+  ζ_theory = ampl*cos.(kwave*(g.X-ω/kwave*s.t)).*cos.(lwave*g.Y)
+
+  isapprox(ζ_theory, v.zeta, rtol=g.nx*g.ny*nsteps*1e-12)
 end
 
 """
@@ -36,7 +48,6 @@ end
 
 Tests if the energy budgets are closed for BarotropicQG with stochastic forcing.
 """
-
 function test_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, mu=1e-1, message=false)
   n, L  = 256, 2π
   nu, nnu = 1e-7, 2
@@ -251,45 +262,30 @@ end
 # -----------------------------------------------------------------------------
 # Running the tests
 
-nx  = 64
 
-f0 = 1.0
- β = 2.0
-Lx = 2π
- mu = 0.0
- nu = 0.0
-nnu = 2
+dt, nsteps, stepper  = 1e-2, 20, "ETDRK4"
+@test test_baroQG_RossbyWave("ETDRK4", dt, nsteps)
 
-η(x,y) = zeros(nx, nx)
-
-g  = BarotropicQG.Grid(nx, Lx)
-p  = BarotropicQG.Params(g, f0, β, η, mu, nu, nnu)
-v  = BarotropicQG.Vars(g)
-eq = BarotropicQG.Equation(p, g)
+dt, nsteps  = 1e-2, 20;
+@test test_baroQG_RossbyWave("FilteredETDRK4", dt, nsteps)
 
 dt, nsteps  = 1e-2, 20
-@test test_baroQG_RossbyWave("ETDRK4", dt, nsteps, g, p, v, eq)
+@test test_baroQG_RossbyWave("RK4", dt, nsteps)
 
 dt, nsteps  = 1e-2, 20
-@test test_baroQG_RossbyWave("FilteredETDRK4", dt, nsteps, g, p, v, eq)
-
-dt, nsteps  = 1e-2, 20
-@test test_baroQG_RossbyWave("RK4", dt, nsteps, g, p, v, eq)
-
-dt, nsteps  =1e-2, 20
-@test test_baroQG_RossbyWave("FilteredRK4", dt, nsteps, g, p, v, eq)
+@test test_baroQG_RossbyWave("FilteredRK4", dt, nsteps)
 
 dt, nsteps  = 1e-3, 200
-@test test_baroQG_RossbyWave("AB3", dt, nsteps, g, p, v, eq)
+@test test_baroQG_RossbyWave("AB3", dt, nsteps)
 
 dt, nsteps  = 1e-3, 200
-@test test_baroQG_RossbyWave("FilteredAB3", dt, nsteps, g, p, v, eq)
+@test test_baroQG_RossbyWave("FilteredAB3", dt, nsteps)
 
 dt, nsteps  = 1e-4, 2000
-@test test_baroQG_RossbyWave("ForwardEuler", dt, nsteps, g, p, v, eq)
+@test test_baroQG_RossbyWave("ForwardEuler", dt, nsteps)
 
 dt, nsteps  = 1e-4, 2000
-@test test_baroQG_RossbyWave("FilteredForwardEuler", dt, nsteps, g, p, v, eq)
+@test test_baroQG_RossbyWave("FilteredForwardEuler", dt, nsteps)
 
 @test test_stochasticforcingbudgets()
 
@@ -297,3 +293,4 @@ dt, nsteps  = 1e-4, 2000
 @test testnonlineartermsU(0.01, "ForwardEuler")
 
 @test testenergyenstrophy()
+@test testenergyenstrophy00()
