@@ -63,48 +63,112 @@ import mytestmodule
 import mytestmodule: pseudoenergy, pseudoenstrophy
 
 
+#
+# function testsimplediagnostics()
+#     nx = 16
+#     Lx = 2π
+#     mu = 0.02
+#     dt = 0.01
+#
+#     g = OneDGrid(nx, Lx)
+#     p = mytestmodule.Params(mu)
+#     v = mytestmodule.Vars(g)
+#     eq = mytestmodule.Equation(p, g)
+#     ts = FourierFlows.ETDRK4TimeStepper(dt, eq.LC)
+#     prob = FourierFlows.Problem(g, v, p, eq, ts)
+#
+#      u0 = randn(size(g.x))
+#
+#     mytestmodule.set_u!(prob, u0)
+#
+#     nsteps = 200
+#     extrasteps = 20
+#
+#     freqE = 2
+#     E = Diagnostic(pseudoenergy, prob; nsteps=nsteps, freq=freqE)
+#
+#     freqZ = 1
+#     Z = Diagnostic(pseudoenstrophy, prob; nsteps=nsteps, freq=freqZ)
+#
+#     diags = [E, Z]
+#
+#
+#     nstepstot = nsteps + extrasteps
+#     while prob.step < nstepstot
+#       stepforward!(prob, diags, 1)
+#     end
+#
+#     println(E.count)
+#
+#     (
+#      isapprox(length(E.data), Int(round(nstepstot/freqE+1))) &&
+#      isapprox(length(Z.data), Int(round(nstepstot/freqZ+1))) &&
+#      isapprox(norm(E.data), norm(E.data[1]*exp.(-2*mu*E.time)), rtol=1e-13) &&
+#      isapprox(norm(Z.data), norm(Z.data[1]*exp.(-2*mu*Z.time)), rtol=1e-13)
+#     )
+#
+# end
+#
+# @test testsimplediagnostics()
 
-function testsimplediagnostics()
-    nx = 16
-    Lx = 2π
-    mu = 0.02
-    dt = 0.01
 
-    g = OneDGrid(nx, Lx)
-    p = mytestmodule.Params(mu)
-    v = mytestmodule.Vars(g)
-    eq = mytestmodule.Equation(p, g)
-    ts = FourierFlows.ETDRK4TimeStepper(dt, eq.LC)
-    prob = FourierFlows.Problem(g, v, p, eq, ts)
+nx = 16
+Lx = 2π
+mu = 0.02
+dt = 0.01
 
-     u0 = randn(size(g.x))
+g = OneDGrid(nx, Lx)
+p = mytestmodule.Params(mu)
+v = mytestmodule.Vars(g)
+eq = mytestmodule.Equation(p, g)
+ts = FourierFlows.ETDRK4TimeStepper(dt, eq.LC)
+prob = FourierFlows.Problem(g, v, p, eq, ts)
 
-    mytestmodule.set_u!(prob, u0)
+srand(1234)
+ u0 = randn(size(g.x))
 
-    nsteps = 200
-    extrasteps = 20
+mytestmodule.set_u!(prob, u0)
 
-    freqE = 2
-    E = Diagnostic(pseudoenergy, prob; nsteps=nsteps, freq=freqE)
+nsteps = 200
+extrasteps = 20
 
-    freqZ = 1
-    Z = Diagnostic(pseudoenstrophy, prob; nsteps=nsteps, freq=freqZ)
+freqE = 2
+E = Diagnostic(pseudoenergy, prob; nsteps=nsteps, freq=freqE)
 
-    diags = [E, Z]
+freqZ = 1
+Z = Diagnostic(pseudoenstrophy, prob; nsteps=nsteps, freq=freqZ)
+
+diags = [E, Z]
 
 
-    nstepstot = nsteps + extrasteps
-    while prob.step < nstepstot
-      stepforward!(prob, diags, 1)
-    end
-
-    (
-     isapprox(length(E.data), Int(round(nstepstot/freqE+1))) &&
-     isapprox(length(Z.data), Int(round(nstepstot/freqZ+1))) &&
-     isapprox(norm(E.data), norm(E.data[1]*exp.(-2*mu*E.time)), rtol=1e-13) &&
-     isapprox(norm(Z.data), norm(Z.data[1]*exp.(-2*mu*Z.time)), rtol=1e-13)
-    )
-
+nstepstot = nsteps + extrasteps
+while prob.step < nstepstot
+  stepforward!(prob, diags, 1)
 end
 
-@test testsimplediagnostics()
+stepforward!(prob, 1)
+increment!(Z)
+stepforward!(prob, 1)
+increment!([E,Z])
+
+
+ resize!(Z, Z.count+2)
+ Z.count += 1
+ resize!(E, E.count+1)
+ E.count += 1
+
+stepforward!(prob, 1)
+update!(Z)
+Z.count += 1
+stepforward!(prob, 1)
+update!(E)
+E.count += 1
+update!(Z)
+Z.count += 1
+
+(
+ isapprox(length(E.data), 2+Int(round(nstepstot/freqE+1))) &&
+ isapprox(length(Z.data), 4+Int(round(nstepstot/freqZ+1))) &&
+ isapprox(norm(E.data), norm(E.data[1]*exp.(-2*mu*E.time)), rtol=1e-13) &&
+ isapprox(norm(Z.data), norm(Z.data[1]*exp.(-2*mu*Z.time)), rtol=1e-13)
+)
