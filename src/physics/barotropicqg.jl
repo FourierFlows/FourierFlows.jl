@@ -273,10 +273,21 @@ updatevars!(prob) = updatevars!(prob.state, prob.vars, prob.params, prob.grid)
 Set the solution s.sol as the transform of zeta and update variables v
 on the grid g.
 """
-function set_zeta!(s, v, p, g, zeta)
+function set_zeta!(s, v::Vars, p, g, zeta)
   A_mul_B!(v.zetah, g.rfftplan, zeta)
   v.zetah[1, 1] = 0.0
   @. s.sol = v.zetah
+
+  updatevars!(s, v, p, g)
+  nothing
+end
+
+function set_zeta!(s, v::ForcedVars, p, g, zeta)
+  v.U = deepcopy(s.sol[1, 1])
+  A_mul_B!(v.zetah, g.rfftplan, zeta)
+  v.zetah[1, 1] = 0.0
+  @. s.sol = v.zetah
+  s.sol[1, 1] = v.U
 
   updatevars!(s, v, p, g)
   nothing
@@ -313,15 +324,20 @@ end
 Returns the domain-averaged enstrophy.
 """
 function enstrophy(prob)
-  s, g = prob.state, prob.grid
-  0.5*FourierFlows.parsevalsum2(s.sol, g)/(g.Lx*g.Ly)
+  s, v, g = prob.state, prob.vars, prob.grid
+  @. v.uh = s.sol
+  v.uh[1, 1] = 0
+  0.5*FourierFlows.parsevalsum2(v.uh, g)/(g.Lx*g.Ly)      
 end
 
 """
-Returns the domain-averaged enstrophy.
+Returns the energy of the domain-averaged U.
 """
-U00(prob) = real(s.sol[1, 1])
 energy00(prob) = real(0.5*prob.state.sol[1, 1].^2)
+
+"""
+Returns the enstrophy of the domain-averaged U.
+"""
 enstrophy00(prob) = real(prob.params.beta*prob.state.sol[1, 1])
 
 """

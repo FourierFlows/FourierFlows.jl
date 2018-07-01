@@ -215,25 +215,37 @@ end
 
 function testenergyenstrophy00()
   nx, Lx  = 64, 2π
-  ny, Ly  = 64, 3π
+  ny, Ly  = 96, 3π
   g  = TwoDGrid(nx, Lx, ny, Ly)
   k0 = g.k[2] # fundamental wavenumber
   l0 = g.l[2] # fundamental wavenumber
   x, y = g.X, g.Y
 
+  calcFU(t) = 0.0
+  eta(x, y) = cos.(10x).*cos.(10y)
+  psi0 = @. sin(2*k0*x)*cos(2*l0*y) + 2sin(k0*x)*cos(3*l0*y)
+ zeta0 = @. -((2*k0)^2+(2*l0)^2)*sin(2*k0*x)*cos(2*l0*y) - (k0^2+(3*l0)^2)*2sin(k0*x)*cos(3*l0*y)
   beta = 10.0
   U = 1.2
 
-  prob = BarotropicQG.InitialValueProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, beta=beta, stepper="ForwardEuler")
+  prob = BarotropicQG.ForcedProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, beta=beta, eta=eta, calcFU = calcFU, stepper="ForwardEuler")
   s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
 
+  BarotropicQG.set_zeta!(prob, zeta0)
   BarotropicQG.set_U!(prob, U)
   BarotropicQG.updatevars!(prob)
 
   energyU = FourierFlows.BarotropicQG.energy00(prob)
   enstrophyU = FourierFlows.BarotropicQG.enstrophy00(prob)
 
-  isapprox(energyU, 0.5*U^2, rtol=1e-13) && isapprox(enstrophyU, beta*U, rtol=1e-13)
+  energyzeta0 = FourierFlows.BarotropicQG.energy(prob)
+  enstrophyzeta0 = FourierFlows.BarotropicQG.enstrophy(prob)
+
+  (isapprox(energyU, 0.5*U^2, rtol=1e-13) &&
+    isapprox(enstrophyU, beta*U, rtol=1e-13) &&
+    isapprox(energyzeta0, 29.0/9, rtol=1e-13) &&
+    isapprox(enstrophyzeta0, 2701.0/162, rtol=1e-13)
+  )
 end
 
 # -----------------------------------------------------------------------------
