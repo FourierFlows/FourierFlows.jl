@@ -225,12 +225,6 @@ solution `s.sol`.
 """
 @inline enstrophy(s, g) = 1/(2*g.Lx*g.Ly)*FourierFlows.parsevalsum2(s.sol, g)
 
-"""
-    enstrophy(prob)
-
-Returns the domain-averaged enstrophy in the Fourier-transformed vorticity
-solution `prob.state.sol`.
-"""
 @inline enstrophy(prob) = enstrophy(prob.state, prob.grid)
 
 """

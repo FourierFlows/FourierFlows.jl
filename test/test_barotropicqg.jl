@@ -190,22 +190,68 @@ function testnonlineartermsU(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, m
   isapprox(prob.ts.N[1, 1], answer, rtol=1e-13)
 end
 
+function testenergyenstrophy()
+  nx, Lx  = 64, 2π
+  ny, Ly  = 64, 3π
+  g  = TwoDGrid(nx, Lx, ny, Ly)
+  k0 = g.k[2] # fundamental wavenumber
+  l0 = g.l[2] # fundamental wavenumber
+  x, y = g.X, g.Y
+
+    eta = @. cos(10*k0*x)*cos(10*l0*y)
+   psi0 = @. sin(2*k0*x)*cos(2*l0*y) + 2sin(k0*x)*cos(3*l0*y)
+  zeta0 = @. -((2*k0)^2+(2*l0)^2)*sin(2*k0*x)*cos(2*l0*y) - (k0^2+(3*l0)^2)*2sin(k0*x)*cos(3*l0*y)
+
+  prob = BarotropicQG.InitialValueProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, eta = eta, stepper="ForwardEuler")
+  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
+  BarotropicQG.set_zeta!(prob, zeta0)
+  BarotropicQG.updatevars!(prob)
+
+  energyzeta0 = FourierFlows.BarotropicQG.energy(prob)
+  enstrophyzeta0 = FourierFlows.BarotropicQG.enstrophy(prob)
+
+  isapprox(energyzeta0, 29.0/9, rtol=1e-13) && isapprox(enstrophyzeta0, 2701.0/162, rtol=1e-13)
+end
+
+function testenergyenstrophy00()
+  nx, Lx  = 64, 2π
+  ny, Ly  = 64, 3π
+  g  = TwoDGrid(nx, Lx, ny, Ly)
+  k0 = g.k[2] # fundamental wavenumber
+  l0 = g.l[2] # fundamental wavenumber
+  x, y = g.X, g.Y
+
+  beta = 10.0
+  U = 1.2
+
+  prob = BarotropicQG.InitialValueProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, beta=beta, stepper="ForwardEuler")
+  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
+
+  BarotropicQG.set_U!(prob, U)
+  BarotropicQG.updatevars!(prob)
+
+  energyU = FourierFlows.BarotropicQG.energy00(prob)
+  enstrophyU = FourierFlows.BarotropicQG.enstrophy00(prob)
+
+  isapprox(energyU, 0.5*U^2, rtol=1e-13) && isapprox(enstrophyU, beta*U, rtol=1e-13)
+end
+
 # -----------------------------------------------------------------------------
 # Running the tests
 
 nx  = 64
-ν  = 0.0
-νn = 2
 
 f0 = 1.0
  β = 2.0
 Lx = 2π
- μ = 0.0
+ mu = 0.0
+ nu = 0.0
+nnu = 2
 
 η(x,y) = zeros(nx, nx)
 
 g  = BarotropicQG.Grid(nx, Lx)
-p  = BarotropicQG.Params(g, f0, β, η, μ, ν, νn)
+p  = BarotropicQG.Params(g, f0, β, η, mu, nu, nnu)
 v  = BarotropicQG.Vars(g)
 eq = BarotropicQG.Equation(p, g)
 
@@ -237,3 +283,5 @@ dt, nsteps  = 1e-4, 2000
 
 @test testnonlineartermsQGPV(0.0005, "ForwardEuler")
 @test testnonlineartermsU(0.01, "ForwardEuler")
+
+@test testenergyenstrophy()
