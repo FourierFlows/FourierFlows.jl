@@ -46,6 +46,7 @@ function Problem(; nx=256, Lx=2π, ny=nx, Ly=Lx, f0 = 1.0, beta=0.0, eta=nothing
     if typeof(eta)!=Array{Float64,2} #this is true if eta was passes in Problem as a function
       pr = BarotropicQG.Params(g, f0, beta, eta, mu, nu, nnu)
     else
+      etah = rfft(eta)
       pr = BarotropicQG.Params(f0, beta, eta, etah, mu, nu, nnu)
     end
     vs = BarotropicQG.Vars(g)
@@ -267,14 +268,12 @@ updatevars!(prob) = updatevars!(prob.state, prob.vars, prob.params, prob.grid)
 
 """
     set_zeta!(prob, zeta)
-    set_q!(s, v, g, zeta)
+    set_zeta!(s, v, g, zeta)
 
 Set the solution s.sol as the transform of zeta and update variables v
 on the grid g.
 """
-function set_zeta!(s, v, p, g, zeta)
-  #zeta = similar(v.u)
-
+function set_zeta!(s, v::Vars, p, g, zeta)
   A_mul_B!(v.zetah, g.rfftplan, zeta)
   v.zetah[1, 1] = 0.0
   @. s.sol = v.zetah
@@ -283,7 +282,32 @@ function set_zeta!(s, v, p, g, zeta)
   nothing
 end
 
+function set_zeta!(s, v::ForcedVars, p, g, zeta)
+  v.U = deepcopy(s.sol[1, 1])
+  A_mul_B!(v.zetah, g.rfftplan, zeta)
+  v.zetah[1, 1] = 0.0
+  @. s.sol = v.zetah
+  s.sol[1, 1] = v.U
+
+  updatevars!(s, v, p, g)
+  nothing
+end
+
 set_zeta!(prob::AbstractProblem, zeta) = set_zeta!(prob.state, prob.vars, prob.params, prob.grid, zeta)
+
+"""
+    set_U!(prob, U)
+    set_U!(s, v, g, U)
+
+Set the (kx,ky)=(0,0) part of solution s.sol as the domain-average zonal flow U.
+"""
+function set_U!(s, v, p, g, U::Float64)
+  s.sol[1, 1] = U
+  updatevars!(s, v, p, g)
+  nothing
+end
+
+set_U!(prob::AbstractProblem, U::Float64) = set_U!(prob.state, prob.vars, prob.params, prob.grid, U)
 
 
 """
@@ -300,15 +324,20 @@ end
 Returns the domain-averaged enstrophy.
 """
 function enstrophy(prob)
-  s, g = prob.state, prob.grid
-  0.5*FourierFlows.parsevalsum2(s.sol, g)/(g.Lx*g.Ly)
+  s, v, g = prob.state, prob.vars, prob.grid
+  @. v.uh = s.sol
+  v.uh[1, 1] = 0
+  0.5*FourierFlows.parsevalsum2(v.uh, g)/(g.Lx*g.Ly)      
 end
 
 """
-Returns the domain-averaged enstrophy.
+Returns the energy of the domain-averaged U.
 """
-U00(prob) = real(s.sol[1, 1])
 energy00(prob) = real(0.5*prob.state.sol[1, 1].^2)
+
+"""
+Returns the enstrophy of the domain-averaged U.
+"""
 enstrophy00(prob) = real(prob.params.beta*prob.state.sol[1, 1])
 
 """

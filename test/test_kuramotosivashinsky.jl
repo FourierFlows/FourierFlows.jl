@@ -1,19 +1,19 @@
-using FourierFlows, FourierFlows.KuramotoSivashinsky
+import FourierFlows.KuramotoSivashinsky
 
 function growingwavetest()
   nx, Lx = 256, 4π
   dt, nt = 1e-6, 100
-  prob = InitialValueProblem(nx=nx, Lx=Lx, dt=dt, stepper="FilteredETDRK4")
+  prob = KuramotoSivashinsky.InitialValueProblem(nx=nx, Lx=Lx, dt=dt, stepper="FilteredETDRK4")
   x = prob.grid.x
 
   # Initial condition
   a = 1e-4
   u0 = @. a*cos(x/2)
   ua(x, t) = a*exp(3t/16)*cos(x/2) + a^2*2/3*(exp(3t/8)-1)*sin(x)
-  set_u!(prob, u0)
+  KuramotoSivashinsky.set_u!(prob, u0)
 
   stepforward!(prob, nt)
-  updatevars!(prob)
+  KuramotoSivashinsky.updatevars!(prob)
   u, t = prob.vars.u, prob.t
 
   arbitraryerror = 1e-14 # what is an appropriate error?

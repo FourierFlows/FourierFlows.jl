@@ -49,7 +49,7 @@ function stochasticforcingbudgetstest(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, m
 
   function calcF!(F, sol, t, s, v, p, g)
     eta = exp.(2π*im*rand(size(sol)))/sqrt(s.dt)
-    eta[1, 1] = 0
+    eta[1, 1] = 0.0
     @. F = eta .* sqrt(force2k)
     nothing
   end
@@ -67,7 +67,6 @@ function stochasticforcingbudgetstest(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, m
   diags = [E, D, W, R]
 
   # Step forward
-
   stepforward!(prob, diags, round(Int, nt))
 
   TwoDTurb.updatevars!(prob)
@@ -146,7 +145,32 @@ function testnonlinearterms(dt, stepper; n=128, L=2π, nu=1e-2, nnu=1, mu=0.0, n
   isapprox(v.q, qf, rtol=1e-13)
 end
 
+function testenergyenstrophy()
+  nx, Lx  = 128, 2π
+  ny, Ly  = 128, 3π
+  g  = TwoDGrid(nx, Lx, ny, Ly)
+  k0 = g.k[2] # fundamental wavenumber
+  l0 = g.l[2] # fundamental wavenumber
+  x, y = g.X, g.Y
+
+  psi0 = @. sin(2*k0*x)*cos(2*l0*y) + 2sin(k0*x)*cos(3*l0*y)
+    q0 = @. -((2*k0)^2+(2*l0)^2)*sin(2*k0*x)*cos(2*l0*y) - (k0^2+(3*l0)^2)*2sin(k0*x)*cos(3*l0*y)
+
+  prob = TwoDTurb.InitialValueProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, stepper="ForwardEuler")
+  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
+  TwoDTurb.set_q!(prob, q0)
+  TwoDTurb.updatevars!(prob)
+
+  energyq0 = FourierFlows.TwoDTurb.energy(prob)
+  enstrophyq0 = FourierFlows.TwoDTurb.enstrophy(prob)
+
+  isapprox(energyq0, 29.0/9, rtol=1e-13) && isapprox(enstrophyq0, 2701.0/162, rtol=1e-13)
+end
+
+
+
 # Run the tests
 @test testnonlinearterms(0.0005, "ForwardEuler")
 @test lambdipoletest(256, 1e-3)
 @test stochasticforcingbudgetstest()
+@test testenergyenstrophy()

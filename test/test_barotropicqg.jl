@@ -3,32 +3,46 @@ import FourierFlows.BarotropicQG
 # -----------------------------------------------------------------------------
 # BAROQG's TEST FUNCTIONS
 
-""" Test that the time-stepper is not doing anything wild by evolving a random
-initial condition for dt=1e-16 looking at relative error of the norm. """
-function test_baroQG_RossbyWave(stepper, dt, nsteps, g, p, v, eq)
+"""
+    test_baroQG_RossbyWave(; kwargs...)
 
-    ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
-    prob = FourierFlows.Problem(g, v, p, eq, ts)
+Evolvesa a Rossby wave and compares with the analytic solution.
+"""
+function test_baroQG_RossbyWave(stepper, dt, nsteps)
+    nx = 64
+  beta = 2.0
+    Lx = 2π
+    mu = 0.0
+    nu = 0.0
 
-    s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
+  # the following if statement is called so that all the cases of
+  # Problem() fuction are tested
+  if stepper=="ForwardEuler"
+    eta = zeros(nx, nx)
+  else
+    eta(x, y) = 0*x
+  end
 
-    # the Rossby wave initial condition
-     ampl = 1e-2
-    kwave = 3.0*2π/g.Lx
-    lwave = 2.0*2π/g.Ly
-        ω = -p.beta*kwave/(kwave^2.0 + lwave^2.0)
-       ζ0 = ampl*cos.(kwave*g.X).*cos.(lwave*g.Y)
-      ζ0h = rfft(ζ0)
+  prob = BarotropicQG.InitialValueProblem(nx=nx, Lx=Lx, eta=eta, beta=beta, mu=mu, nu=nu, stepper=stepper, dt=dt)
+  s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
 
-    BarotropicQG.set_zeta!(prob, ζ0)
+  # the Rossby wave initial condition
+   ampl = 1e-2
+  kwave = 3.0*2π/g.Lx
+  lwave = 2.0*2π/g.Ly
+      ω = -p.beta*kwave/(kwave^2.0 + lwave^2.0)
+     ζ0 = ampl*cos.(kwave*g.X).*cos.(lwave*g.Y)
+    ζ0h = rfft(ζ0)
 
-    stepforward!(prob, nsteps)
-    dealias!(s.sol, g)
-    BarotropicQG.updatevars!(prob)
+  BarotropicQG.set_zeta!(prob, ζ0)
 
-    ζ_theory = ampl*cos.(kwave*(g.X-ω/kwave*s.t)).*cos.(lwave*g.Y)
+  stepforward!(prob, nsteps)
+  dealias!(s.sol, g)
+  BarotropicQG.updatevars!(prob)
 
-    isapprox(ζ_theory, v.zeta, rtol=g.nx*g.ny*nsteps*1e-12)
+  ζ_theory = ampl*cos.(kwave*(g.X-ω/kwave*s.t)).*cos.(lwave*g.Y)
+
+  isapprox(ζ_theory, v.zeta, rtol=g.nx*g.ny*nsteps*1e-12)
 end
 
 """
@@ -36,7 +50,6 @@ end
 
 Tests if the energy budgets are closed for BarotropicQG with stochastic forcing.
 """
-
 function test_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, mu=1e-1, message=false)
   n, L  = 256, 2π
   nu, nnu = 1e-7, 2
@@ -190,50 +203,96 @@ function testnonlineartermsU(dt, stepper; n=128, L=2π, nu=0.0, nnu=1, mu=0.0, m
   isapprox(prob.ts.N[1, 1], answer, rtol=1e-13)
 end
 
+function testenergyenstrophy()
+  nx, Lx  = 64, 2π
+  ny, Ly  = 64, 3π
+  g  = TwoDGrid(nx, Lx, ny, Ly)
+  k0 = g.k[2] # fundamental wavenumber
+  l0 = g.l[2] # fundamental wavenumber
+  x, y = g.X, g.Y
+
+    eta = @. cos(10*k0*x)*cos(10*l0*y)
+   psi0 = @. sin(2*k0*x)*cos(2*l0*y) + 2sin(k0*x)*cos(3*l0*y)
+  zeta0 = @. -((2*k0)^2+(2*l0)^2)*sin(2*k0*x)*cos(2*l0*y) - (k0^2+(3*l0)^2)*2sin(k0*x)*cos(3*l0*y)
+
+  prob = BarotropicQG.InitialValueProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, eta = eta, stepper="ForwardEuler")
+  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
+  BarotropicQG.set_zeta!(prob, zeta0)
+  BarotropicQG.updatevars!(prob)
+
+  energyzeta0 = FourierFlows.BarotropicQG.energy(prob)
+  enstrophyzeta0 = FourierFlows.BarotropicQG.enstrophy(prob)
+
+  isapprox(energyzeta0, 29.0/9, rtol=1e-13) && isapprox(enstrophyzeta0, 2701.0/162, rtol=1e-13)
+end
+
+function testenergyenstrophy00()
+  nx, Lx  = 64, 2π
+  ny, Ly  = 96, 3π
+  g  = TwoDGrid(nx, Lx, ny, Ly)
+  k0 = g.k[2] # fundamental wavenumber
+  l0 = g.l[2] # fundamental wavenumber
+  x, y = g.X, g.Y
+
+  calcFU(t) = 0.0
+  eta(x, y) = cos.(10x).*cos.(10y)
+  psi0 = @. sin(2*k0*x)*cos(2*l0*y) + 2sin(k0*x)*cos(3*l0*y)
+ zeta0 = @. -((2*k0)^2+(2*l0)^2)*sin(2*k0*x)*cos(2*l0*y) - (k0^2+(3*l0)^2)*2sin(k0*x)*cos(3*l0*y)
+  beta = 10.0
+  U = 1.2
+
+  prob = BarotropicQG.ForcedProblem(nx=nx, Lx=Lx, ny=ny, Ly=Ly, beta=beta, eta=eta, calcFU = calcFU, stepper="ForwardEuler")
+  s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts
+
+  BarotropicQG.set_zeta!(prob, zeta0)
+  BarotropicQG.set_U!(prob, U)
+  BarotropicQG.updatevars!(prob)
+
+  energyU = FourierFlows.BarotropicQG.energy00(prob)
+  enstrophyU = FourierFlows.BarotropicQG.enstrophy00(prob)
+
+  energyzeta0 = FourierFlows.BarotropicQG.energy(prob)
+  enstrophyzeta0 = FourierFlows.BarotropicQG.enstrophy(prob)
+
+  (isapprox(energyU, 0.5*U^2, rtol=1e-13) &&
+    isapprox(enstrophyU, beta*U, rtol=1e-13) &&
+    isapprox(energyzeta0, 29.0/9, rtol=1e-13) &&
+    isapprox(enstrophyzeta0, 2701.0/162, rtol=1e-13)
+  )
+end
+
 # -----------------------------------------------------------------------------
 # Running the tests
 
-nx  = 64
-ν  = 0.0
-νn = 2
 
-f0 = 1.0
- β = 2.0
-Lx = 2π
- μ = 0.0
+dt, nsteps, stepper  = 1e-2, 20, "ETDRK4"
+@test test_baroQG_RossbyWave("ETDRK4", dt, nsteps)
 
-η(x,y) = zeros(nx, nx)
-
-g  = BarotropicQG.Grid(nx, Lx)
-p  = BarotropicQG.Params(g, f0, β, η, μ, ν, νn)
-v  = BarotropicQG.Vars(g)
-eq = BarotropicQG.Equation(p, g)
+dt, nsteps  = 1e-2, 20;
+@test test_baroQG_RossbyWave("FilteredETDRK4", dt, nsteps)
 
 dt, nsteps  = 1e-2, 20
-@test test_baroQG_RossbyWave("ETDRK4", dt, nsteps, g, p, v, eq)
+@test test_baroQG_RossbyWave("RK4", dt, nsteps)
 
 dt, nsteps  = 1e-2, 20
-@test test_baroQG_RossbyWave("FilteredETDRK4", dt, nsteps, g, p, v, eq)
-
-dt, nsteps  = 1e-2, 20
-@test test_baroQG_RossbyWave("RK4", dt, nsteps, g, p, v, eq)
-
-dt, nsteps  =1e-2, 20
-@test test_baroQG_RossbyWave("FilteredRK4", dt, nsteps, g, p, v, eq)
+@test test_baroQG_RossbyWave("FilteredRK4", dt, nsteps)
 
 dt, nsteps  = 1e-3, 200
-@test test_baroQG_RossbyWave("AB3", dt, nsteps, g, p, v, eq)
+@test test_baroQG_RossbyWave("AB3", dt, nsteps)
 
 dt, nsteps  = 1e-3, 200
-@test test_baroQG_RossbyWave("FilteredAB3", dt, nsteps, g, p, v, eq)
+@test test_baroQG_RossbyWave("FilteredAB3", dt, nsteps)
 
 dt, nsteps  = 1e-4, 2000
-@test test_baroQG_RossbyWave("ForwardEuler", dt, nsteps, g, p, v, eq)
+@test test_baroQG_RossbyWave("ForwardEuler", dt, nsteps)
 
 dt, nsteps  = 1e-4, 2000
-@test test_baroQG_RossbyWave("FilteredForwardEuler", dt, nsteps, g, p, v, eq)
+@test test_baroQG_RossbyWave("FilteredForwardEuler", dt, nsteps)
 
 @test test_stochasticforcingbudgets()
 
 @test testnonlineartermsQGPV(0.0005, "ForwardEuler")
 @test testnonlineartermsU(0.01, "ForwardEuler")
+
+@test testenergyenstrophy()
+@test testenergyenstrophy00()
