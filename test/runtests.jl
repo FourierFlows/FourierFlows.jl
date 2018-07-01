@@ -30,6 +30,10 @@ end
   include("test_timesteppers.jl")
 end
 
+@testset "Diagnostics tests" begin
+  include("test_diagnostics.jl")
+end
+
 
 println("-- Physics tests --")
 
