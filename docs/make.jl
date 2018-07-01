@@ -7,6 +7,7 @@ makedocs(
      pages = Any[
               "Home" => "index.md",
               "Code Basics" => "basics.md",
+              "Forcing" => "forcing.md",
               "Modules" => Any[
                 "modules/kuramotosivashinsky.md",
                 "modules/twodturb.md",
