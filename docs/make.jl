@@ -2,7 +2,9 @@ using Documenter, FourierFlows
 
 makedocs(
    modules = [FourierFlows],
+   doctest = false, clean = true,
     format = :html,
+   authors = "Gregory L. Wagner and Navid C. Constantinou",
   sitename = "FourierFlows.jl",
      pages = Any[
               "Home" => "index.md",

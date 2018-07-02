@@ -211,7 +211,7 @@ How do we time-step this SDE numerically? Let us assume a discretization of time
 Now let us ask the following question: How can we compute the work done by the noise? In other words, if we are interested in the evolution of the "energy" $E\defn \half x^2$, how is the noise term attributing in the growth of $E$? To answer that we first have to find the SDE that energy $E$ obeys. But, in doing so, it is important to adopt a single interpretation for computing stochastic integrals as now a transformation of variables is needed. That is, depending on whether we choose to interpret the stochastic integrals according to Itô or to Stratonovich calculus, $E$ evolves as:
 
 \begin{equation}
-{\color{Green}\text{Itô}:  \dd E_t  = \left( -2\mu E_t + \frac{1}{2} \sigma \right)\dd t  + x_t \sqrt{\sigma}\dd W_t}\com\label{eq:E_ito}
+{\color{Green}\text{Itô}:  \dd E_t  = \left( -2\mu E_t + \half \sigma \right)\dd t  + x_t \sqrt{\sigma}\dd W_t}\com\label{eq:E_ito}
 \end{equation}
 
 \begin{equation}
@@ -353,25 +353,37 @@ which implies
 
 Thus, the drift, or in this case the mean energy input rate by the stochastic forcing, is precisely determined from the spatial correlation of the forcing. Let us denote:
 
-\begin{equation}
+```math
 \varepsilon \defn \int \frac{\dd^2\bk}{(2\pi)^2} \frac{\widehat{Q}(\bk)}{2k^2}\per\label{eq:def_epsilon}
-\end{equation}
+```
 
 Therefore, work for a single forcing realization is computed numerically as:
 
 ```math
-{\color{Green}\text{Itô}: P_j  =  -\overline{ \psi(\bx,t_j) \xi(\bx,t_{j+1}) }^{x,y}  + \varepsilon}\com\\
-{\color{Purple}\text{Stranotovich}: P_j = -\overline{\frac{\psi(\bx,t_j)+\psi(\bx,t_{j+1})}{2}  \xi(\bx,t_{j+1}) }^{x,y}}\per
+\begin{align}
+{\color{Green}\text{Itô}}&: {\color{Green} P_j  =  -\overline{ \psi(\bx,t_j) \xi(\bx,t_{j+1}) }^{x,y}  + \varepsilon}\com\\
+{\color{Purple}\text{Stranotovich}} &: {\color{Purple}P_j = -\overline{\frac{\psi(\bx,t_j)+\psi(\bx,t_{j+1})}{2}  \xi(\bx,t_{j+1}) }^{x,y}}\per \label{eq:PtStrat}
+\end{align}
 ```
 
 Remember, previously the work done by the stochastic forcing was:
-\begin{equation}
-\dd P_t = \frac{\sigma}{2}\dd t + \sqrt{\sigma}x_t\dd W_t = \sqrt{\sigma} x_t\circ\dd W_t
-\end{equation}
-and sampling over various forcing realizations:
-\begin{equation}
+```math
+\dd P_t = {\color{Green}\frac{\sigma}{2}\dd t + \sqrt{\sigma}x_t\dd W_t} = {\color{Purple}\sqrt{\sigma} x_t\circ\dd W_t}\com
+```
+and by sampling over various forcing realizations:
+```math
 \langle \dd P_t\rangle = \frac{\sigma}{2}\dd t = \langle\sqrt{\sigma} x_t\circ\dd W_t\rangle
-\end{equation}
+```
+
+The code uses {\color{Purple}Stratonovich}. For example, the work in the `TwoDTurb` module is computed based on \eqref{eq:PtStrat} with the function
+
+```julia
+@inline function work(s, v::ForcedVars, g)
+  @. v.Uh = g.invKKrsq * (v.prevsol + s.sol)/2.0 * conj(v.Fh)
+  1/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uh, g)
+end
+```
+
 
 
 ## A bit-less-simple SPDE
