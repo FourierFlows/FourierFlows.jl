@@ -1,3 +1,16 @@
+# Forcing
+
+The code implements forcing in various modules (currently in `TwoDTurb` and `BarotropicQG`). Forcing can be either deterministic or stochastic (random). For deterministic forcing the implementation is straightforward; for stochastic forcing there are two main train of thoughts: Itô calculus and Stratonovich calculus.
+
+Both stochastic calculi give the same results. But once we decide to use one of the two calculi we have to remain consistent and use that calculus for everywhere. There is a lot of confusion and mostly the confusion stems from not using the same stochastic calculus consistently throughout the computation but rather interchanging between the two.
+
+`FourierFlows` uses Stratonovich calculus throughout the code. This choise was made because Stratonovich calculus works the same with both stochastic and deterministic forcing, i.e. with Stratonovich calculus we have the same chain rules for differentiation for stochastic functions as the chain rules we learn in normal-deterministic calculus). Therefore, the code written as is does not really "care" of what forcing the user implements.
+
+If you are interested in learning more regarding the two stochastic calculi and how they are numerically implemented then read on; otherwise you can skip this section of the documentation and go to the Module Tutorials.
+
+
+
+
 ```math
 \newcommand{\sqr}{\mbox{sqr}}
 \newcommand{\saw}{\mbox{saw}}
@@ -114,17 +127,6 @@
 \newcommand{\bit}{\vphantom{\dot{W}}}
 \newcommand{\sd}{b}
 ```
-
-
-# Forcing
-
-The code implements forcing in various modules (currently in `TwoDTurb` and `BarotropicQG`). Forcing can be either deterministic or stochastic (random). For deterministic forcing the implementation is straightforward; for stochastic forcing there are two main train of thoughts: Itô calculus and Stratonovich calculus.
-
-Both stochastic calculi give the same results. But once we decide to use one of the two calculi we have to remain consistent and use that calculus for everywhere. There is a lot of confusion and mostly the confusion stems from not using the same stochastic calculus consistently throughout the computation but rather interchanging between the two.
-
-`FourierFlows` uses Stratonovich calculus throughout the code. This choise was made because Stratonovich calculus works the same with both stochastic and deterministic forcing, i.e. with Stratonovich calculus we have the same chain rules for differentiation for stochastic functions as the chain rules we learn in normal-deterministic calculus). Therefore, the code written as is does not really "care" of what forcing the user implements.
-
-If you are interested in learning more regarding the two stochastic calculi and how they are numerically implemented then read on; otherwise you can skip this section of the documentation and go to the Module Tutorials.
 
 
 ## Stochastic Differential Equations (SDEs)
