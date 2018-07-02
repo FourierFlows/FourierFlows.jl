@@ -118,6 +118,14 @@ FourierFlows is currently being developed by [Gregory L. Wagner][] (@glwagner)
 and [Navid C. Constantinou][] (@navidcy).
 
 
+## Cite
+
+The code is citable via [zenodo](https://zenodo.org). Please cite as:
+
+> Gregory L. Wagner & Navid C. Constantinou. (2018). FourierFlows/FourierFlows.jl: FourierFlows v0.1.1 (Version v0.1.1). Zenodo.  [http://doi.org/10.5281/zenodo.1302136](http://doi.org/10.5281/zenodo.1302136)
+
+
+
 [Julia]: https://julialang.org/
 [ParallelAccelerator]: https://github.com/IntelLabs/ParallelAccelerator.jl
 [Navid C. Constantinou]: http://www.navidconstantinou.com
