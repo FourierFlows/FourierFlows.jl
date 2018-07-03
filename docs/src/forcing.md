@@ -406,7 +406,7 @@ Figure below shows the energy budgets for a numerical solution of \eqref{eq:PDEc
 \widehat{Q}(\bk)\propto \ee^{-(|\bk|-k_f)^2/(2\delta_f^2)}\com
 ```
 
-with $k_f L/(2\pi) = 12$ and $\delta_f L/(2\pi) = 2$. The mean energy input rate was set to $\varepsilon = 0.1$ (cf. \eqref{eq:def_epsilon}).
+with $k_f L/(2\pi) = 12$ and $\delta_f L/(2\pi) = 2$. The mean energy input rate was set to $\varepsilon = 0.1$.
 
 
 ![energy_budgets_SPDE_Stratonovich](assets/energy_budgets_SPDE_Stratonovich.png)
