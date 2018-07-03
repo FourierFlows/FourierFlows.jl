@@ -156,7 +156,7 @@ Of course now, the last integral is a stochastic integral and there is not a sin
 {\color{Magenta}\text{Stranotovich}: \int_{t_0}^{t} g(x(s))\,\dd W_s \approx \sum_{j} g\left(x\left(\half(t_j+t_{j+1})\right)\right)(W_{j+1}-W_j)}\per
 ```
 
-Because the white noise process is not continuous the two definitions do not converge to the same result; the two different definitions give thoroughly different results. And to overcome that they come along with different chain rules, i.e., chain rules that are not necessarily the same as those in plain old calculus.
+Because the white noise process is not continuous the two definitions do not converge to the same result; the two definitions give thoroughly different results. And to overcome that they come along with different chain rules, i.e., chain rules that are not necessarily the same as those in plain old calculus.
 
 An SDE can be written also in differential form. Because we cannot formally form $\dd W/\dd t$, since $W$ is nowhere differentiable, we write an SDE in differential form as:
 
@@ -279,7 +279,7 @@ Figure above shows a comparison of the energy evolution as done from:
 - time-integration of \eqref{eq:E_ito}, and
 - time-integration of \eqref{eq:E_str}.
 
-Figures below show the ensemble mean energy budgets for as computed using Itô and Stratonovich. For the energy budget to close we have to be consistent: if we time-step the energy equation based on Stratonovich calculus then we must compute the work also according to Stratonovich.
+Figures below show the ensemble mean energy budgets (using 1000 ensemble members) as computed using Itô and Stratonovich. For the energy budget to close we have to be consistent: if we time-step the energy equation based on Stratonovich calculus then we must compute the work also according to Stratonovich.
 
 ![energy_budgets_Ito](assets/energy_budgets_Ito.png)
 ![energy_budgets_Stratonovich](assets/energy_budgets_Stratonovich.png)
