@@ -362,20 +362,20 @@ Therefore, work for a single forcing realization is computed numerically as:
 ```math
 \begin{align}
 {\color{Green}\text{Itô}}&: {\color{Green} P_j  =  -\overline{ \psi(\bx,t_j) \xi(\bx,t_{j+1}) }^{x,y}  + \varepsilon}\com\\
-{\color{Purple}\text{Stratonovich}} &: {\color{Purple}P_j = -\overline{\frac{\psi(\bx,t_j)+\psi(\bx,t_{j+1})}{2}  \xi(\bx,t_{j+1}) }^{x,y}}\per \label{eq:PtStrat}
+{\color{Magenta}\text{Stratonovich}} &: {\color{Magenta}P_j = -\overline{\frac{\psi(\bx,t_j)+\psi(\bx,t_{j+1})}{2}  \xi(\bx,t_{j+1}) }^{x,y}}\per \label{eq:PtStrat}
 \end{align}
 ```
 
 Remember, previously the work done by the stochastic forcing was:
 ```math
-\dd P_t = {\color{Green}\frac{\sigma}{2}\dd t + \sqrt{\sigma}x_t\dd W_t} = {\color{Purple}\sqrt{\sigma} x_t\circ\dd W_t}\com
+\dd P_t = {\color{Green}\frac{\sigma}{2}\dd t + \sqrt{\sigma}x_t\dd W_t} = {\color{Magenta}\sqrt{\sigma} x_t\circ\dd W_t}\com
 ```
 and by sampling over various forcing realizations:
 ```math
 \langle \dd P_t\rangle = \frac{\sigma}{2}\dd t = \langle\sqrt{\sigma} x_t\circ\dd W_t\rangle
 ```
 
-The code uses {\color{Purple}Stratonovich}. For example, the work in the `TwoDTurb` module is computed based on \eqref{eq:PtStrat} with the function
+The code uses Stratonovich. For example, the work done by the forcing in the `TwoDTurb` module is computed based on \eqref{eq:PtStrat} with the function
 
 ```julia
 @inline function work(s, v::ForcedVars, g)
