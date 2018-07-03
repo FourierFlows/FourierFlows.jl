@@ -153,7 +153,7 @@ Of course now, the last integral is a stochastic integral and there is not a sin
 
 ```math
 {\color{Green}\text{Itô}: \int_{t_0}^{t} g(x(s))\,\dd W_s\approx\sum_{j} g\left(x(t_j)\right)(W_{j+1}-W_j)}\com\\
-{\color{Magenta}\text{Stranotovich}: \int_{t_0}^{t} g(x(s))\,\dd W_s \approx \sum_{j} g\left(x\left(\half(t_j+t_{j+1})\right)\right)(W_{j+1}-W_j)}\per
+{\color{Magenta}\text{Stratonovich}: \int_{t_0}^{t} g(x(s))\,\dd W_s \approx \sum_{j} g\left(x\left(\half(t_j+t_{j+1})\right)\right)(W_{j+1}-W_j)}\per
 ```
 
 Because the white noise process is not continuous the two definitions do not converge to the same result; the two definitions give thoroughly different results. And to overcome that they come along with different chain rules, i.e., chain rules that are not necessarily the same as those in plain old calculus.
@@ -162,7 +162,7 @@ An SDE can be written also in differential form. Because we cannot formally form
 
 ```math
 {\color{Green}\text{Itô}: \dd x_t = f(x_t)\dd t + g(x_t)\dd W_t}\com\\
-{\color{Magenta}\text{Stranotovich}: \dd x_t = f(x_t)\dd t + g(x_t)\circ\dd W_t\per}
+{\color{Magenta}\text{Stratonovich}: \dd x_t = f(x_t)\dd t + g(x_t)\circ\dd W_t\per}
 ```
 
 The circle in $g(x_t)\circ\dd W_t$ is used to differentiate between Itô or Stratonovich calculus.
@@ -171,7 +171,7 @@ A variable change $y=G(x)$ is done as follows according to the two different cal
 
 ```math
 {\color{Green}\text{Itô}: \dd y_t = \frac{\dd G}{\dd x}\dd x_t + \half g(x_t)^2 \frac{\dd^2 G}{\dd x^2}\dd t =\left[ \frac{\dd G}{\dd x}f(x_t) + \half g(x_t)^2 \frac{\dd^2 G}{\dd x^2}\right]\dd t + \frac{\dd G}{\dd x}g(x_t)\dd W_t}\com\\
-{\color{Magenta}\text{Stranotovich}: \dd y_t  = \frac{\dd G}{\dd x}\dd x_t =\frac{\dd G}{\dd x} f(x_t) \dd t + \frac{\dd G}{\dd x}g(x_t)\dd W_t}\per
+{\color{Magenta}\text{Stratonovich}: \dd y_t  = \frac{\dd G}{\dd x}\dd x_t =\frac{\dd G}{\dd x} f(x_t) \dd t + \frac{\dd G}{\dd x}g(x_t)\dd W_t}\per
 ```
 
 The above are the so called *stochastic chain rules*. All derivatives of $G$ are evaluated at $x_t$.
@@ -185,7 +185,7 @@ The above is demonstrated by evaluating the simple stochastic integral:
 ```math
 {\color{Green}\text{Itô}: \laa \int_{t_0}^{t} W_s\,\dd W_s \raa \approx\sum_{j} \laa W_j(W_{j+1}-W_j)\raa}\\
 {\color{Green}\hspace{7.3em} = \sum_{j} \laa W_j W_{j+1}\raa - \laa W_jW_j\raa \sim \sum_{j} t_j - t_j = 0} \com\\
-{\color{Magenta}\text{Stranotovich}: \laa\int_{t_0}^{t} W_s\circ\dd W_s\raa \approx \sum_{j} \laa \frac1{2}(W_{j} + W_{j+1}) (W_{j+1}-W_j)\raa }\\
+{\color{Magenta}\text{Stratonovich}: \laa\int_{t_0}^{t} W_s\circ\dd W_s\raa \approx \sum_{j} \laa \frac1{2}(W_{j} + W_{j+1}) (W_{j+1}-W_j)\raa }\\
 {\color{Magenta}\hspace{7.3em} = \frac1{2}\sum_{j} \laa W_{j+1} W_{j+1}\raa - \laa W_{j} W_{j}\raa  \sim \frac1{2}\sum_{j} t_{j+1} - t_j = \frac{t}{2}}\per
 ```
 
@@ -362,7 +362,7 @@ Therefore, work for a single forcing realization is computed numerically as:
 ```math
 \begin{align}
 {\color{Green}\text{Itô}}&: {\color{Green} P_j  =  -\overline{ \psi(\bx,t_j) \xi(\bx,t_{j+1}) }^{x,y}  + \varepsilon}\com\\
-{\color{Purple}\text{Stranotovich}} &: {\color{Purple}P_j = -\overline{\frac{\psi(\bx,t_j)+\psi(\bx,t_{j+1})}{2}  \xi(\bx,t_{j+1}) }^{x,y}}\per \label{eq:PtStrat}
+{\color{Purple}\text{Stratonovich}} &: {\color{Purple}P_j = -\overline{\frac{\psi(\bx,t_j)+\psi(\bx,t_{j+1})}{2}  \xi(\bx,t_{j+1}) }^{x,y}}\per \label{eq:PtStrat}
 \end{align}
 ```
 
