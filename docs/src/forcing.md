@@ -279,7 +279,7 @@ Figure above shows a comparison of the energy evolution as done from:
 - time-integration of \eqref{eq:E_ito}, and
 - time-integration of \eqref{eq:E_str}.
 
-Figures below show the ensemble mean energy budgets (using 1000 ensemble members) as computed using Itô and Stratonovich. For the energy budget to close we have to be consistent: if we time-step the energy equation based on Stratonovich calculus then we must compute the work also according to Stratonovich.
+Figures below show the ensemble mean energy budgets (using 1000 ensemble members) as computed using Itô and Stratonovich. For the energy budget to close we have to be consistent: if we time-step the energy equation based on Stratonovich calculus then we must compute the work also according to Stratonovich. (For more details see `examples/forcing/simpleSDEItoStratonovich.jl`.
 
 ![energy_budgets_Ito](assets/energy_budgets_Ito.png)
 ![energy_budgets_Stratonovich](assets/energy_budgets_Stratonovich.png)
