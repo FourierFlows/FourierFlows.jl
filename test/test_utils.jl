@@ -1,5 +1,6 @@
 # import FourierFlows.TwoDTurb
 
+
 test_fftwavenums() = FourierFlows.fftwavenums(6; L=2π) == [0, 1, 2, 3, -2, -1]
 
 function test_domainaverage(n; xdir=true)
@@ -76,6 +77,36 @@ function test_createarrays(T=Float64, dims=(13, 45))
   a1 == a2 && b1 == b2
 end
 
+abstract type TestVars <: AbstractVars end
+function teststructvarsexpr(g)
+  physicalvars = [:a, :b]
+  transformvars = [ Symbol(var, :h) for var in physicalvars ]
+   forcedvar = [:Fh]
+
+  varspecs = cat(1,
+    FourierFlows.getfieldspecs(physicalvars, :(Array{T,2})),
+    FourierFlows.getfieldspecs(transformvars, :(Array{Complex{T},2})))
+
+  eval(FourierFlows.structvarsexpr(:Vars, varspecs; parent=:TestVars))
+
+  function vars(g)
+    @createarrays typeof(g.Lx) (g.nx, g.ny) a b
+    @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) ah bh
+    Vars(a, b, ah, bh)
+  end
+
+  v = vars(g)
+
+  (
+    typeof(v.a)==Array{Float64,2} &&
+    typeof(v.ah)==Array{Complex{Float64},2} &&
+    size(v.a)==size(v.b) &&
+    size(v.ah)==size(v.bh) &&
+    size(v.a)==(g.nx, g.ny) &&
+    size(v.ah) == (g.nkr, g.nl)
+  )
+end
+
 
 # Run tests -------------------------------------------------------------------
 # Test on a rectangular grid
@@ -115,6 +146,7 @@ Js1s2 = (k1*l2-k2*l1)*cos.(k1*x + l1*y).*cos.(k2*x + l2*y)
 @test test_rms(32)
 @test test_domainaverage(32; xdir=true)
 @test test_domainaverage(32; xdir=false)
+@test teststructvarsexpr(g)
 
 # Radial spectrum tests. Note that ahρ = ∫ ah ρ dθ.
 n = 128; δ = n/10                 # Parameters

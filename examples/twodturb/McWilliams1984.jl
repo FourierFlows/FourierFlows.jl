@@ -30,17 +30,7 @@ g = prob.grid
 # that reproduces the results of the paper by McWilliams (1984)
 srand(1234)
 k0, E0 = 6, 0.5
-modk = sqrt.(g.KKrsq)
-psik = zeros(g.nk, g.nl)
-psik =  (modk.^2 .* (1 + (modk/k0).^4)).^(-0.5)
-psik[1, 1] = 0.0
-psih = (randn(g.nkr, g.nl)+im*randn(g.nkr, g.nl)).*psik
-psih = psih.*prob.ts.filter
-Ein = real(sum(g.KKrsq.*abs2.(psih)/(g.nx*g.ny)^2))
-psih = psih*sqrt(E0/Ein)
-qi = -irfft(g.KKrsq.*psih, g.nx)
-E0 = FourierFlows.parsevalsum(g.KKrsq.*abs2.(psih), g)
-
+qi = FourierFlows.peakedisotropicspectrum(g, k0, E0, mask = prob.ts.filter)
 TwoDTurb.set_q!(prob, qi)
 
 # Create Diagnostic -- "energy" is a function imported at the top.
