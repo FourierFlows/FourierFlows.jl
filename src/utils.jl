@@ -178,18 +178,6 @@ function lambdipole(Ue::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
 end
 
 """
-    gaussianvortex(q0, R, G; center=(x0, y0))
-
-Return a vorticity field with magnitude q0, radius R, and center at
-center[1], center[2] on a TwoDGrid g corresponding to a 'Gaussian vortex' with
-Gaussian streamfunction.
-"""
-function gaussianvortex(q0::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
-  xc, yc = center == (nothing, nothing) ? (mean(g.x), mean(g.y)) : (center[1], center[2])
-  @. q0/R^2*((g.x-xc)^2+(g.y-yc)^2-2*R^2)*exp(-((g.x-xc)^2 + (g.y-yc)^2)/(2*R^2))
-end
-
-"""
     parsevalsum2(uh, g)
 
 Calculate ∫u = Σ|uh|² on a 2D grid, where uh is the Fourier transform of u.

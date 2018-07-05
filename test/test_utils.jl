@@ -151,6 +151,12 @@ s2 = sin.(k2*x + l2*y)
 # Analytical expression for the Jacobian of s1 and s2
 Js1s2 = (k1*l2-k2*l1)*cos.(k1*x + l1*y).*cos.(k2*x + l2*y)
 
+e1 = exp.(im*(k1*x + l1*y))
+e2 = exp.(im*(k2*x + l2*y))
+
+# Analytical expression for the Jacobian of e1 and e2
+Je1e2 = (k2*l1-k1*l2)*exp.(im*((k1+k2)*x + (l1+l2)*y))
+
 @test test_parsevalsum(f1, g; realvalued=true)   # Real valued f with rfft
 @test test_parsevalsum(f1, g; realvalued=false)  # Real valued f with fft
 @test test_parsevalsum(f2, g; realvalued=false)  # Complex valued f with fft
@@ -159,7 +165,8 @@ Js1s2 = (k1*l2-k2*l1)*cos.(k1*x + l1*y).*cos.(k2*x + l2*y)
 @test test_parsevalsum2(f2, g; realvalued=false) # Complex valued f with fft
 
 @test test_jacobian(s1, s1, 0*s1, g)  # Test J(a,a) = 0
-@test test_jacobian(s1, s2, Js1s2, g) # Test J(s1,s2) = Js1s2
+@test test_jacobian(s1, s2, Js1s2, g) # Test J(s1, s2) = Js1s2
+@test test_jacobian(e1, e2, Je1e2, g) # Test J(e1, e2) = Je1e2
 
 @test test_createarrays()
 @test test_fftwavenums()
