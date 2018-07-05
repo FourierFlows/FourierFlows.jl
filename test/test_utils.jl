@@ -1,5 +1,3 @@
-# import FourierFlows.TwoDTurb
-
 
 test_fftwavenums() = FourierFlows.fftwavenums(6; L=2π) == [0, 1, 2, 3, -2, -1]
 
@@ -71,32 +69,53 @@ function test_jacobian(a, b, analytic_answer, grid)
              atol=g.nx*g.ny*1e-14)
 end
 
+"""
+Test the createarrays macro.
+"""
 function test_createarrays(T=Float64, dims=(13, 45))
   a1, b1 = zeros(T, dims), zeros(T, dims)
   FourierFlows.@createarrays T dims a2 b2
   a1 == a2 && b1 == b2
 end
 
+"""
+Test the peakedisotropicspectrum function.
+"""
+function testpeakedisotropicspectrum()
+  n, L = 128, 2π
+  gr = TwoDGrid(n, L)
+  k0, E0 = 6, 0.5
+  qi = FourierFlows.peakedisotropicspectrum(gr, k0, E0; allones=true)
+  ρ, qhρ = FourierFlows.radialspectrum(rfft(qi).*gr.invKKrsq, gr)
+
+  ρtest = ρ[ (ρ.>15.0) .& (ρ.<=17.5)]
+  qhρtest = qhρ[ (ρ.>15.0) .& (ρ.<=17.5)]
+
+  isapprox(abs.(qhρtest)/abs(qhρtest[1]), (ρtest/ρtest[1]).^(-2), rtol=5e-3)
+end
+
+
+
 abstract type TestVars <: AbstractVars end
+
+physicalvars = [:a, :b]
+transformvars = [ Symbol(var, :h) for var in physicalvars ]
+ forcedvar = [:Fh]
+
+varspecs = cat(1,
+  FourierFlows.getfieldspecs(physicalvars, :(Array{T,2})),
+  FourierFlows.getfieldspecs(transformvars, :(Array{Complex{T},2})))
+
+eval(FourierFlows.structvarsexpr(:Vars, varspecs; parent=:TestVars))
+
+function Vars(g)
+  @createarrays typeof(g.Lx) (g.nx, g.ny) a b
+  @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) ah bh
+  Vars(a, b, ah, bh)
+end
+
 function teststructvarsexpr(g)
-  physicalvars = [:a, :b]
-  transformvars = [ Symbol(var, :h) for var in physicalvars ]
-   forcedvar = [:Fh]
-
-  varspecs = cat(1,
-    FourierFlows.getfieldspecs(physicalvars, :(Array{T,2})),
-    FourierFlows.getfieldspecs(transformvars, :(Array{Complex{T},2})))
-
-  eval(FourierFlows.structvarsexpr(:Vars, varspecs; parent=:TestVars))
-
-  function vars(g)
-    @createarrays typeof(g.Lx) (g.nx, g.ny) a b
-    @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) ah bh
-    Vars(a, b, ah, bh)
-  end
-
-  v = vars(g)
-
+  v = Vars(g)
   (
     typeof(v.a)==Array{Float64,2} &&
     typeof(v.ah)==Array{Complex{Float64},2} &&
@@ -109,6 +128,7 @@ end
 
 
 # Run tests -------------------------------------------------------------------
+
 # Test on a rectangular grid
 nx, ny = 64, 128   # number of points
 Lx, Ly = 2π, 3π    # Domain width
@@ -157,3 +177,5 @@ ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) #  a = exp(-ρ²/2δ²)
 ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) * k^2/(k^2+l^2) #  a = exp(-ρ²/2δ²)*cos(θ)²
     ahρ(ρ) = π*ρ*exp(-ρ^2/2δ^2)                   # aᵣ = π ρ exp(-ρ²/2δ²)
 @test test_radialspectrum(n, ahkl, ahρ)
+
+@test testpeakedisotropicspectrum()

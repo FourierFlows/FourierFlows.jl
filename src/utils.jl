@@ -129,13 +129,13 @@ Return the root-mean-square of an array.
 rms(q) = sqrt(mean(q.^2))
 
 """
-    peakedisotropicspectrum(g, kpeak, E0)
+    peakedisotropicspectrum(g, kpeak, E0; mask=mask, allones=false)
 
 Generate a real and random two-dimensional vorticity field q(x, y) with
 a Fourier spectrum peaked around a central non-dimensional wavenumber kpeak and
 normalized so that its total energy is E0.
 """
-function peakedisotropicspectrum(g::TwoDGrid, kpeak::Real, E0::Real; mask=mask)
+function peakedisotropicspectrum(g::TwoDGrid, kpeak::Real, E0::Real; mask=ones(size(g.Kr)), allones=false)
   if g.Lx !== g.Ly
       error("the domain is not square")
   else
@@ -145,6 +145,7 @@ function peakedisotropicspectrum(g::TwoDGrid, kpeak::Real, E0::Real; mask=mask)
     psik =  (modk.^2 .* (1 + (modk/k0).^4)).^(-0.5)
     psik[1, 1] = 0.0
     psih = (randn(g.nkr, g.nl)+im*randn(g.nkr, g.nl)).*psik
+    if allones; psih = psik; end
     psih = psih.*mask
     Ein = real(sum(g.KKrsq.*abs2.(psih)/(g.nx*g.ny)^2))
     psih = psih*sqrt(E0/Ein)
@@ -186,17 +187,6 @@ Gaussian streamfunction.
 function gaussianvortex(q0::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
   xc, yc = center == (nothing, nothing) ? (mean(g.x), mean(g.y)) : (center[1], center[2])
   @. q0/R^2*((g.x-xc)^2+(g.y-yc)^2-2*R^2)*exp(-((g.x-xc)^2 + (g.y-yc)^2)/(2*R^2))
-end
-
-"""
-    rmsrand(g, rmsval)
-
-Return an array of random numbers on a TwoDGrid normalized to have a
-specifed rms value.
-"""
-function rmsrand(g::TwoDGrid, rmsval::Real)
-  q = rand(g.nx, g.ny)
-  q.*rmsval/rms(q)
 end
 
 """
