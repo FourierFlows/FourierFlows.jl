@@ -67,13 +67,7 @@ end
 function structvarsexpr(name, physfields, transfields; vardims=2, parent=:AbstractVars, T=Float64, arraytype=:Array)
   physexprs = [:($fld::$arraytype{T,$vardims}) for fld in physfields]
   transexprs = [:($fld::$arraytype{Complex{T},$vardims}) for fld in transfields]
-  expr = quote
-    struct $name{T} <: $parent
-      $(physexprs...)
-      $(transexprs...)
-    end
-  end
-  expr
+  expr = :(struct $name{T} <: $parent; $(physexprs...); $(transexprs...); end)
 end
 
 """
@@ -81,7 +75,7 @@ end
 
 Returns an expression that defines a composite type whose fields are given by
 the name::type pairs specifed by the tuples in fieldspecs. The convention is
-name = fieldspecs[i][1] and type = fieldspecs[i][2] for the ith element of 
+name = fieldspecs[i][1] and type = fieldspecs[i][2] for the ith element of
 fieldspecs.
 """
 function structvarsexpr(name, fieldspecs; parent=nothing)
@@ -89,17 +83,9 @@ function structvarsexpr(name, fieldspecs; parent=nothing)
   # example: fieldspecs[1] = (:u, Array{Float64,2})
   fieldexprs = [ :( $(spec[1])::$(spec[2]) ) for spec in fieldspecs ]
   if parent == nothing
-    expr = quote
-      struct $name{T}
-        $(fieldexprs...)
-      end
-    end
+    expr = :(struct $name{T}; $(fieldexprs...); end)
   else
-    expr = quote
-      struct $name{T} <: $parent
-        $(fieldexprs...)
-      end
-    end
+    expr = :(struct $name{T} <: $parent; $(fieldexprs...); end)
   end
   expr
 end
@@ -108,12 +94,12 @@ end
 """
     getfieldspecs(fieldnames, fieldtype)
 
-Returns an array of (fieldname[i], fieldtype) tuples that can be given to the 
-function getstructexpr. This function makes it convenient to construct 
+Returns an array of (fieldname[i], fieldtype) tuples that can be given to the
+function getstructexpr. This function makes it convenient to construct
 fieldspecs for lists of variables of the same type.
 """
 getfieldspecs(fieldnames, fieldtype) = collect(zip(fieldnames, [ fieldtype for name in fieldnames ]))
-  
+
 """
     fftwavenums(n; L=1)
 
@@ -129,33 +115,31 @@ Return the root-mean-square of an array.
 rms(q) = sqrt(mean(q.^2))
 
 """
-    peakedisotropicspectrum(nkl, kpeak; order=4, rms=1, maxval=1)
-    peakedisotropicspectrum(nx, npeak; order=4, rms=1, maxval=1)
+    peakedisotropicspectrum(g, kpeak, E0; mask=mask, allones=false)
 
-Generate a real and random two-dimensional distribution phi(x, y) with
-a Fourier spectrum peaked around a central non-dimensional wavenumber kpeak.
-The spectrum is normalized either by setting the root-mean-square value of phi
-with the keyword 'rms', or the maximum value of phi with the keyword 'maxval'.
+Generate a real and random two-dimensional vorticity field q(x, y) with
+a Fourier spectrum peaked around a central non-dimensional wavenumber kpeak and
+normalized so that its total energy is E0.
 """
-function peakedisotropicspectrum(nkl::Tuple{Int, Int}, kpeak::Real; order=4, rms=1, maxval=0)
-  nk, nl = nkl
-  k = reshape(fftwavenums(nk), (nk, 1))
-  l = reshape(fftwavenums(nl), (1, nl))
-  K = @. sqrt(k^2+l^2)
-  
-  phih = @. exp(2π*im*rand(nk, nl)) / (1 + K/kpeak)^order # unnormalized random spectrum
-  if maxval > 0 # normalize phih to specify the maximum value of phi
-    phi = real.(ifft(phih))
-    phi = maxval * phi / maximum(abs.(phi))
-  else # normalize phih to specify the rms value of phi
-    phih *= rms / sqrt(sum(abs.(phih).^2))
-    phi = real.(ifft(phih))
+function peakedisotropicspectrum(g::TwoDGrid, kpeak::Real, E0::Real; mask=ones(size(g.Kr)), allones=false)
+  if g.Lx !== g.Ly
+      error("the domain is not square")
+  else
+    k0 = kpeak*2π/g.Lx
+    modk = sqrt.(g.KKrsq)
+    psik = zeros(g.nk, g.nl)
+    psik =  (modk.^2 .* (1 + (modk/k0).^4)).^(-0.5)
+    psik[1, 1] = 0.0
+    psih = (randn(g.nkr, g.nl)+im*randn(g.nkr, g.nl)).*psik
+    if allones; psih = psik; end
+    psih = psih.*mask
+    Ein = real(sum(g.KKrsq.*abs2.(psih)/(g.nx*g.ny)^2))
+    psih = psih*sqrt(E0/Ein)
+    q = -irfft(g.KKrsq.*psih, g.nx)
   end
-
-  phi
 end
 
-peakedisotropicspectrum(nx::Int, npeak::Real; kwargs...) = peakedisotropicspectrum((nx, nx), npeak; kwargs...)
+
 
 """
     lambdipole(Ue, R, g; center=(x0, y0))
@@ -177,29 +161,6 @@ function lambdipole(Ue::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
   q[r .> R] = 0.0
 
   return q
-end
-
-"""
-    gaussianvortex(q0, R, G; center=(x0, y0))
-
-Return a vorticity field with magnitude q0, radius R, and center at
-center[1], center[2] on a TwoDGrid g corresponding to a 'Gaussian vortex' with
-Gaussian streamfunction.
-"""
-function gaussianvortex(q0::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
-  xc, yc = center == (nothing, nothing) ? (mean(g.x), mean(g.y)) : (center[1], center[2])
-  @. q0/R^2*((g.x-xc)^2+(g.y-yc)^2-2*R^2)*exp(-((g.x-xc)^2 + (g.y-yc)^2)/(2*R^2)) 
-end
-
-"""
-    rmsrand(g, rmsval)
-
-Return an array of random numbers on a TwoDGrid normalized to have a
-specifed rms value.
-"""
-function rmsrand(g::TwoDGrid, rmsval::Real)
-  q = rand(g.nx, g.ny)
-  q.*rmsval/rms(q)
 end
 
 """
@@ -337,19 +298,10 @@ domainaverage(c, g) = g.dx*g.dy*sum(c)/(g.Lx*g.Ly)
 xmoment(c, g::TwoDGrid, n=1) = sum(g.X.^n.*c)/sum(c)
 ymoment(c, g::TwoDGrid, n=1) = sum(g.Y.^n.*c)/sum(c)
 
-cumulant_1x(c, g) = g.dx*g.dy*sum(g.X.*c) / domainaverage(c, g)
-cumulant_1y(c, g) = g.dx*g.dy*sum(g.Y.*c) / domainaverage(c, g)
-
-cumulant_2x(c, g) = g.dx*g.dy*sum((g.X.-cumulant_1x(c, g)).^2.*c) / domainaverage(c, g)
-cumulant_2y(c, g) = g.dx*g.dy*sum((g.Y.-cumulant_1y(c, g)).^2.*c) / domainaverage(c, g)
-  
 #=
 # Moments and cumulants
-domainaverage(c, g) = g.dx*g.dy*sum(c)/(g.Lx*g.Ly)
-moment_x(c, g, n) = g.dx*g.dy*sum(g.X.^n.*c)
-moment_y(c, g, n) = g.dx*g.dy*sum(g.Y.^n.*c)
 cumulant_1x(c, g) = g.dx*g.dy*sum(g.X.*c) / domainaverage(c, g)
 cumulant_1y(c, g) = g.dx*g.dy*sum(g.Y.*c) / domainaverage(c, g)
-cumulant_2x(c, g) = g.dx*g.dy*sum((g.X-cumulant_1x(c, g)).^2.0.*c) / domainaverage(c, g)
-cumulant_2y(c, g) = g.dx*g.dy*sum((g.Y.-cumulant_1y(c, g)).^2.0.*c) / domainaverage(c, g)
+cumulant_2x(c, g) = g.dx*g.dy*sum((g.X.-cumulant_1x(c, g)).^2.*c) / domainaverage(c, g)
+cumulant_2y(c, g) = g.dx*g.dy*sum((g.Y.-cumulant_1y(c, g)).^2.*c) / domainaverage(c, g)
 =#
