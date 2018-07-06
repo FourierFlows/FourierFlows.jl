@@ -60,7 +60,7 @@ end
 
 
 """
-Compute the J(a,b) and compare with analytic_answer.
+Compute the J(a, b) and compare with analytic_answer.
 """
 function test_jacobian(a, b, analytic_answer, grid)
     # it's important to use atol for this test since when analytic_answer=0
@@ -142,20 +142,18 @@ f1 = exp.(-(x.^2 + y.^2)/(2σ^2))
 f2 = exp.( im*(2k0*x + 3l0*y.^2) ).*(
       exp.(-(x.^2 + y.^2)/(2σ^2)) + 2im*exp.(-(x.^2 + y.^2)/(5σ^2)) )
 
-# Sine waves
+# Sine/Exp waves
 k1, l1 = 2*k0, 6*l0
 k2, l2 = 3*k0, -3*l0
-s1 = sin.(k1*x + l1*y)
-s2 = sin.(k2*x + l2*y)
 
-# Analytical expression for the Jacobian of s1 and s2
-Js1s2 = (k1*l2-k2*l1)*cos.(k1*x + l1*y).*cos.(k2*x + l2*y)
+sin1 = sin.(k1*x + l1*y)
+sin2 = sin.(k2*x + l2*y)
+exp1 = exp.(im*(k1*x + l1*y))
+exp2 = exp.(im*(k2*x + l2*y))
 
-e1 = exp.(im*(k1*x + l1*y))
-e2 = exp.(im*(k2*x + l2*y))
-
-# Analytical expression for the Jacobian of e1 and e2
-Je1e2 = (k2*l1-k1*l2)*exp.(im*((k1+k2)*x + (l1+l2)*y))
+# Analytical expression for the Jacobian of sin1 and sin2 and of exp1 and exp2
+Jsin1sin2 = (k1*l2-k2*l1)*cos.(k1*x + l1*y).*cos.(k2*x + l2*y)
+Jexp1exp2 = (k2*l1-k1*l2)*exp.(im*((k1+k2)*x + (l1+l2)*y))
 
 @test test_parsevalsum(f1, g; realvalued=true)   # Real valued f with rfft
 @test test_parsevalsum(f1, g; realvalued=false)  # Real valued f with fft
@@ -164,9 +162,9 @@ Je1e2 = (k2*l1-k1*l2)*exp.(im*((k1+k2)*x + (l1+l2)*y))
 @test test_parsevalsum2(f1, g; realvalued=false) # Real valued f with fft
 @test test_parsevalsum2(f2, g; realvalued=false) # Complex valued f with fft
 
-@test test_jacobian(s1, s1, 0*s1, g)  # Test J(a,a) = 0
-@test test_jacobian(s1, s2, Js1s2, g) # Test J(s1, s2) = Js1s2
-@test test_jacobian(e1, e2, Je1e2, g) # Test J(e1, e2) = Je1e2
+@test test_jacobian(sin1, sin1, 0*sin1, g)  # Test J(a, a) = 0
+@test test_jacobian(sin1, sin2, Jsin1sin2, g) # Test J(sin1, sin2) = Jsin1sin2
+@test test_jacobian(exp1, exp2, Jexp1exp2, g) # Test J(exp1, exp2) = Jexp1exps2
 
 @test test_createarrays()
 @test test_fftwavenums()
