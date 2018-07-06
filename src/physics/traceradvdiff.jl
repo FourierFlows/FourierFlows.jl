@@ -17,7 +17,7 @@ function ConstDiffSteadyFlowProblem(;
      u = nothing,
      v = nothing,
     dt = 0.01,
-  timestepper = "RK4"
+  stepper = "RK4"
   )
 
   # Defaults
@@ -34,19 +34,16 @@ function ConstDiffSteadyFlowProblem(;
   end
 
   if grid == nothing;
-    grid = TwoDGrid(nx, Lx, ny, Ly)
+    g = TwoDGrid(nx, Lx, ny, Ly)
+  else
+    g = grid
   end
 
-  vs = Vars(grid)
-  pr = ConstDiffSteadyFlowParams(η, κ, uin, vin, grid)
-  eq = Equation(pr, grid)
-
-  if     timestepper == "RK4";          ts = ETDRK4TimeStepper(dt, eq.LC)
-  elseif timestepper == "ETDRK4";       ts = RK4TimeStepper(dt, eq.LC)
-  elseif timestepper == "ForwardEuler"; ts = ForwardEulerTimeStepper(dt, eq.LC)
-  end
-
-  FourierFlows.Problem(grid, vs, pr, eq, ts; realsol=true, nvars=1)
+  vs = TracerAdvDiff.Vars(g)
+  pr = TracerAdvDiff.ConstDiffSteadyFlowParams(η, κ, uin, vin, g)
+  eq = TracerAdvDiff.Equation(pr, g)
+  ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
+  FourierFlows.Problem(g, vs, pr, eq, ts)
 end
 
 
@@ -83,7 +80,7 @@ function ConstDiffSteadyFlowParams(η, κ, κh, nκh,
 end
 
 function ConstDiffSteadyFlowParams(η, κ, u, v, g)
-  ConstDiffSteadyFlowParams(η, κ, 0, 0, u, v)
+  ConstDiffSteadyFlowParams(η, κ, 0, 0, u, v, g)
 end
 
 
@@ -94,13 +91,13 @@ and on a grid g. """
 function Equation(p::ConstDiffParams, g::TwoDGrid)
   LC = zeros(g.Kr)
   @. LC = -p.η*g.kr^2 - p.κ*g.l^2
-  FourierFlows.Equation{2}(LC, calcN!)
+  FourierFlows.Equation{typeof(LC[1, 1]),2}(LC, calcN!)
 end
 
 function Equation(p::ConstDiffSteadyFlowParams, g::TwoDGrid)
   LC = zeros(g.Kr)
   @. LC = -p.η*g.kr^2 - p.κ*g.l^2 - p.κh*g.KKrsq^p.nκh
-  FourierFlows.Equation{2}(LC, calcN_steadyflow!)
+  FourierFlows.Equation{typeof(LC[1, 1]),2}(LC, calcN_steadyflow!)
 end
 
 
