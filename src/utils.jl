@@ -298,19 +298,10 @@ domainaverage(c, g) = g.dx*g.dy*sum(c)/(g.Lx*g.Ly)
 xmoment(c, g::TwoDGrid, n=1) = sum(g.X.^n.*c)/sum(c)
 ymoment(c, g::TwoDGrid, n=1) = sum(g.Y.^n.*c)/sum(c)
 
-cumulant_1x(c, g) = g.dx*g.dy*sum(g.X.*c) / domainaverage(c, g)
-cumulant_1y(c, g) = g.dx*g.dy*sum(g.Y.*c) / domainaverage(c, g)
-
-cumulant_2x(c, g) = g.dx*g.dy*sum((g.X.-cumulant_1x(c, g)).^2.*c) / domainaverage(c, g)
-cumulant_2y(c, g) = g.dx*g.dy*sum((g.Y.-cumulant_1y(c, g)).^2.*c) / domainaverage(c, g)
-
 #=
 # Moments and cumulants
-domainaverage(c, g) = g.dx*g.dy*sum(c)/(g.Lx*g.Ly)
-moment_x(c, g, n) = g.dx*g.dy*sum(g.X.^n.*c)
-moment_y(c, g, n) = g.dx*g.dy*sum(g.Y.^n.*c)
 cumulant_1x(c, g) = g.dx*g.dy*sum(g.X.*c) / domainaverage(c, g)
 cumulant_1y(c, g) = g.dx*g.dy*sum(g.Y.*c) / domainaverage(c, g)
-cumulant_2x(c, g) = g.dx*g.dy*sum((g.X-cumulant_1x(c, g)).^2.0.*c) / domainaverage(c, g)
-cumulant_2y(c, g) = g.dx*g.dy*sum((g.Y.-cumulant_1y(c, g)).^2.0.*c) / domainaverage(c, g)
+cumulant_2x(c, g) = g.dx*g.dy*sum((g.X.-cumulant_1x(c, g)).^2.*c) / domainaverage(c, g)
+cumulant_2y(c, g) = g.dx*g.dy*sum((g.Y.-cumulant_1y(c, g)).^2.*c) / domainaverage(c, g)
 =#
