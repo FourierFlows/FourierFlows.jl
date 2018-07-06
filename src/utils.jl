@@ -67,13 +67,7 @@ end
 function structvarsexpr(name, physfields, transfields; vardims=2, parent=:AbstractVars, T=Float64, arraytype=:Array)
   physexprs = [:($fld::$arraytype{T,$vardims}) for fld in physfields]
   transexprs = [:($fld::$arraytype{Complex{T},$vardims}) for fld in transfields]
-  expr = quote
-    struct $name{T} <: $parent
-      $(physexprs...)
-      $(transexprs...)
-    end
-  end
-  expr
+  expr = :(struct $name{T} <: $parent; $(physexprs...); $(transexprs...); end)
 end
 
 """
@@ -89,17 +83,9 @@ function structvarsexpr(name, fieldspecs; parent=nothing)
   # example: fieldspecs[1] = (:u, Array{Float64,2})
   fieldexprs = [ :( $(spec[1])::$(spec[2]) ) for spec in fieldspecs ]
   if parent == nothing
-    expr = quote
-      struct $name{T}
-        $(fieldexprs...)
-      end
-    end
+    expr = :(struct $name{T}; $(fieldexprs...); end)
   else
-    expr = quote
-      struct $name{T} <: $parent
-        $(fieldexprs...)
-      end
-    end
+    expr = :(struct $name{T} <: $parent; $(fieldexprs...); end)
   end
   expr
 end

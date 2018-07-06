@@ -106,23 +106,74 @@ varspecs = cat(1,
   FourierFlows.getfieldspecs(physicalvars, :(Array{T,2})),
   FourierFlows.getfieldspecs(transformvars, :(Array{Complex{T},2})))
 
-eval(FourierFlows.structvarsexpr(:Vars, varspecs; parent=:TestVars))
+eval(FourierFlows.structvarsexpr(:VarsFields, physicalvars, transformvars))
+eval(FourierFlows.structvarsexpr(:VarsFieldsParent, physicalvars, transformvars; parent=:TestVars))
+eval(FourierFlows.structvarsexpr(:VarsSpecs, varspecs))
+eval(FourierFlows.structvarsexpr(:VarsSpecsParent, varspecs; parent=:TestVars))
 
-function Vars(g)
+function VarsFields(g)
   @createarrays typeof(g.Lx) (g.nx, g.ny) a b
   @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) ah bh
-  Vars(a, b, ah, bh)
+  VarsFields(a, b, ah, bh)
 end
 
-function teststructvarsexpr(g)
-  v = Vars(g)
+function VarsFieldsParent(g)
+  @createarrays typeof(g.Lx) (g.nx, g.ny) a b
+  @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) ah bh
+  VarsFieldsParent(a, b, ah, bh)
+end
+
+function VarsSpecs(g)
+  @createarrays typeof(g.Lx) (g.nx, g.ny) a b
+  @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) ah bh
+  VarsSpecs(a, b, ah, bh)
+end
+
+function VarsSpecsParent(g)
+  @createarrays typeof(g.Lx) (g.nx, g.ny) a b
+  @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) ah bh
+  VarsSpecsParent(a, b, ah, bh)
+end
+
+function test_structvarsexprFields(g)
+  v1 = VarsFields(g)
   (
-    typeof(v.a)==Array{Float64,2} &&
-    typeof(v.ah)==Array{Complex{Float64},2} &&
-    size(v.a)==size(v.b) &&
-    size(v.ah)==size(v.bh) &&
-    size(v.a)==(g.nx, g.ny) &&
-    size(v.ah) == (g.nkr, g.nl)
+    typeof(v1.a)==Array{Float64,2} &&
+    typeof(v1.ah)==Array{Complex{Float64},2} &&
+    size(v1.a)==size(v1.b) &&
+    size(v1.ah)==size(v1.bh) &&
+    size(v1.a)==(g.nx, g.ny) &&
+    size(v1.ah) == (g.nkr, g.nl)
+  )
+  v2 = VarsFieldsParent(g)
+  (
+    typeof(v2.a)==Array{Float64,2} &&
+    typeof(v2.ah)==Array{Complex{Float64},2} &&
+    size(v2.a)==size(v2.b) &&
+    size(v2.ah)==size(v2.bh) &&
+    size(v2.a)==(g.nx, g.ny) &&
+    size(v2.ah) == (g.nkr, g.nl)
+  )
+end
+
+function test_structvarsexprSpecs(g)
+  v1 = VarsSpecs(g)
+  (
+    typeof(v1.a)==Array{Float64,2} &&
+    typeof(v1.ah)==Array{Complex{Float64},2} &&
+    size(v1.a)==size(v1.b) &&
+    size(v1.ah)==size(v1.bh) &&
+    size(v1.a)==(g.nx, g.ny) &&
+    size(v1.ah) == (g.nkr, g.nl)
+  )
+  v2 = VarsSpecsParent(g)
+  (
+    typeof(v2.a)==Array{Float64,2} &&
+    typeof(v2.ah)==Array{Complex{Float64},2} &&
+    size(v2.a)==size(v2.b) &&
+    size(v2.ah)==size(v2.bh) &&
+    size(v2.a)==(g.nx, g.ny) &&
+    size(v2.ah) == (g.nkr, g.nl)
   )
 end
 
@@ -171,7 +222,8 @@ Jexp1exp2 = (k2*l1-k1*l2)*exp.(im*((k1+k2)*x + (l1+l2)*y))
 @test test_rms(32)
 @test test_domainaverage(32; xdir=true)
 @test test_domainaverage(32; xdir=false)
-@test teststructvarsexpr(g)
+@test test_structvarsexprFields(g)
+@test test_structvarsexprSpecs(g)
 
 # Radial spectrum tests. Note that ahρ = ∫ ah ρ dθ.
 n = 128; δ = n/10                 # Parameters
