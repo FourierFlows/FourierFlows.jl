@@ -110,8 +110,6 @@ end
 ```
 - `updatevars!`: uses `sol` to compute $q$, $u$, $v$, $\widehat{u}$, and $\widehat{v}$ and stores them into corresponding arrays of `Vars`/`ForcedVars`.
 
-- `updatevars!`: uses `sol` to compute $q$, $u$, $v$, $\widehat{u}$, and $\widehat{v}$ and stores them into corresponding arrays of `Vars`/`ForcedVars`.
-
 
 ## Examples
 

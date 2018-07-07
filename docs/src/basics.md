@@ -126,7 +126,11 @@ i2 = Int(-nx/2+1):-1
 k = Array{T}(2π/Lx*cat(1, i1, i2))
 kr = Array{T}(2π/Lx*cat(1, i1))
 ```
-For real-valued fields we use `rfft` and thus only positive wavenumbers are involved: array `kr`.
+
+For real-valued fields we use `rfft` and thus only positive wavenumbers are involved: array `kr`. E.g., for `nx=8` and `Lx=2π` the wavenumber grids are: `k = [0, 1, 2, 3, 4, -3, -2, -1]` and `kr = [0, 1, 2, 3, 4]`.
+
+The construction of the grids only works for *even* number of grid points. Moreover, since the code relies on the $\mathrm{FFT}$ algorithm, we suggest you use a power of 2 as the number of grid points, since then $\mathrm{FFT}$ is most efficient. 
+
 
 Function `Vars(g)` initialize variables `u`, `ux`, and `uux` as real valued arrays of length `nx` and variables `uh`, `uxh`, and `uuxh` as complex valued arrays of length `nkr = Int(nx/2+1)` (the same length as `kr`). As a general convention variable names with `h` denote the Fourier transforms of the corresponding variable (`h` stands for 'hat').
 
