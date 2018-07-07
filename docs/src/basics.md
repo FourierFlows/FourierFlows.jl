@@ -7,11 +7,20 @@ The code solves partial differential equations of the general form:
 
 $\partial_t u = \mathcal{L}u + \mathcal{N}(u)\ .$
 
+(Note: ODEs are special cases of the above. Thus the code also solves ODEs.)
+
 We decompose the right hand side of the above in a linear part ($\mathcal{L}u$) and a nonlinear part ($\mathcal{N}(u)$). The time steppers treat the linear and nonlinear parts differently.
 
-Boundary conditions in all spatial dimensions are periodic. That allows us to use a Fourier base. The equation is time-stepped forward in Fourier space. That way $u$ becomes an array with all Fourier coefficients of the solution. The coefficients for the linear operator $\mathcal{L}$ are stored in an array called `LC`. The term $\mathcal{N}(u)$ is computed for by calling the function `calcN!`.
+Boundary conditions in all spatial dimensions are periodic. That allows us to expand all variables using a Fourier decomposition. For example, a variable $\phi(x, t)$ that depends in one spatial dimension is expanded as:
 
-ODEs are special cases of the above. Thus the code also solves ODEs.
+```math
+\phi(x, t) = \sum_{k} \widehat{\phi}(k, t)\,e^{\mathrm{i} k x}\ ,
+```
+where wavenumbers $k$ take the values $\tfrac{2\pi}{L_x}[0,\pm 1,\pm 2,\dots]$. The equation is time-stepped forward in Fourier space. That way $u$ becomes the array with all Fourier coefficients of the solution.
+
+The coefficients for the linear operator $\mathcal{L}$ are stored in an array called `LC`. The term $\mathcal{N}(u)$ is computed for by calling the function `calcN!`.
+
+
 
 
 
