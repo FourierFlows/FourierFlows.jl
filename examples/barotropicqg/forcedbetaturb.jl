@@ -7,9 +7,9 @@ import FourierFlows.BarotropicQG: energy, enstrophy
 # Numerical parameters and time-stepping parameters
 nx  = 256       # 2D resolution = nx^2
 stepper = "FilteredRK4"   # timestepper
-dt  = 0.02      # timestep
+dt  = 0.01      # timestep
 nsteps = 20000  # total number of time-steps
-nsubs  = 1000   # number of time-steps for plotting
+nsubs  = 500    # number of time-steps for plotting
                 # (nsteps must be multiple of nsubs)
 
 # Physical parameters
@@ -90,6 +90,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   sca(axs[1])
   cla()
   pcolormesh(g.X, g.Y, v.q)
+  clim(-11, 11)
   axis("square")
   xticks(-2:2:2)
   yticks(-2:2:2)
@@ -148,9 +149,11 @@ startwalltime = time()
 
 while prob.step < nsteps
   stepforward!(prob, diags, nsubs)
-  cfl = prob.ts.dt*maximum([maximum(v.v)/g.dx, maximum(v.u)/g.dy])
+
+  BarotropicQG.updatevars!(prob)
 
   # Message
+  cfl = prob.ts.dt*maximum([maximum(v.u)/g.dx, maximum(v.v)/g.dy])
   log = @sprintf("step: %04d, t: %d, cfl: %.2f, E: %.4f, Q: %.4f, τ: %.2f min",
     prob.step, prob.t, cfl, E.value, Z.value,
     (time()-startwalltime)/60)

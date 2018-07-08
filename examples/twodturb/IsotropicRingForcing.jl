@@ -108,7 +108,7 @@ for i = 1:ns
   TwoDTurb.updatevars!(prob)
   # saveoutput(out)
 
-  cfl = prob.ts.dt*maximum([maximum(v.V)/g.dx, maximum(v.U)/g.dy])
+  cfl = prob.ts.dt*maximum([maximum(v.U)/g.dx, maximum(v.V)/g.dy])
   res = makeplot(prob, diags)
   pause(0.01)
 

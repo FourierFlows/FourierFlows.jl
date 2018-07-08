@@ -50,7 +50,7 @@ for i = 1:round(Int, tf/dt/ndp)
   stepforward!(prob, diags, ndp)
   TwoDTurb.updatevars!(prob)
 
-  cfl = prob.ts.dt*maximum([maximum(prob.vars.V)/prob.grid.dx, maximum(prob.vars.U)/prob.grid.dy])
+  cfl = prob.ts.dt*maximum([maximum(prob.vars.U)/prob.grid.dx, maximum(prob.vars.V)/prob.grid.dy])
   @printf("step: %04d, t: %.1f, cfl: %.2f, time: %.3f s\n", prob.step, prob.t, cfl, toq())
 
   sca(axs[1]); cla()
