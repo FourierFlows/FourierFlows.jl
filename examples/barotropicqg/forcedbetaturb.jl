@@ -5,12 +5,12 @@ import FourierFlows.BarotropicQG: energy, enstrophy
 
 
 # Numerical parameters and time-stepping parameters
-nx  = 256       # 2D resolution = nx^2
+nx = 256       # 2D resolution = nx^2
 stepper = "FilteredRK4"   # timestepper
-dt  = 0.01      # timestep
-nsteps = 20000  # total number of time-steps
-nsubs  = 500    # number of time-steps for plotting
-                # (nsteps must be multiple of nsubs)
+dt  = 0.01     # timestep
+nsteps = 20000 # total number of time-steps
+nsubs  = 500   # number of time-steps for plotting
+               # (nsteps must be multiple of nsubs)
 
 # Physical parameters
 Lx  = 2π       # domain size
@@ -41,6 +41,7 @@ function calcFq!(Fh, sol, t, s, v, p, g)
   ξ = exp.(2π*im*rand(size(sol)))/sqrt(s.dt)
   ξ[1, 1] = 0
   @. Fh = ξ*sqrt(force2k)
+  @. Fh[abs.(g.Kr).==0] = 0
   nothing
 end
 
