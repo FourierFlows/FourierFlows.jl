@@ -4,7 +4,8 @@
 **/*.png
 **/*.mp4
 **/*.DS_Store
-
+**/*.mem
+**/*.pdf
 **/.nfs*
 
 docs/build/
