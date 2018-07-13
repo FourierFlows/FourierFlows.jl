@@ -49,6 +49,10 @@ end
   include("test_barotropicqg.jl")
 end
 
+@testset "Physics: TracerAdvDiff" begin
+  include("test_traceradvdiff.jl")
+end
+
 @testset "Physics: Vertically Cosine Boussinesq" begin
   include("test_verticallycosineboussinesq.jl")
 end

@@ -79,6 +79,11 @@ function ConstDiffSteadyFlowParams(η, κ, κh, nκh,
   ConstDiffSteadyFlowParams(η, κ, κh, nκh, ugrid, vgrid)
 end
 
+function ConstDiffSteadyFlowParams(η, κ, κh, nκh,
+                                   u::Array{Float64,2}, v::Array{Float64,2}, g::TwoDGrid)
+  ConstDiffSteadyFlowParams(η, κ, κh, nκh, u, v)
+end
+
 function ConstDiffSteadyFlowParams(η, κ, u, v, g)
   ConstDiffSteadyFlowParams(η, κ, 0, 0, u, v, g)
 end

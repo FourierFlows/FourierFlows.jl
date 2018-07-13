@@ -4,17 +4,29 @@ import FourierFlows.TracerAdvDiff
 
 # Numerical parameters and time-stepping parameters
 nx  = 128      # 2D resolution = nx^2
-stepper = "FilteredRK4"   # timestepper
-dt  = 0.1     # timestep
-nsteps = 50 # total number of time-steps
-nsubs  = 1   # number of time-steps for plotting
+stepper = "RK4"   # timestepper
+dt  = 0.005     # timestep
+nsteps = 100 # total number of time-steps
+nsubs  = 50   # number of time-steps for plotting
                # (nsteps must be multiple of nsubs)
 
 # Physical parameters
 Lx  = 2π       # domain size
 
-uin(x, y) = -0.1*sin.(1*x).*cos.(1*y)
-vin(x, y) =  0.1*cos.(1*x).*sin.(1*y)
+
+gr = TwoDGrid(nx, Lx)
+X, Y = gr.X, gr.Y
+
+psiampl = 0.2
+m, n = 1, 1
+psiin = psiampl*cos.(m*X).*cos.(n*Y)
+uin(x, y) = +psiampl*n*cos.(m*x).*sin.(n*y)
+vin(x, y) = -psiampl*m*sin.(m*x).*cos.(n*y)
+
+# uvel, vvel = 0.2, 0.1
+# psiin = -uvel*Y + vvel*X
+# uin(x, y) = uvel + 0*x
+# vin(x, y) = vvel + 0*x
 
 
 prob = TracerAdvDiff.ConstDiffSteadyFlowProblem(;
@@ -23,7 +35,7 @@ prob = TracerAdvDiff.ConstDiffSteadyFlowProblem(;
     Lx = Lx,
     ny = nothing,
     Ly = nothing,
-     κ = 1.0,
+     κ = 0.00,
      η = nothing,
      u = uin,
      v = vin,
@@ -33,7 +45,17 @@ prob = TracerAdvDiff.ConstDiffSteadyFlowProblem(;
 
 s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
 
-TracerAdvDiff.set_c!(prob, 0.01*ones(size(g.X))+0.0*sin.(2*g.X).*sin.(2*g.Y))
+
+σ = 0.1
+c0func(x, y) = 0.1*exp.(-(x.^2+y.^2)/(2σ^2))
+# + 0*ones(size(g.X)) + 0*sin.(1/2*g.X).*sin.(1/2*g.Y)
+
+c0 = c0func.(g.X, g.Y)
+tf = nsteps*dt
+cf = c0func.(g.X-uvel*tf, g.Y-vvel*tf)
+
+
+TracerAdvDiff.set_c!(prob, c0)
 
 
 function plot_output(prob, fig, axs; drawcolorbar=false)
@@ -45,9 +67,9 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
   TracerAdvDiff.updatevars!(prob)
   cla()
   pcolormesh(g.X, g.Y, v.c)
-  # pcolormesh(fftshift(g.Kr), fftshift(g.Lr), fftshift(abs.(prob.state.sol)))
-  title("\$c(x,y,\\mu t= $t )\$")
   if drawcolorbar;colorbar();end
+  contour(g.X, g.Y, psiin, 15, colors="k", linewidths=0.7)
+  title("\$c(x,y,\\mu t= $t )\$")
   pause(0.001)
 end
 
