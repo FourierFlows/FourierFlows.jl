@@ -81,7 +81,7 @@ function test_timedependentvel(stepper, dt, tfinal)
   tfinal = nsteps*dt
   cfinal = c0func.(g.X-uvel*tfinal, g.Y)
 
-  TracerAdvDiff.set_c!(prob, c0)
+  TracerAdvDiff.set_c!(prob, c0func)
 
   stepforward!(prob, nsteps)
   TracerAdvDiff.updatevars!(prob)
