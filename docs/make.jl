@@ -3,6 +3,7 @@ using Documenter, FourierFlows
 makedocs(
    modules = [FourierFlows],
    doctest = false, clean = true,
+ checkdocs = :all,
     format = :html,
    authors = "Gregory L. Wagner and Navid C. Constantinou",
   sitename = "FourierFlows.jl",
@@ -14,10 +15,12 @@ makedocs(
                 "modules/kuramotosivashinsky.md",
                 "modules/twodturb.md",
                 "modules/barotropicqg.md",
-                "modules/boussinesq.md",
-                "modules/traceradvdiff.md"
+                "modules/traceradvdiff.md",
+                "modules/boussinesq.md"
               ],
-              "DocStrings" => Any["man/docstrings.md"]
+              "DocStrings" => Any[
+              "man/types.md",
+              "man/functions.md"]
              ]
 )
 
