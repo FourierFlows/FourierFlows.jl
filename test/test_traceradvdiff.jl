@@ -4,11 +4,13 @@ import FourierFlows.TracerAdvDiff
 # TRACERADVDIFF's TEST FUNCTIONS
 
 """
-    test_constatvel(; kwargs...)
+    test_constvel(; kwargs...)
 
-Evolvesa a Rossby wave and compares with the analytic solution.
+Advects a gaussian concentration c0(x, y, t) with a constant velocity flow
+u(x, y, t) = uvel and v(x, y, t) = vvel and compares the final state with
+cfinal = c0(x-uvel*tfinal, y-vvel*tfinal)
 """
-function test_constatvel(stepper, dt, nsteps)
+function test_constvel(stepper, dt, nsteps)
 
   nx  = 128
   Lx  = 2π
@@ -24,7 +26,6 @@ function test_constatvel(stepper, dt, nsteps)
 
   σ = 0.1
   c0func(x, y) = 0.1*exp.(-(x.^2+y.^2)/(2σ^2))
-  # + 0*ones(size(g.X)) + 0*sin.(1/2*g.X).*sin.(1/2*g.Y)
 
   c0 = c0func.(g.X, g.Y)
   tfinal = nsteps*dt
@@ -40,8 +41,63 @@ function test_constatvel(stepper, dt, nsteps)
 end
 
 
+"""
+    test_timedependenttvel(; kwargs...)
+
+Advects a gaussian concentration c0(x, y, t) with a time-varying velocity flow
+u(x, y, t) = uvel and v(x, y, t) = vvel*sign(-t+tfinal/2) and compares the final
+state with cfinal = c0(x-uvel*tfinal, y)
+"""
+function test_timedependentvel(stepper, dt, tfinal)
+
+  nx  = 128
+  Lx  = 2π
+
+  nsteps = round(Int, tfinal/dt)
+
+  if !isapprox(tfinal, nsteps*dt, rtol=1e-12)
+      error("tfinal is not multiple of dt")
+  end
+
+  uvel, vvel = 0.2, 0.1
+  uin(x, y, t) = uvel + 0*x
+  function vin(x, y, t)
+    if t <= tfinal/2
+      vvel + 0*x
+    else
+      -vvel + 0*x
+    end
+  end
+
+  prob = TracerAdvDiff.ConstDiffProblem(;
+    nx = nx, Lx = Lx, κ = 0.00, u = uin, v = vin, dt = dt, stepper = stepper)
+
+  s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
+
+  σ = 0.1
+  c0func(x, y) = 0.1*exp.(-(x.^2+y.^2)/(2σ^2))
+
+  c0 = c0func.(g.X, g.Y)
+  tfinal = nsteps*dt
+  cfinal = c0func.(g.X-uvel*tfinal, g.Y)
+
+  TracerAdvDiff.set_c!(prob, c0)
+
+  stepforward!(prob, nsteps)
+  TracerAdvDiff.updatevars!(prob)
+
+  TracerAdvDiff.updatevars!(prob)
+
+  isapprox(cfinal, v.c, rtol=g.nx*g.ny*nsteps*1e-12)
+end
+
 # -----------------------------------------------------------------------------
 # Running the tests
 
+stepper = "RK4"
+
 dt, nsteps  = 1e-2, 100
-@test test_constatvel("RK4", dt, nsteps)
+@test test_constvel(stepper, dt, nsteps)
+
+dt, tfinal  = 0.001, 0.1
+@test test_timedependentvel(stepper, dt, tfinal)

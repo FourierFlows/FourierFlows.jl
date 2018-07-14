@@ -47,6 +47,48 @@ function ConstDiffSteadyFlowProblem(;
 end
 
 
+# Problems
+function ConstDiffProblem(;
+  grid = nothing,
+    nx = 128,
+    Lx = 2π,
+    ny = nothing,
+    Ly = nothing,
+     κ = 1.0,
+     η = nothing,
+     u = nothing,
+     v = nothing,
+    dt = 0.01,
+  stepper = "RK4"
+  )
+
+  # Defaults
+  if ny == nothing; ny = nx;            end
+  if Ly == nothing; Ly = Lx;            end
+  if  η == nothing; η = κ;              end
+
+  if u == nothing; uin(x, y) = 0.0
+  else;            uin = u
+  end
+
+  if v == nothing; vin(x, y) = 0.0
+  else;            vin = v
+  end
+
+  if grid == nothing;
+    g = TwoDGrid(nx, Lx, ny, Ly)
+  else
+    g = grid
+  end
+
+  vs = TracerAdvDiff.Vars(g)
+  pr = TracerAdvDiff.ConstDiffParams(η, κ, uin, vin)
+  eq = TracerAdvDiff.Equation(pr, g)
+  ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
+  FourierFlows.Problem(g, vs, pr, eq, ts)
+end
+
+
 # Params
 struct ConstDiffParams <: AbstractTracerParams
   η::Float64                   # Constant isotropic horizontal diffusivity
@@ -140,8 +182,8 @@ function calcN!(
   v.ch .= sol
   A_mul_B!(v.c, g.irfftplan, v.ch) # destroys v.ch when using fftw
 
-  v.cu .= p.u.(g.X, g.Y, v.t)
-  v.cv .= p.v.(g.X, g.Y, v.t)
+  v.cu .= p.u.(g.X, g.Y, s.t)
+  v.cv .= p.v.(g.X, g.Y, s.t)
 
   v.cu .*= v.c
   v.cv .*= v.c
