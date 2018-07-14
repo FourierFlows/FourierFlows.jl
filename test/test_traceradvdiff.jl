@@ -91,6 +91,53 @@ function test_timedependentvel(stepper, dt, tfinal)
   isapprox(cfinal, v.c, rtol=g.nx*g.ny*nsteps*1e-12)
 end
 
+
+"""
+    test_diffusion(; kwargs...)
+
+Advects a gaussian concentration c0(x, y, t) with a time-varying velocity flow
+u(x, y, t) = uvel and v(x, y, t) = vvel*sign(-t+tfinal/2) and compares the final
+state with cfinal = c0(x-uvel*tfinal, y)
+"""
+function test_diffusion(stepper, dt, tfinal)
+
+  nx  = 128
+  Lx  = 2π
+  κ = 0.01
+
+  nsteps = round(Int, tfinal/dt)
+
+  if !isapprox(tfinal, nsteps*dt, rtol=1e-12)
+      error("tfinal is not multiple of dt")
+  end
+
+  grid = TwoDGrid(nx, Lx)
+
+  prob = TracerAdvDiff.ConstDiffSteadyFlowProblem(; grid = grid, nx = nx,
+    Lx = Lx, κ = κ, dt = dt, stepper = stepper)
+
+  s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
+
+  c0ampl, σ = 0.1, 0.1
+  c0func(x, y) = c0ampl*exp.(-(x.^2+y.^2)/(2σ^2))
+
+  c0 = c0func.(g.X, g.Y)
+  tfinal = nsteps*dt
+  σt = sqrt(2*κ*tfinal + σ^2)
+  cfinal = c0ampl*σ^2/σt^2 * exp.(-(g.X.^2 + g.Y.^2)/(2*σt^2))
+
+  TracerAdvDiff.set_c!(prob, c0)
+
+  stepforward!(prob, nsteps)
+
+  TracerAdvDiff.updatevars!(prob)
+
+  isapprox(cfinal, v.c, rtol=g.nx*g.ny*nsteps*1e-12)
+end
+
+
+
+
 # -----------------------------------------------------------------------------
 # Running the tests
 
@@ -101,3 +148,6 @@ dt, nsteps  = 1e-2, 100
 
 dt, tfinal  = 0.001, 0.1
 @test test_timedependentvel(stepper, dt, tfinal)
+
+dt, tfinal  = 0.005, 0.1
+@test test_diffusion(stepper, dt, tfinal)
