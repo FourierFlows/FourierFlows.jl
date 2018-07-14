@@ -113,8 +113,11 @@ function test_diffusion(stepper, dt, tfinal)
 
   grid = TwoDGrid(nx, Lx)
 
+  u = 0*grid.X
+  v = 0*grid.X
+
   prob = TracerAdvDiff.ConstDiffSteadyFlowProblem(; grid = grid, nx = nx,
-    Lx = Lx, κ = κ, dt = dt, stepper = stepper)
+    Lx = Lx, u = u, v = v, κ = κ, dt = dt, stepper = stepper)
 
   s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
 
