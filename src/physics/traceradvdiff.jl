@@ -10,10 +10,10 @@ function ConstDiffSteadyFlowProblem(;
   grid = nothing,
     nx = 128,
     Lx = 2π,
-    ny = nothing,
-    Ly = nothing,
+    ny = nx,
+    Ly = Lx,
      κ = 1.0,
-     η = nothing,
+     η = κ,
      u = nothing,
      v = nothing,
     dt = 0.01,
@@ -21,10 +21,6 @@ function ConstDiffSteadyFlowProblem(;
   )
 
   # Defaults
-  if ny == nothing; ny = nx;            end
-  if Ly == nothing; Ly = Lx;            end
-  if  η == nothing; η = κ;              end
-
   if u == nothing; uin(x, y) = 0.0
   else;            uin = u
   end
@@ -33,10 +29,8 @@ function ConstDiffSteadyFlowProblem(;
   else;            vin = v
   end
 
-  if grid == nothing;
-    g = TwoDGrid(nx, Lx, ny, Ly)
-  else
-    g = grid
+  if grid == nothing; g = TwoDGrid(nx, Lx, ny, Ly)
+  else;               g = grid
   end
 
   vs = TracerAdvDiff.Vars(g)
@@ -52,10 +46,10 @@ function ConstDiffProblem(;
   grid = nothing,
     nx = 128,
     Lx = 2π,
-    ny = nothing,
-    Ly = nothing,
+    ny = nx,
+    Ly = Lx,
      κ = 1.0,
-     η = nothing,
+     η = κ,
      u = nothing,
      v = nothing,
     dt = 0.01,
@@ -63,10 +57,6 @@ function ConstDiffProblem(;
   )
 
   # Defaults
-  if ny == nothing; ny = nx;            end
-  if Ly == nothing; Ly = Lx;            end
-  if  η == nothing; η = κ;              end
-
   if u == nothing; uin(x, y) = 0.0
   else;            uin = u
   end
@@ -75,10 +65,8 @@ function ConstDiffProblem(;
   else;            vin = v
   end
 
-  if grid == nothing;
-    g = TwoDGrid(nx, Lx, ny, Ly)
-  else
-    g = grid
+  if grid == nothing; g = TwoDGrid(nx, Lx, ny, Ly)
+  else;               g = grid
   end
 
   vs = TracerAdvDiff.Vars(g)
@@ -98,11 +86,7 @@ struct ConstDiffParams <: AbstractTracerParams
   u::Function                  # Advecting x-velocity
   v::Function                  # Advecting y-velocity
 end
-
-function ConstDiffParams(η, κ, u, v)
-  ConstDiffParams(η, κ, 0, 0, u, v)
-end
-
+ConstDiffParams(η, κ, u, v) = ConstDiffParams(η, κ, 0, 0, u, v)
 
 
 struct ConstDiffSteadyFlowParams <: AbstractTracerParams
@@ -114,27 +98,22 @@ struct ConstDiffSteadyFlowParams <: AbstractTracerParams
   v::Array{Float64,2}          # Advecting y-velocity
 end
 
-function ConstDiffSteadyFlowParams(η, κ, κh, nκh,
-                                   u::Function, v::Function, g::TwoDGrid)
+function ConstDiffSteadyFlowParams(η, κ, κh, nκh, u::Function, v::Function, g::TwoDGrid)
   ugrid = u.(g.X, g.Y)
   vgrid = v.(g.X, g.Y)
   ConstDiffSteadyFlowParams(η, κ, κh, nκh, ugrid, vgrid)
 end
 
-function ConstDiffSteadyFlowParams(η, κ, κh, nκh,
-                                   u::Array{Float64,2}, v::Array{Float64,2}, g::TwoDGrid)
-  ConstDiffSteadyFlowParams(η, κ, κh, nκh, u, v)
-end
+ConstDiffSteadyFlowParams(η, κ, κh, nκh, u::Array{Float64,2}, v::Array{Float64,2}, 
+                          g::TwoDGrid) = ConstDiffSteadyFlowParams(η, κ, κh, nκh, u, v)
 
-function ConstDiffSteadyFlowParams(η, κ, u, v, g)
-  ConstDiffSteadyFlowParams(η, κ, 0, 0, u, v, g)
-end
+ConstDiffSteadyFlowParams(η, κ, u, v, g) = ConstDiffSteadyFlowParams(η, κ, 0, 0, u, v, g)
 
 
-
-
-""" Initialize an equation with constant diffusivity problem parameters p
-and on a grid g. """
+""" 
+Initialize an equation with constant diffusivity problem parameters p
+and on a grid g.
+"""
 function Equation(p::ConstDiffParams, g::TwoDGrid)
   LC = zeros(g.Kr)
   @. LC = -p.η*g.kr^2 - p.κ*g.l^2
@@ -146,8 +125,6 @@ function Equation(p::ConstDiffSteadyFlowParams, g::TwoDGrid)
   @. LC = -p.η*g.kr^2 - p.κ*g.l^2 - p.κh*g.KKrsq^p.nκh
   FourierFlows.Equation{typeof(LC[1, 1]),2}(LC, calcN_steadyflow!)
 end
-
-
 
 
 # Vars
@@ -182,11 +159,11 @@ function calcN!(
   v.ch .= sol
   A_mul_B!(v.c, g.irfftplan, v.ch) # destroys v.ch when using fftw
 
-  v.cu .= p.u.(g.X, g.Y, s.t)
-  v.cv .= p.v.(g.X, g.Y, s.t)
+  @. v.cu = p.u(g.X, g.Y, s.t)
+  @. v.cv = p.v(g.X, g.Y, s.t)
 
-  v.cu .*= v.c
-  v.cv .*= v.c
+  @. v.cu *= v.c
+  @. v.cv *= v.c
 
   A_mul_B!(v.cuh, g.rfftplan, v.cu)
   A_mul_B!(v.cvh, g.rfftplan, v.cv)
@@ -219,11 +196,6 @@ end
 
 
 
-
-
-
-
-
 # Helper functions ------------------------------------------------------------
 """ Update state variables. """
 function updatevars!(s::State, v::AbstractVars, g::TwoDGrid)
@@ -233,9 +205,7 @@ function updatevars!(s::State, v::AbstractVars, g::TwoDGrid)
   nothing
 end
 
-function updatevars!(prob::AbstractProblem)
-  updatevars!(prob.state, prob.vars, prob.grid)
-end
+updatevars!(prob::AbstractProblem) = updatevars!(prob.state, prob.vars, prob.grid)
 
 
 """ Set the concentration field of the model with an array. """
@@ -254,9 +224,7 @@ function set_c!(s::State, v::AbstractVars, g::TwoDGrid, c::Function)
   nothing
 end
 
-function set_c!(prob::AbstractProblem, c)
-  set_c!(prob.state, prob.vars, prob.grid, c)
-end
+set_c!(prob::AbstractProblem, c) = set_c!(prob.state, prob.vars, prob.grid, c)
 
 
 end # module
