@@ -104,13 +104,13 @@ function ConstDiffSteadyFlowParams(η, κ, κh, nκh, u::Function, v::Function, 
   ConstDiffSteadyFlowParams(η, κ, κh, nκh, ugrid, vgrid)
 end
 
-ConstDiffSteadyFlowParams(η, κ, κh, nκh, u::Array{Float64,2}, v::Array{Float64,2}, 
+ConstDiffSteadyFlowParams(η, κ, κh, nκh, u::Array{Float64,2}, v::Array{Float64,2},
                           g::TwoDGrid) = ConstDiffSteadyFlowParams(η, κ, κh, nκh, u, v)
 
 ConstDiffSteadyFlowParams(η, κ, u, v, g) = ConstDiffSteadyFlowParams(η, κ, 0, 0, u, v, g)
 
 
-""" 
+"""
 Initialize an equation with constant diffusivity problem parameters p
 and on a grid g.
 """
@@ -130,18 +130,18 @@ end
 # Vars
 struct Vars <: AbstractVars
   c::Array{Float64,2}
-  cu::Array{Float64,2}
-  cv::Array{Float64,2}
+  cx::Array{Float64,2}
+  cy::Array{Float64,2}
   ch::Array{Complex{Float64},2}
-  cuh::Array{Complex{Float64},2}
-  cvh::Array{Complex{Float64},2}
+  cxh::Array{Complex{Float64},2}
+  cyh::Array{Complex{Float64},2}
 end
 
 """ Initialize the vars type on a grid g with zero'd arrays and t=0. """
 function Vars(g::TwoDGrid)
-  @createarrays Float64 (g.nx, g.ny) c cu cv
-  @createarrays Complex{Float64} (g.nkr, g.nl) ch cuh cvh
-  Vars(c, cu, cv, ch, cuh, cvh)
+  @createarrays Float64 (g.nx, g.ny) c cx cy
+  @createarrays Complex{Float64} (g.nkr, g.nl) ch cxh cyh
+  Vars(c, cx, cy, ch, cxh, cyh)
 end
 
 
@@ -157,18 +157,14 @@ function calcN!(
   t::Float64, s::State, v::Vars, p::ConstDiffParams, g::TwoDGrid)
 
   v.ch .= sol
-  A_mul_B!(v.c, g.irfftplan, v.ch) # destroys v.ch when using fftw
+  @. v.cxh = im*g.kr*v.ch
+  @. v.cyh = im*g.l*v.ch
 
-  @. v.cu = p.u(g.X, g.Y, s.t)
-  @. v.cv = p.v(g.X, g.Y, s.t)
+  A_mul_B!(v.cx, g.irfftplan, v.cxh) # destroys v.cxh when using fftw
+  A_mul_B!(v.cy, g.irfftplan, v.cyh) # destroys v.cyh when using fftw
 
-  @. v.cu *= v.c
-  @. v.cv *= v.c
-
-  A_mul_B!(v.cuh, g.rfftplan, v.cu)
-  A_mul_B!(v.cvh, g.rfftplan, v.cv)
-
-  @. N = -im*g.kr*v.cuh - im*g.l*v.cvh
+  @. v.cx = -p.u(g.X, g.Y, s.t)*v.cx - p.v(g.X, g.Y, s.t)*v.cy # copies over v.cx
+  A_mul_B!(N, g.rfftplan, v.cx)
   nothing
 end
 
@@ -182,15 +178,14 @@ function calcN_steadyflow!(
   t::Float64, s::State, v::Vars, p::ConstDiffSteadyFlowParams, g::TwoDGrid)
 
   v.ch .= sol
-  A_mul_B!(v.c, g.irfftplan, v.ch) # destroys v.ch when using fftw
+  @. v.cxh = im*g.kr*v.ch
+  @. v.cyh = im*g.l*v.ch
 
-  @. v.cu = p.u * v.c
-  @. v.cv = p.v * v.c
+  A_mul_B!(v.cx, g.irfftplan, v.cxh) # destroys v.cxh when using fftw
+  A_mul_B!(v.cy, g.irfftplan, v.cyh) # destroys v.cyh when using fftw
 
-  A_mul_B!(v.cuh, g.rfftplan, v.cu)
-  A_mul_B!(v.cvh, g.rfftplan, v.cv)
-
-  @. N = -im*g.kr*v.cuh - im*g.l*v.cvh
+  @. v.cx = -p.u*v.cx - p.v*v.cy # copies over v.cx
+  A_mul_B!(N, g.rfftplan, v.cx)
   nothing
 end
 
