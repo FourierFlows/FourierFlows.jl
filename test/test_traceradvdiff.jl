@@ -16,7 +16,7 @@ function test_constvel(stepper, dt, nsteps)
   u(x, y) = uvel
   v(x, y) = vvel
 
-  prob = TracerAdvDiff.ConstDiffProblem(; steadyflow=true, nx=nx, Lx=Lx, kap=0.0, u=u, v=v, dt=dt, stepper=stepper)
+  prob = TracerAdvDiff.Problem(; steadyflow=true, nx=nx, Lx=Lx, kap=0.0, u=u, v=v, dt=dt, stepper=stepper)
   s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
 
   σ = 0.1
@@ -92,7 +92,7 @@ function test_timedependentvel(stepper, dt, tfinal)
   uvel, vvel = 0.2, 0.1
   u(x, y, t) = uvel
   v(x, y, t) = t <= tfinal/2 ? vvel : -vvel
-  
+
   prob = TracerAdvDiff.ConstDiffProblem(; nx=nx, Lx=Lx, kap=0.0, u=u, v=v, dt=dt, stepper=stepper)
   s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
 

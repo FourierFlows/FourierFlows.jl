@@ -15,7 +15,7 @@ TwoDTurb.set_q!(prob, q0)
 fig = figure(); tic()
 for i = 1:10
   stepforward!(prob, nt)
-  TwoDTurb.updatevars!(prob)  
+  TwoDTurb.updatevars!(prob)
 
   cfl = maximum(prob.vars.U)*prob.grid.dx/prob.ts.dt
   @printf("step: %04d, t: %6.1f, cfl: %.2f, ", prob.step, prob.t, cfl)
