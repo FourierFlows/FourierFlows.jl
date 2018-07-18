@@ -55,10 +55,10 @@ function test_constvel_providegrid(stepper, dt, nsteps)
   grid = TwoDGrid(nx, Lx, ny, Ly)
 
   uvel, vvel = 0.2, 0.1
-  uin(x, y) = uvel + 0*x
-  vin(x, y) = vvel + 0*x
+  uin(x, y, t) = uvel + 0*x
+  vin(x, y, t) = vvel + 0*x
 
-  prob = TracerAdvDiff.ConstDiffSteadyFlowProblem(; grid = grid,
+  prob = TracerAdvDiff.ConstDiffProblem(; grid = grid,
     nx = nx, Lx = Lx, κ = 0.00, u = uin, v = vin, dt = dt, stepper = stepper)
 
   s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
