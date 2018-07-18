@@ -1,7 +1,6 @@
-import FourierFlows.TracerAdvDiff
+# traceradvdiff.jl's test function
 
-# -----------------------------------------------------------------------------
-# TRACERADVDIFF's TEST FUNCTIONS
+import FourierFlows.TracerAdvDiff
 
 """
     test_constvel(; kwargs...)
@@ -12,16 +11,12 @@ cfinal = c0(x-uvel*tfinal, y-vvel*tfinal)
 """
 function test_constvel(stepper, dt, nsteps)
 
-  nx  = 128
-  Lx  = 2π
-
+  nx, Lx = 128, 2π
   uvel, vvel = 0.2, 0.1
-  uin(x, y) = uvel + 0*x
-  vin(x, y) = vvel + 0*x
+  u(x, y) = uvel
+  v(x, y) = vvel
 
-  prob = TracerAdvDiff.ConstDiffSteadyFlowProblem(;
-    nx = nx, Lx = Lx, κ = 0.00, u = uin, v = vin, dt = dt, stepper = stepper)
-
+  prob = TracerAdvDiff.ConstDiffProblem(; steadyflow=true, nx=nx, Lx=Lx, kap=0.0, u=u, v=v, dt=dt, stepper=stepper)
   s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
 
   σ = 0.1
@@ -34,7 +29,6 @@ function test_constvel(stepper, dt, nsteps)
   TracerAdvDiff.set_c!(prob, c0)
 
   stepforward!(prob, nsteps)
-
   TracerAdvDiff.updatevars!(prob)
 
   isapprox(cfinal, v.c, rtol=g.nx*g.ny*nsteps*1e-12)
@@ -55,11 +49,11 @@ function test_constvel_providegrid(stepper, dt, nsteps)
   grid = TwoDGrid(nx, Lx, ny, Ly)
 
   uvel, vvel = 0.2, 0.1
-  uin(x, y, t) = uvel + 0*x
-  vin(x, y, t) = vvel + 0*x
+  u(x, y, t) = uvel
+  v(x, y, t) = vvel
 
-  prob = TracerAdvDiff.ConstDiffProblem(; grid = grid,
-    nx = nx, Lx = Lx, κ = 0.00, u = uin, v = vin, dt = dt, stepper = stepper)
+  prob = TracerAdvDiff.ConstDiffProblem(; grid=grid,
+    nx=nx, Lx=Lx, kap=0.0, u=u, v=v, dt=dt, stepper=stepper)
 
   s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
 
@@ -73,7 +67,6 @@ function test_constvel_providegrid(stepper, dt, nsteps)
   TracerAdvDiff.set_c!(prob, c0)
 
   stepforward!(prob, nsteps)
-
   TracerAdvDiff.updatevars!(prob)
 
   isapprox(cfinal, v.c, rtol=g.nx*g.ny*nsteps*1e-12)
@@ -89,9 +82,7 @@ state with cfinal = c0(x-uvel*tfinal, y)
 """
 function test_timedependentvel(stepper, dt, tfinal)
 
-  nx  = 128
-  Lx  = 2π
-
+  nx, Lx = 128, 2π
   nsteps = round(Int, tfinal/dt)
 
   if !isapprox(tfinal, nsteps*dt, rtol=1e-12)
@@ -99,18 +90,10 @@ function test_timedependentvel(stepper, dt, tfinal)
   end
 
   uvel, vvel = 0.2, 0.1
-  uin(x, y, t) = uvel + 0*x
-  function vin(x, y, t)
-    if t <= tfinal/2
-      vvel + 0*x
-    else
-      -vvel + 0*x
-    end
-  end
-
-  prob = TracerAdvDiff.ConstDiffProblem(;
-    nx = nx, Lx = Lx, κ = 0.00, u = uin, v = vin, dt = dt, stepper = stepper)
-
+  u(x, y, t) = uvel
+  v(x, y, t) = t <= tfinal/2 ? vvel : -vvel
+  
+  prob = TracerAdvDiff.ConstDiffProblem(; nx=nx, Lx=Lx, kap=0.0, u=u, v=v, dt=dt, stepper=stepper)
   s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
 
   σ = 0.1
@@ -123,8 +106,6 @@ function test_timedependentvel(stepper, dt, tfinal)
   TracerAdvDiff.set_c!(prob, c0func)
 
   stepforward!(prob, nsteps)
-  TracerAdvDiff.updatevars!(prob)
-
   TracerAdvDiff.updatevars!(prob)
 
   isapprox(cfinal, v.c, rtol=g.nx*g.ny*nsteps*1e-12)
@@ -142,8 +123,7 @@ function test_diffusion(stepper, dt, tfinal)
 
   nx  = 128
   Lx  = 2π
-  κ = 0.01
-
+  kap = 0.01
   nsteps = round(Int, tfinal/dt)
 
   if !isapprox(tfinal, nsteps*dt, rtol=1e-12)
@@ -151,13 +131,10 @@ function test_diffusion(stepper, dt, tfinal)
   end
 
   grid = TwoDGrid(nx, Lx)
+  u, v = zeros(grid.X), zeros(grid.X)
 
-  u = 0*grid.X
-  v = 0*grid.X
-
-  prob = TracerAdvDiff.ConstDiffSteadyFlowProblem(; grid = grid, nx = nx,
-    Lx = Lx, u = u, v = v, κ = κ, dt = dt, stepper = stepper)
-
+  prob = TracerAdvDiff.ConstDiffProblem(; steadyflow=true, grid=grid, nx=nx,
+    Lx=Lx, u=u, v=v, kap=kap, dt=dt, stepper=stepper)
   s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
 
   c0ampl, σ = 0.1, 0.1
@@ -165,13 +142,12 @@ function test_diffusion(stepper, dt, tfinal)
 
   c0 = c0func.(g.X, g.Y)
   tfinal = nsteps*dt
-  σt = sqrt(2*κ*tfinal + σ^2)
+  σt = sqrt(2*kap*tfinal + σ^2)
   cfinal = c0ampl*σ^2/σt^2 * exp.(-(g.X.^2 + g.Y.^2)/(2*σt^2))
 
   TracerAdvDiff.set_c!(prob, c0)
 
   stepforward!(prob, nsteps)
-
   TracerAdvDiff.updatevars!(prob)
 
   isapprox(cfinal, v.c, rtol=g.nx*g.ny*nsteps*1e-12)
@@ -179,9 +155,9 @@ end
 
 
 
-
-# -----------------------------------------------------------------------------
-# Running the tests
+# --
+# Run tests
+# --
 
 stepper = "RK4"
 
