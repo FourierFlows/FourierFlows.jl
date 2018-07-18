@@ -42,6 +42,45 @@ end
 
 
 """
+    test_constvel(; kwargs...)
+
+Same as test_constvel(; kwargs...) but provides own grid to the
+TracerAdvDiff problem.
+"""
+function test_constvel_providegrid(stepper, dt, nsteps)
+
+  nx, ny = 128, 190
+  Lx, Ly  = 2π, 3π
+
+  grid = TwoDGrid(nx, Lx, ny, Ly)
+
+  uvel, vvel = 0.2, 0.1
+  uin(x, y) = uvel + 0*x
+  vin(x, y) = vvel + 0*x
+
+  prob = TracerAdvDiff.ConstDiffSteadyFlowProblem(; grid = grid,
+    nx = nx, Lx = Lx, κ = 0.00, u = uin, v = vin, dt = dt, stepper = stepper)
+
+  s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
+
+  σ = 0.1
+  c0func(x, y) = 0.1*exp.(-(x.^2+y.^2)/(2σ^2))
+
+  c0 = c0func.(g.X, g.Y)
+  tfinal = nsteps*dt
+  cfinal = c0func.(g.X-uvel*tfinal, g.Y-vvel*tfinal)
+
+  TracerAdvDiff.set_c!(prob, c0)
+
+  stepforward!(prob, nsteps)
+
+  TracerAdvDiff.updatevars!(prob)
+
+  isapprox(cfinal, v.c, rtol=g.nx*g.ny*nsteps*1e-12)
+end
+
+
+"""
     test_timedependenttvel(; kwargs...)
 
 Advects a gaussian concentration c0(x, y, t) with a time-varying velocity flow
@@ -146,10 +185,13 @@ end
 
 stepper = "RK4"
 
-dt, nsteps  = 1e-2, 100
+dt, nsteps  = 1e-2, 40
 @test test_constvel(stepper, dt, nsteps)
 
-dt, tfinal  = 0.001, 0.1
+dt, nsteps  = 1e-2, 40
+@test test_constvel_providegrid(stepper, dt, nsteps)
+
+dt, tfinal  = 0.002, 0.1
 @test test_timedependentvel(stepper, dt, tfinal)
 
 dt, tfinal  = 0.005, 0.1
