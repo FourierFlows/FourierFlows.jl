@@ -1,11 +1,14 @@
 module TracerAdvDiff
 
-using FourierFlows
-export Params, Vars, Equation, set_c!, updatevars!
+using FourierFlows, Requires
 
 abstract type AbstractTracerParams <: AbstractParams end
+abstract type AbstractConstDiffParams <: AbstractParams end
+abstract type AbstractSteadyFlowParams <: AbstractParams end
 
 # Problems
+Problem(; kwargs...) = ConstDiffProblem(; kwargs...) # only problem defined for now
+
 function ConstDiffProblem(;
   grid = nothing,
     nx = 128,
@@ -47,21 +50,21 @@ end
 
 
 # Params
-struct ConstDiffParams{T} <: AbstractTracerParams
-  eta::T                   # Constant isotropic horizontal diffusivity
-  kap::T                   # Constant isotropic vertical diffusivity
-  kaph::T                  # Constant isotropic hyperdiffusivity
-  nkaph::T                 # Constant isotropic hyperdiffusivity order
+struct ConstDiffParams{T} <: AbstractConstDiffParams
+  eta::T                 # Constant isotropic horizontal diffusivity
+  kap::T                 # Constant isotropic vertical diffusivity
+  kaph::T                # Constant isotropic hyperdiffusivity
+  nkaph::T               # Constant isotropic hyperdiffusivity order
   u::Function            # Advecting x-velocity
   v::Function            # Advecting y-velocity
 end
 ConstDiffParams(eta, kap, u, v) = ConstDiffParams(eta, kap, 0eta, 0eta, u, v)
 
-struct ConstDiffSteadyFlowParams{T} <: AbstractTracerParams
-  eta::T                   # Constant horizontal diffusivity
-  kap::T                   # Constant vertical diffusivity
-  kaph::T                  # Constant isotropic hyperdiffusivity
-  nkaph::T                 # Constant isotropic hyperdiffusivity order
+struct ConstDiffSteadyFlowParams{T} <: AbstractSteadyFlowParams
+  eta::T                 # Constant horizontal diffusivity
+  kap::T                 # Constant vertical diffusivity
+  kaph::T                # Constant isotropic hyperdiffusivity
+  nkaph::T               # Constant isotropic hyperdiffusivity order
   u::Array{T,2}          # Advecting x-velocity
   v::Array{T,2}          # Advecting y-velocity
 end
@@ -77,10 +80,7 @@ ConstDiffSteadyFlowParams(eta, kap, kaph, nkaph, u, v,
 ConstDiffSteadyFlowParams(eta, kap, u, v, g) = ConstDiffSteadyFlowParams(eta, kap, 0eta, 0eta, u, v, g)
 
 
-"""
-Initialize an equation with constant diffusivity problem parameters p
-and on a grid g.
-"""
+"Initialize an equation with constant diffusivity problem parameters p and on a grid g."
 function Equation(p::ConstDiffParams, g)
   LC = zeros(g.Kr)
   @. LC = -p.eta*g.kr^2 - p.kap*g.l^2
@@ -98,32 +98,60 @@ end
 # Vars
 # --
 
-struct Vars{T} <: AbstractVars
-  c::Array{T,2}
-  cx::Array{T,2}
-  cy::Array{T,2}
-  ch::Array{Complex{T},2}
-  cxh::Array{Complex{T},2}
-  cyh::Array{Complex{T},2}
-end
+ physicalvars = [:c, :cx, :cy]
+transformvars = [:ch, :cxh, :cyh]
 
-""" Initialize the vars type on a grid g with zero'd arrays and t=0. """
-function Vars(g::TwoDGrid)
+eval(FourierFlows.structvarsexpr(:Vars, physicalvars, transformvars))
+
+"Initialize the vars type on a grid g with zero'd arrays and t=0."
+function Vars(g)
   @createarrays typeof(g.Lx) (g.nx, g.ny) c cx cy
   @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) ch cxh cyh
   Vars(c, cx, cy, ch, cxh, cyh)
 end
 
+@require CuArrays begin
+
+  using CuArrays  
+
+  function CuProblem(; stepper="RK4", kwargs...)
+    prob = Problem(; kwargs...)
+
+    dt = prob.ts.dt
+     g = CuTwoDGrid(prob.grid)
+    pr = CuParams(prob.params)
+    vs = CuVars(prob.vars)
+    eq = CuEquation(prob.eqn)
+    ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)  
+
+    FourierFlows.CuProblem(g, vs, pr, eq, ts)
+  end
+
+  eval(FourierFlows.structvarsexpr(:CuVars, physicalvars, transformvars, arraytype=:CuArray))
+
+  struct CuConstDiffSteadyFlowParams{T} <: AbstractSteadyFlowParams
+    eta::T                 # Constant horizontal diffusivity
+    kap::T                 # Constant vertical diffusivity
+    kaph::T                # Constant isotropic hyperdiffusivity
+    nkaph::T               # Constant isotropic hyperdiffusivity order
+    u::CuArray{T,2}        # Advecting x-velocity
+    v::CuArray{T,2}        # Advecting y-velocity
+  end
+
+  CuVars(v) = CuVars(getfield.(v, fieldnames(v))...)
+  CuVars(g::AbstractGrid) = CuVars(Vars(g))
+
+  CuParams(p::ConstDiffSteadyFlowParams) = CuConstDiffSteadyFlowParams(getfield.(p, fieldnames(p))...)
+  CuParams(p::ConstDiffParams) = p
+
+end # CUDA stuff
 
 # --
 # Solvers
 # --
 
-"""
-Calculate the advective terms for a tracer equation with constant
-diffusivity.
-"""
-function calcN!(N, sol, t, s, v, p::ConstDiffParams, g)
+"Calculate the advective terms for a tracer equation with constant diffusivity."
+function calcN!(N, sol, t, s, v, p::AbstractConstDiffParams, g)
   @. v.cxh = im*g.kr*sol
   @. v.cyh = im*g.l*sol
 
@@ -136,11 +164,8 @@ function calcN!(N, sol, t, s, v, p::ConstDiffParams, g)
 end
 
 
-"""
-Calculate the advective terms for a tracer equation with constant
-diffusivity and time-constant flow.
-"""
-function calcN_steadyflow!(N, sol, t, s, v, p::ConstDiffSteadyFlowParams, g)
+"Calculate the advective terms for a tracer equation with constant diffusivity and time-constant flow."
+function calcN_steadyflow!(N, sol, t, s, v, p::AbstractSteadyFlowParams, g)
   @. v.cxh = im*g.kr*sol
   @. v.cyh = im*g.l*sol
 
