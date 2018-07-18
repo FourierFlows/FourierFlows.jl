@@ -12,7 +12,7 @@ nsubs  = 200   # number of time-steps for plotting
 
 # Physical parameters
 Lx  = 2π      # domain size
-κ   = 0.002   # diffusivity
+kap = 0.002   # diffusivity
 
 gr = TwoDGrid(nx, Lx)
 X, Y = gr.X, gr.Y
@@ -21,12 +21,11 @@ X, Y = gr.X, gr.Y
 psiampl = 0.2
 m, n = 1, 1
 psiin = psiampl*cos.(m*X).*cos.(n*Y)
-uin(x, y) = +psiampl*n*cos.(m*x).*sin.(n*y)
-vin(x, y) = -psiampl*m*sin.(m*x).*cos.(n*y)
+uvel(x, y) = +psiampl*n*cos.(m*x).*sin.(n*y)
+vvel(x, y) = -psiampl*m*sin.(m*x).*cos.(n*y)
 
-
-prob = TracerAdvDiff.ConstDiffSteadyFlowProblem(;
-    nx = nx, Lx = Lx, κ = κ, u = uin, v = vin, dt = dt, stepper = stepper)
+prob = TracerAdvDiff.ConstDiffProblem(; steadyflow=true,
+    nx=nx, Lx=Lx, kap=kap, u=uvel, v=vvel, dt=dt, stepper=stepper)
 
 s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, prob.ts;
 
