@@ -136,7 +136,7 @@ end
     eta::T                 # Constant horizontal diffusivity
     kap::T                 # Constant vertical diffusivity
     kaph::T                # Constant isotropic hyperdiffusivity
-    nkaph::T               # Constant isotropic hyperdiffusivity order
+    nkaph::Int             # Constant isotropic hyperdiffusivity order
     u::CuArray{T,2}        # Advecting x-velocity
     v::CuArray{T,2}        # Advecting y-velocity
   end
