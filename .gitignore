@@ -7,6 +7,7 @@
 **/*.mem
 **/*.pdf
 **/.nfs*
+**/*.cov
 
 docs/build/
 docs/site/
