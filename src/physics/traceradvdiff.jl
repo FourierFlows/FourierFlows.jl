@@ -16,22 +16,27 @@ function ConstDiffProblem(;
     Ly = Lx,
    kap = 1.0,
    eta = kap,
+ nkaph = 0,
      u = nothing,
      v = nothing,
     dt = 0.01,
   stepper = "RK4",
-  steadyflow = false,
+  steadyflow = false
   )
 
   # Defaults
   if u != nothing;   uin = u
-  elseif steadyflow; uin(x, y) = 0.0
-  else;              uin(x, y, t) = 0.0
+  else
+      usteady(x, y) = 0.0
+      uvarying(x, y, t) = 0.0
+      if steadyflow; uin = usteady; else; uin = uvarying;end
   end
 
   if v != nothing;   vin = v
-  elseif steadyflow; vin(x, y) = 0.0
-  else;              vin(x, y, t) = 0.0
+  else
+      vsteady(x, y) = 0.0
+      vvarying(x, y, t) = 0.0
+      if steadyflow; vin = vsteady; else; vin = vvarying;end
   end
 
   if grid == nothing; g = TwoDGrid(nx, Lx, ny, Ly)
@@ -53,17 +58,17 @@ struct ConstDiffParams{T} <: AbstractConstDiffParams
   eta::T                 # Constant isotropic horizontal diffusivity
   kap::T                 # Constant isotropic vertical diffusivity
   kaph::T                # Constant isotropic hyperdiffusivity
-  nkaph::T               # Constant isotropic hyperdiffusivity order
+  nkaph::Int             # Constant isotropic hyperdiffusivity order
   u::Function            # Advecting x-velocity
   v::Function            # Advecting y-velocity
 end
-ConstDiffParams(eta, kap, u, v) = ConstDiffParams(eta, kap, 0eta, 0eta, u, v)
+ConstDiffParams(eta, kap, u, v) = ConstDiffParams(eta, kap, 0eta, 0, u, v)
 
 struct ConstDiffSteadyFlowParams{T} <: AbstractSteadyFlowParams
   eta::T                 # Constant horizontal diffusivity
   kap::T                 # Constant vertical diffusivity
   kaph::T                # Constant isotropic hyperdiffusivity
-  nkaph::T               # Constant isotropic hyperdiffusivity order
+  nkaph::Int             # Constant isotropic hyperdiffusivity order
   u::Array{T,2}          # Advecting x-velocity
   v::Array{T,2}          # Advecting y-velocity
 end
@@ -76,13 +81,13 @@ end
 
 ConstDiffSteadyFlowParams(eta, kap, kaph, nkaph, u, v,
                           g) = ConstDiffSteadyFlowParams{typeof(eta)}(eta, kap, kaph, nkaph, u, v)
-ConstDiffSteadyFlowParams(eta, kap, u, v, g) = ConstDiffSteadyFlowParams(eta, kap, 0eta, 0eta, u, v, g)
+ConstDiffSteadyFlowParams(eta, kap, u, v, g) = ConstDiffSteadyFlowParams(eta, kap, 0eta, 0, u, v, g)
 
 
 "Initialize an equation with constant diffusivity problem parameters p and on a grid g."
 function Equation(p::ConstDiffParams, g)
   LC = zeros(g.Kr)
-  @. LC = -p.eta*g.kr^2 - p.kap*g.l^2
+  @. LC = -p.eta*g.kr^2 - p.kap*g.l^2 - p.kaph*g.KKrsq^p.nkaph
   FourierFlows.Equation{typeof(LC[1, 1]),2}(LC, calcN!)
 end
 

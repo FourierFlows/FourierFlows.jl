@@ -36,44 +36,6 @@ end
 
 
 """
-    test_constvel(; kwargs...)
-
-Same as test_constvel(; kwargs...) but provides own grid to the
-TracerAdvDiff problem.
-"""
-function test_constvel_providegrid(stepper, dt, nsteps)
-
-  nx, ny = 128, 190
-  Lx, Ly  = 2π, 3π
-
-  grid = TwoDGrid(nx, Lx, ny, Ly)
-
-  uvel, vvel = 0.2, 0.1
-  u(x, y, t) = uvel
-  v(x, y, t) = vvel
-
-  prob = TracerAdvDiff.ConstDiffProblem(; grid=grid,
-    nx=nx, Lx=Lx, kap=0.0, u=u, v=v, dt=dt, stepper=stepper)
-
-  s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
-
-  σ = 0.1
-  c0func(x, y) = 0.1*exp.(-(x.^2+y.^2)/(2σ^2))
-
-  c0 = c0func.(g.X, g.Y)
-  tfinal = nsteps*dt
-  cfinal = c0func.(g.X-uvel*tfinal, g.Y-vvel*tfinal)
-
-  TracerAdvDiff.set_c!(prob, c0)
-
-  stepforward!(prob, nsteps)
-  TracerAdvDiff.updatevars!(prob)
-
-  isapprox(cfinal, v.c, rtol=g.nx*g.ny*nsteps*1e-12)
-end
-
-
-"""
     test_timedependenttvel(; kwargs...)
 
 Advects a gaussian concentration c0(x, y, t) with a time-varying velocity flow
@@ -115,11 +77,10 @@ end
 """
     test_diffusion(; kwargs...)
 
-Advects a gaussian concentration c0(x, y, t) with a time-varying velocity flow
-u(x, y, t) = uvel and v(x, y, t) = vvel*sign(-t+tfinal/2) and compares the final
-state with cfinal = c0(x-uvel*tfinal, y)
+Diffuses a gaussian concentration c0(x, y, t) and compares the final state with
+the analytic solution of the heat equation, cfinal
 """
-function test_diffusion(stepper, dt, tfinal)
+function test_diffusion(stepper, dt, tfinal; steadyflow = true)
 
   nx  = 128
   Lx  = 2π
@@ -131,10 +92,8 @@ function test_diffusion(stepper, dt, tfinal)
   end
 
   grid = TwoDGrid(nx, Lx)
-  u, v = zeros(grid.X), zeros(grid.X)
-
-  prob = TracerAdvDiff.ConstDiffProblem(; steadyflow=true, grid=grid, nx=nx,
-    Lx=Lx, u=u, v=v, kap=kap, dt=dt, stepper=stepper)
+  prob = TracerAdvDiff.ConstDiffProblem(; steadyflow=steadyflow, grid=grid, nx=nx,
+    Lx=Lx, kap=kap, dt=dt, stepper=stepper)
   s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
 
   c0ampl, σ = 0.1, 0.1
@@ -164,11 +123,11 @@ stepper = "RK4"
 dt, nsteps  = 1e-2, 40
 @test test_constvel(stepper, dt, nsteps)
 
-dt, nsteps  = 1e-2, 40
-@test test_constvel_providegrid(stepper, dt, nsteps)
-
 dt, tfinal  = 0.002, 0.1
 @test test_timedependentvel(stepper, dt, tfinal)
 
 dt, tfinal  = 0.005, 0.1
-@test test_diffusion(stepper, dt, tfinal)
+@test test_diffusion(stepper, dt, tfinal; steadyflow=true)
+
+dt, tfinal  = 0.005, 0.1
+@test test_diffusion(stepper, dt, tfinal; steadyflow=false)
