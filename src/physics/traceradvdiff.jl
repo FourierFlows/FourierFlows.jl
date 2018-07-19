@@ -1,5 +1,4 @@
 module TracerAdvDiff
-
 using FourierFlows, Requires
 
 abstract type AbstractTracerParams <: AbstractParams end
@@ -25,12 +24,12 @@ function ConstDiffProblem(;
   )
 
   # Defaults
-  if u != nothing;   uin = u 
+  if u != nothing;   uin = u
   elseif steadyflow; uin(x, y) = 0.0
   else;              uin(x, y, t) = 0.0
   end
 
-  if v != nothing;   vin = v 
+  if v != nothing;   vin = v
   elseif steadyflow; vin(x, y) = 0.0
   else;              vin(x, y, t) = 0.0
   end
@@ -75,7 +74,7 @@ function ConstDiffSteadyFlowParams(eta, kap, kaph, nkaph, u::Function, v::Functi
   ConstDiffSteadyFlowParams(eta, kap, kaph, nkaph, ugrid, vgrid)
 end
 
-ConstDiffSteadyFlowParams(eta, kap, kaph, nkaph, u, v, 
+ConstDiffSteadyFlowParams(eta, kap, kaph, nkaph, u, v,
                           g) = ConstDiffSteadyFlowParams{typeof(eta)}(eta, kap, kaph, nkaph, u, v)
 ConstDiffSteadyFlowParams(eta, kap, u, v, g) = ConstDiffSteadyFlowParams(eta, kap, 0eta, 0eta, u, v, g)
 
@@ -112,7 +111,7 @@ end
 
 @require CuArrays begin
 
-  using CuArrays  
+  using CuArrays
 
   function CuProblem(; stepper="RK4", kwargs...)
     prob = Problem(; kwargs...)
@@ -122,7 +121,7 @@ end
     pr = CuParams(prob.params)
     vs = CuVars(prob.vars)
     eq = CuEquation(prob.eqn)
-    ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)  
+    ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
 
     FourierFlows.CuProblem(g, vs, pr, eq, ts)
   end
