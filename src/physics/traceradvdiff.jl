@@ -31,17 +31,15 @@ function ConstDiffProblem(;
   steadyflow = false
   )
 
+  zerofunction(args...) = 0.0
+
   # Defaults
   if u != nothing;   uin = u
-  else
-      usteady(x, y), uvarying(x, y, t) = 0.0, 0.0
-      if steadyflow; uin = usteady; else; uin = uvarying; end
+  else; uin = zerofunction
   end
 
   if v != nothing;   vin = v
-  else
-      vsteady(x, y), vvarying(x, y, t) = 0.0, 0.0
-      if steadyflow; vin = vsteady; else; vin = vvarying; end
+  else; vin = zerofunction
   end
 
   if grid == nothing; g = TwoDGrid(nx, Lx, ny, Ly)
