@@ -100,7 +100,7 @@ function ConstDiffSteadyFlowParams(eta, kap, kaph, nkaph, u::Function, v::Functi
 end
 
 ConstDiffSteadyFlowParams(eta, kap, kaph, nkaph, u, v,
-                          g) = ConstDiffSteadyFlowParams{typeof(eta)}(eta, kap, kaph, nkaph, u, v)
+                            g) = ConstDiffSteadyFlowParams{typeof(eta)}(eta, kap, kaph, nkaph, u, v)
 ConstDiffSteadyFlowParams(eta, kap, u, v, g) = ConstDiffSteadyFlowParams(eta, kap, 0eta, 0, u, v, g)
 
 
@@ -147,46 +147,6 @@ function Vars(g)
   Vars(c, cx, cy, ch, cxh, cyh)
 end
 
-
-# --
-# CUDA functionality
-# --
-
-@require CuArrays begin
-
-  using CuArrays
-
-  function CuProblem(; stepper="RK4", kwargs...)
-    prob = Problem(; kwargs...)
-
-    dt = prob.ts.dt
-     g = CuTwoDGrid(prob.grid)
-    pr = CuParams(prob.params)
-    vs = CuVars(prob.vars)
-    eq = CuEquation(prob.eqn)
-    ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
-
-    FourierFlows.CuProblem(g, vs, pr, eq, ts)
-  end
-
-  eval(FourierFlows.structvarsexpr(:CuVars, physicalvars, transformvars, arraytype=:CuArray))
-
-  struct CuConstDiffSteadyFlowParams{T} <: AbstractSteadyFlowParams
-    eta::T                 # Constant horizontal diffusivity
-    kap::T                 # Constant vertical diffusivity
-    kaph::T                # Constant isotropic hyperdiffusivity
-    nkaph::Int             # Constant isotropic hyperdiffusivity order
-    u::CuArray{T,2}        # Advecting x-velocity
-    v::CuArray{T,2}        # Advecting y-velocity
-  end
-
-  CuVars(v) = CuVars(getfield.(v, fieldnames(v))...)
-  CuVars(g::AbstractGrid) = CuVars(Vars(g))
-
-  CuParams(p::ConstDiffSteadyFlowParams) = CuConstDiffSteadyFlowParams(getfield.(p, fieldnames(p))...)
-  CuParams(p::ConstDiffParams) = p
-
-end # CUDA stuff
 
 
 # --

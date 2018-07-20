@@ -113,6 +113,55 @@ function test_diffusion(stepper, dt, tfinal; steadyflow = true)
 end
 
 
+"""
+    test_hyperdiffusion(; kwargs...)
+
+Diffuses a gaussian concentration c0(x, y, t) using hyperdiffusivity and
+compares the final state with the analytic solution of the heat equation, cfinal
+"""
+function test_hyperdiffusion(stepper, dt, tfinal; steadyflow = true)
+
+    nx  = 128
+    Lx  = 2π
+    kap = 0.0   # no diffusivity
+    eta = kap   # no diffusivity
+   kaph = 0.01  # hyperdiffusivity coeff
+  nkaph = 1     # nkaph=1 converts hyperdiffusivity to plain diffusivity
+                # so we can compare with the analytic solution of heat equation
+
+  nsteps = round(Int, tfinal/dt)
+
+  if !isapprox(tfinal, nsteps*dt, rtol=1e-12)
+      error("tfinal is not multiple of dt")
+  end
+
+
+   g = TwoDGrid(nx, Lx)
+
+  u, v = 0*g.X, 0*g.X
+
+  vs = TracerAdvDiff.Vars(g)
+  pr = TracerAdvDiff.ConstDiffSteadyFlowParams(eta, kap, kaph, nkaph, u, v, g)
+  eq = TracerAdvDiff.Equation(pr, g)
+  ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
+  prob = FourierFlows.Problem(g, vs, pr, eq, ts)
+
+  c0ampl, σ = 0.1, 0.1
+  c0func(x, y) = c0ampl*exp.(-(x.^2+y.^2)/(2σ^2))
+
+  c0 = c0func.(g.X, g.Y)
+  tfinal = nsteps*dt
+  σt = sqrt(2*kaph*tfinal + σ^2)
+  cfinal = c0ampl*σ^2/σt^2 * exp.(-(g.X.^2 + g.Y.^2)/(2*σt^2))
+
+  TracerAdvDiff.set_c!(prob, c0)
+
+  stepforward!(prob, nsteps)
+  TracerAdvDiff.updatevars!(prob)
+
+  isapprox(cfinal, vs.c, rtol=g.nx*g.ny*nsteps*1e-12)
+end
+
 
 # --
 # Run tests
@@ -131,3 +180,6 @@ dt, tfinal  = 0.005, 0.1
 
 dt, tfinal  = 0.005, 0.1
 @test test_diffusion(stepper, dt, tfinal; steadyflow=false)
+
+dt, tfinal  = 0.005, 0.1
+@test test_hyperdiffusion(stepper, dt, tfinal; steadyflow=true)
