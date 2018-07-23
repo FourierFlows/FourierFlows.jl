@@ -14,44 +14,47 @@ abstract type AbstractSteadyFlowParams <: AbstractParams end
 
 Construct a constant diffusivity problem with steady or time-varying flow.
 """
+noflow(args...) = 0.0
+
 Problem(; kwargs...) = ConstDiffProblem(; kwargs...) # only problem defined for now
 
+function flowargs(u)
+  umethods = methods(u)
+  length(umethods.ms) == 1 ? umethods.ms[1].nargs-1 : error("Either define steadyflow or use a flow function 
+    with only one argument.")
+end
+
 function ConstDiffProblem(;
-  grid = nothing,
     nx = 128,
     Lx = 2π,
     ny = nx,
     Ly = Lx,
+  grid = TwoDGrid(nx, Lx, ny, Ly),
    kap = 0.1,
    eta = kap,
-     u = nothing,
-     v = nothing,
+     u = noflow,
+     v = noflow,
     dt = 0.01,
   stepper = "RK4",
-  steadyflow = false
+  steadyflow = nothing
   )
 
-  zerofunction(args...) = 0.0
-
-  # Defaults
-  if u != nothing;   uin = u
-  else; uin = zerofunction
+  if steadyflow==nothing # deduce whether flow is time-dependent
+    if (typeof(u) <: Function && flowargs(u) > 2) || (typeof(v) <: Function && flowargs(v) > 2)
+      steadyflow = false
+    else
+      steadyflow = true
+    end
   end
 
-  if v != nothing;   vin = v
-  else; vin = zerofunction
-  end
-
-  if grid == nothing; g = TwoDGrid(nx, Lx, ny, Ly)
-  else;               g = grid
-  end
-
-  vs = TracerAdvDiff.Vars(g)
   if steadyflow; pr = TracerAdvDiff.ConstDiffSteadyFlowParams(eta, kap, uin, vin, g)
   else;          pr = TracerAdvDiff.ConstDiffParams(eta, kap, uin, vin)
   end
+
+  vs = TracerAdvDiff.Vars(g)
   eq = TracerAdvDiff.Equation(pr, g)
   ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
+
   FourierFlows.Problem(g, vs, pr, eq, ts)
 end
 
@@ -91,14 +94,16 @@ struct ConstDiffSteadyFlowParams{T} <: AbstractSteadyFlowParams
   v::Array{T,2}          # Advecting y-velocity
 end
 
-function ConstDiffSteadyFlowParams(eta, kap, kaph, nkaph, u::Function, v::Function, g)
-  ugrid = u.(g.X, g.Y)
-  vgrid = v.(g.X, g.Y)
+function ConstDiffSteadyFlowParams(eta, kap, kaph, nkaph, u, v, g)
+  if typeof(u) <: Function; ugrid = u.(g.X, g.Y)
+  else;                     ugrid = u
+  end
+  if typeof(v) <: Function; vgrid = v.(g.X, g.Y)
+  else;                     vgrid = v
+  end
   ConstDiffSteadyFlowParams(eta, kap, kaph, nkaph, ugrid, vgrid)
 end
 
-ConstDiffSteadyFlowParams(eta, kap, kaph, nkaph, u, v,
-                            g) = ConstDiffSteadyFlowParams{typeof(eta)}(eta, kap, kaph, nkaph, u, v)
 ConstDiffSteadyFlowParams(eta, kap, u, v, g) = ConstDiffSteadyFlowParams(eta, kap, 0eta, 0, u, v, g)
 
 
