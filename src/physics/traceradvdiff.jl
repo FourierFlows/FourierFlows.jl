@@ -44,7 +44,6 @@ function ConstDiffProblem(;
       steadyflow = false
     else
       steadyflow = true
-      println("I'm here")
     end
   end
 
