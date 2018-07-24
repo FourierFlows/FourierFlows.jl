@@ -14,13 +14,13 @@ abstract type AbstractSteadyFlowParams <: AbstractParams end
 
 Construct a constant diffusivity problem with steady or time-varying flow.
 """
-noflow(args...) = 0.0
+noflow(args...) = 0.0 # used as defaults for u, v functions in Problem()
 
 Problem(; kwargs...) = ConstDiffProblem(; kwargs...) # only problem defined for now
 
 function flowargs(u)
   umethods = methods(u)
-  length(umethods.ms) == 1 ? umethods.ms[1].nargs-1 : error("Either define steadyflow or use a flow function 
+  length(umethods.ms) == 1 ? umethods.ms[1].nargs-1 : error("Either define steadyflow or use a flow function
     with only one argument.")
 end
 
@@ -47,8 +47,12 @@ function ConstDiffProblem(;
     end
   end
 
-  if steadyflow; pr = TracerAdvDiff.ConstDiffSteadyFlowParams(eta, kap, uin, vin, g)
-  else;          pr = TracerAdvDiff.ConstDiffParams(eta, kap, uin, vin)
+  if grid == nothing; g = TwoDGrid(nx, Lx, ny, Ly)
+  else;               g = grid
+  end
+
+  if steadyflow; pr = TracerAdvDiff.ConstDiffSteadyFlowParams(eta, kap, u, v, g)
+  else;          pr = TracerAdvDiff.ConstDiffParams(eta, kap, u, v)
   end
 
   vs = TracerAdvDiff.Vars(g)
