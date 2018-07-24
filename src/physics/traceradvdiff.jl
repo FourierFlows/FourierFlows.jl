@@ -44,22 +44,19 @@ function ConstDiffProblem(;
       steadyflow = false
     else
       steadyflow = true
+      println("I'm here")
     end
   end
 
-  if grid == nothing; g = TwoDGrid(nx, Lx, ny, Ly)
-  else;               g = grid
-  end
-
-  if steadyflow; pr = TracerAdvDiff.ConstDiffSteadyFlowParams(eta, kap, u, v, g)
+  if steadyflow; pr = TracerAdvDiff.ConstDiffSteadyFlowParams(eta, kap, u, v, grid)
   else;          pr = TracerAdvDiff.ConstDiffParams(eta, kap, u, v)
   end
 
-  vs = TracerAdvDiff.Vars(g)
-  eq = TracerAdvDiff.Equation(pr, g)
-  ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
+  vs = TracerAdvDiff.Vars(grid)
+  eq = TracerAdvDiff.Equation(pr, grid)
+  ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, grid)
 
-  FourierFlows.Problem(g, vs, pr, eq, ts)
+  FourierFlows.Problem(grid, vs, pr, eq, ts)
 end
 
 

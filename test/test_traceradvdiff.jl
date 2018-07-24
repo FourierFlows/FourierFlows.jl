@@ -16,7 +16,7 @@ function test_constvel(stepper, dt, nsteps)
   u(x, y) = uvel
   v(x, y) = vvel
 
-  prob = TracerAdvDiff.Problem(; steadyflow=true, nx=nx, Lx=Lx, kap=0.0, u=u, v=v, dt=dt, stepper=stepper)
+  prob = TracerAdvDiff.Problem(; nx=nx, Lx=Lx, kap=0.0, u=u, v=v, dt=dt, stepper=stepper)
   s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
 
   σ = 0.1
@@ -135,7 +135,6 @@ function test_hyperdiffusion(stepper, dt, tfinal; steadyflow = true)
       error("tfinal is not multiple of dt")
   end
 
-
    g = TwoDGrid(nx, Lx)
 
   u, v = 0*g.X, 0*g.X
@@ -182,4 +181,4 @@ dt, tfinal  = 0.005, 0.1
 @test test_diffusion(stepper, dt, tfinal; steadyflow=false)
 
 dt, tfinal  = 0.005, 0.1
-@test test_hyperdiffusion(stepper, dt, tfinal; steadyflow=true)
+@test test_hyperdiffusion(stepper, dt, tfinal)
