@@ -25,11 +25,9 @@ g2 = CuTwoDGrid(32, 2π, 24, 4π)
 @test testk(g2)
 @test testkr(g2)
 
-# Cannot get tests of arrays with dimension (1, n) to work.
 @test testy(g2)
 @test testl(g2)
 
-# Tests of 2D grid objects do not work with CuArrays.
 @test testX(g2)
 @test testY(g2)
 @test testK(g2)
