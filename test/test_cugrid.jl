@@ -10,12 +10,12 @@ testk(g) = sum(g.k[2:g.nkr-1] .+ flipdim(g.k[g.nkr+1:end], 1)) == 0.0
 testkr(g) = sum(g.k[1:g.nkr] .- g.kr) == 0.0
 testl(g) = sum(g.l[:, 2:Int(g.ny/2)] .+ flipdim(g.l[:, Int(g.ny/2+2):end], 2)) == 0.0
 
-testX(g) = sum(g.X[end, :].-g.X[1, :]) - (g.Lx-g.dx)*g.ny < 1e-15*g.ny
-testY(g) = sum(g.Y[:, end].-g.Y[:, 1]) - (g.Ly-g.dy)*g.nx < 1e-15*g.nx
-testK(g) = sum(g.K[2:g.nkr-1, :] .+ flipdim(g.K[g.nkr+1:end, :], 1)) == 0.0
-testL(g) = sum(g.L[:, 2:Int(g.ny/2)] .+ flipdim(g.L[:, Int(g.ny/2+2):end], 2)) == 0.0
-testKr(g) = sum(g.K[1:g.nkr, :] .- g.Kr) == 0.0
-testLr(g) = sum(g.L[1:g.nkr, :] .- g.Lr) == 0.0
+testX(g) = isapprox(sum(g.X[end, :].-g.X[1, :]), (g.Lx-g.dx)*g.ny, rtol = 1e-15*g.ny)
+testY(g) = isapprox(sum(g.Y[:, end].-g.Y[:, 1]), (g.Ly-g.dy)*g.nx, rtol = 1e-15*g.nx)
+testK(g) = isapprox(sum(g.K[2:g.nkr-1, :] .+ flipdim(g.K[g.nkr+1:end, :], 1)), 0, rtol=1e-14)
+testL(g) = isapprox(sum(g.L[:, 2:Int(g.ny/2)] .+ flipdim(g.L[:, Int(g.ny/2+2):end], 2)), 0, rtol=1e-14)
+testKr(g) = isapprox(sum(g.K[1:g.nkr, :] .- g.Kr), 0, rtol=1e-14)
+testLr(g) = isapprox(sum(g.L[1:g.nkr, :] .- g.Lr), 0, rtol=1e-14)
 
 g2 = CuTwoDGrid(32, 2π, 24, 4π)
 
@@ -26,13 +26,13 @@ g2 = CuTwoDGrid(32, 2π, 24, 4π)
 @test testkr(g2)
 
 # Cannot get tests of arrays with dimension (1, n) to work.
-#@test testy(g2)
-#@test testl(g2)
+@test testy(g2)
+@test testl(g2)
 
 # Tests of 2D grid objects do not work with CuArrays.
-#@test testX(g2)
-#@test testY(g2)
-#@test testK(g2)
-#@test testL(g2)
-#@test testKr(g2)
-#@test testLr(g2)
+@test testX(g2)
+@test testY(g2)
+@test testK(g2)
+@test testL(g2)
+@test testKr(g2)
+@test testLr(g2)
