@@ -24,7 +24,7 @@ function test_constvel(stepper, dt, nsteps)
 
   c0 = c0func.(g.X, g.Y)
   tfinal = nsteps*dt
-  cfinal = c0func.(g.X-uvel*tfinal, g.Y-vvel*tfinal)
+  cfinal = c0func.(g.X .- uvel*tfinal, g.Y .- vvel*tfinal)
 
   TracerAdvDiff.set_c!(prob, c0)
 
@@ -63,7 +63,7 @@ function test_timedependentvel(stepper, dt, tfinal)
 
   c0 = c0func.(g.X, g.Y)
   tfinal = nsteps*dt
-  cfinal = c0func.(g.X-uvel*tfinal, g.Y)
+  cfinal = c0func.(g.X .- uvel*tfinal, g.Y)
 
   TracerAdvDiff.set_c!(prob, c0func)
 

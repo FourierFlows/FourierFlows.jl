@@ -52,7 +52,7 @@ calculating these coefficients.
 """
 function getetdcoeffs(dt, LC; ncirc=32, rcirc=1)
 
-  shape = Tuple(cat(1, ncirc, ones(Int, ndims(LC))))
+  shape = Tuple(cat(ncirc, ones(Int, ndims(LC)), dims=1))
 
   circ = zeros(cxeltype(LC), shape)
   circ .= rcirc * exp.(2π*im/ncirc*(0.5:1:(ncirc-0.5)))
@@ -68,15 +68,15 @@ function getetdcoeffs(dt, LC; ncirc=32, rcirc=1)
   Γc = @. ( -4 - 3zc - zc^2 + exp(zc)*(4 - zc) ) / zc^3
 
   if eltype(LC) <: Real
-    ζ = dt*real.(squeeze(mean(ζc, M), M))
-    α = dt*real.(squeeze(mean(αc, M), M))
-    β = dt*real.(squeeze(mean(βc, M), M))
-    Γ = dt*real.(squeeze(mean(Γc, M), M))
+    ζ = dt*real.(dropdims(mean(ζc, dims=M), dims=M))
+    α = dt*real.(dropdims(mean(αc, dims=M), dims=M))
+    β = dt*real.(dropdims(mean(βc, dims=M), dims=M))
+    Γ = dt*real.(dropdims(mean(Γc, dims=M), dims=M))
   else
-    ζ = dt*squeeze(mean(ζc, M), M)
-    α = dt*squeeze(mean(αc, M), M)
-    β = dt*squeeze(mean(βc, M), M)
-    Γ = dt*squeeze(mean(Γc, M), M)
+    ζ = dt*dropdims(mean(ζc, dims=M), dims=M)
+    α = dt*dropdims(mean(αc, dims=M), dims=M)
+    β = dt*dropdims(mean(βc, dims=M), dims=M)
+    Γ = dt*dropdims(mean(Γc, dims=M), dims=M)
   end
 
   ζ, α, β, Γ

@@ -27,9 +27,7 @@ struct CuTwoDGrid{T} <: AbstractTwoDGrid
   invKKrsq::CuArray{T,2}  # 1/KKrsq, invKKrsq[1, 1]=0
 
   fftplan::CuArrays.FFT.cCuFFTPlan{Complex{T},-1,false,2}
-  ifftplan::Base.DFT.ScaledPlan{Complex{T},CuArrays.FFT.cCuFFTPlan{Complex{T},1,false,2},T}
   rfftplan::CuArrays.FFT.rCuFFTPlan{T,-1,false,2}
-  irfftplan::Base.DFT.ScaledPlan{Complex{T},CuArrays.FFT.rCuFFTPlan{Complex{T},1,false,2},T}
 
   # Range objects that access the aliased part of the wavenumber range
   ialias::UnitRange{Int}
@@ -40,7 +38,7 @@ end
 """
     CuTwoDGrid(nx, Lx, ny=nx, Ly=Lx;  x0=-Lx/2, y0=-Ly/2)
 
-Construct a CuTwoDGrid object. The two-dimensional domain has size `(Lx, Ly)`, 
+Construct a CuTwoDGrid object. The two-dimensional domain has size `(Lx, Ly)`,
 resolution `(nx, ny)` and bottom left corner at `(x0, y0)`. The type of `CuTwoDGrid` is
 inferred from the type of `Lx`.
 """
@@ -86,9 +84,7 @@ function CuTwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly)
 
   # FFT plans
     fftplan = plan_fft(CuArray{Complex{T},2}(nx, ny))
-   ifftplan = plan_ifft(CuArray{Complex{T},2}(nk, nl))
    rfftplan = plan_rfft(CuArray{T,2}(nx, ny))
-  irfftplan = plan_irfft(CuArray{Complex{T},2}(nkr, nl), nx)
 
   # Index endpoints for aliased i, j wavenumbers
   iaL, iaR = Int(floor(nk/3))+1, 2*Int(ceil(nk/3))-1
@@ -100,7 +96,7 @@ function CuTwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly)
 
   CuTwoDGrid(nx, ny, nk, nl, nkr, Lx, Ly, dx, dy, x, y, X, Y,
              k, l, kr, K, L, Kr, Lr, KKsq, invKKsq, KKrsq, invKKrsq,
-             fftplan, ifftplan, rfftplan, irfftplan, ialias, iralias, jalias)
+             fftplan, rfftplan, ialias, iralias, jalias)
 end
 
 """

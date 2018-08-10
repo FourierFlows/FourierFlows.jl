@@ -15,6 +15,7 @@ environment:
 branches:
   only:
     - master
+    - TowardsJulia1.0
     - /release-.*/
 
 notifications:
@@ -40,8 +41,8 @@ install:
 build_script:
 # Need to convert from shallow to complete for Pkg.clone to work
   - IF EXIST .git\shallow (git fetch --unshallow)
-  - C:\projects\julia\bin\julia -e "versioninfo();
+  - C:\projects\julia\bin\julia -e "versioninfo(); using Pkg;
       Pkg.clone(pwd(), \"FourierFlows\"); Pkg.build(\"FourierFlows\")"
 
 test_script:
-  - C:\projects\julia\bin\julia --check-bounds=yes -e "Pkg.test(\"FourierFlows\")"
+  - C:\projects\julia\bin\julia --check-bounds=yes -e "using Pkg; Pkg.test(\"FourierFlows\")"

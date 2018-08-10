@@ -21,9 +21,9 @@ end
 function Diagnostic(calc::Function, prob::FourierFlows.Problem; freq=1, nsteps=1, num=ceil(Int, (nsteps+1)/freq))
   value = calc(prob)
   T = typeof(value)
-  data = Array{T}(num)
-  time = Array{Float64}(num)
-  step = Array{Int}(num)
+  data = Array{T}(undef, num)
+  time = Array{Float64}(undef, num)
+  step = Array{Int}(undef, num)
   data[1] = value
   time[1] = prob.t
   step[1] = prob.step

@@ -56,12 +56,12 @@ end
 
 Problem(g, v, p, eq, ts, st) = Problem(g, v, p, eq, ts, st, st.t, st.step)
 
-function Problem(g, v, p, eq::Equation, ts; cxsol=true) 
+function Problem(g, v, p, eq::Equation, ts; cxsol=true)
   Tsol = cxsol ? cxeltype(eq.LC) : eltype(eq.LC)
   Problem(g, v, p, eq, ts, State(Tsol, size(eq.LC), ts.dt))
 end
 
-function Problem(g, v, p, eq::DualEquation, ts; cxsolc=true, cxsolr=true) 
+function Problem(g, v, p, eq::DualEquation, ts; cxsolc=true, cxsolr=true)
   Tc = cxsolc ? cxeltype(eq.LCc) : eltype(eq.LCc)
   Tr = cxsolr ? cxeltype(eq.LCr) : eltype(eq.LCr)
   Problem(g, v, p, eq, ts, DualState(Tc, Tr, size(eq.LCc), size(eq.LCr), ts.c.dt))
@@ -72,7 +72,7 @@ end
 For Julia v1.0 release:
   The `t` and `step` properties can be removed from Problem, instead
   overloading the `getfield` function to intercept attempts to access
-  `t` and `step`, which will be redirected to prob.state.t and 
+  `t` and `step`, which will be redirected to prob.state.t and
   prob.state.step (and perhaps sol as well). This'll make lots of things
   just a little bit nicer.
 
@@ -92,7 +92,7 @@ end
 For Julia v1.0 release:
   The `t` and `step` properties can be removed from Problem, instead
   overloading the `getfield` function to intercept attempts to access
-  `t` and `step`, which will be redirected to prob.state.t and 
+  `t` and `step`, which will be redirected to prob.state.t and
   prob.state.step (and perhaps sol as well). This'll make lots of things
   just a little bit nicer.
 

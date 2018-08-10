@@ -22,13 +22,13 @@ function test_irfft_cosmx(g::OneDGrid)
     isapprox(f1, f1b, rtol=rtol)
 end
 
-function test_irfft_AmulB_cosmx(g::OneDGrid)
-    # test irfft with A_mul_B for cos(mx+φ)
+function test_irfft_mul_cosmx(g::OneDGrid)
+    # test irfft with ldiv! for cos(mx+φ)
     f1, f1h, f1hr, f1hr_mul, f1h_th, f1hr_th = create_testfuncs(g)
     f1hr_c = deepcopy(f1hr)
     # deepcopy is needed because FFTW irfft messes up with input!
-    f1b = Array{Float64}(g.nx)
-    A_mul_B!( f1b, g.irfftplan, f1hr_c )
+    f1b = Array{Float64}(undef, g.nx)
+    ldiv!( f1b, g.rfftplan, f1hr_c )
     isapprox(f1, f1b, rtol=rtol)
 end
 
@@ -50,14 +50,14 @@ function test_irfft_cosmxcosny(g::TwoDGrid)
     isapprox(f1, f1b, rtol=rtol)
 end
 
-function test_irfft_AmulB_cosmxcosny(g::TwoDGrid)
-    # test irfft with A_mul_B for cos(mx)cos(ny)
+        function test_irfft_mul_cosmxcosny(g::TwoDGrid)
+    # test irfft with ldiv! for cos(mx)cos(ny)
     f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mul, f2hr_mul,
             f1h_th, f1hr_th, f2h_th, f2hr_th = create_testfuncs(g)
     f1hr_c = deepcopy(f1hr)
     # deepcopy is needed because FFTW irfft messes up with input!
-    f1b = Array{Float64}(g.nx, g.ny)
-    A_mul_B!( f1b, g.irfftplan, f1hr_c )
+    f1b = Array{Float64}(undef, g.nx, g.ny)
+    ldiv!( f1b, g.rfftplan, f1hr_c )
     isapprox(f1, f1b, rtol=rtol)
 end
 
@@ -79,14 +79,14 @@ function test_irfft_sinmxny(g::TwoDGrid)
     isapprox(f2, f2b4, rtol=rtol)
 end
 
-function test_irfft_AmulB_sinmxny(g::TwoDGrid)
-    # test irfft with A_mul_B for sin(mx+ny)
+function test_irfft_mul_sinmxny(g::TwoDGrid)
+    # test irfft with ldiv! for sin(mx+ny)
     f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mul, f2hr_mul,
             f1h_th, f1hr_th, f2h_th, f2hr_th = create_testfuncs(g)
     f2hr_c = deepcopy(f2hr)
     # deepcopy is needed because FFTW irfft messes up with input!
-    f2b = Array{Float64}(g.nx, g.ny)
-    A_mul_B!(f2b, g.irfftplan, f2hr_c)
+    f2b = Array{Float64}(undef, g.nx, g.ny)
+    ldiv!(f2b, g.rfftplan, f2hr_c)
     isapprox(f2, f2b, rtol=rtol)
 end
 
@@ -107,11 +107,11 @@ g2 = TwoDGrid(nx, Lx, ny, Ly)
 
 @test test_ifft_cosmx(g1)
 @test test_irfft_cosmx(g1)
-@test test_irfft_AmulB_cosmx(g1)
+@test test_irfft_mul_cosmx(g1)
 
 @test test_ifft_cosmxcosny(g2)
 @test test_irfft_cosmxcosny(g2)
-@test test_irfft_AmulB_cosmxcosny(g2)
+@test test_irfft_mul_cosmxcosny(g2)
 @test test_ifft_sinmxny(g2)
 @test test_irfft_sinmxny(g2)
-@test test_irfft_AmulB_sinmxny(g2)
+@test test_irfft_mul_sinmxny(g2)

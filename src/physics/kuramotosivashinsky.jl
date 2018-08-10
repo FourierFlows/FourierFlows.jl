@@ -1,5 +1,6 @@
 module KuramotoSivashinsky
-using FourierFlows
+using FourierFlows, FFTW
+import LinearAlgebra: mul!, ldiv!
 
 export InitialValueProblem, updatevars!, set_u!
 
@@ -52,10 +53,10 @@ end
 function calcN!(N, sol, t, s, v, p, g)
   @. v.uh = sol
   @. v.uxh = im*g.kr*sol
-  A_mul_B!(v.u, g.irfftplan, v.uh)
-  A_mul_B!(v.ux, g.irfftplan, v.uxh)
+  ldiv!(v.u, g.rfftplan, v.uh)
+  ldiv!(v.ux, g.rfftplan, v.uxh)
   @. v.uux = v.u*v.ux
-  A_mul_B!(v.uuxh, g.rfftplan, v.uux)
+  mul!(v.uuxh, g.rfftplan, v.uux)
   @. N = -v.uuxh
   dealias!(N, g)
   nothing
@@ -69,7 +70,7 @@ Update the vars in v on the grid g with the solution in s.sol.
 """
 function updatevars!(v, s, g)
   v.uh .= s.sol
-  A_mul_B!(v.u, g.irfftplan, v.uh)
+  ldiv!(v.u, g.rfftplan, v.uh)
   nothing
 end
 
@@ -82,7 +83,7 @@ updatevars!(prob::AbstractProblem) = updatevars!(prob.vars, prob.state, prob.gri
 Set the solution prob.state.sol as the transform of u and update variables.
 """
 function set_u!(s, v, g, u)
-  A_mul_B!(s.sol, g.rfftplan, u)
+  mul!(s.sol, g.rfftplan, u)
   updatevars!(v, s, g)
   nothing
 end

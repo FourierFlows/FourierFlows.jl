@@ -2,7 +2,8 @@ __precompile__()
 
 module FourierFlows
 
-using Requires
+using Requires, FFTW, Statistics
+import LinearAlgebra: mul!, ldiv!
 
 export AbstractGrid,
        AbstractParams,
@@ -47,12 +48,11 @@ include("physics/kuramotosivashinsky.jl")
 include("physics/verticallycosineboussinesq.jl")
 include("physics/verticallyfourierboussinesq.jl")
 
-
 # ----------------------
 # CUDA/GPU functionality
 # ----------------------
 
-@require CuArrays begin
+@require CuArrays="3a865a2d-5b23-5a0f-bc46-62713ec82fae" begin
   using CuArrays
   include("cuda/cuutils.jl")
   include("cuda/cuproblemstate.jl")

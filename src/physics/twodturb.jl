@@ -1,5 +1,8 @@
 module TwoDTurb
-using FourierFlows, Requires
+using FourierFlows, FFTW
+using Requires
+
+import LinearAlgebra: mul!, ldiv!
 
 """
     Problem(; parameters...)
@@ -104,7 +107,7 @@ end
 # CUDA functionality
 # ------------------
 
-@require CuArrays begin
+@require CuArrays="3a865a2d-5b23-5a0f-bc46-62713ec82fae" begin
 
 using CuArrays
 
@@ -142,15 +145,15 @@ function calcN_advection!(N, sol, t, s, v, p, g)
   @. v.Vh = -im * g.kr * g.invKKrsq * sol
   @. v.qh = sol
 
-  A_mul_B!(v.U, g.irfftplan, v.Uh)
-  A_mul_B!(v.V, g.irfftplan, v.Vh)
-  A_mul_B!(v.q, g.irfftplan, v.qh)
+  ldiv!(v.U, g.rfftplan, v.Uh)
+  ldiv!(v.V, g.rfftplan, v.Vh)
+  ldiv!(v.q, g.rfftplan, v.qh)
 
   @. v.U *= v.q # U*q
   @. v.V *= v.q # V*q
 
-  A_mul_B!(v.Uh, g.rfftplan, v.U) # \hat{U*q}
-  A_mul_B!(v.Vh, g.rfftplan, v.V) # \hat{U*q}
+  mul!(v.Uh, g.rfftplan, v.U) # \hat{U*q}
+  mul!(v.Vh, g.rfftplan, v.V) # \hat{U*q}
 
   @. N = -im*g.kr*v.Uh - im*g.l*v.Vh
   nothing
@@ -180,9 +183,9 @@ function updatevars!(v, s, g)
   v.qh .= s.sol
   @. v.Uh =  im * g.l  * g.invKKrsq * s.sol
   @. v.Vh = -im * g.kr * g.invKKrsq * s.sol
-  A_mul_B!(v.q, g.irfftplan, deepcopy(v.qh))
-  A_mul_B!(v.U, g.irfftplan, deepcopy(v.Uh))
-  A_mul_B!(v.V, g.irfftplan, deepcopy(v.Vh))
+  ldiv!(v.q, g.rfftplan, deepcopy(v.qh))
+  ldiv!(v.U, g.rfftplan, deepcopy(v.Uh))
+  ldiv!(v.V, g.rfftplan, deepcopy(v.Vh))
   nothing
 end
 
@@ -196,7 +199,7 @@ Set the solution s.sol as the transform of q and update variables v
 on the grid g.
 """
 function set_q!(s, v, g, q)
-  A_mul_B!(s.sol, g.rfftplan, q)
+  mul!(s.sol, g.rfftplan, q)
   s.sol[1, 1] = 0 # zero domain average
   updatevars!(v, s, g)
   nothing
@@ -235,7 +238,7 @@ Returns the domain-averaged dissipation rate. nnu must be >= 1.
 """
 @inline function dissipation(s, v, p, g)
   @. v.Uh = g.KKrsq^(p.nnu-1) * abs2(s.sol)
-  @. v.Uh[1, 1] = 0
+  v.Uh[1, 1] = 0
   p.nu/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uh, g)
 end
 
@@ -263,7 +266,7 @@ Returns the extraction of domain-averaged energy by drag mu.
 """
 @inline function drag(s, v, p, g)
   @. v.Uh = g.KKrsq^(p.nmu-1) * abs2(s.sol)
-  @. v.Uh[1, 1] = 0
+  v.Uh[1, 1] = 0
   p.mu/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.Uh, g)
 end
 

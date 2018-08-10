@@ -1,5 +1,7 @@
 module VerticallyCosineBoussinesq
-using FourierFlows
+using FourierFlows, FFTW
+
+import LinearAlgebra: mul!, ldiv!
 
 import FourierFlows: autoconstructtimestepper, parsevalsum, parsevalsum2
 
@@ -45,7 +47,7 @@ function Problem(;
   stepper = "RK4",
   calcF = nothing,
   tracer = false,
-  nthreads = Sys.CPU_CORES,
+  nthreads = Sys.CPU_THREADS,
   T = Float64
   )
 
@@ -185,21 +187,23 @@ abstract type VerticallyCosineVars <: AbstractVars end
                        :u, :v, :w, :p, :zeta, :Uu, :Uv, :Up, :Vu, :Vv, :Vp, :uUxvUy, :uVxvVy]
       transformvars = [ Symbol(var, :h) for var in physicalvars ]
           forcedvar = [:Fh]
-forcedtransformvars = cat(1, transformvars, forcedvar)
+forcedtransformvars = cat(transformvars, forcedvar, dims=1)
 
-tracerphysicalvars = cat(1, physicalvars, [:C, :UCuc, :VCvc, :c, :UcuC, :VcvC, :wC])
+tracerphysicalvars = cat(physicalvars, [:C, :UCuc, :VCvc, :c, :UcuC, :VcvC, :wC], dims=1)
 tracertransformvars = [ Symbol(var, :h) for var in tracerphysicalvars ]
 
-varspecs = cat(1,
+varspecs = cat(
   FourierFlows.getfieldspecs(physicalvars, :(Array{T,2})),
-  FourierFlows.getfieldspecs(transformvars, :(Array{Complex{T},2})))
+  FourierFlows.getfieldspecs(transformvars, :(Array{Complex{T},2})),
+  dims=1)
 
-forcedvarspecs = cat(1, varspecs, FourierFlows.getfieldspecs(forcedvar, :(Array{Complex{T},3})))
+forcedvarspecs = cat(varspecs, FourierFlows.getfieldspecs(forcedvar, :(Array{Complex{T},3})), dims=1)
 
-tracerforcedvarspecs = cat(1,
+tracerforcedvarspecs = cat(
   FourierFlows.getfieldspecs(tracerphysicalvars, :(Array{T,2})),
   FourierFlows.getfieldspecs(tracertransformvars, :(Array{Complex{T},2})),
-  FourierFlows.getfieldspecs(forcedvar, :(Array{Complex{T},3})))
+  FourierFlows.getfieldspecs(forcedvar, :(Array{Complex{T},3})),
+  dims=1)
 
 eval(FourierFlows.structvarsexpr(:Vars, varspecs; parent=:VerticallyCosineVars))
 eval(FourierFlows.structvarsexpr(:ForcedVars, forcedvarspecs; parent=:VerticallyCosineVars))
@@ -302,20 +306,20 @@ function calcN!(N, sol, t, s, v, p, g)
   v.Vh[1, 1] += p.Vb*g.nx*g.ny
 
   # Inverse transforms
-  A_mul_B!(v.u, g.irfftplan, v.uh)
-  A_mul_B!(v.v, g.irfftplan, v.vh)
-  A_mul_B!(v.p, g.irfftplan, v.ph)
-  A_mul_B!(v.w, g.irfftplan, v.wh)
-  A_mul_B!(v.zeta, g.irfftplan, v.zetah)
+  ldiv!(v.u, g.rfftplan, v.uh)
+  ldiv!(v.v, g.rfftplan, v.vh)
+  ldiv!(v.p, g.rfftplan, v.ph)
+  ldiv!(v.w, g.rfftplan, v.wh)
+  ldiv!(v.zeta, g.rfftplan, v.zetah)
 
-  A_mul_B!(v.Z, g.irfftplan, v.Zh)
-  A_mul_B!(v.U, g.irfftplan, v.Uh)
-  A_mul_B!(v.V, g.irfftplan, v.Vh)
+  ldiv!(v.Z, g.rfftplan, v.Zh)
+  ldiv!(v.U, g.rfftplan, v.Uh)
+  ldiv!(v.V, g.rfftplan, v.Vh)
 
-  A_mul_B!(v.Ux, g.irfftplan, v.Uxh)
-  A_mul_B!(v.Uy, g.irfftplan, v.Uyh)
-  A_mul_B!(v.Vx, g.irfftplan, v.Vxh)
-  A_mul_B!(v.Vy, g.irfftplan, v.Vyh)
+  ldiv!(v.Ux, g.rfftplan, v.Uxh)
+  ldiv!(v.Uy, g.rfftplan, v.Uyh)
+  ldiv!(v.Vx, g.rfftplan, v.Vxh)
+  ldiv!(v.Vy, g.rfftplan, v.Vyh)
 
   # Multiplies
   @. v.UZuz = v.U*v.Z + 0.5*v.u*v.zeta - 0.5*p.m*v.v*v.w
@@ -332,18 +336,18 @@ function calcN!(N, sol, t, s, v, p, g)
   @. v.uVxvVy = v.u*v.Vx + v.v*v.Vy
 
   # Forward transforms
-  A_mul_B!(v.UZuzh, g.rfftplan, v.UZuz)
-  A_mul_B!(v.VZvzh, g.rfftplan, v.VZvz)
+  mul!(v.UZuzh, g.rfftplan, v.UZuz)
+  mul!(v.VZvzh, g.rfftplan, v.VZvz)
 
-  A_mul_B!(v.Uuh, g.rfftplan, v.Uu)
-  A_mul_B!(v.Uvh, g.rfftplan, v.Uv)
-  A_mul_B!(v.Vuh, g.rfftplan, v.Vu)
-  A_mul_B!(v.Vvh, g.rfftplan, v.Vv)
-  A_mul_B!(v.Uph, g.rfftplan, v.Up)
-  A_mul_B!(v.Vph, g.rfftplan, v.Vp)
+  mul!(v.Uuh, g.rfftplan, v.Uu)
+  mul!(v.Uvh, g.rfftplan, v.Uv)
+  mul!(v.Vuh, g.rfftplan, v.Vu)
+  mul!(v.Vvh, g.rfftplan, v.Vv)
+  mul!(v.Uph, g.rfftplan, v.Up)
+  mul!(v.Vph, g.rfftplan, v.Vp)
 
-  A_mul_B!(v.uUxvUyh, g.rfftplan, v.uUxvUy)
-  A_mul_B!(v.uVxvVyh, g.rfftplan, v.uVxvVy)
+  mul!(v.uUxvUyh, g.rfftplan, v.uUxvUy)
+  mul!(v.uVxvVyh, g.rfftplan, v.uVxvVy)
 
   # Linear terms
   calcN_linearterms!(N, sol, t, s, v, p, g)
@@ -368,8 +372,8 @@ function calcN_tracer!(N, sol, t, s, v, p, g)
   @views v.Ch .= sol[:, :, 5]
   @views v.ch .= sol[:, :, 6]
 
-  A_mul_B!(v.C, g.irfftplan, v.Ch)
-  A_mul_B!(v.c, g.irfftplan, v.ch)
+  ldiv!(v.C, g.rfftplan, v.Ch)
+  ldiv!(v.c, g.rfftplan, v.ch)
 
   @. v.UCuc = v.U*v.C + 0.5*v.u*v.c
   @. v.VCvc = v.V*v.C + 0.5*v.v*v.c
@@ -378,11 +382,11 @@ function calcN_tracer!(N, sol, t, s, v, p, g)
   @. v.VcvC = v.V*v.c + v.v*v.C
   @. v.wC = v.w*v.C
 
-  A_mul_B!(v.UCuch, g.rfftplan, v.UCuc)
-  A_mul_B!(v.VCvch, g.rfftplan, v.VCvc)
-  A_mul_B!(v.UcuCh, g.rfftplan, v.UcuC)
-  A_mul_B!(v.VcvCh, g.rfftplan, v.VcvC)
-  A_mul_B!(v.wCh, g.rfftplan, v.wC)
+  mul!(v.UCuch, g.rfftplan, v.UCuc)
+  mul!(v.VCvch, g.rfftplan, v.VCvc)
+  mul!(v.UcuCh, g.rfftplan, v.UcuC)
+  mul!(v.VcvCh, g.rfftplan, v.VcvC)
+  mul!(v.wCh, g.rfftplan, v.wC)
 
   @views @. N[:, :, 5] = -im*g.kr*v.UCuch - im*g.l*v.VCvch
   @views @. N[:, :, 6] = -im*g.kr*v.UcuCh - im*g.l*v.VcvCh + p.m*v.wCh
@@ -424,14 +428,14 @@ function updatevars!(v, sol, s, p, g)
   ph = deepcopy(v.ph)
   wh = deepcopy(v.wh)
 
-  A_mul_B!(v.Psi, g.irfftplan, Psih)
-  A_mul_B!(v.U, g.irfftplan, Uh)
-  A_mul_B!(v.V, g.irfftplan, Vh)
-  A_mul_B!(v.Z, g.irfftplan, Zh)
-  A_mul_B!(v.u, g.irfftplan, uh)
-  A_mul_B!(v.v, g.irfftplan, vh)
-  A_mul_B!(v.p, g.irfftplan, ph)
-  A_mul_B!(v.w, g.irfftplan, wh)
+  ldiv!(v.Psi, g.rfftplan, Psih)
+  ldiv!(v.U, g.rfftplan, Uh)
+  ldiv!(v.V, g.rfftplan, Vh)
+  ldiv!(v.Z, g.rfftplan, Zh)
+  ldiv!(v.u, g.rfftplan, uh)
+  ldiv!(v.v, g.rfftplan, vh)
+  ldiv!(v.p, g.rfftplan, ph)
+  ldiv!(v.w, g.rfftplan, wh)
   nothing
 end
 
@@ -441,7 +445,7 @@ function updatevars!(v::TracerForcedVars, s, p, g)
   @views updatevars!(v, s.sol[:, :, 1:4], s, p, g)
   @views @. v.ch = s.sol[:, :, 5]
   ch = deepcopy(v.ch)
-  A_mul_B!(v.c, g.irfftplan, ch)
+  ldiv!(v.c, g.rfftplan, ch)
   nothing
 end
 
@@ -453,7 +457,7 @@ updatevars!(prob) = updatevars!(prob.vars, prob.state, prob.params, prob.grid)
 Set zeroth mode vorticity and update vars.
 """
 function set_Z!(s, v, p, g, Z)
-  @views A_mul_B!(s.sol[:, :, 1], g.rfftplan, Z)
+  @views mul!(s.sol[:, :, 1], g.rfftplan, Z)
   updatevars!(v, s, p, g)
   nothing
 end
@@ -465,7 +469,7 @@ set_Z!(prob, Z) = set_Z!(prob.state, prob.vars, prob.params, prob.grid, Z)
 Set zeroth mode tracer concentration and update vars.
 """
 function set_C!(s, v, p, g, C)
-  @views A_mul_B!(s.sol[:, :, 5], g.rfftplan, C)
+  @views mul!(s.sol[:, :, 5], g.rfftplan, C)
   updatevars!(v, s, p, g)
   nothing
 end
@@ -477,9 +481,9 @@ set_C!(prob, C) = set_C!(prob.state, prob.vars, prob.params, prob.grid, C)
 Set first mode u, v, and p and update vars.
 """
 function set_uvp!(s, vs, pr, g, u, v, p)
-  @views A_mul_B!(s.sol[:, :, 2], g.rfftplan, u)
-  @views A_mul_B!(s.sol[:, :, 3], g.rfftplan, v)
-  @views A_mul_B!(s.sol[:, :, 4], g.rfftplan, p)
+  @views mul!(s.sol[:, :, 2], g.rfftplan, u)
+  @views mul!(s.sol[:, :, 3], g.rfftplan, v)
+  @views mul!(s.sol[:, :, 4], g.rfftplan, p)
   updatevars!(vs, s, pr, g)
   nothing
 end
@@ -663,20 +667,20 @@ Returns the barotropic available potential vorticity.
   @views @. v.vh = s.sol[:, :, 3]
   @views @. v.ph = s.sol[:, :, 4]
 
-  A_mul_B!(v.Z, g.irfftplan, v.Zh)
-  A_mul_B!(v.u, g.irfftplan, v.uh)
-  A_mul_B!(v.v, g.irfftplan, v.vh)
-  A_mul_B!(v.p, g.irfftplan, v.ph)
+  ldiv!(v.Z, g.rfftplan, v.Zh)
+  ldiv!(v.u, g.rfftplan, v.uh)
+  ldiv!(v.v, g.rfftplan, v.vh)
+  ldiv!(v.p, g.rfftplan, v.ph)
 
   @views @. v.Uu = v.u*v.p
   @views @. v.Vu = v.v*v.p
 
-  A_mul_B!(v.Uuh, g.rfftplan, v.Uu)
-  A_mul_B!(v.Vuh, g.rfftplan, v.Vu)
+  mul!(v.Uuh, g.rfftplan, v.Uu)
+  mul!(v.Vuh, g.rfftplan, v.Vu)
 
   @. v.uUxvUyh = im*g.kr*v.Vuh - im*g.l*v.Uuh
 
-  A_mul_B!(v.uUxvUy, g.irfftplan, v.uUxvUyh)
+  ldiv!(v.uUxvUy, g.rfftplan, v.uUxvUyh)
 
   @. v.Z - p.m^2/(2*p.N^2)*v.uUxvUy
 end
