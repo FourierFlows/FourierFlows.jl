@@ -73,7 +73,7 @@ function saveproblem(prob::AbstractProblem, filename::String)
       file["grid/$field"] = getfield(prob.grid, field)
     end
 
-    for name in fieldnames(prob.params)   # Params
+    for name in fieldnames(typeof(prob.params))   # Params
       field = getfield(prob.params, name)
       if !(typeof(field) <: Function)
         file["params/$name"] = field
