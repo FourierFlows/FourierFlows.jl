@@ -30,15 +30,16 @@ s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, pr
 
 # Initial condition c0 = c(x, y, t=0)
 amplc0, sigc0 = 0.1, 0.1
+x0, y0 = 1.2, 0
 c0func(x, y) = amplc0*exp(-(x^2+y^2)/(2sigc0^2))
-c0 = c0func.(g.X-1.2, g.Y)
+c0 = c0func.(g.X .- x0, g.Y .- y0)
 
 TracerAdvDiff.set_c!(prob, c0)
 
 "Plot the concentration field and the (u, v) streamlines."
 function plotoutput(prob, fig, axs; drawcolorbar=false)
   s, v, p, g = prob.state, prob.vars, prob.params, prob.grid
-  t = round(prob.state.t, 2)
+  t = round(prob.state.t, digits=2)
 
   TracerAdvDiff.updatevars!(prob)
 

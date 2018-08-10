@@ -1,4 +1,6 @@
-using PyPlot, FourierFlows
+using PyPlot, FourierFlows, Statistics
+import Printf.@printf
+import Statistics.mean
 import FourierFlows.TwoDTurb
 import FourierFlows.TwoDTurb: energy, dissipation, work, drag
 
@@ -36,9 +38,8 @@ function runtest(prob, nt)
   W = Diagnostic(work,   prob, nsteps=nt)
   diags = [E, D, W, R]
 
-  tic()
-  stepforward!(prob, diags, round(Int, nt))
-  @printf("step: %04d, t: %.1f, time: %.2f s\n", prob.step, prob.t, toq())
+  time = @elapsed stepforward!(prob, diags, round(Int, nt))
+  println("step: %04d, t: %.1f, time: %.2f s\n", prob.step, prob.t, time)
 
   diags
 end

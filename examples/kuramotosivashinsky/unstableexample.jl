@@ -7,7 +7,7 @@ x = prob.grid.x
 
 a = 1e-4 # amplitude of initial condition
 u0 = @. a*cos(x/2) # initial condition
-set_u!(prob, u0) 
+set_u!(prob, u0)
 
 ua(x, t) = a*exp(3t/16)*cos(x/2) + a^2*2/3*(exp(3t/8)-1)*sin(x) # analytical solution
 
@@ -23,7 +23,7 @@ for i = 1:nt
   U[:, i] .= prob.vars.u
 end
 
-L1(u) = prob.grid.dx*squeeze(sum(abs.(u), 1), 1)/Lx
+L1(u) = prob.grid.dx*dropdims(sum(abs.(u), dims=1), dims=1)/Lx
 L1(u::Array{T,1}) where {T} = prob.grid.dx*sum(abs.(u))/Lx
 
 close("all")

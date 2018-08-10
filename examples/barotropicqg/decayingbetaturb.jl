@@ -1,5 +1,6 @@
-using FourierFlows, PyPlot, JLD2
-
+using FourierFlows, PyPlot, JLD2, FFTW, Random, Statistics
+import Printf.@sprintf
+import Statistics: mean
 import FourierFlows.BarotropicQG
 import FourierFlows.BarotropicQG: energy, enstrophy
 
@@ -27,7 +28,7 @@ s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, pr
 # Files
 filepath = "."
 plotpath = "./plots"
-plotname = "testplots"
+plotname = "snapshot"
 filename = joinpath(filepath, "decayingbetaturb.jld2")
 
 # File management
@@ -39,13 +40,13 @@ if !isdir(plotpath); mkdir(plotpath); end
 
 # Initial condition that has power only at wavenumbers with
 # 8<L/(2π)*sqrt(kx^2+ky^2)<10 and initial energy E0
-srand(1234)
+Random.seed!(1234)
 E0 = 0.1
 modk = ones(g.nkr, g.nl)
-modk[real(g.KKrsq).<(8*2*pi/g.Lx)^2]=0
-modk[real(g.KKrsq).>(10*2*pi/g.Lx)^2]=0
-modk[1, :]=0
-psih = (randn(g.nkr, g.nl)+im*randn(g.nkr, g.nl)).*modk
+@. modk[real(g.KKrsq) < (8*2*pi/g.Lx)^2] = 0
+@. modk[real(g.KKrsq) > (10*2*pi/g.Lx)^2] = 0
+@. modk[1, :] = 0
+psih = (randn(g.nkr, g.nl) + im*randn(g.nkr, g.nl)).*modk
 psih = psih.*prob.ts.filter
 Ein = real(sum(g.KKrsq.*abs2.(psih)/(g.nx*g.ny)^2))
 psih = psih*sqrt(E0/Ein)
@@ -101,7 +102,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[3])
   cla()
-  plot(mean(v.zeta, 1).', g.Y[1,:])
+  plot(mean(v.zeta, dims=1).', g.y.')
   plot(0*g.Y[1,:], g.Y[1,:], "k--")
   ylim(-Lx/2, Lx/2)
   xlim(-2, 2)
@@ -109,7 +110,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[4])
   cla()
-  plot(mean(v.u, 1).', g.Y[1,:])
+  plot(mean(v.u, dims=1).', g.y.')
   plot(0*g.Y[1,:], g.Y[1,:], "k--")
   ylim(-Lx/2, Lx/2)
   xlim(-0.5, 0.5)

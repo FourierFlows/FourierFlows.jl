@@ -1,4 +1,4 @@
-using FourierFlows, PyPlot, JLD2
+using FourierFlows, Printf, PyPlot, JLD2, Random
 
 import FourierFlows.TwoDTurb
 import FourierFlows.TwoDTurb: energy, enstrophy
@@ -16,7 +16,7 @@ nsubs = 200
 filepath = "."
 plotpath = "./plots"
 plotname = "testplots"
-filename = joinpath(filepath, "testdata.jld2")
+filename = joinpath(filepath, "McWilliams84.jld2")
 
 # File management
 if isfile(filename); rm(filename); end
@@ -28,7 +28,7 @@ g = prob.grid
 
 # Initial condition closely following pyqg barotropic example
 # that reproduces the results of the paper by McWilliams (1984)
-srand(1234)
+Random.seed!(1234)
 k0, E0 = 6, 0.5
 qi = FourierFlows.peakedisotropicspectrum(g, k0, E0, mask = prob.ts.filter)
 TwoDTurb.set_q!(prob, qi)
@@ -89,5 +89,5 @@ end
 
 plot_output(prob, fig, axs; drawcolorbar=true)
 
-savename = @sprintf("%s_%09d.png", joinpath(plotpath, plotname), prob.step)
+savename = ("%s_%09d.png", joinpath(plotpath, plotname), prob.step)
 savefig(savename, dpi=240)

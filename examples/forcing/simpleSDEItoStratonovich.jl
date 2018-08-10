@@ -1,6 +1,9 @@
-using PyPlot
+using PyPlot, Random
 
-srand(1234)
+import Statistics.mean
+import Random: randn
+
+Random.seed!(1234)
 
 stochastic = true
 
@@ -18,18 +21,18 @@ if stochastic
        E_theory = 0.5*σ*T
     dEdt_theory = 0.5*σ*ones(size(T))
   else
-       E_theory = σ/4μ * (1 - exp.(-2μ*T))
-    dEdt_theory = σ/2  * exp.(-2μ*T)
+       E_theory = @. σ/4μ * (1 - exp(-2μ*T))
+    dEdt_theory = @. σ/2  * exp(-2μ*T)
   end
 else
   nens = 1
   ΔW = sqrt(σ)*ones(nsteps, nens)
   if μ == 0
-       E_theory = 0.5*σ*T.^2
+       E_theory = @. 0.5*σ*T^2
     dEdt_theory = σ*T
   else
-       E_theory = σ/(2*μ^2) * (1-exp.(-μ*T)).^2
-    dEdt_theory = σ/μ * exp.(-μ*T) .* (1-exp.(-μ*T))
+       E_theory = @. σ/(2*μ^2) * (1 - exp(-μ*T))^2
+    dEdt_theory = @. σ/μ * exp(-μ*T) * (1 - exp(-μ*T))
   end
 
 end
@@ -46,7 +49,7 @@ for it = 1:nsteps-1 # time step the equation
     @views @.   X[it+1, :] = X[it, :] + (-μ*X[it, :] + ΔW[it, :])*dt
 
     @views @.   E_ito[it+1, :] = E_ito[it, :] + (-2*μ*E_ito[it, :]
-                                    + σ/2)*dt + X[it, :]*ΔW[it, :]*dt
+                                    .+ σ/2)*dt + X[it, :]*ΔW[it, :]*dt
 
     Ebar = E_str[it, :] + (-2*μ*E_str[it, :])*dt + X[it, :].*ΔW[it, :]*dt
     @views @.   E_str[it+1, :] = E_str[it, :] + (-2*μ*(0.5*(E_str[it, :] +
@@ -57,14 +60,14 @@ end
 @views @. E_numerical = 0.5*X^2
 
 # compute dE/dt numerically
-dEdt_ito = mean((E_ito[2:nsteps, :] - E_ito[1:nsteps-1, :])/dt, 2)
-dEdt_str = mean((E_str[2:nsteps, :] - E_str[1:nsteps-1, :])/dt, 2)
+dEdt_ito = mean((E_ito[2:nsteps, :] - E_ito[1:nsteps-1, :])/dt, dims=2)
+dEdt_str = mean((E_str[2:nsteps, :] - E_str[1:nsteps-1, :])/dt, dims=2)
 
 # compute the work and dissipation
-work_ito = mean(ΔW[1:nsteps-1, :].* X[1:nsteps-1, :], 2) + σ/2
-work_str = mean(ΔW[1:nsteps-1, :].*(X[1:nsteps-1, :]+X[2:nsteps, :])/2, 2)
-diss_ito = 2*μ*(mean(E_ito[1:nsteps-1, :], 2))
-diss_str = 2*μ*(mean(E_str[1:nsteps-1, :], 2))
+work_ito = mean(ΔW[1:nsteps-1, :].* X[1:nsteps-1, :], dims=2) .+ σ/2
+work_str = mean(ΔW[1:nsteps-1, :].*(X[1:nsteps-1, :]+X[2:nsteps, :])/2, dims=2)
+diss_ito = 2*μ*(mean(E_ito[1:nsteps-1, :], dims=2))
+diss_str = 2*μ*(mean(E_str[1:nsteps-1, :], dims=2))
 
 
 
@@ -95,7 +98,7 @@ fig, axs = subplots(nrows=2, figsize=(8, 6), sharex=true)
 sca(axs[1]); cla()
 axs[1][:plot](μ*T, E_theory,
                 linewidth=3, label="theoretical \$\\langle E\\rangle\$")
-axs[1][:plot](μ*T, mean(E_ito, 2), linestyle="--",
+axs[1][:plot](μ*T, mean(E_ito, dims=2), linestyle="--",
                 linewidth=2, label="\$\\langle E\\rangle\$ from $nens ensemble member(s)")
 xlabel(L"$\mu t$")
 ylabel(L"$E$")
@@ -129,7 +132,7 @@ fig, axs = subplots(nrows=2, figsize=(8, 6), sharex=true)
 sca(axs[1]); cla()
 plot(μ*T, E_theory,
                 linewidth=3, label="theoretical \$\\langle E\\rangle\$")
-plot(μ*T, mean(E_str, 2),
+plot(μ*T, mean(E_str, dims=2),
                 linestyle="--", linewidth=2,
                     label="\$\\langle E\\rangle\$ from $nens ensemble member(s)")
 xlabel(L"$\mu t$")
