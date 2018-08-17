@@ -17,16 +17,14 @@ before_script:
  - julia -e 'using Pkg; Pkg.add("Interpolations"); Pkg.add("Requires");'
  - julia -e 'using Pkg; Pkg.add("FFTW");'
 
-script:
-  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  # - julia -e 'using Pkg; Pkg.clone(pwd())'
-  - julia -e 'using Pkg; Pkg.test("FourierFlows", coverage=true)'
+# script:
+#   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+#   - julia -e 'using Pkg; Pkg.test("FourierFlows", coverage=true)'
 
 after_success:
   - julia -e 'using Pkg; Pkg.add("Documenter")'
-  - julia -e 'using Pkg; cd(Pkg.dir("FourierFlows")); include(joinpath("docs", "make.jl"))'
-  - julia -e 'using Pkg; cd(Pkg.dir("FourierFlows")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
-  - julia -e 'using Pkg; cd(Pkg.dir("FourierFlows")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(process_folder())'
+  - julia -e 'using Pkg; Pkg.add("Documenter"); Pkg.dir("FourierFlows"); include(joinpath("docs", "make.jl"))'
+  - julia -e 'using Pkg; Pkg.add("Coverage"); Pkg.dir("FourierFlows"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
 
 notifications:
   email: true
