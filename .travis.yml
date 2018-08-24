@@ -6,10 +6,12 @@ os:
 
 julia:
   - 0.7
-  # - nightly
+  - 1.0
+  - nightly
 
 matrix:
   allow_failures:
+    - julia: 1.0
     - julia: nightly
 
 before_script:
