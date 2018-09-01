@@ -123,12 +123,12 @@ end
 eval(FourierFlows.structvarsexpr(:CuVars, physicalvars, transformvars, arraytype=:CuArray))
 eval(FourierFlows.structvarsexpr(:CuForcedVars, physicalvars, transformvars, arraytype=:CuArray))
 
-CuVars(v::Vars) = CuVars(getfield.(v, fieldnames(v))...)
-CuVars(v::ForcedVars) = CuForcedVars(getfield.(v, fieldnames(v))...)
-CuVars(g::AbstractGrid) = CuVars(Vars(g))
+CuVars(v::Vars) = CuVars(CuArray.(getfield.(v, fieldnames(v)))...)
+CuVars(v::ForcedVars) = CuForcedVars(CuArray.(getfield.(v, fieldnames(v)))...)
+CuVars(g::AbstractGrid) = CuVars(CuArray.(Vars(g)))
 
-CuForcedVars(v::Vars) = CuForcedVars(getfield.(v, fieldnames(v))...)
-CuForcedVars(g::AbstractGrid) = CuForcedVars(ForcedVars(g))
+CuForcedVars(v::Vars) = CuForcedVars(CuArray.(getfield.(v, fieldnames(v)))...)
+CuForcedVars(g::AbstractGrid) = CuForcedVars(CuArray.(ForcedVars(g)))
 
 end # CUDA stuff
 
