@@ -1,5 +1,7 @@
 module BarotropicQG
-using FourierFlows
+using FourierFlows, FFTW
+import LinearAlgebra: mul!, ldiv!
+
 Grid = TwoDGrid
 
 """
@@ -200,19 +202,19 @@ function calcN_advection!(N, sol, t, s, v, p, g)
   @. v.uh =  im * g.l  * g.invKKrsq * v.zetah
   @. v.vh = -im * g.kr * g.invKKrsq * v.zetah
 
-  A_mul_B!(v.zeta, g.irfftplan, v.zetah)
-  A_mul_B!(v.u, g.irfftplan, v.uh)
+  ldiv!(v.zeta, g.rfftplan, v.zetah)
+  ldiv!(v.u, g.rfftplan, v.uh)
   v.psih = deepcopy(v.vh) # FFTW's irfft destroys its input; v.vh is needed for N[1, 1]
-  A_mul_B!(v.v, g.irfftplan, v.psih)
+  ldiv!(v.v, g.rfftplan, v.psih)
 
   @. v.q = v.zeta + p.eta
   @. v.u = (v.U + v.u)*v.q # (U+u)*q
   @. v.v = v.v*v.q # v*q
 
-  A_mul_B!(v.uh, g.rfftplan, v.u) # \hat{(u+U)*q}
+  mul!(v.uh, g.rfftplan, v.u) # \hat{(u+U)*q}
   # Nonlinear advection term for q (part 1)
   @. N = -im*g.kr*v.uh # -∂[(U+u)q]/∂x
-  A_mul_B!(v.uh, g.rfftplan, v.v) # \hat{v*q}
+  mul!(v.uh, g.rfftplan, v.v) # \hat{v*q}
   @. N += - im*g.l*v.uh # -∂[vq]/∂y
 end
 
@@ -255,10 +257,10 @@ function updatevars!(s, v, p, g)
   uh1 = deepcopy(v.uh)
   vh1 = deepcopy(v.vh)
 
-  A_mul_B!(v.zeta, g.irfftplan, zetah1)
-  A_mul_B!(v.psi, g.irfftplan, v.psih)
-  A_mul_B!(v.u, g.irfftplan, uh1)
-  A_mul_B!(v.v, g.irfftplan, vh1)
+  ldiv!(v.zeta, g.rfftplan, zetah1)
+  ldiv!(v.psi, g.rfftplan, v.psih)
+  ldiv!(v.u, g.rfftplan, uh1)
+  ldiv!(v.v, g.rfftplan, vh1)
 
   @. v.q = v.zeta + p.eta
   nothing
@@ -274,7 +276,7 @@ Set the solution s.sol as the transform of zeta and update variables v
 on the grid g.
 """
 function set_zeta!(s, v::Vars, p, g, zeta)
-  A_mul_B!(v.zetah, g.rfftplan, zeta)
+  mul!(v.zetah, g.rfftplan, zeta)
   v.zetah[1, 1] = 0.0
   @. s.sol = v.zetah
 
@@ -284,7 +286,7 @@ end
 
 function set_zeta!(s, v::ForcedVars, p, g, zeta)
   v.U = deepcopy(s.sol[1, 1])
-  A_mul_B!(v.zetah, g.rfftplan, zeta)
+  mul!(v.zetah, g.rfftplan, zeta)
   v.zetah[1, 1] = 0.0
   @. s.sol = v.zetah
   s.sol[1, 1] = v.U
@@ -327,7 +329,7 @@ function enstrophy(prob)
   s, v, g = prob.state, prob.vars, prob.grid
   @. v.uh = s.sol
   v.uh[1, 1] = 0
-  0.5*FourierFlows.parsevalsum2(v.uh, g)/(g.Lx*g.Ly)      
+  0.5*FourierFlows.parsevalsum2(v.uh, g)/(g.Lx*g.Ly)
 end
 
 """
@@ -348,7 +350,7 @@ Returns the domain-averaged dissipation rate. nnu must be >= 1.
 """
 @inline function dissipation(s, v, p, g)
   @. v.uh = g.KKrsq^(p.nnu-1) * abs2(s.sol)
-  @. v.uh[1, 1] = 0
+  v.uh[1, 1] = 0
   p.nu/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.uh, g)
 end
 
@@ -376,7 +378,7 @@ Returns the extraction of domain-averaged energy by drag mu.
 """
 @inline function drag(s, v, p, g)
   @. v.uh = g.KKrsq^(-1) * abs2(s.sol)
-  @. v.uh[1, 1] = 0
+  v.uh[1, 1] = 0
   p.mu/(g.Lx*g.Ly)*FourierFlows.parsevalsum(v.uh, g)
 end
 

@@ -1,5 +1,6 @@
 module TracerAdvDiff
-using FourierFlows, Requires
+using FourierFlows, FFTW
+import LinearAlgebra: mul!, ldiv!
 
 abstract type AbstractTracerParams <: AbstractParams end
 abstract type AbstractConstDiffParams <: AbstractParams end
@@ -117,13 +118,13 @@ ConstDiffSteadyFlowParams(eta, kap, u, v, g) = ConstDiffSteadyFlowParams(eta, ka
 Returns the equation for constant diffusivity problem with params p and grid g.
 """
 function Equation(p::ConstDiffParams, g)
-  LC = zeros(g.Kr)
+  LC = zero(g.Kr)
   @. LC = -p.eta*g.kr^2 - p.kap*g.l^2 - p.kaph*g.KKrsq^p.nkaph
   FourierFlows.Equation{typeof(LC[1, 1]),2}(LC, calcN!)
 end
 
 function Equation(p::ConstDiffSteadyFlowParams, g)
-  LC = zeros(g.Kr)
+  LC = zero(g.Kr)
   @. LC = -p.eta*g.kr^2 - p.kap*g.l^2 - p.kaph*g.KKrsq^p.nkaph
   FourierFlows.Equation{typeof(LC[1, 1]),2}(LC, calcN_steadyflow!)
 end
@@ -165,11 +166,11 @@ function calcN!(N, sol, t, s, v, p::AbstractConstDiffParams, g)
   @. v.cxh = im*g.kr*sol
   @. v.cyh = im*g.l*sol
 
-  A_mul_B!(v.cx, g.irfftplan, v.cxh) # destroys v.cxh when using fftw
-  A_mul_B!(v.cy, g.irfftplan, v.cyh) # destroys v.cyh when using fftw
+  ldiv!(v.cx, g.rfftplan, v.cxh) # destroys v.cxh when using fftw
+  ldiv!(v.cy, g.rfftplan, v.cyh) # destroys v.cyh when using fftw
 
   @. v.cx = -p.u(g.X, g.Y, s.t)*v.cx - p.v(g.X, g.Y, s.t)*v.cy # copies over v.cx so v.cx = N in physical space
-  A_mul_B!(N, g.rfftplan, v.cx)
+  mul!(N, g.rfftplan, v.cx)
   nothing
 end
 
@@ -183,11 +184,11 @@ function calcN_steadyflow!(N, sol, t, s, v, p::AbstractSteadyFlowParams, g)
   @. v.cxh = im*g.kr*sol
   @. v.cyh = im*g.l*sol
 
-  A_mul_B!(v.cx, g.irfftplan, v.cxh) # destroys v.cxh when using fftw
-  A_mul_B!(v.cy, g.irfftplan, v.cyh) # destroys v.cyh when using fftw
+  ldiv!(v.cx, g.rfftplan, v.cxh) # destroys v.cxh when using fftw
+  ldiv!(v.cy, g.rfftplan, v.cyh) # destroys v.cyh when using fftw
 
   @. v.cx = -p.u*v.cx - p.v*v.cy # copies over v.cx so v.cx = N in physical space
-  A_mul_B!(N, g.rfftplan, v.cx)
+  mul!(N, g.rfftplan, v.cx)
   nothing
 end
 
@@ -204,7 +205,7 @@ Update the vars in v on the grid g with the solution in s.sol.
 function updatevars!(s, v, g)
   v.ch .= s.sol
   ch1 = deepcopy(v.ch)
-  A_mul_B!(v.c, g.irfftplan, ch1)
+  ldiv!(v.c, g.rfftplan, ch1)
   nothing
 end
 
@@ -220,14 +221,14 @@ Set the solution s.sol as the transform of c and update variables v
 on the grid g.
 """
 function set_c!(s, v, g, c)
-  A_mul_B!(s.sol, g.rfftplan, c)
+  mul!(s.sol, g.rfftplan, c)
   updatevars!(s, v, g)
   nothing
 end
 
 function set_c!(s, v, g, c::Function)
   cgrid = c.(g.X, g.Y)
-  A_mul_B!(s.sol, g.rfftplan, cgrid)
+  mul!(s.sol, g.rfftplan, cgrid)
   updatevars!(s, v, g)
   nothing
 end

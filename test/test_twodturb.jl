@@ -1,5 +1,8 @@
 import FourierFlows.TwoDTurb
 
+using Statistics, Random
+import Statistics: mean
+
 cfl(prob) = maximum([maximum(abs.(prob.vars.U)), maximum(abs.(prob.vars.V))]*prob.ts.dt/prob.grid.dx)
 
 function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu=0.0, nnu=1, ti=L/Ue*0.01, nm=3)
@@ -13,7 +16,6 @@ function lambdipoletest(n, dt; L=2π, Ue=1, Re=L/20, nu=0.0, nnu=1, ti=L/Ue*0.01
   x, y, q = prob.grid.X, prob.grid.Y, prob.vars.q # nicknames
 
   for i = 1:nm # step forward
-    tic()
     stepforward!(prob, nt)
     TwoDTurb.updatevars!(prob)
     xq[i] = mean(abs.(q).*x) / mean(abs.(q))
@@ -38,19 +40,20 @@ function stochasticforcingbudgetstest(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, m
   σ = 0.1
   gr  = TwoDGrid(n, L)
 
-  force2k = exp.(-(sqrt.(gr.KKrsq)-kf).^2/(2*dkf^2))
-  force2k[gr.KKrsq .< 2.0^2 ] = 0
-  force2k[gr.KKrsq .> 20.0^2 ] = 0
-  force2k[gr.Kr.<2π/L] = 0
+  force2k = zero(gr.Kr)
+  @. force2k = exp(-(sqrt(gr.KKrsq)-kf)^2/(2*dkf^2))
+  @. force2k[gr.KKrsq .< 2.0^2 ] = 0
+  @. force2k[gr.KKrsq .> 20.0^2 ] = 0
+  @. force2k[gr.Kr.<2π/L] = 0
   σ0 = FourierFlows.parsevalsum(force2k.*gr.invKKrsq/2.0, gr)/(gr.Lx*gr.Ly)
   force2k .= σ/σ0 * force2k
 
-  srand(1234)
+  Random.seed!(1234)
 
   function calcF!(F, sol, t, s, v, p, g)
-    eta = exp.(2π*im*rand(size(sol)))/sqrt(s.dt)
+    eta = exp.(2π*im*rand(Float64, size(sol)))/sqrt(s.dt)
     eta[1, 1] = 0.0
-    @. F = eta .* sqrt(force2k)
+    @. F = eta * sqrt(force2k)
     nothing
   end
 
@@ -76,7 +79,7 @@ function stochasticforcingbudgetstest(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, m
 
   E, D, W, R = diags
 
-  t = round(mu*prob.state.t, 2)
+  t = round(mu*prob.state.t, digits=2)
 
   i₀ = 1
   dEdt = (E[(i₀+1):E.count] - E[i₀:E.count-1])/prob.ts.dt
@@ -92,7 +95,7 @@ function stochasticforcingbudgetstest(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, m
   residual = dEdt - total
 
   if message
-    @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", prob.step, prob.t, cfl, tc)
+    println("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", prob.step, prob.t, cfl, tc)
   end
   # println(mean(abs.(residual)))
   isapprox(mean(abs.(residual)), 0, atol=1e-4)

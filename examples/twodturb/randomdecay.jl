@@ -1,4 +1,4 @@
-using PyPlot, FourierFlows
+using PyPlot, FourierFlows, FFTW, Printf
 import FourierFlows.TwoDTurb
 
    n, L = 256, 2π  # Domain
@@ -9,14 +9,17 @@ prob = TwoDTurb.Problem(nx=n, Lx=L, nu=nu, nnu=nnu, dt=dt, stepper="FilteredRK4"
 TwoDTurb.set_q!(prob, rand(n, n))
 
 # Step forward
-fig = figure(); tic()
+fig = figure()
+
 for i = 1:10
+  time = @elapsed begin
   stepforward!(prob, nt)
   TwoDTurb.updatevars!(prob)
 
   cfl = maximum(prob.vars.U)*prob.grid.dx/prob.ts.dt
   @printf("step: %04d, t: %6.1f, cfl: %.2f, ", prob.step, prob.t, cfl)
-  toc(); tic()
+  end
+  println("time: ", time)
 
   clf(); imshow(prob.vars.q); pause(0.01)
 end

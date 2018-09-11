@@ -1,12 +1,13 @@
 #!/usr/bin/env julia
 
-#using CuArrays
-using Requires
+# using CuArrays
 using FourierFlows
-using Base.Test
+using Requires
+using Test
 
 # Run tests
-tic()
+
+time = @elapsed begin
 
 println("-- Core tests --")
 
@@ -37,6 +38,7 @@ end
 
 println("-- Physics tests --")
 
+
 @testset "Physics: Kuramoto-Sivashinsky" begin
   include("test_kuramotosivashinsky.jl")
 end
@@ -61,7 +63,7 @@ end
   include("test_verticallyfourierboussinesq.jl")
 end
 
-@require CuArrays begin
+@require CuArrays="3a865a2d-5b23-5a0f-bc46-62713ec82fae" begin
 
   println("-- CUDA tests --")
 
@@ -72,4 +74,5 @@ end
 
 end
 
-println("Total test time: ", toq())
+end
+println("Total test time: ", time)

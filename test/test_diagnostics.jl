@@ -1,6 +1,11 @@
+using Random
+import LinearAlgebra: norm, mul!, ldiv!
+
+
 module mytestmodule
 
-using FourierFlows
+using FourierFlows, FFTW
+import LinearAlgebra: norm, mul!, ldiv!
 
 export updatevars!, set_u!
 
@@ -33,14 +38,14 @@ end
 
 function set_u!(prob::AbstractProblem, u)
   v, s, g = prob.vars, prob.state, prob.grid
-  A_mul_B!(s.sol, g.rfftplan, u)
+  mul!(s.sol, g.rfftplan, u)
   updatevars!(v, s, g)
   nothing
 end
 
 function updatevars!(v, s, g)
   v.uh .= s.sol
-  A_mul_B!(v.u, g.irfftplan, v.uh)
+  ldiv!(v.u, g.rfftplan, v.uh)
   nothing
 end
 
@@ -59,10 +64,6 @@ end
 
 end #module
 
-import mytestmodule
-import mytestmodule: pseudoenergy, pseudoenstrophy
-
-
 
 function testsimplediagnostics()
     nx = 16
@@ -77,7 +78,7 @@ function testsimplediagnostics()
     ts = FourierFlows.ETDRK4TimeStepper(dt, eq.LC)
     prob = FourierFlows.Problem(g, v, p, eq, ts)
 
-    srand(1234)
+    Random.seed!(1234)
      u0 = randn(size(g.x))
 
     mytestmodule.set_u!(prob, u0)
@@ -86,10 +87,10 @@ function testsimplediagnostics()
     extrasteps = 20
 
     freqE = 2
-    E = Diagnostic(pseudoenergy, prob; nsteps=nsteps, freq=freqE)
+    E = Diagnostic(mytestmodule.pseudoenergy, prob; nsteps=nsteps, freq=freqE)
 
     freqZ = 1
-    Z = Diagnostic(pseudoenstrophy, prob; nsteps=nsteps, freq=freqZ)
+    Z = Diagnostic(mytestmodule.pseudoenstrophy, prob; nsteps=nsteps, freq=freqZ)
 
     diags = [E, Z]
 

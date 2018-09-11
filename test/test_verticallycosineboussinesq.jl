@@ -20,7 +20,6 @@ function test_lambdipole(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1,
 
   # Step forward
   for i = 1:nm
-    tic()
     stepforward!(prob, nt)
     VerticallyCosineBoussinesq.updatevars!(prob)
     xZ[i] = mean(abs.(Z).*x) / mean(abs.(Z))
@@ -32,8 +31,8 @@ function test_lambdipole(n, dt; L=2π, Ue=1, Re=L/20, nu0=0, nnu0=1,
     end
 
     if message
-      @printf("     step: %04d, t: %3.3f, time: %.3f, cfl: %.2f\n",
-        prob.step, prob.t, toq(), cfl(prob))
+      println("     step: %04d, t: %3.3f, time: %.3f, cfl: %.2f\n",
+        prob.step, prob.t, cfl(prob))
     end
   end
 

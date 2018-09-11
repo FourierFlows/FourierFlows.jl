@@ -39,14 +39,14 @@ the solution vector), and grid g.
 """
 function autoconstructtimestepper(stepper, dt, sol, g::AbstractGrid=ZeroDGrid(1))
   fullsteppername = Symbol(stepper, :TimeStepper)
-  tsexpr = contains(stepper, "Filtered") ?
+  tsexpr = occursin("Filtered", stepper) ?
       Expr(:call, fullsteppername, dt, sol, g) : Expr(:call, fullsteppername, dt, sol)
   eval(tsexpr)
 end
 
 function autoconstructtimestepper(stepper, dt, solc, solr, g::AbstractGrid=ZeroDGrid(1))
   fullsteppername = Symbol(stepper, :TimeStepper)
-  tsexpr = contains(stepper, "Filtered") ?
+  tsexpr = occursin("Filtered", stepper) ?
     Expr(:call, fullsteppername, dt, solc, solr, g) : Expr(:call, fullsteppername, dt, solc, solr)
   eval(tsexpr)
 end
@@ -105,7 +105,7 @@ getfieldspecs(fieldnames, fieldtype) = collect(zip(fieldnames, [ fieldtype for n
 
 Return the fftwavenumber vector with length n and domain size L.
 """
-fftwavenums(n::Int; L=1) = 2π/L*cat(1, 0:n/2, -n/2+1:-1)
+fftwavenums(n::Int; L=1) = 2π/L*cat(0:n/2, -n/2+1:-1, dims=1)
 
 """
     rms(q)
@@ -128,7 +128,7 @@ function peakedisotropicspectrum(g::TwoDGrid, kpeak::Real, E0::Real; mask=ones(s
     k0 = kpeak*2π/g.Lx
     modk = sqrt.(g.KKrsq)
     psik = zeros(g.nk, g.nl)
-    psik =  (modk.^2 .* (1 + (modk/k0).^4)).^(-0.5)
+    psik =  (modk.^2 .* (1 .+ (modk/k0).^4)).^(-0.5)
     psik[1, 1] = 0.0
     psih = (randn(g.nkr, g.nl)+im*randn(g.nkr, g.nl)).*psik
     if allones; psih = psik; end
@@ -157,8 +157,8 @@ function lambdipole(Ue::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
   r = @. sqrt((g.x-xc)^2 + (g.y-yc)^2)
   q = @. q0*SpecialFunctions.besselj(1, k*r)*(g.y-yc)/r
 
-  q[r .== 0.0] = 0.0 # just in case.
-  q[r .> R] = 0.0
+  @. q[r == 0.0] = 0.0 # just in case.
+  @. q[r > R] = 0.0
 
   return q
 end
@@ -257,18 +257,18 @@ function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=4)
 
   if size(ah)[1] == g.nkr       # conjugate symmetric form
     m = Int(m/2)                # => half resolution in θ
-    θ = linspace(-π/2, π/2, m)  # θ-grid from k=0 to max(kr)
+    θ = range(-π/2, stop=π/2, length=m)  # θ-grid from k=0 to max(kr)
     ahsh = fftshift(ah, 2)      # shifted ah
-    ksh = linspace(0, g.nkr-1, g.nkr)*2π/g.Lx
+    ksh = range(0, stop=g.nkr-1, length=g.nkr)*2π/g.Lx
   else                          # ordinary form
-    θ = linspace(0, 2π, m)      # θ grid
+    θ = range(0, stop=2π, length=m)      # θ grid
     ahsh = fftshift(ah, [1, 2]) # shifted ah
-    ksh = linspace(-g.nk/2+1, g.nk/2, g.nk)*2π/g.Lx
+    ksh = range(-g.nk/2+1, stop=g.nk/2, length=g.nk)*2π/g.Lx
   end
 
-  lsh = linspace(-g.nl/2+1, g.nl/2, g.nl)*2π/g.Ly
+  lsh = range(-g.nl/2+1, stop=g.nl/2, length=g.nl)*2π/g.Ly
   ρmax = minimum([maximum(g.k), maximum(g.l)])
-  ρ = linspace(0, ρmax, n)
+  ρ = range(0, stop=ρmax, length=n)
 
   itp = scale(interpolate(ahsh, BSpline(Linear()), OnGrid()), ksh, lsh)
   ahρθ = zeros(eltype(ahsh), (n, m))
@@ -283,9 +283,9 @@ function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=4)
   # ahρ = ρ ∫ ah(ρ,θ) dθ  =>  Ah = ∫ ahρ dρ = ∫∫ ah dk dl
   dθ = θ[2]-θ[1]
   if size(ah)[1] == g.nkr
-    ahρ = 2ρ.*sum(ahρθ, 2)*dθ # multiply by 2 for conjugate symmetry
+    ahρ = 2ρ.*sum(ahρθ, dims=2)*dθ # multiply by 2 for conjugate symmetry
   else
-    ahρ = ρ.*sum(ahρθ, 2)*dθ
+    ahρ = ρ.*sum(ahρθ, dims=2)*dθ
   end
   ahρ[1] = ah[1, 1] # zeroth mode
 

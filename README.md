@@ -28,9 +28,10 @@ For more details refer to the [documentation](https://fourierflows.github.io/Fou
 
 ## Installation
 
-The package is registered in `METADATA.jl` and can be installed with `Pkg.add`.
+The is a registered package and can be installed by:
 
 ```julia
+julia> using Pkg
 julia> Pkg.add("FourierFlows")
 ```
 

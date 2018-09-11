@@ -1,5 +1,8 @@
-using FourierFlows, PyPlot, JLD2
+using FourierFlows, PyPlot, JLD2, Random
 
+import Printf.@sprintf
+import Random: rand
+import Statistics.mean
 import FourierFlows.BarotropicQG
 import FourierFlows.BarotropicQG: energy, enstrophy
 
@@ -25,7 +28,7 @@ kf, dkf = 12.0, 2.0     # forcing wavenumber and width of
                         # forcing ring in wavenumber space
 σ = 0.005               # energy input rate by the forcing
 gr  = TwoDGrid(nx, Lx)
-force2k = exp.(-(sqrt.(gr.KKrsq)-kf).^2/(2*dkf^2))
+force2k = exp.(-(sqrt.(gr.KKrsq) .- kf).^2/(2*dkf^2))
 force2k[gr.KKrsq .< 2.0^2 ] = 0
 force2k[gr.KKrsq .> 20.0^2 ] = 0
 force2k[gr.Kr.<2π/Lx] = 0
@@ -34,11 +37,11 @@ force2k .= σ/σ0 * force2k  # normalization so that forcing injects
                            # energy ε per domain area per unit time
 
 # reset of the random number generator for reproducibility
-srand(1234)
+Random.seed!(1234)
 
 # the function that updates the forcing realization
 function calcFq!(Fh, sol, t, s, v, p, g)
-  ξ = exp.(2π*im*rand(size(sol)))/sqrt(s.dt)
+  ξ = exp.(2π*im*rand(eltype(Lx), size(sol)))/sqrt(s.dt)
   ξ[1, 1] = 0
   @. Fh = ξ*sqrt(force2k)
   @. Fh[abs.(g.Kr).==0] = 0
@@ -54,8 +57,8 @@ s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, pr
 # Files
 filepath = "."
 plotpath = "./plots"
-plotname = "testplots"
-filename = joinpath(filepath, "decayingbetaturb.jld2")
+plotname = "snapshot"
+filename = joinpath(filepath, "forcedbetaturb.jld2")
 
 # File management
 if isfile(filename); rm(filename); end
@@ -112,7 +115,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[3])
   cla()
-  plot(mean(v.zeta, 1).', g.Y[1,:])
+  plot(mean(v.zeta, dims=1).', g.y')
   plot(0*g.Y[1,:], g.Y[1,:], "k--")
   ylim(-Lx/2, Lx/2)
   xlim(-4, 4)
@@ -120,7 +123,7 @@ function plot_output(prob, fig, axs; drawcolorbar=false)
 
   sca(axs[4])
   cla()
-  plot(mean(v.u, 1).', g.Y[1,:])
+  plot(mean(v.u, dims=1).', g.y')
   plot(0*g.Y[1,:], g.Y[1,:], "k--")
   ylim(-Lx/2, Lx/2)
   xlim(-0.7, 0.7)

@@ -1,6 +1,6 @@
 using FourierFlows, PyPlot, JLD2
 
-
+import Printf.@sprintf
 import FourierFlows.BarotropicQG
 import FourierFlows.BarotropicQG: energy, energy00, enstrophy, enstrophy00
 
@@ -38,8 +38,8 @@ s, v, p, g, eq, ts = prob.state, prob.vars, prob.params, prob.grid, prob.eqn, pr
 # Files
 filepath = "."
 plotpath = "./plots"
-plotname = "testplots"
-filename = joinpath(filepath, "testdata.jld2")
+plotname = "snapshot"
+filename = joinpath(filepath, "ACConelayer.jld2")
 
 # File management
 if isfile(filename); rm(filename); end

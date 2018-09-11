@@ -1,17 +1,19 @@
+using LinearAlgebra, FFTW
+
 function create_testfuncs(g::OneDGrid)
-    if nx <= 8; error("nx must be > 8."); end
+    if nx <= 8; error("nx must be > 8"); end
 
     m = 5
     k0 = g.k[2] # Fundamental wavenumber
 
     # Test function
     φ = π/3
-    f1 = cos.(m*k0*g.x + φ)
+    f1 = cos.(m*k0*g.x .+ φ)
     f1h = fft(f1)
     f1hr = rfft(f1)
 
     f1hr_mul = zeros(Complex{eltype(g.x)}, g.nkr)
-    A_mul_B!(f1hr_mul, g.rfftplan, f1)
+    mul!(f1hr_mul, g.rfftplan, f1)
 
     # Theoretical values of the fft and rfft
     f1h_th = zeros(Complex{Float64}, size(f1h))
@@ -34,7 +36,7 @@ end
 
 
 function create_testfuncs(g::TwoDGrid)
-    if nx <= 8; error("nx must be > 8."); end
+    if nx <= 8; error("nx must be > 8"); end
 
     m, n = 5, 2
     k0 = g.k[2] # fundamental wavenumber
@@ -51,8 +53,8 @@ function create_testfuncs(g::TwoDGrid)
 
     f1hr_mul = zeros(Complex{eltype(g.x)}, (g.nkr, g.nl))
     f2hr_mul = zeros(Complex{eltype(g.x)}, (g.nkr, g.nl))
-    A_mul_B!(f1hr_mul, g.rfftplan, f1)
-    A_mul_B!(f2hr_mul, g.rfftplan, f2)
+    mul!(f1hr_mul, g.rfftplan, f1)
+    mul!(f2hr_mul, g.rfftplan, f2)
 
     # Theoretical results
     f1h_th = zeros(Complex{eltype(g.x)}, size(f1h))
@@ -103,7 +105,7 @@ function test_rfft_cosmx(g::OneDGrid)
     isapprox(f1hr, f1hr_th, rtol=rtol)
 end
 
-function test_rfft_AmulB_cosmx(g::OneDGrid)
+function test_rfft_mul_cosmx(g::OneDGrid)
     f1, f1h, f1hr, f1hr_mul, f1h_th, f1hr_th = create_testfuncs(g)
     isapprox(f1hr_mul, f1hr_th, rtol=rtol)
 end
@@ -120,14 +122,14 @@ function test_rfft_cosmxcosny(g::TwoDGrid)
     isapprox(f1hr, f1hr_th, rtol=rtol)
 end
 
-function test_rfft_AmulB_cosmxcosny(g::TwoDGrid)
+function test_rfft_mul_cosmxcosny(g::TwoDGrid)
     f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mul, f2hr_mul,
             f1h_th, f1hr_th, f2h_th, f2hr_th = create_testfuncs(g)
     isapprox(f1hr_mul, f1hr_th, rtol=rtol)
 end
 
 function test_fft_sinmxny(g::TwoDGrid)
-    f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mul, f2hr_mul,
+    f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mulPk, f2hr_mul,
             f1h_th, f1hr_th, f2h_th, f2hr_th = create_testfuncs(g)
     isapprox(f2h, f2h_th, rtol=rtol)
 end
@@ -138,7 +140,7 @@ function test_rfft_sinmxny(g::TwoDGrid)
     isapprox(f2hr, f2hr_th, rtol=rtol)
 end
 
-function test_rfft_AmulB_sinmxny(g::TwoDGrid)
+function test_rfft_mul_sinmxny(g::TwoDGrid)
     f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mul, f2hr_mul,
             f1h_th, f1hr_th, f2h_th, f2hr_th = create_testfuncs(g)
     isapprox(f2hr_mul, f2hr_th, rtol=rtol)
@@ -156,11 +158,11 @@ g2 = TwoDGrid(nx, Lx, ny, Ly)
 
 @test test_fft_cosmx(g1)
 @test test_rfft_cosmx(g1)
-@test test_rfft_AmulB_cosmx(g1)
+@test test_rfft_mul_cosmx(g1)
 
 @test test_fft_cosmxcosny(g2)
 @test test_rfft_cosmxcosny(g2)
-@test test_rfft_AmulB_cosmxcosny(g2)
+@test test_rfft_mul_cosmxcosny(g2)
 @test test_fft_sinmxny(g2)
 @test test_rfft_sinmxny(g2)
-@test test_rfft_AmulB_sinmxny(g2)
+@test test_rfft_mul_sinmxny(g2)

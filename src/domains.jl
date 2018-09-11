@@ -11,7 +11,7 @@ Constructs a placeholder grid object for "0D" problems (in other words, systems 
 struct ZeroDGrid <: AbstractGrid end
 
 """
-    OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_CORES, effort=FFTW.MEASURE)
+    OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
 
 Constrcut a OneDGrid object with size `Lx`, resolution `nx`, and leftmost
 position `x0`. FFT plans are generated for `nthreads` CPUs using
@@ -29,28 +29,26 @@ struct OneDGrid{T} <: AbstractOneDGrid
   invksq::Array{T,1}
   invkrsq::Array{T,1}
 
-  fftplan::Base.DFT.FFTW.cFFTWPlan{Complex{T},-1,false,1}
-  ifftplan::Base.DFT.ScaledPlan{Complex{T},Base.DFT.FFTW.cFFTWPlan{Complex{T},1,false,1},T}
-  rfftplan::Base.DFT.FFTW.rFFTWPlan{T,-1,false,1}
-  irfftplan::Base.DFT.ScaledPlan{Complex{T},Base.DFT.FFTW.rFFTWPlan{Complex{T},1,false, 1},T}
+  fftplan::FFTW.cFFTWPlan{Complex{T},-1,false,1}
+  rfftplan::FFTW.rFFTWPlan{T,-1,false,1}
 
   # Range objects that access the aliased part of the wavenumber range
   ialias::UnitRange{Int}
   iralias::UnitRange{Int}
 end
 
-function OneDGrid(nx, Lx; x0=-0.5*Lx, nthreads=Sys.CPU_CORES, effort=FFTW.MEASURE)
+function OneDGrid(nx, Lx; x0=-0.5*Lx, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
   T = typeof(Lx)
   dx = Lx/nx
-  x = Array{T}(linspace(x0, x0+Lx-dx, nx))
+  x = Array{T}(range(x0, step=dx, length=nx))
 
   nk = nx
   nkr = Int(nx/2+1)
 
   i1 = 0:Int(nx/2)
   i2 = Int(-nx/2+1):-1
-  k = Array{T}(2π/Lx*cat(1, i1, i2))
-  kr = Array{T}(2π/Lx*cat(1, i1))
+  k = Array{T}(2π/Lx*cat(i1, i2; dims = 1))
+  kr = Array{T}(2π/Lx*cat(i1; dims = 1))
 
   invksq = @. 1/k^2
   invksq[1] = 0
@@ -58,10 +56,8 @@ function OneDGrid(nx, Lx; x0=-0.5*Lx, nthreads=Sys.CPU_CORES, effort=FFTW.MEASUR
   invkrsq[1] = 0
 
   FFTW.set_num_threads(nthreads)
-  fftplan   = plan_fft(Array{Complex{T},1}(nx); flags=effort)
-  ifftplan  = plan_ifft(Array{Complex{T},1}(nk); flags=effort)
-  rfftplan  = plan_rfft(Array{T,1}(nx); flags=effort)
-  irfftplan = plan_irfft(Array{Complex{T},1}(nkr), nx; flags=effort)
+  fftplan   = plan_fft(Array{Complex{T},1}(undef, nx); flags=effort)
+  rfftplan  = plan_rfft(Array{T,1}(undef, nx); flags=effort)
 
   # Index endpoints for aliased i, j wavenumbers
   iaL, iaR = Int(floor(nk/3))+1, 2*Int(ceil(nk/3))-1
@@ -69,12 +65,12 @@ function OneDGrid(nx, Lx; x0=-0.5*Lx, nthreads=Sys.CPU_CORES, effort=FFTW.MEASUR
   iralias = iaL:nkr
 
   OneDGrid(nx, nk, nkr, Lx, dx, x, k, kr, invksq, invkrsq,
-           fftplan, ifftplan, rfftplan, irfftplan, ialias, iralias)
+           fftplan, rfftplan, ialias, iralias)
 end
 
 """
     TwoDGrid(nx, Lx)
-    TwoDGrid(nx, Lx, ny, Ly; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_CORES, effort=FFTW.MEASURE)
+    TwoDGrid(nx, Lx, ny, Ly; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
 
 Constrcut a TwoDGrid object. The two-dimensional domain has size (Lx, Ly),
 resolution (nx, ny) and bottom left corner at (x0, y0). FFT plans are generated
@@ -106,10 +102,8 @@ struct TwoDGrid{T} <: AbstractTwoDGrid
   KKrsq::Array{T,2}     # Kr^2 + Lr^2
   invKKrsq::Array{T,2}  # 1/KKrsq, invKKrsq[1, 1]=0
 
-  fftplan::Base.DFT.FFTW.cFFTWPlan{Complex{T},-1,false,2}
-  ifftplan::Base.DFT.ScaledPlan{Complex{T},Base.DFT.FFTW.cFFTWPlan{Complex{T},1,false,2},T}
-  rfftplan::Base.DFT.FFTW.rFFTWPlan{T,-1,false,2}
-  irfftplan::Base.DFT.ScaledPlan{Complex{T},Base.DFT.FFTW.rFFTWPlan{Complex{T},1,false,2},T}
+  fftplan::FFTW.cFFTWPlan{Complex{T},-1,false,2}
+  rfftplan::FFTW.rFFTWPlan{T,-1,false,2}
 
   # Range objects that access the aliased part of the wavenumber range
   ialias::UnitRange{Int}
@@ -117,7 +111,7 @@ struct TwoDGrid{T} <: AbstractTwoDGrid
   jalias::UnitRange{Int}
 end
 
-function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU_CORES, effort=FFTW.MEASURE)
+function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
   T = typeof(Lx)
   dx = Lx/nx
   dy = Ly/ny
@@ -126,8 +120,8 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU
   nkr = Int(nx/2+1)
 
   # Physical grid
-  x = Array{T}(reshape(linspace(x0, x0+Lx-dx, nx), (nx, 1)))
-  y = Array{T}(reshape(linspace(y0, y0+Ly-dy, ny), (1, ny)))
+  x = Array{T}(reshape(range(x0, step=dx, length=nx), (nx, 1)))
+  y = Array{T}(reshape(range(y0, step=dy, length=ny), (1, ny)))
   X = [ x[i] for i = 1:nx, j = 1:ny]
   Y = [ y[j] for i = 1:nx, j = 1:ny]
 
@@ -137,9 +131,9 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU
   j1 = 0:Int(ny/2)
   j2 = Int(-ny/2+1):-1
 
-  k  = reshape(2π/Lx*cat(1, i1, i2), (nk, 1))
-  kr = reshape(2π/Lx*cat(1, i1), (nkr, 1))
-  l  = reshape(2π/Ly*cat(1, j1, j2), (1, nl))
+  k  = reshape(2π/Lx*cat(i1, i2, dims=1), (nk, 1))
+  kr = reshape(2π/Lx*cat(i1, dims=1), (nkr, 1))
+  l  = reshape(2π/Ly*cat(j1, j2, dims=1), (1, nl))
 
   K = [ k[i] for i = 1:nk, j = 1:nl]
   L = [ l[j] for i = 1:nk, j = 1:nl]
@@ -147,19 +141,17 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU
   Lr = [ l[j]  for i = 1:nkr, j = 1:nl]
 
   KKsq  = @. K^2 + L^2
-  invKKsq = 1./KKsq
+  invKKsq = 1 ./ KKsq
   invKKsq[1, 1] = 0
 
   KKrsq = @. Kr^2 + Lr^2
-  invKKrsq = 1./KKrsq
+  invKKrsq = 1 ./ KKrsq
   invKKrsq[1, 1] = 0
 
   # FFT plans
   FFTW.set_num_threads(nthreads)
-  fftplan   = plan_fft(Array{Complex{T},2}(nx, ny); flags=effort)
-  ifftplan  = plan_ifft(Array{Complex{T},2}(nk, nl); flags=effort)
-  rfftplan  = plan_rfft(Array{T,2}(nx, ny); flags=effort)
-  irfftplan = plan_irfft(Array{Complex{T},2}(nkr, nl), nx; flags=effort)
+  fftplan   = plan_fft(Array{Complex{T},2}(undef, nx, ny); flags=effort)
+  rfftplan  = plan_rfft(Array{T,2}(undef, nx, ny); flags=effort)
 
   # Index endpoints for aliased i, j wavenumbers
   iaL, iaR = Int(floor(nk/3))+1, 2*Int(ceil(nk/3))-1
@@ -171,7 +163,7 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU
 
   TwoDGrid(nx, ny, nk, nl, nkr, Lx, Ly, dx, dy, x, y, X, Y,
            k, l, kr, K, L, Kr, Lr, KKsq, invKKsq, KKrsq, invKKrsq,
-           fftplan, ifftplan, rfftplan, irfftplan, ialias, iralias, jalias)
+           fftplan, rfftplan, ialias, iralias, jalias)
 end
 
 function dealias!(a, g::OneDGrid)

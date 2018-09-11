@@ -1,5 +1,9 @@
 import FourierFlows.BarotropicQG
 
+using FFTW, Statistics, Random
+import Statistics: mean
+
+
 # -----------------------------------------------------------------------------
 # BAROQG's TEST FUNCTIONS
 
@@ -40,7 +44,7 @@ function test_baroQG_RossbyWave(stepper, dt, nsteps)
   dealias!(s.sol, g)
   BarotropicQG.updatevars!(prob)
 
-  ζ_theory = ampl*cos.(kwave*(g.X-ω/kwave*s.t)).*cos.(lwave*g.Y)
+  ζ_theory = ampl*cos.(kwave*(g.X .- ω/kwave*s.t)) .* cos.(lwave*g.Y)
 
   isapprox(ζ_theory, v.zeta, rtol=g.nx*g.ny*nsteps*1e-12)
 end
@@ -63,17 +67,18 @@ function test_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, 
   σ = 0.1
   gr  = TwoDGrid(n, L)
 
-  force2k = exp.(-(sqrt.(gr.KKrsq)-kf).^2/(2*dkf^2))
-  force2k[gr.KKrsq .< 2.0^2 ] = 0
-  force2k[gr.KKrsq .> 20.0^2 ] = 0
-  force2k[gr.Kr.<2π/L] = 0
+  force2k = zero(gr.Kr)
+  @. force2k = exp.(-(sqrt.(gr.KKrsq)-kf).^2/(2*dkf^2))
+  @. force2k[gr.KKrsq .< 2.0^2 ] = 0
+  @. force2k[gr.KKrsq .> 20.0^2 ] = 0
+  @. force2k[gr.Kr.<2π/L] = 0
   σ0 = FourierFlows.parsevalsum(force2k.*gr.invKKrsq/2.0, gr)/(gr.Lx*gr.Ly)
   force2k .= σ/σ0 * force2k
 
-  srand(1234)
+  Random.seed!(1234)
 
   function calcFq!(F, sol, t, s, v, p, g)
-    eta = exp.(2π*im*rand(size(sol)))/sqrt(s.dt)
+    eta = exp.(2π*im*rand(Float64, size(sol)))/sqrt(s.dt)
     eta[1, 1] = 0
     @. F = eta .* sqrt(force2k)
     nothing
@@ -101,7 +106,7 @@ function test_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, 
 
   E, D, W, R = diags
 
-  t = round(mu*prob.state.t, 2)
+  t = round(mu*prob.state.t, digits=2)
 
   i₀ = 1
   dEdt = (E[(i₀+1):E.count] - E[i₀:E.count-1])/prob.ts.dt
@@ -117,7 +122,7 @@ function test_stochasticforcingbudgets(; n=256, dt=0.01, L=2π, nu=1e-7, nnu=2, 
   residual = dEdt - total
 
   if message
-    @printf("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", prob.step, prob.t, cfl, tc)
+    println("step: %04d, t: %.1f, cfl: %.3f, time: %.2f s\n", prob.step, prob.t, cfl, tc)
   end
   # println(mean(abs.(residual)))
   isapprox(mean(abs.(residual)), 0, atol=1e-4)

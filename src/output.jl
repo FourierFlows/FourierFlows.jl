@@ -4,7 +4,7 @@ export Output, saveoutput, saveproblem, groupsize, savediagnostic
 
 gridfieldstosave = [:nx, :ny, :Lx, :Ly, :X, :Y]
 
-""" 
+"""
     Output(prob, filename, fieldtuples...)
 
 Define output for the Problem prob with fields and functions that calculate
@@ -23,12 +23,12 @@ function Output(prob::Problem, filename::String, fields::Dict{Symbol,Function})
   else
     basefilename = filename
   end
-  
+
   filename = basefilename*".jld2"
   n = 0
   while isfile(filename) # append numbers until unique name is found
     n += 1
-    filename = basefilename * "_$n.jld2" 
+    filename = basefilename * "_$n.jld2"
   end
 
   saveproblem(prob, filename)
@@ -43,7 +43,7 @@ end
 
 getindex(out::Output, key) = out.fields[key](out.prob)
 
-""" 
+"""
     saveoutput(out)
 
 Save current output fields for file in out.filename.
@@ -59,7 +59,7 @@ function saveoutput(out::Output)
   nothing
 end
 
-""" 
+"""
     saveproblem(prob, filename)
 
 Save certain aspects of a problem timestepper, grid, and params. Functions
@@ -73,7 +73,7 @@ function saveproblem(prob::AbstractProblem, filename::String)
       file["grid/$field"] = getfield(prob.grid, field)
     end
 
-    for name in fieldnames(prob.params)   # Params
+    for name in fieldnames(typeof(prob.params))   # Params
       field = getfield(prob.params, name)
       if !(typeof(field) <: Function)
         file["params/$name"] = field
@@ -90,7 +90,7 @@ saveproblem(out::Output) = saveproblem(out.prob, out.filename)
 
 Save diagnostics to file, labeled by the string diagname.
 """
-function savediagnostic(diag::AbstractDiagnostic, diagname::String, filename::String) 
+function savediagnostic(diag::AbstractDiagnostic, diagname::String, filename::String)
   jldopen(filename, "a+") do file
     file["diags/$diagname/time"] = diag.time
     file["diags/$diagname/data"] = diag.data

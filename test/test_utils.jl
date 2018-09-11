@@ -1,3 +1,4 @@
+using FFTW
 
 test_fftwavenums() = FourierFlows.fftwavenums(6; L=2π) == [0, 1, 2, 3, -2, -1]
 
@@ -102,9 +103,8 @@ physicalvars = [:a, :b]
 transformvars = [ Symbol(var, :h) for var in physicalvars ]
  forcedvar = [:Fh]
 
-varspecs = cat(1,
-  FourierFlows.getfieldspecs(physicalvars, :(Array{T,2})),
-  FourierFlows.getfieldspecs(transformvars, :(Array{Complex{T},2})))
+varspecs = cat(FourierFlows.getfieldspecs(physicalvars, :(Array{T,2})),
+  FourierFlows.getfieldspecs(transformvars, :(Array{Complex{T},2})), dims=1)
 
 eval(FourierFlows.structvarsexpr(:VarsFields, physicalvars, transformvars))
 eval(FourierFlows.structvarsexpr(:VarsFieldsParent, physicalvars, transformvars; parent=:TestVars))
@@ -197,14 +197,14 @@ f2 = exp.( im*(2k0*x + 3l0*y.^2) ).*(
 k1, l1 = 2*k0, 6*l0
 k2, l2 = 3*k0, -3*l0
 
-sin1 = sin.(k1*x + l1*y)
-sin2 = sin.(k2*x + l2*y)
-exp1 = exp.(im*(k1*x + l1*y))
-exp2 = exp.(im*(k2*x + l2*y))
+sinkl1 = sin.(k1*x + l1*y)
+sinkl2 = sin.(k2*x + l2*y)
+expkl1 = exp.(im*(k1*x + l1*y))
+expkl2 = exp.(im*(k2*x + l2*y))
 
 # Analytical expression for the Jacobian of sin1 and sin2 and of exp1 and exp2
-Jsin1sin2 = (k1*l2-k2*l1)*cos.(k1*x + l1*y).*cos.(k2*x + l2*y)
-Jexp1exp2 = (k2*l1-k1*l2)*exp.(im*((k1+k2)*x + (l1+l2)*y))
+Jsinkl1sinkl2 = (k1*l2-k2*l1)*cos.(k1*x + l1*y).*cos.(k2*x + l2*y)
+Jexpkl1expkl2 = (k2*l1-k1*l2)*exp.(im*((k1+k2)*x + (l1+l2)*y))
 
 @test test_parsevalsum(f1, g; realvalued=true)   # Real valued f with rfft
 @test test_parsevalsum(f1, g; realvalued=false)  # Real valued f with fft
@@ -213,9 +213,9 @@ Jexp1exp2 = (k2*l1-k1*l2)*exp.(im*((k1+k2)*x + (l1+l2)*y))
 @test test_parsevalsum2(f1, g; realvalued=false) # Real valued f with fft
 @test test_parsevalsum2(f2, g; realvalued=false) # Complex valued f with fft
 
-@test test_jacobian(sin1, sin1, 0*sin1, g)  # Test J(a, a) = 0
-@test test_jacobian(sin1, sin2, Jsin1sin2, g) # Test J(sin1, sin2) = Jsin1sin2
-@test test_jacobian(exp1, exp2, Jexp1exp2, g) # Test J(exp1, exp2) = Jexp1exps2
+@test test_jacobian(sinkl1, sinkl1, 0*sinkl1, g)  # Test J(a, a) = 0
+@test test_jacobian(sinkl1, sinkl2, Jsinkl1sinkl2, g) # Test J(sin1, sin2) = Jsin1sin2
+@test test_jacobian(expkl1, expkl2, Jexpkl1expkl2, g) # Test J(exp1, exp2) = Jexp1exps2
 
 @test test_createarrays()
 @test test_fftwavenums()

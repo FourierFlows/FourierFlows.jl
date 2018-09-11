@@ -2,6 +2,10 @@ import FourierFlows.TwoDTurb
 import FourierFlows.VerticallyFourierBoussinesq
 import FourierFlows.TwoDTurb: energy
 
+using FFTW
+import FFTW: rfft, irfft
+import LinearAlgebra: mul!, ldiv!
+
 # Dictionary of (stepper, nsteps) pairs to test. Each stepper is tested by
 # stepping forward nstep times.
 steppersteps = Dict([
@@ -45,7 +49,7 @@ function testtwodturbstepforward(n=64, L=2π, nu=1e-2, nnu=0; nsteps=100, steppe
   # Remove high wavenumber power from IC
   cutoff = 0.3
   highwavenumbers = @. sqrt((g.Kr*g.dx/π)^2 + (g.Lr*g.dy/π)^2 ) > cutoff
-  qih[highwavenumbers] = 0
+  @. qih[highwavenumbers] = 0
 
   qi = irfft(qih, g.nx)
   qih = rfft(qi)
@@ -86,10 +90,10 @@ function testverticallyfourierstepforward(n=64, L=2π, nu=1e-2, nnu=0; nsteps=10
   cutoff = 0.3
   highwavenumbersr = @. sqrt((g.Kr*g.dx/π)^2 + (g.Lr*g.dy/π)^2 ) > cutoff
   highwavenumbersc = @. sqrt((g.K*g.dx/π)^2 + (g.L*g.dy/π)^2 ) > cutoff
-  Zih[highwavenumbersr] = 0
-  uih[highwavenumbersc] = 0
-  vih[highwavenumbersc] = 0
-  pih[highwavenumbersc] = 0
+  Zih[highwavenumbersr] .= 0
+  uih[highwavenumbersc] .= 0
+  vih[highwavenumbersc] .= 0
+  pih[highwavenumbersc] .= 0
 
   Zi = irfft(Zih, g.nx)
   Zih = rfft(Zi)
