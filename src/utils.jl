@@ -243,7 +243,7 @@ function jacobian(a, b, g::TwoDGrid)
 end
 
 """
-    radialspectrum(ah, g; nr=nothing, nθ=nothing, refinement=4)
+    radialspectrum(ah, g; n=nothing, m=nothing, refinement=2)
 
 Returns `aρ = ∫ ah(ρ,θ) ρ dρ dθ`, the radial spectrum of `ah` known on the
 Cartesian wavenumber grid (k,l).
