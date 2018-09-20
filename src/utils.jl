@@ -29,22 +29,28 @@ const filteredsteppers = [
 ]
 
 """
-    autoconstructtimestepper(stepper, dt, sol)
-    autoconstructtimestepper(stepper, dt, solc, solr)
-    autoconstructtimestepper(filteredstepper, dt, sol, g)
+    autoconstructtimestepper(stepper, dt, sol, g=ZeroDGrid())
 
-Returns a time-stepper type defined by the prefix 'stepper', timestep dt
-solution sol (used to construct variables with identical type and size as
-the solution vector), and grid g.
+Returns a time-stepper type defined by the prefix `stepper`, timestep `dt`
+solution `sol` (used to construct variables 
+with identical type and size as the solution vector), and grid `g`.
 """
-function autoconstructtimestepper(stepper, dt, sol, g::AbstractGrid=ZeroDGrid(1))
+function autoconstructtimestepper(stepper, dt, sol, g::AbstractGrid=ZeroDGrid())
   fullsteppername = Symbol(stepper, :TimeStepper)
   tsexpr = occursin("Filtered", stepper) ?
       Expr(:call, fullsteppername, dt, sol, g) : Expr(:call, fullsteppername, dt, sol)
   eval(tsexpr)
 end
 
-function autoconstructtimestepper(stepper, dt, solc, solr, g::AbstractGrid=ZeroDGrid(1))
+"""
+    autoconstructtimestepper(stepper, dt, solc, solr, g=ZeroDGrid())
+
+Returns a time-stepper type defined by the prefix `stepper`, timestep `dt`
+complex solution `solc` and real solution `solr` (used to construct variables 
+with identical type and size as the solution vector), and grid `g`.
+
+"""
+function autoconstructtimestepper(stepper, dt, solc, solr, g::AbstractGrid=ZeroDGrid())
   fullsteppername = Symbol(stepper, :TimeStepper)
   tsexpr = occursin("Filtered", stepper) ?
     Expr(:call, fullsteppername, dt, solc, solr, g) : Expr(:call, fullsteppername, dt, solc, solr)
@@ -54,8 +60,8 @@ end
 """
     @createarrays T dims a b c...
 
-Create arrays of all zeros with element type T, size dims, and global names
-a, b, c (for example). An arbitrary number of arrays may be created.
+Create arrays of all zeros with element type `T`, size `dims`, and global names
+`a`, `b`, `c` (for example). An arbitrary number of arrays may be created.
 """
 macro createarrays(T, dims, vars...)
   expr = Expr(:block)
@@ -237,47 +243,51 @@ function jacobian(a, b, g::TwoDGrid)
 end
 
 """
-    radialspectrum(ah, g; nr=nothing, nθ=nothing, refinement=4)
+    radialspectrum(ah, g; n=nothing, m=nothing, refinement=2)
 
-Returns aρ = ∫ ah(ρ,θ) ρ dρ dθ, the radial spectrum of ah known on the
+Returns `aρ = ∫ ah(ρ,θ) ρ dρ dθ`, the radial spectrum of `ah` known on the
 Cartesian wavenumber grid (k,l).
 
-aρ is found by intepolating ah onto a polar wavenumber grid (ρ,θ), and
-then integrating over θ to find aρ. The default resolution (n,m) for the
-polar wave number grid is n=refinement*maximum(nk,nl),
-m=refinement*maximum(nk,nl), where refinement=4 by default. If
-ah is in conjugate symmetric form only the upper half plane in θ is
+`aρ` is found by intepolating `ah` onto a polar wavenumber grid (ρ,θ), and
+then integrating over `θ` to find `aρ`. The default resolution (n,m) for the
+polar wave number grid is `n=refinement*maximum(nk, nl),
+m=refinement*maximum(nk, nl)`, where `refinement=2` by default. If
+`ah` is in conjugate symmetric form only the upper half plane in `θ` is
 represented on the polar grid.
-
 """
-function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=4)
+function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=2)
 
-  if n == nothing; n = refinement*maximum([g.nk, g.nl]); end
-  if m == nothing; m = refinement*maximum([g.nk, g.nl]); end
+  n = n == nothing ? refinement*maximum([g.nk, g.nl]) : n 
+  m = m == nothing ? refinement*maximum([g.nk, g.nl]) : m 
 
-  if size(ah)[1] == g.nkr       # conjugate symmetric form
-    m = Int(m/2)                # => half resolution in θ
+  # Calcualte shifted k and l
+  lshift = range(-g.nl/2+1, stop=g.nl/2, length=g.nl)*2π/g.Ly
+
+  if size(ah)[1] == g.nkr # conjugate symmetric form
+    m = Int(m/2)                         # => half resolution in θ
     θ = range(-π/2, stop=π/2, length=m)  # θ-grid from k=0 to max(kr)
-    ahsh = fftshift(ah, 2)      # shifted ah
-    ksh = range(0, stop=g.nkr-1, length=g.nkr)*2π/g.Lx
-  else                          # ordinary form
+    ahshift = fftshift(ah, 2)            # shifted ah
+    kshift = range(0, stop=g.nkr-1, length=g.nkr)*2π/g.Lx
+  else # ordinary form
     θ = range(0, stop=2π, length=m)      # θ grid
-    ahsh = fftshift(ah, [1, 2]) # shifted ah
-    ksh = range(-g.nk/2+1, stop=g.nk/2, length=g.nk)*2π/g.Lx
+    ahshift = fftshift(ah, [1, 2])       # shifted ah
+    kshift = range(-g.nk/2+1, stop=g.nk/2, length=g.nk)*2π/g.Lx
   end
 
-  lsh = range(-g.nl/2+1, stop=g.nl/2, length=g.nl)*2π/g.Ly
-  ρmax = minimum([maximum(g.k), maximum(g.l)])
+  # Interpolator for ah
+  itp = scale(interpolate(ahshift, BSpline(Linear())), kshift, lshift)
+
+  # Get radial wavenumber vector
+  ρmax = minimum([(g.nk/2-1)*2π/g.Lx, (g.nl/2-1)*2π/g.Ly])
   ρ = range(0, stop=ρmax, length=n)
 
-  itp = scale(interpolate(ahsh, BSpline(Linear()), OnGrid()), ksh, lsh)
-  ahρθ = zeros(eltype(ahsh), (n, m))
-
   # Interpolate ah onto fine grid in (ρ,θ).
+  ahρθ = zeros(eltype(ahshift), (n, m)) 
+
   for i=2:n, j=1:m # ignore zeroth mode
     kk = ρ[i]*cos(θ[j])
     ll = ρ[i]*sin(θ[j])
-    ahρθ[i, j] = itp[kk, ll]
+    ahρθ[i, j] = itp(kk, ll)
   end
 
   # ahρ = ρ ∫ ah(ρ,θ) dθ  =>  Ah = ∫ ahρ dρ = ∫∫ ah dk dl
@@ -287,21 +297,18 @@ function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=4)
   else
     ahρ = ρ.*sum(ahρθ, dims=2)*dθ
   end
+
   ahρ[1] = ah[1, 1] # zeroth mode
 
   ρ, ahρ
 end
 
-
 # Moments and cumulants
+"Compute the average of `c` on the grid `g`."
 domainaverage(c, g) = g.dx*g.dy*sum(c)/(g.Lx*g.Ly)
-xmoment(c, g::TwoDGrid, n=1) = sum(g.X.^n.*c)/sum(c)
-ymoment(c, g::TwoDGrid, n=1) = sum(g.Y.^n.*c)/sum(c)
 
-#=
-# Moments and cumulants
-cumulant_1x(c, g) = g.dx*g.dy*sum(g.X.*c) / domainaverage(c, g)
-cumulant_1y(c, g) = g.dx*g.dy*sum(g.Y.*c) / domainaverage(c, g)
-cumulant_2x(c, g) = g.dx*g.dy*sum((g.X.-cumulant_1x(c, g)).^2.*c) / domainaverage(c, g)
-cumulant_2y(c, g) = g.dx*g.dy*sum((g.Y.-cumulant_1y(c, g)).^2.*c) / domainaverage(c, g)
-=#
+"Compute the `n`th x-moment of `c` on the grid `g`."
+xmoment(c, g, n=1) = sum(g.X.^n.*c)/sum(c)
+
+"Compute the `n`th y-moment of `c` on the grid `g`."
+ymoment(c, g, n=1) = sum(g.Y.^n.*c)/sum(c)
