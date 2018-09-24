@@ -1,8 +1,3 @@
-export OneDGrid, TwoDGrid, dealias!
-
-abstract type AbstractTwoDGrid <: AbstractGrid end
-abstract type AbstractOneDGrid <: AbstractGrid end
-
 """
     ZeroDGrid()
 
