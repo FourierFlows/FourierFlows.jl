@@ -16,7 +16,7 @@ export
 
   OneDGrid, 
   TwoDGrid, 
-  dealias!
+  dealias!,
 
   Diagnostic,
   resize!, 
