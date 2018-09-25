@@ -1,8 +1,3 @@
-export OneDGrid, TwoDGrid, dealias!
-
-abstract type AbstractTwoDGrid <: AbstractGrid end
-abstract type AbstractOneDGrid <: AbstractGrid end
-
 """
     ZeroDGrid()
 
@@ -199,7 +194,7 @@ end
 
 function makefilter(g::AbstractTwoDGrid; realvars=true, kwargs...)
   K = realvars ?
-      @.(sqrt((g.Kr*g.dx/π)^2 + (g.Lr*g.dy/π)^2)) : @.(sqrt((g.K*g.dx/π)^2 + (g.L*g.dy/π)^2))
+      @.(sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2)) : @.(sqrt((g.k*g.dx/π)^2 + (g.l*g.dy/π)^2))
   makefilter(K; kwargs...)
 end
 

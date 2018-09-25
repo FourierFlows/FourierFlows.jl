@@ -1,8 +1,3 @@
-using Interpolations
-import SpecialFunctions
-
-export @createarrays
-
 """
     cxeltype(a)
 
@@ -158,10 +153,10 @@ function lambdipole(Ue::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
   xc, yc = center == (nothing, nothing) ? (mean(g.x), mean(g.y)) : (center[1], center[2])
 
   k = 3.8317059702075123156 / R # dipole wavenumber for radius R in terms of first zero of besselj
-  q0 = -2Ue*k/SpecialFunctions.besselj(0, k*R)
+  q0 = -2Ue*k/besselj(0, k*R)
 
   r = @. sqrt((g.x-xc)^2 + (g.y-yc)^2)
-  q = @. q0*SpecialFunctions.besselj(1, k*r)*(g.y-yc)/r
+  q = @. q0*besselj(1, k*r)*(g.y-yc)/r
 
   @. q[r == 0.0] = 0.0 # just in case.
   @. q[r > R] = 0.0

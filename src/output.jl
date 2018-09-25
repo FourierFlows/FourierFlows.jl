@@ -1,8 +1,4 @@
-using JLD2
-import Base: getindex, setindex!, push!, append!, fieldnames
-export Output, saveoutput, saveproblem, groupsize, savediagnostic
-
-gridfieldstosave = [:nx, :ny, :Lx, :Ly, :X, :Y]
+const gridfieldstosave = [:nx, :ny, :Lx, :Ly, :X, :Y]
 
 """
     Output(prob, filename, fieldtuples...)

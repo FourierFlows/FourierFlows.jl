@@ -1,18 +1,61 @@
 module FourierFlows
 
-using Requires, FFTW, Statistics
+export 
+  AbstractGrid,
+  AbstractParams,
+  AbstractVars,
+  AbstractEquation,
+  AbstractTimeStepper,
+  AbstractProblem,
+
+  Equation, 
+  DualEquation, 
+  Problem, 
+  State, 
+  DualState,
+
+  OneDGrid, 
+  TwoDGrid, 
+  dealias!,
+
+  Diagnostic,
+  resize!, 
+  update!, 
+  increment!,
+    
+  Output, 
+  saveoutput, 
+  saveproblem, 
+  groupsize, 
+  savediagnostic,
+
+  @createarrays, 
+
+  ForwardEulerTimeStepper, 
+  FilteredForwardEulerTimeStepper,
+  RK4TimeStepper, 
+  FilteredRK4TimeStepper,
+  DualRK4TimeStepper, 
+  DualFilteredRK4TimeStepper,
+  ETDRK4TimeStepper, 
+  FilteredETDRK4TimeStepper,
+  DualETDRK4TimeStepper, 
+  DualFilteredETDRK4TimeStepper,
+  AB3TimeStepper, 
+  FilteredAB3TimeStepper,
+  stepforward!
+
+using 
+  Requires, 
+  FFTW, 
+  Statistics,
+  JLD2,
+  Interpolations
+
+using SpecialFunctions: besselj
+
+import Base: resize!, getindex, setindex!, push!, append!, fieldnames
 import LinearAlgebra: mul!, ldiv!
-
-export AbstractGrid,
-       AbstractParams,
-       AbstractVars,
-       AbstractEquation,
-       AbstractTimeStepper,
-       AbstractProblem
-
-# -------------------
-# Abstract supertypes
-# -------------------
 
 abstract type AbstractGrid end
 abstract type AbstractParams end
@@ -22,6 +65,10 @@ abstract type AbstractEquation end
 abstract type AbstractState end
 abstract type AbstractProblem end
 
+abstract type AbstractTwoDGrid <: AbstractGrid end
+abstract type AbstractOneDGrid <: AbstractGrid end
+
+abstract type AbstractDiagnostic end
 
 # ------------------
 # Base functionality

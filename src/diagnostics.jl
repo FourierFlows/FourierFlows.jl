@@ -1,9 +1,3 @@
-import Base: resize!, getindex
-export AbstractDiagnostic, Diagnostic
-export resize!, update!, increment!
-
-abstract type AbstractDiagnostic end
-
 """ A diagnostic type associated with FourierFlows.Problem types """
 mutable struct Diagnostic{T} <: AbstractDiagnostic
   calc::Function

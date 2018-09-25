@@ -1,5 +1,3 @@
-export Equation, DualEquation, Problem, State, DualState
-
 mutable struct State{T,dim} <: AbstractState
   t::Float64
   step::Int
