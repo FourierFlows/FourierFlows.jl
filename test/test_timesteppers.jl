@@ -24,7 +24,7 @@ dualsteppersteps = Dict([
   ("DualFilteredETDRK4", 40),
 ])
 
-function testtraceradvdifftestforward(n=64, L=2π, kap=1e-2; nsteps=100, stepper="ForwardEuler")
+function tracerdiffusiontest(n=64, L=2π, kap=1e-2; nsteps=100, stepper="ForwardEuler")
   Lc = L/20
   t0 = Lc^2/2kap
   t1 = 2t0
@@ -46,7 +46,7 @@ function testtraceradvdifftestforward(n=64, L=2π, kap=1e-2; nsteps=100, stepper
 end
 
 for (stepper, steps) in steppersteps
-  @test testtraceradvdiffstepforward(n; stepper=stepper, nsteps=steps)
+  @test tracerdiffusiontest(n; stepper=stepper, nsteps=steps)
 end
 
 #=
