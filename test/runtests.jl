@@ -27,9 +27,9 @@ end
   include("test_utils.jl")
 end
 
-@testset "Timestepper tests" begin
-  include("test_timesteppers.jl")
-end
+#@testset "Timestepper tests" begin
+#  include("test_timesteppers.jl")
+#end
 
 @testset "Diagnostics tests" begin
   include("test_diagnostics.jl")
