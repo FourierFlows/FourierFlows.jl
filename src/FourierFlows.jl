@@ -1,22 +1,11 @@
 module FourierFlows
 
 export 
-  AbstractGrid,
-  AbstractParams,
-  AbstractVars,
-  AbstractEquation,
-  AbstractTimeStepper,
-  AbstractProblem,
-
-  Equation, 
-  DualEquation, 
-  Problem, 
-  State, 
-  DualState,
-
   OneDGrid, 
   TwoDGrid, 
   dealias!,
+
+  unpack,
 
   Diagnostic,
   resize!, 
