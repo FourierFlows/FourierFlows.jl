@@ -1,5 +1,7 @@
-using FourierFlows, PyPlot
-import FourierFlows.TracerAdvDiff
+using 
+  FourierFlows, 
+  FourierFlows.TracerAdvDiff,
+  PyPlot
 
 # Numerical parameters and time-stepping parameters
 nx  = 128         # 2D resolution = nx^2
@@ -24,8 +26,7 @@ x0, y0 = 1.2, 0
 c0(x, y) = C*exp( -((x-x0)^2+(y-y0)^2) / (2dc^2))
 
 # Generate problem
-prob = TracerAdvDiff.ConstDiffProblem(nx=nx, Lx=Lx, kap=kap, u=uvel, v=vvel,
-                                      dt=dt, stepper=stepper, steadyflow=true) 
+prob = TracerAdvDiff.ConstDiffProblem(nx=nx, Lx=Lx, kap=kap, u=uvel, v=vvel, dt=dt, stepper=stepper, steadyflow=true) 
 TracerAdvDiff.set_c!(prob, c0)
 
 # Calculate streamfunction of flow field for plotting

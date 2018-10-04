@@ -18,7 +18,7 @@
 
 ## Overview
 
-This software provides solvers for partial differential equations on
+This software provides tools for partial differential equations on
 doubly-periodic domains using Fourier-based pseudospectral methods.
 A central intent of the software's design is also to provide a framework
 for writing new, fast solvers for new physical problems.
@@ -35,88 +35,10 @@ julia> using Pkg
 julia> Pkg.add("FourierFlows")
 ```
 
-## Source code organization
+## Example 
 
-The code is divided along conceptual lines into problem-agnostic and
-problem-specific components. Files that contain problem-agnostic parts
-of the code are stored in `/src`. Files in `/src` define the domain,
-'AbstractTypes' that supertype problem-specific types, and
-time-stepper types and routines. Problem-specific modules are stores in
-`/src/physics`.
-
-Here's an overview of the code structure:
-
-- `/src/`
-    - `FourierFlows.jl`
-        - Defines supertyping AbstractParams, AbstractGrid, etc.
-        - Defines a `Problem` type to organize the grid, vars, params,
-            equation, and timestepper into a single structure.
-        - Includes all sources files and physics files.
-   - `timesteppers.jl`: defines modules and `stepforward!` routines for
-        various time-steppers. Current implemented time-steppers are:
-        - Forward Euler
-        - 3rd-order Adams-Bashforth (AB3)
-        - 4th-order Runge-Kutta (RK4)
-        - 4th-order Runge-Kutta Exponential Time Differencing (ETDRK4)
-        - 4th-order Dual Runge-Kutta (DualRK4)
-        - 4th-order Dual Runge-Kutta Exponential Time Differencing (DualETDRK4)
-
-        For each time-stepper exists also a "filtered" version that filters
-        out high-wavenumber spectral components of the solution. The `Dual`
-        time-steppers evolve a state variable that comprises both of real valued
-        and complex valued fields.
-
-    - `physics/`
-        - `kuramotosivashinsky.jl`: Defines a `KuramotoSivashinsky` module that
-                solves the 1D Kuramoto-Sivashinsky equation.
-        - `twodturb.jl`: Defines a `TwoDTurb` module that provides a
-                solver for the two-dimensional vorticity equation.
-        - `barotropicqg.jl`: Defines a `BarotropicQG` module that provides
-                several solvers for the barotropic QG model that permit beta,
-                topography, beta + topography, and forcing.
-        - `verticallyfourierboussinesq.jl`: Defines a `VerticallyFourierBoussinesq` module that
-                solves the two-mode truncation of the Fourier series thin-layer approximation to the hydrostatic Boussinesq equations.
-        - `verticallycosinerboussinesq.jl`: Defines a `VerticallyCosineBoussinesq` module that
-                solves the two-mode truncation of the Sin/Cos series thin-layer approximation to the hydrostatic Boussinesq equations.
-        - `traceradvdiff.jl`: Defines a `TracerAdvDiff` module that
-                provides a solver for a two-dimensional and periodic tracer
-                field in a given 2D flow (u, w), which can be an arbitrary
-                function of x, z, and t.
-
-
-## Basic Notation
-
-The code solves partial differential equations of the general
-form: `∂u/∂t = L*u + N(u)`, where `u` denotes the solution, which is
-typically an array of complex coefficients for each Fourier mode. In general,
-`L` is an array of coeffients that describe the linear part of the equation
-governing `u`, while `N(u)` is an arbitrary function that may contain terms
-both linear and nonlinear in `u`, as well forcing terms.
-The time-steppers currently implemented only accepted
-diagonal `L` arrays, which means that `L` and `u` have the same size.
-Currently, the ETDRK4 time-stepper is the only time-stepper implemented that
-makes special use of `L`. Both `L` and the function that calculates `N(u)` are
-stored as fields of the type `AbstractEquation`.
-
-
-## Writing fast solvers
-
-The performance-intensive part of the code involves just two functions: the
-timestepping scheme `stepforward!`, and the function `calcN!` that
-calculates the nonlinear part of the given equation's right-hand side.
-Optimization of these two functions for a given problem will produce the
-fastest possible code.
-
-
-## Future work
-
-The code is in the chaotic stage of development. A main goal for the future
-is to permit the use of shared memory parallelism in the compute-intensive
-routines (shared-memory parallelism provided already by FFTW/MKLFFT, but
-is not yet native to Julia for things like element-wise matrix multiplication,
-addition, and assignment). This feature may possibly be enabled by
-Intel Lab's [ParallelAccelerator][] package.
-
+For a simple example involving the advection and diffusion of a passive tracer, 
+see `examples/tracers_cellularflow.jl`.
 
 # Developers
 
