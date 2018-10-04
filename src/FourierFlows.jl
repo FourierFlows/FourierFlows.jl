@@ -83,11 +83,11 @@ include("timesteppers.jl")
 
 
 # -------
-# Physics
+# Physics modules
 # -------
 
-include("physics/traceradvdiff.jl")
-include("physics/kuramotosivashinsky.jl")
+include("traceradvdiff.jl")
+include("kuramotosivashinsky.jl")
 
 # ----------------------
 # CUDA/GPU functionality
