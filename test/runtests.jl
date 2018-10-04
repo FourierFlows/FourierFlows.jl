@@ -38,29 +38,12 @@ end
 
 println("-- Physics tests --")
 
-
 @testset "Physics: Kuramoto-Sivashinsky" begin
   include("test_kuramotosivashinsky.jl")
 end
 
-@testset "Physics: TwoDTurb" begin
-  include("test_twodturb.jl")
-end
-
-@testset "Physics: BarotropicQG" begin
-  include("test_barotropicqg.jl")
-end
-
 @testset "Physics: TracerAdvDiff" begin
   include("test_traceradvdiff.jl")
-end
-
-@testset "Physics: Vertically Cosine Boussinesq" begin
-  include("test_verticallycosineboussinesq.jl")
-end
-
-@testset "Physics: Vertically Fourier Boussinesq" begin
-  include("test_verticallyfourierboussinesq.jl")
 end
 
 @require CuArrays="3a865a2d-5b23-5a0f-bc46-62713ec82fae" begin
