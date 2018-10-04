@@ -1,6 +1,10 @@
 module FourierFlows
 
 export 
+  AbstractProblem,
+  AbstractVars,
+  AbstractParams,
+
   OneDGrid, 
   TwoDGrid, 
   dealias!,

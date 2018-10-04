@@ -11,9 +11,9 @@ using
 
 using LinearAlgebra: mul!, ldiv!
 
-abstract type AbstractTracerParams <: FourierFlows.AbstractParams end
-abstract type AbstractConstDiffParams <: FourierFlows.AbstractParams end
-abstract type AbstractSteadyFlowParams <: FourierFlows.AbstractParams end
+abstract type AbstractTracerParams <: AbstractParams end
+abstract type AbstractConstDiffParams <: AbstractParams end
+abstract type AbstractSteadyFlowParams <: AbstractParams end
 
 # --
 # Problems
