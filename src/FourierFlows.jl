@@ -4,6 +4,7 @@ export
   AbstractProblem,
   AbstractVars,
   AbstractParams,
+  AbstractEquation,
 
   OneDGrid, 
   TwoDGrid, 
