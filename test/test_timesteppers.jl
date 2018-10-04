@@ -24,25 +24,25 @@ dualsteppersteps = Dict([
   ("DualFilteredETDRK4", 40),
 ])
 
-function tracerdiffusiontest(n=128, L=2π, kap=1e-2; nsteps=100, stepper="ForwardEuler")
-  Lc = L/20
-  t0 = Lc^2/2kap
-  t1 = 2t0
+function tracerdiffusionproblem(nx=32, ny=2, Lx=2π, kap=1e-2; nsteps=100, stepper="ForwardEuler")
+  k1 = 2π/Lx
+  dt = 1e-4 / (kap*k1^2) # resolved?
+  prob = TracerAdvDiff.ConstDiffProblem(nx=nx, Lx=Lx, ny=ny, kap=kap, dt=dt, stepper=stepper, steadyflow=true)
+  g = prob.grid
 
-  csol(x, t) = @. exp(-x^2/(4*kap*t)) / sqrt(4π*kap*t)
-
-  dt = t0/nsteps
-  prob = TracerAdvDiff.ConstDiffProblem(nx=n, Lx=L, kap=kap, dt=dt, stepper=stepper, steadyflow=true)
-  g, p, v, s = unpack(prob)
-
-  c0 = csol(g.X, t0)
-  c1 = csol(g.X, t1) # analytical solution
+  t1 = dt*nsteps
+  c0 = @. sin(k1*g.X)
+  c1 = @. exp(-kap*k1^2*t1) * sin(k1*g.X) # analytical solution
 
   set_c!(prob, c0)
   stepforward!(prob, nsteps)
   updatevars!(prob)
+  prob, c0, c1, nsteps
+end
 
-  isapprox(c1, prob.vars.c, rtol=n^2*nsteps*1e-13)
+function tracerdiffusiontest(args...; kwargs...)
+  prob, c0, c1, nsteps = tracerdiffusionproblem(args...; kwargs...)
+  isapprox(c1, prob.vars.c, rtol=prob.grid.nx^2*nsteps*1e-13)
 end
 
 for (stepper, steps) in steppersteps
