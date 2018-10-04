@@ -24,9 +24,9 @@ dualsteppersteps = Dict([
   ("DualFilteredETDRK4", 40),
 ])
 
-function tracerdiffusionproblem(nx=32, ny=2, Lx=2π, kap=1e-2; nsteps=100, stepper="ForwardEuler")
+function tracerdiffusionproblem(nx=16, ny=2, Lx=2π, kap=1e-2; nsteps=100, stepper="ForwardEuler")
   k1 = 2π/Lx
-  dt = 1e-4 / (kap*k1^2) # resolved?
+  dt = 1e-9 / (kap*k1^2) # resolved?
   prob = TracerAdvDiff.ConstDiffProblem(nx=nx, Lx=Lx, ny=ny, kap=kap, dt=dt, stepper=stepper, steadyflow=true)
   g = prob.grid
 
