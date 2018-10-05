@@ -88,10 +88,6 @@ struct TwoDGrid{T} <: AbstractTwoDGrid
   k::Array{T,2}
   l::Array{T,2}
   kr::Array{T,2}
-  K::Array{T,2}
-  L::Array{T,2}
-  Kr::Array{T,2}
-  Lr::Array{T,2}
   KKsq::Array{T,2}      # K^2 + L^2
   invKKsq::Array{T,2}   # 1/KKsq, invKKsq[1, 1]=0
   KKrsq::Array{T,2}     # Kr^2 + Lr^2
@@ -135,11 +131,11 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU
   Kr = [ kr[i] for i = 1:nkr, j = 1:nl]
   Lr = [ l[j]  for i = 1:nkr, j = 1:nl]
 
-  KKsq  = @. K^2 + L^2
+  KKsq  = @. k^2 + l^2
   invKKsq = 1 ./ KKsq
   invKKsq[1, 1] = 0
 
-  KKrsq = @. Kr^2 + Lr^2
+  KKrsq = @. kr^2 + l^2
   invKKrsq = 1 ./ KKrsq
   invKKrsq[1, 1] = 0
 
@@ -157,7 +153,7 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU
   jalias  = jaL:jaR
 
   TwoDGrid(nx, ny, nk, nl, nkr, Lx, Ly, dx, dy, x, y, X, Y,
-           k, l, kr, K, L, Kr, Lr, KKsq, invKKsq, KKrsq, invKKrsq,
+           k, l, kr, KKsq, invKKsq, KKrsq, invKKrsq,
            fftplan, rfftplan, ialias, iralias, jalias)
 end
 
