@@ -27,6 +27,7 @@ export
 
   @createarrays, 
 
+  TimeStepper,
   ForwardEulerTimeStepper, 
   FilteredForwardEulerTimeStepper,
   RK4TimeStepper, 

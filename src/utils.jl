@@ -23,6 +23,10 @@ const filteredsteppers = [
   "FilteredETDRK4",
 ]
 
+
+"Returns a time-stepper of type `steppernameTimeStepper'."
+TimeStepper(steppername, args...) = autoconstructtimestepper(steppername, args...)
+
 """
     autoconstructtimestepper(stepper, dt, sol, g=ZeroDGrid())
 
