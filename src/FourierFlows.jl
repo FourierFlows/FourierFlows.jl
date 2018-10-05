@@ -10,6 +10,8 @@ export
   TwoDGrid, 
   dealias!,
 
+  State,
+  DualState,
   unpack,
 
   Diagnostic,
