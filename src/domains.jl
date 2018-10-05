@@ -106,8 +106,8 @@ struct TwoDGrid{T} <: AbstractTwoDGrid
   jalias::UnitRange{Int}
 end
 
-function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
-  T = typeof(Lx)
+function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE,
+                  T=Float64)
   dx = Lx/nx
   dy = Ly/ny
   nk = nx
