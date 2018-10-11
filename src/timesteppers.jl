@@ -1,12 +1,13 @@
 """
     stepforward!(prob)
 
-Step forward the Problem `prob` for one timestep.
+Step forward `prob` for one timestep.
 """
 function stepforward!(prob::Problem)
-    stepforward!(prob.state, prob.ts, prob.eqn, prob.vars, prob.params, prob.grid)
-    prob.t = prob.state.t
-    prob.step = prob.state.step
+  stepforward!(prob.state, prob.ts, prob.eqn, prob.vars, prob.params, prob.grid)
+  prob.t = prob.state.t
+  prob.step = prob.state.step
+  nothing
 end
 
 """
@@ -14,7 +15,12 @@ end
 
 Step forward `prob` for `nsteps`.
 """
-stepforward!(prob::Problem, nsteps) = for step=1:nsteps; stepforward!(prob); end
+function stepforward!(prob::Problem, nsteps) 
+  for step = 1:nsteps
+    stepforward!(prob)
+  end
+  nothing
+end
 
 """
     stepforward!(prob, diags, nsteps)
