@@ -9,6 +9,7 @@ export
   OneDGrid, 
   TwoDGrid, 
   dealias!,
+  gridpoints,
 
   State,
   DualState,
