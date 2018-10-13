@@ -35,9 +35,9 @@ julia> using Pkg
 julia> Pkg.add("FourierFlows")
 ```
 
-## Example 
+## Example
 
-For a simple example involving the advection and diffusion of a passive tracer, 
+For a simple example involving the advection and diffusion of a passive tracer,
 see `examples/tracers_cellularflow.jl`.
 
 # Developers
