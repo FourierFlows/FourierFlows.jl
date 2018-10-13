@@ -1,12 +1,13 @@
 """
     stepforward!(prob)
 
-Step forward the Problem `prob` for one timestep.
+Step forward `prob` for one timestep.
 """
 function stepforward!(prob::Problem)
-    stepforward!(prob.state, prob.ts, prob.eqn, prob.vars, prob.params, prob.grid)
-    prob.t = prob.state.t
-    prob.step = prob.state.step
+  stepforward!(prob.state, prob.ts, prob.eqn, prob.vars, prob.params, prob.grid)
+  prob.t = prob.state.t
+  prob.step = prob.state.step
+  nothing
 end
 
 """
@@ -14,7 +15,12 @@ end
 
 Step forward `prob` for `nsteps`.
 """
-stepforward!(prob::Problem, nsteps) = for step=1:nsteps; stepforward!(prob); end
+function stepforward!(prob::Problem, nsteps) 
+  for step = 1:nsteps
+    stepforward!(prob)
+  end
+  nothing
+end
 
 """
     stepforward!(prob, diags, nsteps)
@@ -53,7 +59,7 @@ function getetdcoeffs(dt, LC; ncirc=32, rcirc=1)
   M = ndims(LC)+1
 
   # Four coefficients: ζ, α, β, Γ
-  ζc = @.          ( exp(zc/2)-1 ) / zc
+  ζc = @.            ( exp(zc/2)-1 ) / zc
   αc = @. ( -4 - zc + exp(zc)*(4 - 3zc + zc^2) ) / zc^3
   βc = @.    ( 2  + zc + exp(zc)*(-2 + zc) ) / zc^3
   Γc = @. ( -4 - 3zc - zc^2 + exp(zc)*(4 - zc) ) / zc^3
@@ -172,8 +178,8 @@ struct ETDRK4TimeStepper{T,dim} <: AbstractETDRK4TimeStepper
   α::Array{T,dim}
   β::Array{T,dim}
   Γ::Array{T,dim}
-  expLCdt::Array{Complex{Float64},dim}     # Precomputed exp(LC*dt)
-  expLCdt2::Array{Complex{Float64},dim}    # Precomputed exp(LC*dt/2)
+  expLCdt::Array{T,dim}     # Precomputed exp(LC*dt)
+  expLCdt2::Array{T,dim}    # Precomputed exp(LC*dt/2)
   # Intermediate times, solutions, and nonlinear evaluations
   sol₁::Array{T,dim}
   sol₂::Array{T,dim}
@@ -356,11 +362,11 @@ function stepforward!(s::DualState, ts::AbstractDualFilteredETDRK4TimeStepper, e
 
   # Update
   @. s.solc = ts.c.filter*(ts.c.expLCdt.*s.solc +   ts.c.α * ts.c.N₁
-                                    + 2*ts.c.β * (ts.c.N₂ + ts.c.N₃)
-                                    +   ts.c.Γ * ts.c.N₄ )
+                                                + 2*ts.c.β * (ts.c.N₂ + ts.c.N₃)
+                                                +   ts.c.Γ * ts.c.N₄ )
   @. s.solr = ts.r.filter*(ts.r.expLCdt.*s.solr +   ts.r.α * ts.r.N₁
-                                    + 2*ts.r.β * (ts.r.N₂ + ts.r.N₃)
-                                    +   ts.r.Γ * ts.r.N₄ )
+                                                + 2*ts.r.β * (ts.r.N₂ + ts.r.N₃)
+                                                +   ts.r.Γ * ts.r.N₄ )
   s.t += ts.dt
   s.step += 1
 

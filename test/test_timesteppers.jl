@@ -1,10 +1,8 @@
-import FourierFlows.TwoDTurb
-import FourierFlows.VerticallyFourierBoussinesq
-import FourierFlows.TwoDTurb: energy
+using 
+  FourierFlows.TracerAdvDiff,
+  FFTW
 
-using FFTW
-import FFTW: rfft, irfft
-import LinearAlgebra: mul!, ldiv!
+using LinearAlgebra: mul!, ldiv!
 
 # Dictionary of (stepper, nsteps) pairs to test. Each stepper is tested by
 # stepping forward nstep times.
@@ -26,6 +24,32 @@ dualsteppersteps = Dict([
   ("DualFilteredETDRK4", 40),
 ])
 
+function tracerdiffusionproblem(nx=16, ny=2, Lx=2π, kap=1e-2; nsteps=100, stepper="ForwardEuler")
+  k1 = 2π/Lx
+  dt = 1e-9 / (kap*k1^2) # resolved?
+  prob = TracerAdvDiff.ConstDiffProblem(nx=nx, Lx=Lx, ny=ny, kap=kap, dt=dt, stepper=stepper, steadyflow=true)
+  g = prob.grid
+
+  t1 = dt*nsteps
+  c0 = @. sin(k1*g.X)
+  c1 = @. exp(-kap*k1^2*t1) * sin(k1*g.X) # analytical solution
+
+  set_c!(prob, c0)
+  stepforward!(prob, nsteps)
+  updatevars!(prob)
+  prob, c0, c1, nsteps
+end
+
+function tracerdiffusiontest(args...; kwargs...)
+  prob, c0, c1, nsteps = tracerdiffusionproblem(args...; kwargs...)
+  isapprox(c1, prob.vars.c, rtol=prob.grid.nx^2*nsteps*1e-13)
+end
+
+for (stepper, steps) in steppersteps
+  @test tracerdiffusiontest(; stepper=stepper, nsteps=steps)
+end
+
+#=
 """
     testtwodturbstepforward(n, L, nu, nnu; kwargs...)
 
@@ -112,11 +136,9 @@ function testverticallyfourierstepforward(n=64, L=2π, nu=1e-2, nnu=0; nsteps=10
   p0h = deepcopy(vih)
 
   VerticallyFourierBoussinesq.set_Z!(prob, Zi)
-  #VerticallyFourierBoussinesq.set_uvp!(prob, ui, vi, pi)
   stepforward!(prob, nsteps)
 
   Zfh = @. Z0h*exp(-p.nu0*g.KKrsq^p.nnu0*s.step*dt)
-  #Ef = @. E0*exp(-2*p.nu*s.step*dt)
   isapprox(Zfh, prob.state.solr, rtol=n^2*nsteps*1e-13)
 end
 
@@ -131,3 +153,4 @@ end
 for (stepper, steps) in dualsteppersteps
   @test testverticallyfourierstepforward(n; stepper=stepper, nsteps=steps)
 end
+=#

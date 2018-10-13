@@ -28,8 +28,8 @@ struct OneDGrid{T} <: AbstractOneDGrid
   rfftplan::FFTW.rFFTWPlan{T,-1,false,1}
 
   # Range objects that access the aliased part of the wavenumber range
-  ialias::UnitRange{Int}
-  iralias::UnitRange{Int}
+  kalias::UnitRange{Int}
+  kralias::UnitRange{Int}
 end
 
 function OneDGrid(nx, Lx; x0=-0.5*Lx, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
@@ -56,11 +56,11 @@ function OneDGrid(nx, Lx; x0=-0.5*Lx, nthreads=Sys.CPU_THREADS, effort=FFTW.MEAS
 
   # Index endpoints for aliased i, j wavenumbers
   iaL, iaR = Int(floor(nk/3))+1, 2*Int(ceil(nk/3))-1
-  ialias  = iaL:iaR
-  iralias = iaL:nkr
+  kalias  = iaL:iaR
+  kralias = iaL:nkr
 
   OneDGrid(nx, nk, nkr, Lx, dx, x, k, kr, invksq, invkrsq,
-           fftplan, rfftplan, ialias, iralias)
+           fftplan, rfftplan, kalias, kralias)
 end
 
 """
@@ -101,13 +101,13 @@ struct TwoDGrid{T} <: AbstractTwoDGrid
   rfftplan::FFTW.rFFTWPlan{T,-1,false,2}
 
   # Range objects that access the aliased part of the wavenumber range
-  ialias::UnitRange{Int}
-  iralias::UnitRange{Int}
-  jalias::UnitRange{Int}
+  kalias::UnitRange{Int}
+  kralias::UnitRange{Int}
+  lalias::UnitRange{Int}
 end
 
-function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
-  T = typeof(Lx)
+function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE,
+                  T=Float64)
   dx = Lx/nx
   dy = Ly/ny
   nk = nx
@@ -135,11 +135,11 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU
   Kr = [ kr[i] for i = 1:nkr, j = 1:nl]
   Lr = [ l[j]  for i = 1:nkr, j = 1:nl]
 
-  KKsq  = @. K^2 + L^2
+  KKsq  = @. k^2 + l^2
   invKKsq = 1 ./ KKsq
   invKKsq[1, 1] = 0
 
-  KKrsq = @. Kr^2 + Lr^2
+  KKrsq = @. kr^2 + l^2
   invKKrsq = 1 ./ KKrsq
   invKKrsq[1, 1] = 0
 
@@ -152,26 +152,50 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-0.5*Lx, y0=-0.5*Ly, nthreads=Sys.CPU
   iaL, iaR = Int(floor(nk/3))+1, 2*Int(ceil(nk/3))-1
   jaL, jaR = Int(floor(nl/3))+1, 2*Int(ceil(nl/3))-1
 
-  ialias  = iaL:iaR
-  iralias = iaL:nkr
-  jalias  = jaL:jaR
+  kalias  = iaL:iaR
+  kralias = iaL:nkr
+  lalias  = jaL:jaR
 
   TwoDGrid(nx, ny, nk, nl, nkr, Lx, Ly, dx, dy, x, y, X, Y,
            k, l, kr, K, L, Kr, Lr, KKsq, invKKsq, KKrsq, invKKrsq,
-           fftplan, rfftplan, ialias, iralias, jalias)
+           fftplan, rfftplan, kalias, kralias, lalias)
 end
 
+"""
+    gridpoints(g)
+
+Returns the collocation points of the grid `g` in 2D arrays `X, Y`.
+"""
+function gridpoints(g)
+  X = [ g.x[i] for i=1:g.nx, j=1:g.ny]
+  Y = [ g.y[j] for i=1:g.nx, j=1:g.ny]
+  X, Y
+end
+
+"""
+    dealias!(a, g, kalias)
+
+Dealias `a` on the grid `g` with aliased x-wavenumbers `kalias`.
+"""
 function dealias!(a, g::OneDGrid)
-  if size(a)[1] == g.nkr; @views @. a[g.iralias, :] = 0
-  else;                   @views @. a[g.ialias, :] = 0
-  end
+  kalias = size(a, 1) == g.nkr ? g.kralias : g.kalias
+  dealias!(a, g, kalias)
+  nothing
+end
+
+function dealias!(a, g::OneDGrid, kalias)
+  @views @. a[kalias, :] = 0
   nothing
 end
 
 function dealias!(a, g::TwoDGrid)
-  if size(a)[1] == g.nkr; @views @. a[g.iralias, g.jalias, :] = 0
-  else;                   @views @. a[g.ialias, g.jalias, :] = 0
-  end
+  kalias = size(a, 1) == g.nkr ? g.kralias : g.kalias
+  dealias!(a, g, kalias)
+  nothing
+end
+
+function dealias!(a, g::TwoDGrid, kalias)
+  @views @. a[kalias, g.lalias, :] = 0
   nothing
 end
 

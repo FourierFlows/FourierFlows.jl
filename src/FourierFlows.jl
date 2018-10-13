@@ -1,22 +1,19 @@
 module FourierFlows
 
 export 
-  AbstractGrid,
-  AbstractParams,
-  AbstractVars,
-  AbstractEquation,
-  AbstractTimeStepper,
   AbstractProblem,
-
-  Equation, 
-  DualEquation, 
-  Problem, 
-  State, 
-  DualState,
+  AbstractVars,
+  AbstractParams,
+  AbstractEquation,
 
   OneDGrid, 
   TwoDGrid, 
   dealias!,
+  gridpoints,
+
+  State,
+  DualState,
+  unpack,
 
   Diagnostic,
   resize!, 
@@ -31,6 +28,7 @@ export
 
   @createarrays, 
 
+  TimeStepper,
   ForwardEulerTimeStepper, 
   FilteredForwardEulerTimeStepper,
   RK4TimeStepper, 
@@ -83,15 +81,11 @@ include("timesteppers.jl")
 
 
 # -------
-# Physics
+# Physics modules
 # -------
 
-include("physics/twodturb.jl")
-include("physics/barotropicqg.jl")
-include("physics/traceradvdiff.jl")
-include("physics/kuramotosivashinsky.jl")
-include("physics/verticallycosineboussinesq.jl")
-include("physics/verticallyfourierboussinesq.jl")
+include("traceradvdiff.jl")
+include("kuramotosivashinsky.jl")
 
 # ----------------------
 # CUDA/GPU functionality

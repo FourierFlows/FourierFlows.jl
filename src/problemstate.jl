@@ -65,6 +65,8 @@ function Problem(g, v, p, eq::DualEquation, ts; cxsolc=true, cxsolr=true)
   Problem(g, v, p, eq, ts, DualState(Tc, Tr, size(eq.LCc), size(eq.LCr), ts.c.dt))
 end
 
+unpack(prob::Problem) = prob.grid, prob.vars, prob.params, prob.state
+
 
 #=
 For Julia v1.0 release:

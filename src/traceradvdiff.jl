@@ -1,6 +1,15 @@
 module TracerAdvDiff
-using FourierFlows, FFTW
-import LinearAlgebra: mul!, ldiv!
+
+export
+  ConstantDiffProblem,
+  set_c!,
+  updatevars!
+
+using 
+  FourierFlows, 
+  FFTW
+
+using LinearAlgebra: mul!, ldiv!
 
 abstract type AbstractTracerParams <: AbstractParams end
 abstract type AbstractConstDiffParams <: AbstractParams end

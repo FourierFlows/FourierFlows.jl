@@ -23,6 +23,10 @@ const filteredsteppers = [
   "FilteredETDRK4",
 ]
 
+
+"Returns a time-stepper of type `steppernameTimeStepper'."
+TimeStepper(steppername, args...) = autoconstructtimestepper(steppername, args...)
+
 """
     autoconstructtimestepper(stepper, dt, sol, g=ZeroDGrid())
 
@@ -167,7 +171,7 @@ end
 """
     parsevalsum2(uh, g)
 
-Calculate ∫u = Σ|uh|² on a 2D grid, where uh is the Fourier transform of u.
+Calculate ∫|u|² = Σ|uh|² on a 2D grid, where uh is the Fourier transform of u.
 Accounts for DFT normalization, grid resolution, and whether or not uh
 is the product of fft or rfft.
 """

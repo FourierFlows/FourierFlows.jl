@@ -1,8 +1,15 @@
 module KuramotoSivashinsky
-using FourierFlows, FFTW
-import LinearAlgebra: mul!, ldiv!
 
-export InitialValueProblem, updatevars!, set_u!
+export 
+  InitialValueProblem, 
+  updatevars!, 
+  set_u!
+
+using 
+  FourierFlows, 
+  FFTW
+
+using LinearAlgebra: mul!, ldiv!
 
 """
     InitialValueProblem(; parameters...)

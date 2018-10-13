@@ -14,19 +14,16 @@ matrix:
     - julia: 1.0
     - julia: nightly
 
-before_script:
- - julia -e 'using Pkg; Pkg.add("JLD2"); Pkg.add("SpecialFunctions"); Pkg.add("CuArrays");'
- - julia -e 'using Pkg; Pkg.add("Interpolations"); Pkg.add("Requires");'
- - julia -e 'using Pkg; Pkg.add("FFTW");'
-
-# script:
-#   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-#   - julia -e 'using Pkg; Pkg.test("FourierFlows", coverage=true)'
+# before_script:
+#  - julia -e 'using Pkg; Pkg.add("JLD2"); Pkg.add("SpecialFunctions"); Pkg.add("CuArrays");'
+#  - julia -e 'using Pkg; Pkg.add("Interpolations"); Pkg.add("Requires");'
+#  - julia -e 'using Pkg; Pkg.add("FFTW");'
 
 after_success:
   - julia -e 'using Pkg; Pkg.add("Documenter")'
   - julia -e 'using Pkg; Pkg.add("Documenter"); Pkg.dir("FourierFlows"); include(joinpath("docs", "make.jl"))'
   - julia -e 'using Pkg; Pkg.add("Coverage"); Pkg.dir("FourierFlows"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+  - julia -e 'using Pkg; Pkg.add("Coverage"); Pkg.dir("FourierFlows"); using Coverage; Codecov.submit(Codecov.process_folder())''
 
 notifications:
   email: true
