@@ -1,4 +1,6 @@
-using Documenter, FourierFlows
+using 
+  Documenter,
+  FourierFlows
 
 makedocs(
    modules = [FourierFlows],
@@ -13,10 +15,7 @@ makedocs(
               "Forcing" => "forcing.md",
               "Modules" => Any[
                 "modules/kuramotosivashinsky.md",
-                "modules/twodturb.md",
-                "modules/barotropicqg.md",
                 "modules/traceradvdiff.md",
-                "modules/boussinesq.md"
               ],
               "DocStrings" => Any[
               "man/types.md",

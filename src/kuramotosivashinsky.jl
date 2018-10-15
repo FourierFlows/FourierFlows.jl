@@ -6,30 +6,31 @@ export
   set_u!
 
 using 
-  FourierFlows, 
-  FFTW
+  FFTW,
+  Reexport
+
+@reexport using FourierFlows
 
 using LinearAlgebra: mul!, ldiv!
 
 """
-    InitialValueProblem(; parameters...)
+    Problem(; parameters...)
 
-Construct an initial-value Kuramoto-Sivashinky problem that solves the equation
+Construct a Kuramoto-Sivashinky problem that solves the equation
 
 ∂t u + ∂ₓ⁴u + ∂ₓ²u + u ∂ₓu = 0.
 """
-function InitialValueProblem(;
+function Problem(;
        nx = 256,
        Lx = 2π,
        dt = 0.01,
-  stepper = "RK4"
-  )
+  stepper = "RK4")
 
   g  = OneDGrid(nx, Lx)
   pr = Params()
   vs = Vars(g)
   eq = Equation(pr, g)
-  ts = FourierFlows.autoconstructtimestepper(stepper, dt, eq.LC, g)
+  ts = TimeStepper(stepper, dt, eq.LC, g)
 
   FourierFlows.Problem(g, vs, pr, eq, ts)
 end
@@ -44,10 +45,9 @@ function Equation(p, g)
 end
 
 # Construct Vars type
-physvars = [:u, :ux, :uux]
-transvars = [:uh, :uxh, :uuxh]
-expr = FourierFlows.structvarsexpr(:Vars, physvars, transvars; vardims=1)
-eval(expr)
+physicalvars = [:u, :ux, :uux]
+transformvars = [:uh, :uxh, :uuxh]
+eval(FourierFlows.structvarsexpr(:Vars, physicalvars, transformvars; vardims=1))
 
 "Returns the Vars object for Kuramoto-Sivashinsky."
 function Vars(g)
