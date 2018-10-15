@@ -26,4 +26,4 @@ FourierFlows is currently being developed by [Gregory L. Wagner](https://glwagne
 
 ## Cite
 
-The code is citable via [zenodo](https://zenodo.org/record/1461533)
+The code is citable via [zenodo](https://doi.org/10.5281/zenodo.1161724).

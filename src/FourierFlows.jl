@@ -6,6 +6,7 @@ export
   AbstractParams,
   AbstractEquation,
 
+  ZeroDGrid, 
   OneDGrid, 
   TwoDGrid, 
   dealias!,
