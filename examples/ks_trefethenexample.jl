@@ -1,10 +1,12 @@
-using FourierFlows, FourierFlows.KuramotoSivashinsky, PyPlot
+using 
+  FourierFlows.KuramotoSivashinsky, 
+  PyPlot
 
 nx = 512
 Lx = 32π
 dt = 0.1
 nt = 2000
-prob = InitialValueProblem(nx=nx, Lx=Lx, dt=dt, stepper="ETDRK4")
+prob = Problem(nx=nx, Lx=Lx, dt=dt, stepper="ETDRK4")
 
 x = prob.grid.x
 u0 = @. cos(x/16) * (1 + sin(x/16))

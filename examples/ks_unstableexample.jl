@@ -1,4 +1,6 @@
-using FourierFlows, FourierFlows.KuramotoSivashinsky, PyPlot
+using 
+  FourierFlows.KuramotoSivashinsky, 
+  PyPlot
 
 nx, Lx = 256, 4π
 dt, nt = 1e-6, 100
