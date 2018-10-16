@@ -1,20 +1,28 @@
 # FourierFlows.jl
 
-<table>
-    <tr align="center">
-        <td><b>Documentation</b></td> <td>Travis</td> <td>Appveyor</td> <td>Code Coverage</td> <td>Citing</td>
-    </tr>
-    <tr align="center">
-        <td><a href="https://FourierFlows.github.io/FourierFlows.jl/latest"><img src="https://img.shields.io/badge/docs-latest-blue.svg"></a></br><a href="https://FourierFlows.github.io/FourierFlows.jl/stable"><img src="https://img.shields.io/badge/docs-stable-blue.svg"></a></td> <td><a href="https://travis-ci.org/FourierFlows/FourierFlows.jl"><img src="https://travis-ci.org/FourierFlows/FourierFlows.jl.svg?branch=master" title="Build Status"></a><td><a href="https://ci.appveyor.com/project/navidcy/fourierflows-jl"><img src="https://ci.appveyor.com/api/projects/status/3hm86k8d4qdch730?svg=true" title="Build Status"></a></td> <td> <a href="https://codecov.io/gh/FourierFlows/FourierFlows.jl"><img src="https://codecov.io/gh/FourierFlows/FourierFlows.jl/branch/master/graph/badge.svg" title="codecov"></a></br>
-<a href="https://coveralls.io/github/FourierFlows/FourierFlows.jl?branch=master"><img src="https://coveralls.io/repos/github/FourierFlows/FourierFlows.jl/badge.svg?branch=master" title="Coverage status"></a></td> <td><a href="https://doi.org/10.5281/zenodo.1161724"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.1161724.svg" alt="DOI"></a></td>
-    </tr>
-    <tr align="center">
-    <td></td><td colspan=2> <a href="http://pkg.julialang.org/detail/FourierFlows"><img src="http://pkg.julialang.org/badges/FourierFlows_0.6.svg" title="FourierFlows"></a></br>
-<a href="http://pkg.julialang.org/detail/FourierFlows"><img src="http://pkg.julialang.org/badges/FourierFlows_0.7.svg" title="FourierFlows"></a>
-</td> <td></td><td></td>
-    </tr>
- </table>
-
+<p align="left">
+    <a href="https://travis-ci.org/FourierFlows/FourierFlows.jl">
+        <img src="https://travis-ci.org/FourierFlows/FourierFlows.jl.svg?branch=master" title="Build Status">
+    </a>
+    <a href="https://ci.appveyor.com/project/navidcy/fourierflows-jl">
+        <img src="https://ci.appveyor.com/api/projects/status/3hm86k8d4qdch730?svg=true" title="Build Status">
+    </a>
+    <a href="https://FourierFlows.github.io/FourierFlows.jl/stable">
+        <img src="https://img.shields.io/badge/docs-stable-blue.svg">
+    </a>
+    <a href="https://FourierFlows.github.io/FourierFlows.jl/latest">
+        <img src="https://img.shields.io/badge/docs-latest-blue.svg">
+    </a>
+    <a href="http://pkg.julialang.org/detail/FourierFlows">
+        <img src="http://pkg.julialang.org/badges/FourierFlows_0.7.svg" title="FourierFlows">
+    </a>
+    <a href="https://codecov.io/gh/FourierFlows/FourierFlows.jl">
+        <img src="https://codecov.io/gh/FourierFlows/FourierFlows.jl/branch/master/graph/badge.svg" title="codecov">
+    </a>
+    <a href="https://doi.org/10.5281/zenodo.1161724">
+        <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.1161724.svg" alt="DOI">
+    </a>
+</p>
 
 ## Overview
 
@@ -55,6 +63,5 @@ The code is citable via [zenodo](https://zenodo.org). Please cite as:
 
 
 [Julia]: https://julialang.org/
-[ParallelAccelerator]: https://github.com/IntelLabs/ParallelAccelerator.jl
 [Navid C. Constantinou]: http://www.navidconstantinou.com
 [Gregory L. Wagner]: https://glwagner.github.io
