@@ -145,29 +145,6 @@ function peakedisotropicspectrum(g::TwoDGrid, kpeak::Real, E0::Real; mask=ones(s
 end
 
 
-
-"""
-    lambdipole(Ue, R, g; center=(x0, y0))
-
-Return a 2D vorticity field corresponding to the Lamb Dipole with
-strength Ue, radius R, and centered around
-(xc, yc)=center. The default value of 'center' is the middle of the grid.
-"""
-function lambdipole(Ue::Real, R::Real, g::TwoDGrid; center=(nothing, nothing))
-  xc, yc = center == (nothing, nothing) ? (mean(g.x), mean(g.y)) : (center[1], center[2])
-
-  k = 3.8317059702075123156 / R # dipole wavenumber for radius R in terms of first zero of besselj
-  q0 = -2Ue*k/besselj(0, k*R)
-
-  r = @. sqrt((g.x-xc)^2 + (g.y-yc)^2)
-  q = @. q0*besselj(1, k*r)*(g.y-yc)/r
-
-  @. q[r == 0.0] = 0.0 # just in case.
-  @. q[r > R] = 0.0
-
-  return q
-end
-
 """
     parsevalsum2(uh, g)
 
