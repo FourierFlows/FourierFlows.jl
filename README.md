@@ -48,7 +48,7 @@ julia> Pkg.add("FourierFlows")
 For a simple example involving the advection and diffusion of a passive tracer,
 see `examples/tracers_cellularflow.jl`.
 
-# Developers
+## Developers
 
 FourierFlows is currently being developed by [Gregory L. Wagner][] (@glwagner)
 and [Navid C. Constantinou][] (@navidcy).
