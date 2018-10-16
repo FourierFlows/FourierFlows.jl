@@ -1,8 +1,6 @@
 #!/usr/bin/env julia
 
-# using CuArrays
 using FourierFlows
-using Requires
 using Test
 
 # Run tests
@@ -46,16 +44,6 @@ end
   include("test_traceradvdiff.jl")
 end
 
-@require CuArrays="3a865a2d-5b23-5a0f-bc46-62713ec82fae" begin
-
-  println("-- CUDA tests --")
-
-  @testset "CuGrid tests" begin
-    using CuArrays
-    include("test_cugrid.jl")
-  end
-
-end
 
 end
 println("Total test time: ", time)

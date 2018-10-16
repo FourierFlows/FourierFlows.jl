@@ -1,14 +1,14 @@
 module FourierFlows
 
-export 
+export
   AbstractProblem,
   AbstractVars,
   AbstractParams,
   AbstractEquation,
 
-  ZeroDGrid, 
-  OneDGrid, 
-  TwoDGrid, 
+  ZeroDGrid,
+  OneDGrid,
+  TwoDGrid,
   dealias!,
   gridpoints,
 
@@ -17,41 +17,38 @@ export
   unpack,
 
   Diagnostic,
-  resize!, 
-  update!, 
+  resize!,
+  update!,
   increment!,
-    
-  Output, 
-  saveoutput, 
-  saveproblem, 
-  groupsize, 
+
+  Output,
+  saveoutput,
+  saveproblem,
+  groupsize,
   savediagnostic,
 
-  @createarrays, 
+  @createarrays,
 
   TimeStepper,
-  ForwardEulerTimeStepper, 
+  ForwardEulerTimeStepper,
   FilteredForwardEulerTimeStepper,
-  RK4TimeStepper, 
+  RK4TimeStepper,
   FilteredRK4TimeStepper,
-  DualRK4TimeStepper, 
+  DualRK4TimeStepper,
   DualFilteredRK4TimeStepper,
-  ETDRK4TimeStepper, 
+  ETDRK4TimeStepper,
   FilteredETDRK4TimeStepper,
-  DualETDRK4TimeStepper, 
+  DualETDRK4TimeStepper,
   DualFilteredETDRK4TimeStepper,
-  AB3TimeStepper, 
+  AB3TimeStepper,
   FilteredAB3TimeStepper,
   stepforward!
 
-using 
-  Requires, 
-  FFTW, 
+using
+  FFTW,
   Statistics,
   JLD2,
   Interpolations
-
-using SpecialFunctions: besselj
 
 import Base: resize!, getindex, setindex!, push!, append!, fieldnames
 import LinearAlgebra: mul!, ldiv!
@@ -88,16 +85,5 @@ include("timesteppers.jl")
 include("traceradvdiff.jl")
 include("kuramotosivashinsky.jl")
 
-# ----------------------
-# CUDA/GPU functionality
-# ----------------------
-
-@require CuArrays="3a865a2d-5b23-5a0f-bc46-62713ec82fae" begin
-  using CuArrays
-  include("cuda/cuutils.jl")
-  include("cuda/cuproblemstate.jl")
-  include("cuda/cudomains.jl")
-  include("cuda/cutimesteppers.jl")
-end
 
 end # module
