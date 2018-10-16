@@ -36,12 +36,13 @@ For more details refer to the [documentation](https://fourierflows.github.io/Fou
 
 ## Installation
 
-The is a registered package and can be installed by:
+But it is simple:
 
 ```julia
-julia> using Pkg
-julia> Pkg.add("FourierFlows")
+] add FourierFlows
 ```
+
+and no more.
 
 ## Example
 
