@@ -1,19 +1,9 @@
-using FFTW
-
-test_fftwavenums() = FourierFlows.fftwavenums(6; L=2π) == [0, 1, 2, 3, -2, -1]
-
 function test_domainaverage(n; xdir=true)
   g = TwoDGrid(n, 2π)
   if xdir; c = cos.(g.X).^2
   else;    c = cos.(g.Y).^2
   end
   0.5 ≈ FourierFlows.domainaverage(c, g)
-end
-
-function test_rms(n)
-  g = TwoDGrid(n, 2π)
-  q = cos.(g.X)
-  isapprox(FourierFlows.rms(q), sqrt(1/2))
 end
 
 # This test could use some further work.
@@ -78,24 +68,6 @@ function test_createarrays(T=Float64, dims=(13, 45))
   FourierFlows.@createarrays T dims a2 b2
   a1 == a2 && b1 == b2
 end
-
-"""
-Test the peakedisotropicspectrum function.
-"""
-function testpeakedisotropicspectrum()
-  n, L = 128, 2π
-  gr = TwoDGrid(n, L)
-  k0, E0 = 6, 0.5
-  qi = FourierFlows.peakedisotropicspectrum(gr, k0, E0; allones=true)
-  ρ, qhρ = FourierFlows.radialspectrum(rfft(qi).*gr.invKKrsq, gr)
-
-  ρtest = ρ[ (ρ.>15.0) .& (ρ.<=17.5)]
-  qhρtest = qhρ[ (ρ.>15.0) .& (ρ.<=17.5)]
-
-  isapprox(abs.(qhρtest)/abs(qhρtest[1]), (ρtest/ρtest[1]).^(-2), rtol=5e-3)
-end
-
-
 
 abstract type TestVars <: AbstractVars end
 
@@ -218,8 +190,6 @@ Jexpkl1expkl2 = (k2*l1-k1*l2)*exp.(im*((k1+k2)*x + (l1+l2)*y))
 @test test_jacobian(expkl1, expkl2, Jexpkl1expkl2, g) # Test J(exp1, exp2) = Jexp1exps2
 
 @test test_createarrays()
-@test test_fftwavenums()
-@test test_rms(32)
 @test test_domainaverage(32; xdir=true)
 @test test_domainaverage(32; xdir=false)
 @test test_structvarsexprFields(g)
@@ -234,5 +204,3 @@ ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) #  a = exp(-ρ²/2δ²)
 ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) * k^2/(k^2+l^2) #  a = exp(-ρ²/2δ²)*cos(θ)²
     ahρ(ρ) = π*ρ*exp(-ρ^2/2δ^2)                   # aᵣ = π ρ exp(-ρ²/2δ²)
 @test test_radialspectrum(n, ahkl, ahρ)
-
-@test testpeakedisotropicspectrum()

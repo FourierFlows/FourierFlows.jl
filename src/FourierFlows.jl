@@ -4,7 +4,6 @@ export
   AbstractProblem,
   AbstractVars,
   AbstractParams,
-  AbstractEquation,
 
   ZeroDGrid, 
   OneDGrid, 
@@ -28,52 +27,101 @@ export
   savediagnostic,
 
   @createarrays, 
+  @superzeros,
 
   TimeStepper,
   ForwardEulerTimeStepper, 
   FilteredForwardEulerTimeStepper,
   RK4TimeStepper, 
   FilteredRK4TimeStepper,
-  DualRK4TimeStepper, 
-  DualFilteredRK4TimeStepper,
   ETDRK4TimeStepper, 
   FilteredETDRK4TimeStepper,
-  DualETDRK4TimeStepper, 
-  DualFilteredETDRK4TimeStepper,
   AB3TimeStepper, 
   FilteredAB3TimeStepper,
   stepforward!
 
 using 
-  Requires, 
   FFTW, 
-  Statistics,
   JLD2,
   Interpolations
-
-using SpecialFunctions: besselj
 
 import Base: resize!, getindex, setindex!, push!, append!, fieldnames
 import LinearAlgebra: mul!, ldiv!
 
-abstract type AbstractGrid end
-abstract type AbstractParams end
-abstract type AbstractVars end
-abstract type AbstractTimeStepper end
-abstract type AbstractEquation end
-abstract type AbstractState end
 abstract type AbstractProblem end
-
-abstract type AbstractTwoDGrid <: AbstractGrid end
-abstract type AbstractOneDGrid <: AbstractGrid end
-
+abstract type AbstractGrid{T} end
+abstract type AbstractTimeStepper{T} end
+abstract type AbstractTwoDGrid{T} <: AbstractGrid{T} end
+abstract type AbstractOneDGrid{T} <: AbstractGrid{T} end
 abstract type AbstractDiagnostic end
 
-# ------------------
-# Base functionality
-# ------------------
+abstract type AbstractParams end
+abstract type AbstractVars end
 
-include("problemstate.jl")
+# Some utilities
+
+"""
+    innereltype(x)
+    
+Recursively determine the 'innermost' type in by the collection `x` (which may be, for example, 
+a collection of a collection).
+"""
+function innereltype(x)
+  T = eltype(x)
+  T <: AbstractArray ? innereltype(T) : return T
+end 
+
+"""
+    superzeros(T, A)
+
+Returns an array like `A`, but full of zeros. If `innereltype(A)` can be promoted to `T`, then
+the innermost elements of the array will have type `T`.
+"""
+superzeros(T, A) = T(0)*A
+superzeros(A) = superzeros(innereltype(A), A)
+
+"""
+    @superzeros T a b c d...
+    @superzeros a b c d...
+
+Generate arrays `b, c, d...` with the super-dimensions of `a` and innereltype `T`. If `T` is not
+supplied then b, c, d have the same innereltype as `a`.
+"""
+macro superzeros(T::Type, A, vars...)
+  expr = Expr(:block)
+  append!(expr.args, [:($(esc(var)) = superzeros($(esc(T)), $(esc(A))); ) for var in vars])
+  expr
+end
+
+macro superzeros(A, vars...)
+  expr = Expr(:block)
+  append!(expr.args, [:($(esc(var)) = superzeros($(esc(A))); ) for var in vars])
+  expr
+end
+
+"""
+    cxtype(T)
+
+Returns `T` when `T` is `Complex`, or `Complex{T}` when `T` is `Real`.
+"""
+cxtype(::Type{T}) where T<:Number = T
+cxtype(::Type{T}) where T<:Real = Complex{T}
+
+"""
+    fltype(T)
+
+Returns `T` whel `T<:AbstractFloat` ol `Tf` when `T<:Complex{Tf}`.
+"""
+fltype(::Type{T})          where T<:AbstractFloat = T
+fltype(::Type{Complex{T}}) where T<:AbstractFloat = T
+
+cxeltype(x) = cxtype(innereltype(x))
+fleltype(x) = fltype(innereltype(x))
+
+
+# The meat and potatoes
+
+include("problem.jl")
 include("domains.jl")
 include("diagnostics.jl")
 include("output.jl")
@@ -81,23 +129,9 @@ include("utils.jl")
 include("timesteppers.jl")
 
 
-# -------
-# Physics modules
-# -------
+# Physics
 
 include("traceradvdiff.jl")
 include("kuramotosivashinsky.jl")
-
-# ----------------------
-# CUDA/GPU functionality
-# ----------------------
-
-@require CuArrays="3a865a2d-5b23-5a0f-bc46-62713ec82fae" begin
-  using CuArrays
-  include("cuda/cuutils.jl")
-  include("cuda/cuproblemstate.jl")
-  include("cuda/cudomains.jl")
-  include("cuda/cutimesteppers.jl")
-end
 
 end # module

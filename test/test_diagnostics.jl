@@ -14,9 +14,9 @@ struct Params <: AbstractParams
 end
 
 function Equation(p, g)
-  LC = 0.0*ones(size(g.kr))
-  @. LC = -p.mu
-  FourierFlows.Equation(LC, calcN!)
+  L = zeros(Float64, size(g.kr))
+  @. L = -p.mu
+  FourierFlows.Equation(L, calcN!)
 end
 
 # Construct Vars type
@@ -32,7 +32,7 @@ function Vars(g)
   Vars(u, uh)
 end
 
-function calcN!(N, sol, t, s, v, p, g)
+function calcN!(N, sol, t, cl, v, p, g)
   nothing
 end
 

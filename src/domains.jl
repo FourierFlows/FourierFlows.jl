@@ -3,7 +3,7 @@
 
 Constructs a placeholder grid object for "0D" problems (in other words, systems of ODEs).
 """
-struct ZeroDGrid <: AbstractGrid end
+struct ZeroDGrid{T} <: AbstractGrid{T} end
 
 """
     OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
@@ -12,7 +12,7 @@ Constrcut a OneDGrid object with size `Lx`, resolution `nx`, and leftmost
 position `x0`. FFT plans are generated for `nthreads` CPUs using
 FFTW flag `effort`.
 """
-struct OneDGrid{T} <: AbstractOneDGrid
+struct OneDGrid{T} <: AbstractOneDGrid{T}
   nx::Int
   nk::Int
   nkr::Int
@@ -71,7 +71,7 @@ Constrcut a TwoDGrid object. The two-dimensional domain has size (Lx, Ly),
 resolution (nx, ny) and bottom left corner at (x0, y0). FFT plans are generated
 which use nthreads threads with the specified planning effort.
 """
-struct TwoDGrid{T} <: AbstractTwoDGrid
+struct TwoDGrid{T} <: AbstractTwoDGrid{T}
   nx::Int
   ny::Int
   nk::Int
@@ -228,3 +228,5 @@ function makefilter(g::AbstractOneDGrid; realvars=true, kwargs...)
 end
 
 makefilter(g, T, sz; kwargs...) = ones(T, sz).*makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
+
+makefilter(eq) = makefilter(eq.grid, innereltype(eq.L), size(eq.L))
