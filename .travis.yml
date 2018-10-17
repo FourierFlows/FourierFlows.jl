@@ -15,7 +15,7 @@ matrix:
     - julia: nightly
 
 after_success:
-  - julia -e 'using Pkg; Pkg.add("Documenter"); Pkg.dir("FourierFlows"); include(joinpath("docs", "make.jl"))'
+  - julia -e 'using Pkg; ps=Pkg.PackageSpec(name="Documenter", version="0.19"); Pkg.add(ps); Pkg.pin(ps); Pkg.dir("FourierFlows"); include(joinpath("docs", "make.jl"))'
   - julia -e 'using Pkg; Pkg.add("Coverage"); Pkg.dir("FourierFlows"); 
               using Coverage; Coveralls.submit(Coveralls.process_folder())'
   - julia -e 'using Pkg; Pkg.add("Coverage"); Pkg.dir("FourierFlows"); 
