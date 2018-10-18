@@ -17,13 +17,26 @@ end
 Returns an expression that defines an `AbstractVars` type.
 """
 function varsexpression(name, fieldspecs; parent=:AbstractVars, typeparams=nothing)
-  varspec = typeparams == nothing ? :($name <: $parent) : Symbol(name, :({$typeparams}), :(<: $parent))
-  fieldexpr = [ :( $(spec[1])::$(spec[2]); ) for spec in fieldspecs ]
+
+  # make this work:
+  #=
+  if typeparams == nothing 
+    varspec = :($name <: $parent)
+  else
+    signature = Symbol(name, typeparams)
+    varspec = :( $signature <: $parent )
+  end
+  =#
+
+  varspec = :( $name{Tp,Tf} <: $parent )
+
+  fieldexprs = [ :( $(spec[1])::$(spec[2]); ) for spec in fieldspecs ]
+
   :(struct $varspec; $(fieldexprs...); end)
 end
 
 function varsexpression(name, physicalfields, fourierfields; 
-                        physicaltype=:Tp, fouriertype=:Tf, parent=:AbstractVars, typeparams=:(Tp,Tf))
+                        physicaltype=:Tp, fouriertype=:Tf, parent=:AbstractVars, typeparams=:({Tp,Tf}))
 
   physicalfieldspecs = getfieldspecs(physicalfields, physicaltype)
    fourierfieldspecs = getfieldspecs(fourierfields, fouriertype)
@@ -36,7 +49,7 @@ end
 
 Returns an array of (fieldname[i], fieldtype) tuples.
 """
-getfieldspecs(fieldnames::AbstractArray, fieldtype) = collect(zip(fieldnames, [ fieldtype for name in fieldnames ]))
+getfieldspecs(fieldnames::AbstractArray, fieldtype) = [ (name, fieldtype) for name in fieldnames ]
 
 """
     parsevalsum2(uh, g)

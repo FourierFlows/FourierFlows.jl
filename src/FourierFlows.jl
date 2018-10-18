@@ -50,13 +50,12 @@ import LinearAlgebra: mul!, ldiv!
 
 abstract type AbstractProblem end
 abstract type AbstractGrid{T} end
-abstract type AbstractTimeStepper{T} end
 abstract type AbstractTwoDGrid{T} <: AbstractGrid{T} end
 abstract type AbstractOneDGrid{T} <: AbstractGrid{T} end
-abstract type AbstractDiagnostic end
-
+abstract type AbstractTimeStepper{T} end
 abstract type AbstractParams end
 abstract type AbstractVars end
+abstract type AbstractDiagnostic end
 
 # Some utilities
 
@@ -72,6 +71,25 @@ function innereltype(x)
 end 
 
 """
+    cxtype(T)
+
+Returns `T` when `T` is `Complex`, or `Complex{T}` when `T` is `Real`.
+"""
+cxtype(::Type{T}) where T<:Number = T
+cxtype(::Type{T}) where T<:Real = Complex{T}
+
+"""
+    fltype(T)
+
+Returns `T` when `T<:AbstractFloat` or `Tf` when `T<:Complex{Tf}`.
+"""
+fltype(::Type{T})          where T<:AbstractFloat = T
+fltype(::Type{Complex{T}}) where T<:AbstractFloat = T
+
+cxeltype(x) = cxtype(innereltype(x))
+fleltype(x) = fltype(innereltype(x))
+
+"""
     superzeros(T, A)
 
 Returns an array like `A`, but full of zeros. If `innereltype(A)` can be promoted to `T`, then
@@ -79,6 +97,16 @@ the innermost elements of the array will have type `T`.
 """
 superzeros(T, A) = T(0)*A
 superzeros(A) = superzeros(innereltype(A), A)
+
+function superzeros(T, dims::Tuple)
+  if eltype(tup) <: Tuple
+    return [ superzeros(T, d) for d in dims ]
+  else
+    return zeros(T, dims)
+  end
+end
+
+superzeros(dims::Tuple) = superzeros(Float64, dims)
 
 """
     @superzeros T a b c d...
@@ -99,25 +127,6 @@ macro superzeros(A, vars...)
   expr
 end
 
-"""
-    cxtype(T)
-
-Returns `T` when `T` is `Complex`, or `Complex{T}` when `T` is `Real`.
-"""
-cxtype(::Type{T}) where T<:Number = T
-cxtype(::Type{T}) where T<:Real = Complex{T}
-
-"""
-    fltype(T)
-
-Returns `T` whel `T<:AbstractFloat` ol `Tf` when `T<:Complex{Tf}`.
-"""
-fltype(::Type{T})          where T<:AbstractFloat = T
-fltype(::Type{Complex{T}}) where T<:AbstractFloat = T
-
-cxeltype(x) = cxtype(innereltype(x))
-fleltype(x) = fltype(innereltype(x))
-
 
 # The meat and potatoes
 
@@ -132,6 +141,6 @@ include("timesteppers.jl")
 # Physics
 
 include("traceradvdiff.jl")
-include("kuramotosivashinsky.jl")
+#include("kuramotosivashinsky.jl")
 
 end # module

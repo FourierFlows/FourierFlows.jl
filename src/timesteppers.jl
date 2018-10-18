@@ -3,7 +3,7 @@
 
 Step forward `prob` one time step.
 """
-stepforward!(prob) = stepforward!(prob.sol, prob.clock, prob.ts, prob.eqn, prob.vars, prob.params, prob.grid)
+stepforward!(prob) = stepforward!(prob.sol, prob.clock, prob.timestepper, prob.eqn, prob.vars, prob.params, prob.grid)
 
 """
     stepforward!(prob, nsteps)
@@ -35,12 +35,30 @@ function stepforward!(prob, diags, nsteps)
   nothing
 end
 
-# --
-# Timestepper utilities
-# -- 
+const fullyexplicitsteppers= [
+  :ForwardEuler,
+  :RK4,
+  :AB3,
+  :FilteredForwardEuler,
+  :FilteredRK4,
+  :FilteredAB3
+]
 
-# ------------------------------------------------------------------------------ 
-# Time-stepper:
+isexplicit(stepper) = any(Symbol(stepper) .== fullyexplicitsteppers)
+
+"""
+    TimeStepper(stepper, eq, dt=nothing)
+    
+Generalized timestepper constructor. If `stepper` is explicit, `dt` is not used.
+"""
+function TimeStepper(stepper, eq, dt=nothing)
+  fullsteppername = Symbol(stepper, :TimeStepper)
+  args = isexplicit(stepper) ? (eq, dt) : eq
+  eval(Expr(:call, fullsteppername, args...))
+end
+
+
+# The following time-steppers are implemented below
 #
 #   * Forward Euler
 #   * Filtered Forward Euler
@@ -50,16 +68,13 @@ end
 #   * Filtered ETDRK4
 #   * AB3
 #   * Filtered AB3
-#
-# ------------------------------------------------------------------------------ 
-
 
 # --
 # Forward Euler
 # --
 
 """
-    ForwardEulerTimeStepper(L, Tsol=cxeltype(L))
+    ForwardEulerTimeStepper(eq)
 
 Initialize a forward Euler timestepper.
 """
@@ -76,13 +91,10 @@ function stepforward!(sol, cl, ts::ForwardEulerTimeStepper, eq, v, p, g)
   nothing
 end
 
-function ForwardEulerTimeStepper(eq, T=cxeltype(eq.L)) 
-  N = superzeros(T, eq.L)
-  ForwardEulerTimeStepper(N)
-end
+ForwardEulerTimeStepper(eq::Equation) = ForwardEulerTimeStepper(superzeros(eq.T, eq.dims))
 
 """
-    FilteredForwardEulerTimeStepper(L, g, Tsol=cxeltype(L); filterkwargs...)
+    FilteredForwardEulerTimeStepper(eq; filterkwargs...)
 
 Construct a forward Euler timestepper with spectral filtering.
 """
@@ -91,9 +103,9 @@ struct FilteredForwardEulerTimeStepper{T,Tf} <: AbstractTimeStepper{T}
   filter::Tf
 end
 
-function FilteredForwardEulerTimeStepper(eq, T=cxeltype(eq.L); filterkwargs...)
+function FilteredForwardEulerTimeStepper(eq; filterkwargs...)
   filter = makefilter(eq; filterkwargs...)
-  FilteredForwardEulerTimeStepper(superzeros(T, eq.L), filter)
+  FilteredForwardEulerTimeStepper(superzeros(eq.T, eq.dims), filter)
 end
 
 function stepforward!(sol, cl, ts::FilteredForwardEulerTimeStepper, eq, v, p, g)
@@ -135,17 +147,17 @@ struct FilteredRK4TimeStepper{T,Tf} <: AbstractTimeStepper{T}
 end
 
 """
-    RK4TimeStepper(eq, T=cxeltype(eq.L))
+    RK4TimeStepper(eq)
 
 Construct a 4th-order Runge-Kutta time stepper with spectral filtering for the equation `eq`.
 """
-function RK4TimeStepper(eq, T=cxeltype(eq.L))
-  @superzeros T eq.L N sol₁ RHS₁ RHS₂ RHS₃ RHS₄
+function RK4TimeStepper(eq)
+  @superzeros eq.T eq.dims N sol₁ RHS₁ RHS₂ RHS₃ RHS₄
   RK4TimeStepper(sol₁, RHS₁, RHS₂, RHS₃, RHS₄)
 end
 
-function FilteredRK4TimeStepper(eq, T=cxeltype(eq.L); filterkwargs...)
-  ts = RK4TimeStepper(eq, T)
+function FilteredRK4TimeStepper(eq; filterkwargs...)
+  ts = RK4TimeStepper(eq)
   filter = makefilter(eq; filterkwargs...)
   FilteredRK4TimeStepper(getfield.(Ref(ts), fieldnames(typeof(ts)))..., filter)
 end
@@ -204,12 +216,11 @@ end
 # ------
 
 """
-    ETDRK4TimeStepper(dt, L, Tsol=cxeltype(L))
+    ETDRK4TimeStepper(eq, dt)
 
-Construct an exponential time differencing 4th-order Runge-Kutta time stepper. The Rolls Royce of timestepping.
+Construct a 4th-order exponential-time-differencing Runge-Kutta time stepper. The Rolls Royce of timestepping.
 """
-struct ETDRK4TimeStepper{T,TL,Tdt} <: AbstractTimeStepper{T}
-  dt::Tdt
+struct ETDRK4TimeStepper{T,TL} <: AbstractTimeStepper{T}
   # ETDRK4 coefficents
   ζ::TL 
   α::TL
@@ -225,8 +236,12 @@ struct ETDRK4TimeStepper{T,TL,Tdt} <: AbstractTimeStepper{T}
   N₄::T
 end
 
-struct FilteredETDRK4TimeStepper{T,TL,Tdt,Tf} <: AbstractTimeStepper{T}
-  dt::Tdt
+"""
+    FilteredETDRK4TimeStepper(eq, dt; filterkwargs...)
+
+Construct a 4th-order exponential-time-differencing Runge-Kutta time stepper with spectral filtering.
+"""
+struct FilteredETDRK4TimeStepper{T,TL,Tf} <: AbstractTimeStepper{T}
   # ETDRK4 coefficents:
   ζ::TL   
   α::TL
@@ -243,17 +258,17 @@ struct FilteredETDRK4TimeStepper{T,TL,Tdt,Tf} <: AbstractTimeStepper{T}
   filter::Tf
 end
 
-function ETDRK4TimeStepper(dt, eq, T=cxeltype(eq.L))
-  Tdt = fleltype(eq.L)
+function ETDRK4TimeStepper(eq, dt)
+  dt = fltype(eq.T)(dt) # ensure dt is correct type.
   expLdt  = @. exp(dt*eq.L)
   expLdt2 = @. exp(0.5*dt*eq.L)
   ζ, α, β, Γ = getetdcoeffs(dt, eq.L)
-  @superzeros T eq.L sol₁ sol₂ N₁ N₂ N₃ N₄
-  ETDRK4TimeStepper(Tdt(dt), ζ, α, β, Γ, expLdt, expLdt2, sol₁, sol₂, N₁, N₂, N₃, N₄)
+  @superzeros eq.T eq.dims sol₁ sol₂ N₁ N₂ N₃ N₄
+  ETDRK4TimeStepper(ζ, α, β, Γ, expLdt, expLdt2, sol₁, sol₂, N₁, N₂, N₃, N₄)
 end
 
-function FilteredETDRK4TimeStepper(dt, eq, Tsol=cxeltype(L); filterkwargs...)
-  ts = ETDRK4TimeStepper(dt, L, Tsol)
+function FilteredETDRK4TimeStepper(eq, dt; filterkwargs...)
+  ts = ETDRK4TimeStepper(eq, dt)
   filter = makefilter(eq; filterkwargs...)
   FilteredETDRK4TimeStepper(getfield.(Ref(ts), fieldnames(typeof(ts)))..., filter)
 end
@@ -277,14 +292,14 @@ function ETDRK4substeps!(sol, cl, ts, eq, v, p, g)
   eq.calcN!(ts.N₁, sol, cl.t, cl, v, p, g)
   @. ts.sol₁ = ts.expLdt2*sol + ts.ζ*ts.N₁
   # Substep 2
-  t2 = cl.t + 0.5*ts.dt
+  t2 = cl.t + 0.5*cl.dt
   eq.calcN!(ts.N₂, ts.sol₁, t2, cl, v, p, g)
   @. ts.sol₂ = ts.expLdt2*sol + ts.ζ*ts.N₂
   # Substep 3
   eq.calcN!(ts.N₃, ts.sol₂, t2, cl, v, p, g)
   @. ts.sol₂ = ts.expLdt2*ts.sol₁ + ts.ζ*(2*ts.N₃ - ts.N₁)
   # Substep 4
-  t3 = cl.t + ts.dt
+  t3 = cl.t + cl.dt
   eq.calcN!(ts.N₄, ts.sol₂, t3, cl, v, p, g)
   nothing
 end
@@ -292,7 +307,7 @@ end
 function stepforward!(sol, cl, ts::ETDRK4TimeStepper, eq, v, p, g)
   ETDRK4substeps(sol, cl, ts, eq, v, p, g)
   ETDRK4update(sol, ts) # update
-  cl.t += ts.dt
+  cl.t += cl.dt
   cl.step += 1
   nothing
 end
@@ -300,7 +315,7 @@ end
 function stepforward!(sol, cl, ts::FilteredETDRK4TimeStepper, eq, v, p, g)
   ETDRK4substeps!(sol, cl, ts, eq, v, p, g)
   ETDRK4update!(sol, ts, ts.filter) # update
-  cl.t += ts.dt
+  cl.t += cl.dt
   cl.step += 1
   nothing
 end
@@ -310,7 +325,7 @@ end
 # ---
 
 """
-    AB3TimeStepper(dt, L, Tsol=cxeltype(L))
+    AB3TimeStepper(eq)
 
 Construct a 3rd order Adams-Bashforth time stepper.
 """
@@ -325,10 +340,29 @@ struct AB3TimeStepper{T} <: AbstractTimeStepper{T}
   RHS₋₂::T
 end
 
-function AB3TimeStepper(eq, T=cxeltype(eq.L))
-  @superzeros RHS RHS₋₁ RHS₋₂
+function AB3TimeStepper(eq)
+  @superzeros eq.T eq.dims RHS RHS₋₁ RHS₋₂
   AB3TimeStepper(RHS, RHS₋₁, RHS₋₂)
 end
+
+"""
+    FilteredAB3TimeStepper(eq; filterkwargs...)_
+
+Construct a 3rd order Adams-Bashforth time stepper with spectral filtering.
+"""
+struct FilteredAB3TimeStepper{T,Tf} <: AbstractTimeStepper{T}
+  RHS::T
+  RHS₋₁::T
+  RHS₋₂::T
+  filter::Tf
+end
+
+function FilteredAB3TimeStepper(eq; filterkwargs...)
+  ts = AB3TimeStepper(eq)
+  filter = makefilter(eq; filterkwargs...)
+  FilteredAB3TimeStepper(getfield.(Ref(ts), fieldnames(typeof(ts)))..., filter)
+end
+
 
 function stepforward!(sol, cl, ts::AB3TimeStepper, eq, v, p, g)
   eq.calcN!(ts.RHS, sol, cl.t, cl, v, p, g)
@@ -350,29 +384,6 @@ function stepforward!(sol, cl, ts::AB3TimeStepper, eq, v, p, g)
   nothing
 end
 
-
-# --
-# Filtered AB3
-# --
-
-"""
-    FilteredAB3TimeStepper(L, g, Tsol=cxeltype(L); filterkwargs...)
-
-Construct a 3rd order Adams-Bashforth time stepper with spectral filtering.
-"""
-struct FilteredAB3TimeStepper{T,Tf} <: AbstractTimeStepper{T}
-  RHS::T
-  RHS₋₁::T
-  RHS₋₂::T
-  filter::Tf
-end
-
-function FilteredAB3TimeStepper(eq, T=cxeltype(L); filterkwargs...)
-  ts = AB3TimeStepper(L; Tsol=Tsol)
-  filter = makefilter(eq; filterkwargs...)
-  FilteredAB3TimeStepper{T,eltype(ts.RHS),eltype(filter),ndims(L)}(ts.RHS, ts.RHS₋₁, ts.RHS₋₂, filter)
-end
-
 function stepforward!(sol, cl, ts::FilteredAB3TimeStepper, eq, v, p, g)
   eq.calcN!(ts.RHS, sol, cl.t, cl, v, p, g)
   @. ts.RHS += eq.L*sol   # Add linear term to RHS
@@ -385,18 +396,21 @@ function stepforward!(sol, cl, ts::FilteredAB3TimeStepper, eq, v, p, g)
 
   cl.t += cl.dt
   cl.step += 1
+
   @. ts.RHS₋₂ = ts.RHS₋₁          # Store
   @. ts.RHS₋₁ = ts.RHS            # ... previous values of RHS
   nothing
 end
+
+# --
+# Timestepper utils
+# --
 
 """
     getetdcoeffs(dt, L; ncirc=32, rcirc=1)
 
 Calculate ETDRK4 coefficients associated with the (diagonal) linear coefficient
 L by integrating over a small circle in complex space.
-Note: arbitrary-precision arithmetic might provide a more robust method for
-calculating these coefficients.
 """
 function getetdcoeffs(dt, L; ncirc=32, rcirc=1)
 
@@ -428,17 +442,4 @@ function getetdcoeffs(dt, L; ncirc=32, rcirc=1)
   end
  
   ζ, α, β, Γ
-end
-
-"""
-    TimeStepper(stepper, eq, dt=nothing; T=cxeltype(eq.L))
-    
-Generalized timestepper constructor.
-"""
-function TimeStepper(stepper, eq, dt=nothing; T=cxeltype(eq.L))
-  fullsteppername = Symbol(stepper, :TimeStepper)
-  (dt == nothing ?
-    return eval(Expr(:call, fullsteppername, eq, T)) :
-    return eval(Expr(:call, fullsteppername, dt, eq, T))
-  )
 end

@@ -1,88 +1,62 @@
 """ A diagnostic type associated with FourierFlows.Problem types """
-mutable struct Diagnostic{T} <: AbstractDiagnostic
+mutable struct Diagnostic{T,N} <: AbstractDiagnostic
   calc::Function
   prob::Problem
-  num::Int
   data::Array{T,1}
   time::Array{Float64,1}
-  step::Array{Int,1}
-  value::T
-  count::Int
+  steps::Array{Int,1}
   freq::Int
+  i::Int
 end
 
-""" Constructor for the ProblemDiagnostic type. """
-function Diagnostic(calc::Function, prob::FourierFlows.Problem; freq=1, nsteps=1, num=ceil(Int, (nsteps+1)/freq))
-  value = calc(prob)
-  T = typeof(value)
-  data = Array{T}(undef, num)
-  time = Array{Float64}(undef, num)
-  step = Array{Int}(undef, num)
-  data[1] = value
-  time[1] = prob.t
-  step[1] = prob.step
-  Diagnostic{T}(calc, prob, num, data, time, step, value, 1, freq)
-end
+""" Constructor for the Diagnostic type. """
+function Diagnostic(calc::Function, prob::FourierFlows.Problem; freq=1, nsteps=1, N=ceil(Int, (nsteps+1)/freq))
 
-getindex(d::Diagnostic, inds...) = getindex(d.data, inds...)
+  firstvalue = calc(prob)
 
-"""
-    resize!(diag, newnum)
+   data = Array{typeof(firstvalue)}(undef, N)
+  time = Array{Float64}(undef, N)
+  steps = Array{Int}(undef, N)
 
-Resize the Diagnostic data and time arrays to length newnum.
-"""
-function resize!(diag::AbstractDiagnostic, newnum::Int)
-  resize!(diag.data, newnum)
-  resize!(diag.time, newnum)
-  resize!(diag.step, newnum)
-  nothing
+  data[1] = firstvalue
+  time[1] = prob.clock.t
+  step[1] = prob.clock.step
+  count = DiagStatus(1)
+
+  Diagnostic{T,N}(calc, prob, data, time, steps, freq, 1)
 end
 
 """
     update!(diag)
 
-Update diag with its current value.
+Update `diag`.
 """
-function update!(diag::AbstractDiagnostic)
-  diag.data[diag.count] = diag.calc(diag.prob)
-  diag.time[diag.count] = diag.prob.t
-  diag.step[diag.count] = diag.prob.step
-  diag.value = diag.data[diag.count]
-  nothing
-end
-
-function update!(diags::AbstractArray)
-  for diag in diags
-    update!(diag)
-  end
+function update!(d::Diagnostic, i)
+   d.data[i] = d.calc(prob)
+  d.time[i] = d.prob.clock.t
+  d.steps[i] = d.prob.clock.step
   nothing
 end
 
 """
     increment!(diag)
-    increment!(diags)
 
 Increment the Diagnostic diag, or an array of Diagnostics diags.
 """
-function increment!(diag::AbstractDiagnostic)
-  if diag.count < diag.num
-    diag.data[diag.count+1] = diag.calc(diag.prob)
-    diag.time[diag.count+1] = diag.prob.t
-    diag.step[diag.count+1] = diag.prob.step
-  else
-    push!(diag.data, diag.calc(diag.prob))
-    push!(diag.time, diag.prob.t)
-    push!(diag.step, diag.prob.step)
-    diag.num += 1
-  end
-  diag.count += 1
-  diag.value = diag.data[diag.count]
+function increment!(d::AbstractDiagnostic)
+  d.i += 1
+  update!(d, d.i)
   nothing
 end
 
-function increment!(diags::AbstractArray)
-  for d in diags
-    increment!(d)
-  end
-  nothing
-end
+"""
+e.g. `plot(energy["time"], energy["data"])`.
+"""
+getindex(d, s::AbstractString) = getindex(getfield(d, Symbol(s)), 1:d.i)
+
+# d() = current value
+# e = Diagnostic(energy, ...)
+# e() returns energy at the current time.
+# sensible?
+(d::Diagnostic)() = d.calc(d.prob)
+
