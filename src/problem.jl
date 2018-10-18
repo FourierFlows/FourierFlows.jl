@@ -6,7 +6,10 @@ struct Equation{T,TL<:AbstractArray,Tg<:AbstractFloat}
   T::T # element type of the solution
 end
 
-Equation(L, calcN!, grid; dims=size(L)) = Equation(L, calcN!, grid, dims)
+function Equation(L, calcN!, grid::AbstractGrid{Tg}; dims=size(L), T=nothing) where {Tg}
+  T != nothing || T = cxtype(Tg)
+  Equation(L, calcN!, grid, dims, T)
+end
 
 mutable struct Clock{T<:AbstractFloat}
   dt::T
