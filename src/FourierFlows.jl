@@ -5,6 +5,7 @@ export
   AbstractVars,
   AbstractParams,
 
+  AbstractGrid,
   ZeroDGrid, 
   OneDGrid, 
   TwoDGrid, 
@@ -48,11 +49,13 @@ using
 import Base: resize!, getindex, setindex!, push!, append!, fieldnames
 import LinearAlgebra: mul!, ldiv!
 
-abstract type AbstractProblem end
 abstract type AbstractGrid{T} end
 abstract type AbstractTwoDGrid{T} <: AbstractGrid{T} end
 abstract type AbstractOneDGrid{T} <: AbstractGrid{T} end
+
 abstract type AbstractTimeStepper{T} end
+
+abstract type AbstractProblem end
 abstract type AbstractParams end
 abstract type AbstractVars end
 abstract type AbstractDiagnostic end
@@ -140,7 +143,7 @@ include("timesteppers.jl")
 
 # Physics
 
-include("traceradvdiff.jl")
+include("heatequation1d.jl")
 #include("kuramotosivashinsky.jl")
 
 end # module

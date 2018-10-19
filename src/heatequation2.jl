@@ -1,9 +1,9 @@
-module TracerAdvDiff
+module HeatEquation
 
 export
   Problem,
+  updatevars!,
   set_c!,
-  updatevars!
 
 using 
   FourierFlows, 
@@ -29,7 +29,7 @@ end
 
 Construct a constant diffusivity problem with steady or time-varying flow.
 """
-function Problem(;
+function TwoDProblem(;
             nx = 128,
             Lx = 2π,
             ny = nx,
@@ -58,6 +58,21 @@ function Problem(;
   FourierFlows.Problem(eq, stepper, dt, grid, vars, params)
 end
 
+function OneDProblem(;
+            nx = 128,
+            Lx = 2π,
+            dt = 0.01,
+       stepper = "RK4",
+             T = Float64
+  )
+
+   g = OneDGrid(nx, Lx)
+   p = EmptyParams()
+   v = Vars(g)
+  eq = Equation(p, g)
+
+  FourierFlows.Problem(eq, stepper, dt, grid, vars, params)
+end
 
 # --
 # Params

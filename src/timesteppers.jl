@@ -24,7 +24,6 @@ Step forward `prob` for `nsteps`, incrementing diagnostics in the array `diags` 
 """
 function stepforward!(prob, diags, nsteps)
   for step = 1:nsteps
-
     stepforward!(prob)
 
     for diag in diags

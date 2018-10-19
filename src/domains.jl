@@ -5,6 +5,22 @@ Constructs a placeholder grid object for "0D" problems (in other words, systems 
 """
 struct ZeroDGrid{T} <: AbstractGrid{T} end
 
+function getaliasedwavenumbers(nk, nkr, aliasfrac)
+  # Index endpoints for aliased i, j wavenumbers
+  # 1/3 aliasfrac => upper 1/6 of +/- wavenumbers (1/3 total) are set to 0 after performing fft.
+  # 1/2 aliasfrac => upper 1/4 of +/- wavenumbers (1/2 total) are set to 0 after performing fft.
+  Lfrac = (1 - aliasfrac)/2 # (1 - 1/3) / 2 + 1 = 1/3.
+  Rfrac = (1 + aliasfrac)/2 # (1 + 1/3) / 2 - 1 = 2/3.
+  iaL = floor(Int, Lfrac*nk) + 1
+  iaR =  ceil(Int, Rfrac*nk)
+
+  aliasfrac < 1 || error("keyword `aliasfrac` must be less than 1") # aliasfrac=1 is not sensible.
+   kalias = (aliasfrac > 0) ? (iaL:iaR) : Int(nx/2+1)
+  kralias = (aliasfrac > 0) ? (iaL:nkr) : nkr
+
+  kalias, kralias
+end
+
 """
     OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
 
@@ -12,7 +28,7 @@ Constrcut a OneDGrid object with size `Lx`, resolution `nx`, and leftmost
 position `x0`. FFT plans are generated for `nthreads` CPUs using
 FFTW flag `effort`.
 """
-struct OneDGrid{T,Ta,Tfft,Trfft} <: AbstractOneDGrid{T}
+struct OneDGrid{T<:AbstractFloat,Ta<:AbstractArray,Tfft,Trfft} <: AbstractOneDGrid{T}
   nx::Int
   nk::Int
   nkr::Int
@@ -23,7 +39,6 @@ struct OneDGrid{T,Ta,Tfft,Trfft} <: AbstractOneDGrid{T}
   x::Ta
   k::Ta
   kr::Ta
-
   invksq::Ta
   invkrsq::Ta
 
@@ -35,7 +50,8 @@ struct OneDGrid{T,Ta,Tfft,Trfft} <: AbstractOneDGrid{T}
   kralias::UnitRange{Int}
 end
 
-function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64)
+function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64, aliasfrac=1/3)
+
   dx = Lx/nx
   x = Array{T}(range(x0, step=dx, length=nx))
 
@@ -44,25 +60,21 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
 
   i₁ = 0:Int(nx/2)
   i₂ = Int(-nx/2+1):-1
-  k = Array{T}(2π/Lx*cat(i₁, i₂; dims = 1))
-  kr = Array{T}(2π/Lx*cat(i₁; dims = 1))
+   k = Array{T}(2π/Lx*cat(i₁, i₂; dims=1))
+  kr = Array{T}(2π/Lx*cat(i₁; dims=1))
 
-  invksq = @. 1/k^2
-  invksq[1] = 0
+   invksq = @. 1/k^2
   invkrsq = @. 1/kr^2
+   invksq[1] = 0
   invkrsq[1] = 0
 
   FFTW.set_num_threads(nthreads)
    fftplan = plan_fft(Array{Complex{T},1}(undef, nx); flags=effort)
   rfftplan = plan_rfft(Array{T,1}(undef, nx); flags=effort)
 
-  # Index endpoints for aliased i, j wavenumbers
-  iaL, iaR = Int(floor(nk/3))+1, 2*Int(ceil(nk/3))-1
-  kalias  = iaL:iaR
-  kralias = iaL:nkr
-
-  OneDGrid(nx, nk, nkr, Lx, dx, x, k, kr, invksq, invkrsq,
-           fftplan, rfftplan, kalias, kralias)
+  kalias, kralias = getaliasedwavenumbers(nk, nkr, aliasfrac)
+  
+  OneDGrid(nx, nk, nkr, dx, Lx, x, k, kr, invksq, invkrsq, fftplan, rfftplan, kalias, kralias)
 end
 
 """
@@ -70,7 +82,7 @@ end
 
 Construct a TwoDGrid object.
 """
-struct TwoDGrid{T,Ta,Tfft,Trfft} <: AbstractTwoDGrid{T}
+struct TwoDGrid{T<:AbstractFloat,Ta<:AbstractArray,Tfft,Trfft} <: AbstractTwoDGrid{T}
   nx::Int
   ny::Int
   nk::Int
@@ -84,11 +96,9 @@ struct TwoDGrid{T,Ta,Tfft,Trfft} <: AbstractTwoDGrid{T}
 
   x::Ta
   y::Ta
-
   k::Ta
   l::Ta
   kr::Ta
-
   Ksq::Ta
   invKsq::Ta
   Krsq::Ta
@@ -103,7 +113,8 @@ struct TwoDGrid{T,Ta,Tfft,Trfft} <: AbstractTwoDGrid{T}
   lalias::UnitRange{Int}
 end
 
-function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64)
+function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64,
+                  aliasfrac=1/3)
   dx = Lx/nx
   dy = Ly/ny
 
@@ -138,14 +149,10 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
   fftplan = plan_fft(Array{Complex{T},2}(undef, nx, ny); flags=effort)
   rfftplan = plan_rfft(Array{T,2}(undef, nx, ny); flags=effort)
 
-  # Index endpoints for aliased i, j wavenumbers
-  ileft, iright = Int(floor(nk/3))+1, 2*Int(ceil(nk/3))-1
-  jleft, jright = Int(floor(nl/3))+1, 2*Int(ceil(nl/3))-1
-
-   kalias = ileft:iright
-   lalias = jleft:jright
-  kralias = ileft:nkr
-
+  # Index endpoints for aliasfrac i, j wavenumbers
+  kalias, kralias = getaliasedwavenumbers(nk, nkr, aliased)
+  lalias, _ = getaliasedwavenumbers(nl, nl, aliased)
+  
   TwoDGrid(nx, ny, nk, nl, nkr, dx, dy, Lx, Ly, x, y, k, l, kr, Ksq, invKsq, Krsq, invKrsq,
            fftplan, rfftplan, kalias, kralias, lalias)
 end
