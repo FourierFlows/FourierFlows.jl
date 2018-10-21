@@ -177,7 +177,7 @@ end
 end
 
 @time @testset "Diagnostics tests" begin
-  include("test_diagnostics2.jl")
+  include("test_diagnostics.jl")
 
   @test test_diagnosticsteps(freq=1)
   @test test_diagnosticsteps(freq=2)
