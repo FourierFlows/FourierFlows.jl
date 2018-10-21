@@ -3,14 +3,16 @@
 
 Step forward `prob` one time step.
 """
-stepforward!(prob) = stepforward!(prob.sol, prob.clock, prob.timestepper, prob.eqn, prob.vars, prob.params, prob.grid)
+function stepforward!(prob::Problem)
+  stepforward!(prob.sol, prob.clock, prob.timestepper, prob.eqn, prob.vars, prob.params, prob.grid)
+end
 
 """
     stepforward!(prob, nsteps)
 
 Step forward `prob` for `nsteps`.
 """
-function stepforward!(prob, nsteps) 
+function stepforward!(prob::Problem, nsteps::Int) 
   for step = 1:nsteps
     stepforward!(prob)
   end
@@ -20,16 +22,13 @@ end
 """
     stepforward!(prob, diags, nsteps)
 
-Step forward `prob` for `nsteps`, incrementing diagnostics in the array `diags` along the way.
+Step forward `prob` for `nsteps`, incrementing `diags` along the way. `diags` may be a single `Diagnostic` or
+a `Vector` of `Diagnostic`s.
 """
-function stepforward!(prob, diags, nsteps)
+function stepforward!(prob::Problem, diags::Union{AbstractVector{Diagnostic},Diagnostic}, nsteps::Int)
   for step = 1:nsteps
     stepforward!(prob)
-
-    for diag in diags
-      prob.step % diag.freq != 0 || increment!(diag)
-    end
-
+    increment!(diags)
   end
   nothing
 end

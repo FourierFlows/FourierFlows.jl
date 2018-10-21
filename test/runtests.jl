@@ -8,6 +8,8 @@ using
   Printf,
   Test
 
+using FourierFlows: parsevalsum2
+
 using LinearAlgebra: mul!, ldiv!, norm
 
 const rtol_fft = 1e-12
@@ -174,22 +176,13 @@ end
 
 end
 
-#=
-@testset "Diagnostics tests" begin
-  include("test_diagnostics.jl")
-  @test testsimplediagnostics()
+@time @testset "Diagnostics tests" begin
+  include("test_diagnostics2.jl")
+
+  @test test_diagnosticsteps(freq=1)
+  @test test_diagnosticsteps(freq=2)
+  @test test_diagnosticsteps(nsteps=100, freq=9, ndata=20)
+  @test test_basicdiagnostics()
+  @test test_scalardiagnostics(freq=1)
+  @test test_scalardiagnostics(freq=2)
 end
-=#
-
-
-#=
-println("-- Physics tests --")
-
-@testset "Physics: Kuramoto-Sivashinsky" begin
-  include("test_kuramotosivashinsky.jl")
-end
-
-@testset "Physics: TracerAdvDiff" begin
-  include("test_traceradvdiff.jl")
-end
-=#

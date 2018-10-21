@@ -61,40 +61,44 @@ getfieldspecs(fieldnames::AbstractArray, fieldtype) = [ (name, fieldtype) for na
 """
     parsevalsum2(uh, g)
 
-Calculate ∫|u|² = Σ|uh|² on a 2D grid, where uh is the Fourier transform of u.
-Accounts for DFT normalization, grid resolution, and whether or not uh
-is the product of fft or rfft.
+Returns `∫|u|² = Σ|uh|²` on the grid `g`, where `uh` is the Fourier transform of `u`.
 """
 function parsevalsum2(uh, g::TwoDGrid)
-  norm = g.Lx*g.Ly/(g.nx^2*g.ny^2)    # weird normalization for dft
-
-  if size(uh)[1] == g.nkr             # uh is conjugate symmetric
-    U = sum(abs2, uh[1, :])           # k=0 modes
-    U += 2*sum(abs2, uh[2:end, :])    # sum k>0 modes twice
-  else                                # count every mode once
+  if size(uh, 1) == g.nkr # uh is in conjugate symmetric form
+    U = @views sum(abs2, uh[1, :])           # k=0 modes
+    U += @views 2*sum(abs2, uh[2:end, :])    # sum k>0 modes twice
+  else # count every mode once
     U = sum(abs2, uh)
   end
+  norm = g.Lx*g.Ly/(g.nx^2*g.ny^2)    # normalization for dft
+  norm*U
+end
 
+function parsevalsum2(uh, g::OneDGrid)
+  if size(uh, 1) == g.nkr # uh is conjugate symmetric
+    U = sum(abs2, uh[1])                  # k=0 modes
+    U += @views 2*sum(abs2, uh[2:end])    # sum k>0 modes twice
+  else # count every mode once
+    U = sum(abs2, uh)
+  end
+  norm = g.Lx/g.nx^2 # normalization for dft
   norm*U
 end
 
 """
     parsevalsum(uh, g)
 
-Calculate real(Σ uh) on a 2D grid.  Accounts for DFT normalization,
-grid resolution, and whether or not uh is in a conjugate-symmetric form to
-save memory.
+Returns `real(Σ uh)` on the grid `g`.
 """
 function parsevalsum(uh, g::TwoDGrid)
-  norm = g.Lx*g.Ly/(g.nx^2*g.ny^2) # weird normalization for dft
-
-  if size(uh)[1] == g.nkr       # uh is conjugate symmetric
+  if size(uh, 1) == g.nkr       # uh is conjugate symmetric
     U = sum(uh[1, :])           # k=0 modes
     U += 2*sum(uh[2:end, :])    # sum k>0 modes twice
   else # count every mode once
     U = sum(uh)
   end
 
+  norm = g.Lx*g.Ly/(g.nx^2*g.ny^2) # weird normalization for dft
   norm*real(U)
 end
 
