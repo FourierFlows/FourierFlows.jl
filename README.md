@@ -46,7 +46,7 @@ and no more.
 
 ## Example(s)
 
-See the child package [GeophysicalFlows.jl][] for example usage of FourierFlows for problems in 
+See the child package [GeophysicalFlows.jl][] for example usage of `FourierFlows.jl` for problems in 
 Geophysical Fluid Dynamics.
 
 ## Developers
