@@ -44,10 +44,10 @@ But it is simple:
 
 and no more.
 
-## Example
+## Example(s)
 
-For a simple example involving the advection and diffusion of a passive tracer,
-see `examples/tracers_cellularflow.jl`.
+See the child package [GeophysicalFlows.jl][] for example usage of FourierFlows for problems in 
+Geophysical Fluid Dynamics.
 
 ## Developers
 
@@ -66,3 +66,4 @@ The code is citable via [zenodo](https://zenodo.org). Please cite as:
 [Julia]: https://julialang.org/
 [Navid C. Constantinou]: http://www.navidconstantinou.com
 [Gregory L. Wagner]: https://glwagner.github.io
+[GeophysicalFlows.jl]: https://github.com/FourierFlows/GeophysicalFlows.jl
