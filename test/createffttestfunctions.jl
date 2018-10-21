@@ -1,89 +1,87 @@
 function create_testfuncs(g::OneDGrid)
-    if nx <= 8; error("nx must be > 8"); end
-
+    g.nx > 8 || error("nx must be > 8")
     m = 5
-    k0 = g.k[2] # Fundamental wavenumber
+    k₀ = g.k[2] # Fundamental wavenumber
 
-    # Test function
+    # Analytic function
     φ = π/3
-    f1 = cos.(m*k0*g.x .+ φ)
-    f1h = fft(f1)
-    f1hr = rfft(f1)
+    f₁ = @. cos(m*k₀*g.x + φ)
 
-    f1hr_mul = zeros(Complex{eltype(g.x)}, g.nkr)
-    mul!(f1hr_mul, g.rfftplan, f1)
+    # Transform of f₁ three ways
+     f₁h = fft(f₁)
+    f₁hr = rfft(f₁)
+    f₁hr_mul = zeros(Complex{eltype(g.x)}, g.nkr)
+    mul!(f₁hr_mul, g.rfftplan, f₁)
 
-    # Theoretical values of the fft and rfft
-    f1h_th = zeros(Complex{Float64}, size(f1h))
-    f1hr_th = zeros(Complex{Float64}, size(f1hr))
+    # Analytical values of the fft and rfft
+     f₁h_analytical = zeros(Complex{Float64}, size(f₁h))
+    f₁hr_analytical = zeros(Complex{Float64}, size(f₁hr))
 
     for i in 1:g.nk
-      if abs(real(g.k[i])) == m*k0
-        f1h_th[i] = -exp(sign(real(g.k[i]))*im*φ)*g.nx/2
+      if abs(real(g.k[i])) == m*k₀
+        f₁h_analytical[i] = -exp(sign(real(g.k[i]))*im*φ)*g.nx/2
       end
     end
 
     for i in 1:g.nkr
-      if abs(real(g.k[i]))==m*k0
-        f1hr_th[i] = -exp(sign(real(g.kr[i]))*im*φ)*g.nx/2
+      if abs(real(g.k[i])) == m*k₀
+        f₁hr_analytical[i] = -exp(sign(real(g.kr[i]))*im*φ)*g.nx/2
       end
     end
 
-    f1, f1h, f1hr, f1hr_mul, f1h_th, f1hr_th
+    f₁, f₁h, f₁hr, f₁hr_mul, f₁h_analytical, f₁hr_analytical
 end
 
 
 function create_testfuncs(g::TwoDGrid)
-    if nx <= 8; error("nx must be > 8"); end
-
+    g.nx > 8 || error("nx must be > 8")
     m, n = 5, 2
-    k0 = g.k[2] # fundamental wavenumber
-    l0 = g.l[2] # fundamental wavenumber
+    k₀ = g.k[2]
+    l₀ = g.l[2]
 
-    # some test functions
-    f1 = @. cos(m*k0*g.X) * cos(n*l0*g.Y)
-    f2 = @. sin(m*k0*g.X + n*l0*g.Y)
+    # Analytic functions
+    f₁ = @. cos(m*k₀*g.x) * cos(n*l₀*g.y)
+    f₂ = @. sin(m*k₀*g.x + n*l₀*g.y)
 
-    f1h = fft(f1)
-    f2h = fft(f2)
-    f1hr = rfft(f1)
-    f2hr = rfft(f2)
+     f₁h = fft(f₁)
+     f₂h = fft(f₂)
+    f₁hr = rfft(f₁)
+    f₂hr = rfft(f₂)
 
-    f1hr_mul = zeros(Complex{eltype(g.x)}, (g.nkr, g.nl))
-    f2hr_mul = zeros(Complex{eltype(g.x)}, (g.nkr, g.nl))
-    mul!(f1hr_mul, g.rfftplan, f1)
-    mul!(f2hr_mul, g.rfftplan, f2)
+    f₁hr_mul = zeros(Complex{eltype(g.x)}, (g.nkr, g.nl))
+    f₂hr_mul = zeros(Complex{eltype(g.x)}, (g.nkr, g.nl))
+    mul!(f₁hr_mul, g.rfftplan, f₁)
+    mul!(f₂hr_mul, g.rfftplan, f₂)
 
     # Theoretical results
-    f1h_th = zeros(Complex{eltype(g.x)}, size(f1h))
-    f2h_th = zeros(Complex{eltype(g.x)}, size(f2h))
-    f1hr_th = zeros(Complex{eltype(g.x)}, size(f1hr))
-    f2hr_th = zeros(Complex{eltype(g.x)}, size(f2hr))
+     f₁h_analytical = zeros(Complex{eltype(g.x)}, size(f₁h))
+     f₂h_analytical = zeros(Complex{eltype(g.x)}, size(f₂h))
+    f₁hr_analytical = zeros(Complex{eltype(g.x)}, size(f₁hr))
+    f₂hr_analytical = zeros(Complex{eltype(g.x)}, size(f₂hr))
 
     for j in 1:g.nl, i in 1:g.nk
-      if ( abs(real(g.K[i, j])) == m*k0 && abs(real(g.L[i, j])) == n*l0 )
-        f1h_th[i, j] = - g.nx*g.ny/4
+      if ( abs(real(g.k[i])) == m*k₀ && abs(real(g.l[j])) == n*l₀ )
+        f₁h_analytical[i, j] = - g.nx*g.ny/4
       end
-      if ( real(g.K[i, j]) == m*k0 && real(g.L[i, j]) == n*l0 )
-        f2h_th[i, j] = -g.nx*g.ny/2
-      elseif ( real(g.K[i, j]) == -m*k0 && real(g.L[i, j]) == -n*l0 )
-        f2h_th[i, j] = g.nx*g.ny/2
+      if ( real(g.k[i]) == m*k₀ && real(g.l[j]) == n*l₀ )
+        f₂h_analytical[i, j] = -g.nx*g.ny/2
+      elseif ( real(g.k[i]) == -m*k₀ && real(g.l[j]) == -n*l₀ )
+        f₂h_analytical[i, j] = g.nx*g.ny/2
       end
     end
-    f2h_th = -im*f2h_th;
+    f₂h_analytical = -im*f₂h_analytical;
 
     for j in 1:g.nl, i in 1:g.nkr
-      if ( abs(g.Kr[i, j])==m*k0 && abs(g.L[i, j])==n*l0 )
-        f1hr_th[i, j] = - g.nx*g.ny/4
+      if ( abs(g.kr[i])==m*k₀ && abs(g.l[j])==n*l₀ )
+        f₁hr_analytical[i, j] = - g.nx*g.ny/4
       end
-      if ( real(g.Kr[i, j]) == m*k0 && real(g.L[i, j]) == n*l0 )
-        f2hr_th[i, j] = -g.nx*g.ny/2
-      elseif ( real(g.Kr[i, j]) == -m*k0 && real(g.L[i, j]) == -n*l0 )
-        f2hr_th[i, j] = g.nx*g.ny/2
+      if ( real(g.kr[i]) == m*k₀ && real(g.l[j]) == n*l₀ )
+        f₂hr_analytical[i, j] = -g.nx*g.ny/2
+      elseif ( real(g.kr[i]) == -m*k₀ && real(g.l[j]) == -n*l₀ )
+        f₂hr_analytical[i, j] = g.nx*g.ny/2
       end
     end
-    f2hr_th = -im*f2hr_th;
+    f₂hr_analytical = -im*f₂hr_analytical;
 
-    f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mul, f2hr_mul,
-      f1h_th, f1hr_th, f2h_th, f2hr_th
+    f₁, f₂, f₁h, f₂h, f₁hr, f₂hr, f₁hr_mul, f₂hr_mul, f₁h_analytical, f₁hr_analytical, f₂h_analytical, f₂hr_analytical
 end

@@ -87,9 +87,9 @@ version = "0.6.0"
 
 [[CuArrays]]
 deps = ["AbstractFFTs", "Adapt", "CUDAapi", "CUDAdrv", "CUDAnative", "DiffRules", "ForwardDiff", "GPUArrays", "LinearAlgebra", "MacroTools", "NNlib", "Printf", "Random", "Test"]
-git-tree-sha1 = "ed8d6eea1e50fca4ec9068c077969adf35946834"
+git-tree-sha1 = "50814c8f6de015f08a4fe2c01c87fb74f42c8a39"
 uuid = "3a865a2d-5b23-5a0f-bc46-62713ec82fae"
-version = "0.8.0"
+version = "0.8.1"
 
 [[DataStructures]]
 deps = ["InteractiveUtils", "OrderedCollections", "REPL", "Random", "Serialization", "Test"]
@@ -146,10 +146,10 @@ uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 version = "1.0.2"
 
 [[FillArrays]]
-deps = ["Compat", "LinearAlgebra", "Random", "SparseArrays"]
-git-tree-sha1 = "c80c54ba3341ffc3c64e817f742ce77564ad410c"
+deps = ["LinearAlgebra", "Random", "SparseArrays", "Test"]
+git-tree-sha1 = "d87b7fc5c086cf157deabec625d53ba55eca6436"
 uuid = "1a297f60-69ca-5386-bcde-b61e274b549b"
-version = "0.2.1"
+version = "0.3.0"
 
 [[ForwardDiff]]
 deps = ["CommonSubexpressions", "DiffResults", "DiffRules", "InteractiveUtils", "LinearAlgebra", "NaNMath", "Pkg", "Random", "SparseArrays", "SpecialFunctions", "StaticArrays", "Test"]
@@ -181,9 +181,9 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [[Interpolations]]
 deps = ["AxisAlgorithms", "LinearAlgebra", "OffsetArrays", "Random", "Ratios", "SharedArrays", "SparseArrays", "StaticArrays", "Test", "WoodburyMatrices"]
-git-tree-sha1 = "d3328be2a9624d62957607a8bdfcc164d24f1b6d"
+git-tree-sha1 = "56691033f157dd1ee1d2aa042114caeefefa897b"
 uuid = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
-version = "0.10.3"
+version = "0.10.5"
 
 [[JLD2]]
 deps = ["CodecZlib", "DataStructures", "FileIO", "LinearAlgebra", "Mmap", "Printf", "Random", "Test"]
@@ -228,9 +228,9 @@ uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
 
 [[MbedTLS]]
 deps = ["BinaryProvider", "Libdl", "Pkg", "Random", "Sockets", "Test"]
-git-tree-sha1 = "3775d205b09b624aa06d39012a8920ba99cb3b8b"
+git-tree-sha1 = "4b890362c0c2fdb14a575ce927f1f4eeac6dda9f"
 uuid = "739be429-bea8-5141-9913-cc70e7f3736d"
-version = "0.6.3"
+version = "0.6.4"
 
 [[Mmap]]
 uuid = "a63ad114-7e13-5084-954f-fe012c677804"

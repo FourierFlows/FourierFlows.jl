@@ -1,10 +1,53 @@
-function test_domainaverage(n; xdir=true)
+function test_fltype()
+  Tf = Float16
+  Tc = Complex{Tf}
+  Tf == fltype(Tf) && Tf == fltype(Tc)
+end
+
+function test_cxtype()
+  Tf = Float16
+  Tc = Complex{Tf}
+  Tc == cxtype(Tf) && Tc == cxtype(Tc)
+end
+
+function test_innereltype(T=Float32)
+  a = [zeros(T, 3), zeros(T, 2, 5)]
+  T == innereltype(a)
+end
+
+function test_superzeros()
+  T = Float64
+  dims1 = (2, 3)
+  dims2a = (7,)
+  dims2b = dims1
+  dims2 = (dims2a, dims2b)
+
+  a1 = rand(T, dims1)
+  a2 = [(1+im)*rand(T, dims2a), (2+im)*rand(T, dims2b)]
+
+  a1a = zeros(T, dims1)
+  a2a = [zeros(Complex{T}, dims2a), zeros(Complex{T}, dims2b)]
+
+  a1z = superzeros(a1)
+  a2z = superzeros(a2)
+  a1d = superzeros(dims1)
+  a2d = superzeros(Complex{T}, dims2)
+
+  @superzeros innereltype(a1) a1 a1ma dum
+  @superzeros innereltype(a2) a2 a2ma dum
+  @superzeros innereltype(a1) dims1 a1md dum
+  @superzeros innereltype(a2) dims2 a2md dum
+
+  ( a1a == a1z && a1a == a1d && a1a == a1ma && a1a == a1md &&
+    a2a == a2z && a2a == a2d && a2a == a2ma && a2a == a2md )
+end
+
+function test_domainaverage(n)
   g = TwoDGrid(n, 2π)
   X, Y = gridpoints(g)
-  if xdir; c = @. cos(X)^2
-  else;    c = @. cos(Y)^2
-  end
-  0.5 ≈ FourierFlows.domainaverage(c, g)
+  cx = @. cos(X)^2
+  cy = @. cos(Y)^2
+  0.5 ≈ FourierFlows.domainaverage(cx, g) && 0.5 ≈ FourierFlows.domainaverage(cy, g)
 end
 
 # This test could use some further work.
@@ -51,100 +94,89 @@ function test_parsevalsum2(func, grid; realvalued=true)
 end
 
 """
-Compute the J(a, b) and compare with analytic_answer.
+Compute the jacobian J(a, b) and compare the result with `analytic`. Use `atol` for the comparison
+to ensure validity when `analytic=0`.
 """
-function test_jacobian(a, b, analytic_answer, grid)
-    # it's important to use atol for this test since when analytic_answer=0
-    # the rtol is not conclusive (e.g., isapprox(1e-5, 0, rtol=1e-10) is false)
-    isapprox(FourierFlows.jacobian(a, b, grid), analytic_answer;
-             atol=g.nx*g.ny*1e-14)
-end
+test_jacobian(a, b, analytic, grid) = isapprox(FourierFlows.jacobian(a, b, grid), analytic; 
+                                               atol=grid.nx*grid.ny*10*eps())
 
 """
-Test the createarrays macro.
+Test the zeros macro.
 """
-function test_createarrays(T=Float64, dims=(13, 45))
+function test_zeros(T=Float64, dims=(13, 45))
   a1, b1 = zeros(T, dims), zeros(T, dims)
-  FourierFlows.@createarrays T dims a2 b2
+  @zeros T dims a2 b2
   a1 == a2 && b1 == b2
 end
 
 abstract type TestVars <: AbstractVars end
 
 physicalvars = [:a, :b]
-transformvars = [ Symbol(var, :h) for var in physicalvars ]
- forcedvar = [:Fh]
+ fouriervars = [:ah, :bh]
 
 varspecs = cat(FourierFlows.getfieldspecs(physicalvars, :(Array{T,2})),
-  FourierFlows.getfieldspecs(transformvars, :(Array{Complex{T},2})), dims=1)
+  FourierFlows.getfieldspecs(fouriervars, :(Array{Complex{T},2})), dims=1)
 
-eval(FourierFlows.structvarsexpr(:VarsFields, physicalvars, transformvars))
-eval(FourierFlows.structvarsexpr(:VarsFieldsParent, physicalvars, transformvars; parent=:TestVars))
-eval(FourierFlows.structvarsexpr(:VarsSpecs, varspecs))
-eval(FourierFlows.structvarsexpr(:VarsSpecsParent, varspecs; parent=:TestVars))
+eval(FourierFlows.varsexpression(:VarsFields, physicalvars, fouriervars))
+eval(FourierFlows.varsexpression(:VarsFieldsParent, physicalvars, fouriervars; parent=:TestVars))
 
-function VarsFields(g)
-  @createarrays typeof(g.Lx) (g.nx, g.ny) a b
-  @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) ah bh
-  VarsFields(a, b, ah, bh)
-end
+eval(FourierFlows.varsexpression(:VarsSpecs, varspecs; typeparams=:T))
+eval(FourierFlows.varsexpression(:VarsSpecsParent, varspecs; parent=:TestVars, typeparams=:T))
 
-function VarsFieldsParent(g)
-  @createarrays typeof(g.Lx) (g.nx, g.ny) a b
-  @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) ah bh
-  VarsFieldsParent(a, b, ah, bh)
-end
+function test_varsexpression_fields(g::AbstractGrid{T}) where T
+  @zeros T (g.nx, g.ny) a b
+  @zeros Complex{T} (g.nkr, g.nl) ah bh
+  v1 = VarsFields(a, b, ah, bh)
 
-function VarsSpecs(g)
-  @createarrays typeof(g.Lx) (g.nx, g.ny) a b
-  @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) ah bh
-  VarsSpecs(a, b, ah, bh)
-end
-
-function VarsSpecsParent(g)
-  @createarrays typeof(g.Lx) (g.nx, g.ny) a b
-  @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) ah bh
-  VarsSpecsParent(a, b, ah, bh)
-end
-
-function test_structvarsexprFields(g)
-  v1 = VarsFields(g)
   (
-    typeof(v1.a)==Array{Float64,2} &&
-    typeof(v1.ah)==Array{Complex{Float64},2} &&
-    size(v1.a)==size(v1.b) &&
-    size(v1.ah)==size(v1.bh) &&
-    size(v1.a)==(g.nx, g.ny) &&
-    size(v1.ah) == (g.nkr, g.nl)
-  )
-  v2 = VarsFieldsParent(g)
-  (
-    typeof(v2.a)==Array{Float64,2} &&
-    typeof(v2.ah)==Array{Complex{Float64},2} &&
-    size(v2.a)==size(v2.b) &&
-    size(v2.ah)==size(v2.bh) &&
-    size(v2.a)==(g.nx, g.ny) &&
-    size(v2.ah) == (g.nkr, g.nl)
+     typeof(v1.a) == Array{T,2} &&
+    typeof(v1.ah) == Array{Complex{T},2} &&
+       size(v1.a) == size(v1.b) &&
+      size(v1.ah) == size(v1.bh) &&
+       size(v1.a) == (g.nx, g.ny) &&
+      size(v1.ah) == (g.nkr, g.nl)
   )
 end
 
-function test_structvarsexprSpecs(g)
-  v1 = VarsSpecs(g)
+function test_varsexpression_fields_parent(g)
+  @zeros T (g.nx, g.ny) a b
+  @zeros Complex{T} (g.nkr, g.nl) ah bh
+  v2 = VarsFieldsParent(a, b, ah, bh)
   (
-    typeof(v1.a)==Array{Float64,2} &&
-    typeof(v1.ah)==Array{Complex{Float64},2} &&
-    size(v1.a)==size(v1.b) &&
-    size(v1.ah)==size(v1.bh) &&
-    size(v1.a)==(g.nx, g.ny) &&
-    size(v1.ah) == (g.nkr, g.nl)
+     typeof(v2.a) == Array{T,2} &&
+    typeof(v2.ah) == Array{Complex{T},2} &&
+       size(v2.a) == size(v2.b) &&
+      size(v2.ah) == size(v2.bh) &&
+       size(v2.a) == (g.nx, g.ny) &&
+      size(v2.ah) == (g.nkr, g.nl)
   )
-  v2 = VarsSpecsParent(g)
+end
+
+function test_varsexpression_specs(g::AbstractGrid{T}) where T
+  @zeros T (g.nx, g.ny) a b
+  @zeros Complex{T} (g.nkr, g.nl) ah bh
+  v1 = VarsSpecs(a, b, ah, bh)
+
   (
-    typeof(v2.a)==Array{Float64,2} &&
-    typeof(v2.ah)==Array{Complex{Float64},2} &&
-    size(v2.a)==size(v2.b) &&
-    size(v2.ah)==size(v2.bh) &&
-    size(v2.a)==(g.nx, g.ny) &&
-    size(v2.ah) == (g.nkr, g.nl)
+     typeof(v1.a) == Array{T,2} &&
+    typeof(v1.ah) == Array{Complex{T},2} &&
+       size(v1.a) == size(v1.b) &&
+      size(v1.ah) == size(v1.bh) &&
+       size(v1.a) == (g.nx, g.ny) &&
+      size(v1.ah) == (g.nkr, g.nl)
+  )
+end
+
+function test_varsexpression_specs_parent(g)
+  @zeros T (g.nx, g.ny) a b
+  @zeros Complex{T} (g.nkr, g.nl) ah bh
+  e2 = VarsSpecsParent(a, b, ah, bh)
+  (
+     typeof(v2.a) == Array{T,2} &&
+    typeof(v2.ah) == Array{Complex{T},2} &&
+       size(v2.a) == size(v2.b) &&
+      size(v2.ah) == size(v2.bh) &&
+       size(v2.a) == (g.nx, g.ny) &&
+      size(v2.ah) == (g.nkr, g.nl)
   )
 end

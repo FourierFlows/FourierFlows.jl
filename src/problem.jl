@@ -1,9 +1,9 @@
-struct Equation{T,TL<:AbstractArray,Tg<:AbstractFloat}
+struct Equation{T,TL,Tg<:AbstractFloat}
   L::TL 
   calcN!::Function
   grid::AbstractGrid{Tg}
   dims::Tuple
-  T::T # element type of the solution
+  T::T # type of the solution; ie typeof(sol) = Array{Float64,1} => T = Float64
 end
 
 function Equation(L, calcN!, grid::AbstractGrid{Tg}; dims=size(L), T=nothing) where {Tg}
@@ -25,11 +25,11 @@ Clock(dt) = Clock(dt, 0dt, 0)
 Initialize a FourierFlows problem on grid g, with variables v, parameters p,
 equation eq, and timestepper ts.
 """
-struct Problem{T<:AbstractFloat,TL<:AbstractArray,Ta<:AbstractArray}
+struct Problem{T,Ta<:AbstractArray,Tg<:AbstractFloat,TL<:AbstractArray}
   sol::Ta
-  clock::Clock{T}
-  eqn::Equation{TL,T}
-  grid::AbstractGrid{T}
+  clock::Clock{Tg}
+  eqn::Equation{T,TL,Tg}
+  grid::AbstractGrid{Tg}
   vars::AbstractVars
   params::AbstractParams
   timestepper::AbstractTimeStepper{Ta}
@@ -38,13 +38,9 @@ end
 struct EmptyParams <: AbstractParams end
 struct EmptyVars <: AbstractVars end
 
-function Problem(eqn::Equation, stepper, dt, grid, vars=EmptyVars, params=EmptyParams)
-  clock = Clock{fltype(eqn.T)}(dt)
+function Problem(eqn::Equation, stepper, dt, grid::AbstractGrid{T}, vars=EmptyVars, params=EmptyParams) where T
+  clock = Clock{T}(dt, 0, 0)
   timestepper = TimeStepper(stepper, eqn, dt)
-  Problem(clock, eqn, grid, vars, params, timestepper)
-end
-
-function Problem(clock, eqn, grid, vars, params, timestepper)
   sol = superzeros(eqn.T, eqn.dims)
   Problem(sol, clock, eqn, grid, vars, params, timestepper)
 end

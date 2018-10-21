@@ -2,48 +2,60 @@
 
 using 
   FourierFlows,
+  FourierFlows.Diffusion,
   FFTW,
   LinearAlgebra,
+  Printf,
   Test
 
+using LinearAlgebra: mul!, ldiv!, norm
+
 const rtol_fft = 1e-12
+const rtol_timesteppers = 1e-6
+
+const steppers = [
+  "ForwardEuler",
+  "RK4",
+  "ETDRK4",
+  "AB3",
+  "FilteredForwardEuler",
+  "FilteredRK4",
+  "FilteredETDRK4",
+  "FilteredAB3"
+]
 
 # Run tests
 
 include("createffttestfunctions.jl")
 
-time = @elapsed begin
+@time @testset "Grid tests" begin
+    include("test_grid.jl")
 
-println("-- Core tests --")
+    # Test 1D grid
+    nx, Lx = 6, 2π
+    g₁ = OneDGrid(nx, Lx)
+    @test testnx(g₁, nx)
+    @test testdx(g₁)
+    @test testx(g₁)
+    @test testk(g₁)
+    @test testkr(g₁)
 
-@testset "Grid tests" begin
-  include("test_grid.jl")
-
-  # Test 1D grid
-  nx, Lx = 4, 2π
-  g₁ = OneDGrid(nx, Lx)
-  @test testnx(g₁, nx)
-  @test testdx(g₁)
-  @test testx(g₁)
-  @test testk(g₁)
-  @test testkr(g₁)
-
-  # Test 2D rectangular grid
-  ny, Ly = 6, 4π
-  g₂ = TwoDGrid(nx, Lx, ny, Ly)
-  @test testnx(g₂, nx)
-  @test testny(g₂, ny)
-  @test testdx(g₂)
-  @test testdy(g₂)
-  @test testx(g₂)
-  @test testy(g₂)
-  @test testk(g₂)
-  @test testkr(g₂)
-  @test testl(g₂)
-  @test testgridpoints(g₂)
+    # Test 2D rectangular grid
+    ny, Ly = 8, 4π
+    g₂ = TwoDGrid(nx, Lx, ny, Ly)
+    @test testnx(g₂, nx)
+    @test testny(g₂, ny)
+    @test testdx(g₂)
+    @test testdy(g₂)
+    @test testx(g₂)
+    @test testy(g₂)
+    @test testk(g₂)
+    @test testkr(g₂)
+    @test testl(g₂)
+    @test testgridpoints(g₂)
 end
 
-@testset "FFT tests" begin
+@time @testset "FFT tests" begin
   include("test_fft.jl")
 
   # Test 1D grid
@@ -68,7 +80,7 @@ end
   @test test_rfft_mul_sinmxny(g2)
 end
 
-@testset "IFFT tests" begin
+@time @testset "IFFT tests" begin
   include("test_ifft.jl")
 
   # Test 1D grid
@@ -93,8 +105,13 @@ end
   @test test_irfft_mul_sinmxny(g2)
 end
 
-@testset "Utils tests" begin
+@time @testset "Utils tests" begin
   include("test_utils.jl")
+
+  @test test_fltype()
+  @test test_cxtype()
+  @test test_innereltype()
+  @test test_superzeros()
 
   # Test on a rectangular grid
   nx, ny = 64, 128   # number of points
@@ -132,11 +149,10 @@ end
   @test test_jacobian(sinkl1, sinkl2, Jsinkl1sinkl2, g) # Test J(sin1, sin2) = Jsin1sin2
   @test test_jacobian(expkl1, expkl2, Jexpkl1expkl2, g) # Test J(exp1, exp2) = Jexp1exps2
 
-  @test test_createarrays()
-  @test test_domainaverage(32; xdir=true)
-  @test test_domainaverage(32; xdir=false)
-  @test test_structvarsexprFields(g)
-  @test test_structvarsexprSpecs(g)
+  @test test_zeros()
+  @test test_domainaverage(32)
+  @test test_varsexpression_fields(g)
+  @test test_varsexpression_specs(g)
 
   # Radial spectrum tests. Note that ahρ = ∫ ah ρ dθ.
   n = 128; δ = n/10                 # Parameters
@@ -149,13 +165,21 @@ end
   @test test_radialspectrum(n, ahkl, ahρ)
 end
 
-#@testset "Timestepper tests" begin
-#  include("test_timesteppers.jl")
-#end
+@time @testset "Timestepper tests" begin
+  include("test_timesteppers.jl")
 
-#@testset "Diagnostics tests" begin
-#  include("test_diagnostics.jl")
-#end
+  for stepper in steppers
+    @test diffusiontest(stepper)
+  end
+
+end
+
+#=
+@testset "Diagnostics tests" begin
+  include("test_diagnostics.jl")
+  @test testsimplediagnostics()
+end
+=#
 
 
 #=
@@ -169,6 +193,3 @@ end
   include("test_traceradvdiff.jl")
 end
 =#
-
-end
-println("Total test time: ", time)

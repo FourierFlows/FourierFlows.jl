@@ -1,4 +1,4 @@
-module OneDHeatEquation
+module Diffusion
 
 export
   Problem,
@@ -6,8 +6,10 @@ export
   set_c!
 
 using 
-  FourierFlows, 
-  FFTW
+  FFTW,
+  Reexport
+
+@reexport using FourierFlows
 
 using FourierFlows: varsexpression
 using LinearAlgebra: mul!, ldiv!
@@ -17,7 +19,7 @@ using LinearAlgebra: mul!, ldiv!
 
 Construct a constant diffusivity problem with steady or time-varying flow.
 """
-function OneDProblem(;
+function Problem(;
             nx = 128,
             Lx = 2π,
            kap = 0,
@@ -26,12 +28,12 @@ function OneDProblem(;
              T = Float64
   )
 
-   g = OneDGrid(nx, Lx; T=T)
-   p = Params(kap)
-   v = Vars(g)
-  eq = Equation(p, g)
+    grid = OneDGrid(nx, Lx; T=T)
+  params = Params(kap)
+    vars = Vars(grid)
+     eqn = Equation(kap, grid)
 
-  FourierFlows.Problem(eq, stepper, dt, grid, vars, params)
+  FourierFlows.Problem(eqn, stepper, dt, grid, vars, params)
 end
 
 struct Params{T} <: AbstractParams
@@ -43,11 +45,13 @@ end
 
 Returns the equation for constant diffusivity problem with params p and grid g.
 """
-function Equation(p::Params{T}, g) where T<:Number
-  FourierFlows.Equation(-g.kr.^2, calcN_implicit!, g)
+function Equation(kap::T, g) where T<:Number
+  FourierFlows.Equation(-kap*g.kr.^2, calcN!, g)
 end
 
-Equation(p::Params{T}, g) where T<:AbstractArray = FourierFlows.Equation(0, calcN!, g)
+function Equation(kap::T, g::AbstractGrid{Tg}) where {T<:AbstractArray,Tg}
+  FourierFlows.Equation(0, calcN!, g; dims=(g.nkr,), T=cxtype(Tg))
+end
 
 # Construct Vars types
 const physicalvars = [:c, :cx]
@@ -60,7 +64,11 @@ eval(varsexpression(:Vars, physicalvars, fouriervars))
 
 Returns the vars for constant diffusivity problem on grid g.
 """
-Vars(g::AbstractGrid{T}) where T = Vars(zeros(T, g.nx), zeros(Complex{T}, g.nkr))
+function Vars(g::AbstractGrid{T}) where T 
+  @zeros T g.nx c cx
+  @zeros Complex{T} g.nkr ch cxh
+  Vars(c, cx, ch, cxh)
+end
 
 """
     calcN!(N, sol, t, clock, vars, params, grid)
@@ -68,6 +76,7 @@ Vars(g::AbstractGrid{T}) where T = Vars(zeros(T, g.nx), zeros(Complex{T}, g.nkr)
 Calculate the nonlinear term for the 1D heat equation.
 """
 calcN!(N, sol, t, cl, v, p::Params{T}, g) where T<:Number = nothing
+
 function calcN!(N, sol, t, cl, v, p::Params{T}, g) where T<:AbstractArray
   @. v.cxh = im * g.kr * sol
   ldiv!(v.cx, g.rfftplan, v.cxh)
@@ -96,8 +105,8 @@ updatevars!(prob) = updatevars!(prob.vars, prob.grid, prob.sol)
 Set the solution as the transform of `c`.
 """
 function set_c!(prob, c)
-  mul!(prob.sol, g.rfftplan, c)
-  updatevars(prob)
+  mul!(prob.sol, prob.grid.rfftplan, c)
+  updatevars!(prob)
 end
 
 set_c!(prob, c::Function) = set_c!(prob, c.(prob.grid.x))

@@ -1,6 +1,10 @@
 module FourierFlows
 
 export 
+  cxtype,
+  fltype,
+  innereltype,
+
   AbstractProblem,
   AbstractVars,
   AbstractParams,
@@ -11,10 +15,6 @@ export
   TwoDGrid, 
   dealias!,
   gridpoints,
-
-  State,
-  DualState,
-  unpack,
 
   Diagnostic,
   resize!, 
@@ -27,8 +27,10 @@ export
   groupsize, 
   savediagnostic,
 
+  @zeros,
   @createarrays, 
   @superzeros,
+  superzeros,
 
   TimeStepper,
   ForwardEulerTimeStepper, 
@@ -44,10 +46,12 @@ export
 using 
   FFTW, 
   JLD2,
+  Statistics,
   Interpolations
 
-import Base: resize!, getindex, setindex!, push!, append!, fieldnames
-import LinearAlgebra: mul!, ldiv!
+import Base: resize!, getindex, setindex!, push!, append!
+using Base: fieldnames
+using LinearAlgebra: mul!, ldiv!
 
 abstract type AbstractGrid{T} end
 abstract type AbstractTwoDGrid{T} <: AbstractGrid{T} end
@@ -98,38 +102,23 @@ fleltype(x) = fltype(innereltype(x))
 Returns an array like `A`, but full of zeros. If `innereltype(A)` can be promoted to `T`, then
 the innermost elements of the array will have type `T`.
 """
-superzeros(T, A) = T(0)*A
-superzeros(A) = superzeros(innereltype(A), A)
+superzeros(T, A::AbstractArray) = T(0)*A
 
-function superzeros(T, dims::Tuple)
-  if eltype(tup) <: Tuple
-    return [ superzeros(T, d) for d in dims ]
-  else
-    return zeros(T, dims)
-  end
-end
-
-superzeros(dims::Tuple) = superzeros(Float64, dims)
+superzeros(A::AbstractArray) = superzeros(innereltype(A), A)
+superzeros(T, dims::Tuple) = eltype(dims) <: Tuple ? [ superzeros(T, d) for d in dims ] : zeros(T, dims)
+superzeros(dims::Tuple) = superzeros(Float64, dims) # default
 
 """
     @superzeros T a b c d...
-    @superzeros a b c d...
+    @superzeros T dims b c d...
 
-Generate arrays `b, c, d...` with the super-dimensions of `a` and innereltype `T`. If `T` is not
-supplied then b, c, d have the same innereltype as `a`.
+Generate arrays `b, c, d...` with the super-dimensions of `a` and innereltype `T`.
 """
-macro superzeros(T::Type, A, vars...)
+macro superzeros(T, ad, vars...)
   expr = Expr(:block)
-  append!(expr.args, [:($(esc(var)) = superzeros($(esc(T)), $(esc(A))); ) for var in vars])
+  append!(expr.args, [:( $(esc(var)) = superzeros($(esc(T)), $(esc(ad))); ) for var in vars])
   expr
 end
-
-macro superzeros(A, vars...)
-  expr = Expr(:block)
-  append!(expr.args, [:($(esc(var)) = superzeros($(esc(A))); ) for var in vars])
-  expr
-end
-
 
 # The meat and potatoes
 
@@ -143,7 +132,7 @@ include("timesteppers.jl")
 
 # Physics
 
-include("heatequation1d.jl")
+include("diffusion.jl")
 #include("kuramotosivashinsky.jl")
 
 end # module

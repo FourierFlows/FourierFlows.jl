@@ -1,9 +1,3 @@
-"""
-    @createarrays T dims a b c...
-
-Create arrays of all zeros with element type `T`, size `dims`, and global names
-`a`, `b`, `c` (for example). An arbitrary number of arrays may be created.
-"""
 macro createarrays(T, dims, vars...)
   expr = Expr(:block)
   append!(expr.args, [:($(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
@@ -11,38 +5,51 @@ macro createarrays(T, dims, vars...)
 end
 
 """
+    @zeros T dims a b c...
+
+Create arrays of all zeros with element type `T`, size `dims`, and global names
+`a`, `b`, `c` (for example). An arbitrary number of arrays may be created.
+"""
+macro zeros(T, dims, vars...)
+  expr = Expr(:block)
+  append!(expr.args, [:($(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
+  expr
+end
+
+
+"""
     varsexpression(name, fieldspecs; parent=:AbstractVars, typeparams=nothing)
-    varsexpression(name, physicalfields, fourierfields; parent=:AbstractVars, typeparams=:(Tp,Tf))
+
+    varsexpression(name, fieldspecs...; parent=:AbstractVars, typeparams=nothing)
+
+    varsexpression(name, physicalfields, fourierfields; physicaltype=:Tp, fouriertype=:Tf, 
+                   parent=:AbstractVars, typeparams=[physicaltype, fouriertype])
 
 Returns an expression that defines an `AbstractVars` type.
 """
 function varsexpression(name, fieldspecs; parent=:AbstractVars, typeparams=nothing)
-
-  # make this work:
-  #=
-  if typeparams == nothing 
-    varspec = :($name <: $parent)
+  if typeparams == nothing
+    signature = name
   else
-    signature = Symbol(name, typeparams)
-    varspec = :( $signature <: $parent )
+    try 
+      signature = Expr(:curly, name, typeparams...)
+    catch 
+      signature = Expr(:curly, name, typeparams) # only one typeparam given?
+    end
   end
-  =#
-
-  varspec = :( $name{Tp,Tf} <: $parent )
 
   fieldexprs = [ :( $(spec[1])::$(spec[2]); ) for spec in fieldspecs ]
 
-  :(struct $varspec; $(fieldexprs...); end)
+  :(struct $signature <: $parent; $(fieldexprs...); end)
 end
 
-function varsexpression(name, physicalfields, fourierfields; 
-                        physicaltype=:Tp, fouriertype=:Tf, parent=:AbstractVars, typeparams=:({Tp,Tf}))
-
+function varsexpression(name, physicalfields, fourierfields; parent=:AbstractVars,  physicaltype=:Tp, fouriertype=:Tf, 
+                        typeparams=[physicaltype, fouriertype])
   physicalfieldspecs = getfieldspecs(physicalfields, physicaltype)
    fourierfieldspecs = getfieldspecs(fourierfields, fouriertype)
-
   varsexpression(name, cat(physicalfieldspecs, fourierfieldspecs; dims=1); parent=parent, typeparams=typeparams)
 end
+
 
 """
     getfieldspecs(fieldnames, fieldtype)

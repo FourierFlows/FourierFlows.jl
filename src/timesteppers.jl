@@ -52,8 +52,11 @@ Generalized timestepper constructor. If `stepper` is explicit, `dt` is not used.
 """
 function TimeStepper(stepper, eq, dt=nothing)
   fullsteppername = Symbol(stepper, :TimeStepper)
-  args = isexplicit(stepper) ? (eq, dt) : eq
-  eval(Expr(:call, fullsteppername, args...))
+  if isexplicit(stepper) 
+    return eval(Expr(:call, fullsteppername, eq))
+  else
+    return eval(Expr(:call, fullsteppername, eq, dt))
+  end
 end
 
 
@@ -124,7 +127,7 @@ const sixth = 1/6
 const third = 1/3
 
 """
-    RK4TimeStepper(L, Tsol=cxeltype(L))
+    RK4TimeStepper(eq)
 
 Construct a 4th-order Runge-Kutta time stepper.
 """
@@ -136,6 +139,11 @@ struct RK4TimeStepper{T} <: AbstractTimeStepper{T}
   RHS₄::T
 end
 
+"""
+    FilteredRK4TimeStepper(eq; filterkwargs...)
+
+Construct a 4th-order Runge-Kutta time stepper with spectral filtering for the equation `eq`.
+"""
 struct FilteredRK4TimeStepper{T,Tf} <: AbstractTimeStepper{T}
   sol₁::T 
   RHS₁::T
@@ -145,11 +153,6 @@ struct FilteredRK4TimeStepper{T,Tf} <: AbstractTimeStepper{T}
   filter::Tf
 end
 
-"""
-    RK4TimeStepper(eq)
-
-Construct a 4th-order Runge-Kutta time stepper with spectral filtering for the equation `eq`.
-"""
 function RK4TimeStepper(eq)
   @superzeros eq.T eq.dims N sol₁ RHS₁ RHS₂ RHS₃ RHS₄
   RK4TimeStepper(sol₁, RHS₁, RHS₂, RHS₃, RHS₄)
@@ -163,21 +166,21 @@ end
 
 function RK4substeps!(sol, cl, ts, eq, v, p, g)
   # Substep 1
-  eq.calcN!(ts.RHS₁, sol, t, cl, v, p, g)
+  eq.calcN!(ts.RHS₁, sol, cl.t, cl, v, p, g)
   @. ts.RHS₁ += eq.L*sol
   # Substep 2
   t1 = cl.t + 0.5*cl.dt
   @. ts.sol₁ = sol + 0.5*cl.dt*ts.RHS₁
-  eq.calcN!(ts.RHS₂, ts.sol₁, t2, cl, v, p, g)
+  eq.calcN!(ts.RHS₂, ts.sol₁, t1, cl, v, p, g)
   @. ts.RHS₂ += eq.L*ts.sol₁
   # Substep 3
   @. ts.sol₁ = sol + 0.5*cl.dt*ts.RHS₂
-  eq.calcN!(ts.RHS₃, ts.sol₁, t2, cl, v, p, g)
+  eq.calcN!(ts.RHS₃, ts.sol₁, t1, cl, v, p, g)
   @. ts.RHS₃ += eq.L*ts.sol₁
   # Substep 4
   t2 = cl.t + cl.dt
   @. ts.sol₁ = sol + cl.dt*ts.RHS₃
-  eq.calcN!(ts.RHS₄, ts.sol₁, t3, cl, v, p, g)
+  eq.calcN!(ts.RHS₄, ts.sol₁, t2, cl, v, p, g)
   @. ts.RHS₄ += eq.L*ts.sol₁
   nothing
 end
@@ -194,7 +197,7 @@ end
 
 function stepforward!(sol, cl, ts::RK4TimeStepper, eq, v, p, g)
   RK4substeps!(sol, cl, ts, eq, v, p, g)
-  RK4update!(sol, ts, dt)
+  RK4update!(sol, ts, cl.dt)
   cl.t += cl.dt
   cl.step += 1
   nothing
@@ -202,7 +205,7 @@ end
 
 function stepforward!(sol, cl, ts::FilteredRK4TimeStepper, eq, v, p, g)
   RK4substeps!(sol, cl, ts, eq, v, p, g)
-  RK4update!(sol, ts, dt, ts.filter)
+  RK4update!(sol, ts, cl.dt, ts.filter)
   cl.t += cl.dt
   cl.step += 1
   nothing
@@ -304,8 +307,8 @@ function ETDRK4substeps!(sol, cl, ts, eq, v, p, g)
 end
 
 function stepforward!(sol, cl, ts::ETDRK4TimeStepper, eq, v, p, g)
-  ETDRK4substeps(sol, cl, ts, eq, v, p, g)
-  ETDRK4update(sol, ts) # update
+  ETDRK4substeps!(sol, cl, ts, eq, v, p, g)
+  ETDRK4update!(sol, ts) # update
   cl.t += cl.dt
   cl.step += 1
   nothing
@@ -365,7 +368,6 @@ end
 
 function stepforward!(sol, cl, ts::AB3TimeStepper, eq, v, p, g)
   eq.calcN!(ts.RHS, sol, cl.t, cl, v, p, g)
-
   @. ts.RHS += eq.L*sol   # Add linear term to RHS
 
   if cl.step < 3  # forward Euler steps to initialize AB3
@@ -387,7 +389,7 @@ function stepforward!(sol, cl, ts::FilteredAB3TimeStepper, eq, v, p, g)
   eq.calcN!(ts.RHS, sol, cl.t, cl, v, p, g)
   @. ts.RHS += eq.L*sol   # Add linear term to RHS
 
-  if s.step < 3  # forward Euler steps to initialize AB3
+  if cl.step < 3  # forward Euler steps to initialize AB3
     @. sol = ts.filter*(sol + cl.dt*ts.RHS)    # Update
   else   # Otherwise, stepforward with 3rd order Adams Bashforth:
     @. sol = ts.filter*(sol + cl.dt*(ab3h1*ts.RHS - ab3h2*ts.RHS₋₁ + ab3h3*ts.RHS₋₂))

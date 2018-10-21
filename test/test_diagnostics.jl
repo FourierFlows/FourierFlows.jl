@@ -1,8 +1,7 @@
 using Random
 import LinearAlgebra: norm, mul!, ldiv!
 
-
-module mytestmodule
+module TestModule
 
 using FourierFlows, FFTW
 import LinearAlgebra: norm, mul!, ldiv!
@@ -22,7 +21,7 @@ end
 # Construct Vars type
 physvars = [:u]
 transvars = [:uh]
-expr = FourierFlows.structvarsexpr(:Vars, physvars, transvars; vardims=1)
+expr = FourierFlows.varsexpression(:Vars, physvars, transvars)
 eval(expr)
 
 "Returns the Vars object for Kuramoto-Sivashinsky."
@@ -71,26 +70,26 @@ function testsimplediagnostics()
     mu = 0.02
     dt = 0.01
 
-    g = OneDGrid(nx, Lx)
-    p = mytestmodule.Params(mu)
-    v = mytestmodule.Vars(g)
-    eq = mytestmodule.Equation(p, g)
-    ts = FourierFlows.ETDRK4TimeStepper(dt, eq.LC)
+       g = OneDGrid(nx, Lx)
+       p = TestModule.Params(mu)
+       v = TestModule.Vars(g)
+      eq = TestModule.Equation(p, g)
+      ts = FourierFlows.ETDRK4TimeStepper(dt, eq.LC)
     prob = FourierFlows.Problem(g, v, p, eq, ts)
 
     Random.seed!(1234)
      u0 = randn(size(g.x))
 
-    mytestmodule.set_u!(prob, u0)
+    TestModule.set_u!(prob, u0)
 
     nsteps = 200
     extrasteps = 20
 
     freqE = 2
-    E = Diagnostic(mytestmodule.pseudoenergy, prob; nsteps=nsteps, freq=freqE)
+    E = Diagnostic(TestModule.pseudoenergy, prob; nsteps=nsteps, freq=freqE)
 
     freqZ = 1
-    Z = Diagnostic(mytestmodule.pseudoenstrophy, prob; nsteps=nsteps, freq=freqZ)
+    Z = Diagnostic(TestModule.pseudoenstrophy, prob; nsteps=nsteps, freq=freqZ)
 
     diags = [E, Z]
 
@@ -126,5 +125,3 @@ function testsimplediagnostics()
      isapprox(norm(Z.data), norm(Z.data[1]*exp.(-2*mu*Z.time)), rtol=1e-13)
     )
 end
-
-@test testsimplediagnostics()
