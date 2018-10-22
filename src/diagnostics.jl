@@ -77,6 +77,7 @@ end
 e.g. `plot(energydiag[:t], energydiag[:data])`.
 """
 getindex(d::Diagnostic, s::Union{AbstractString,Symbol}) = getfield(d, Symbol(s))[1:d.i]
+getindex(d::Diagnostic, idx...) = getindex(d.data, idx...)
 
 # d() = current value
 # e = Diagnostic(energy, ...)
