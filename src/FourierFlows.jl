@@ -5,7 +5,6 @@ export
   fltype,
   innereltype,
 
-  AbstractProblem,
   AbstractVars,
   AbstractParams,
 
@@ -59,7 +58,6 @@ abstract type AbstractOneDGrid{T} <: AbstractGrid{T} end
 
 abstract type AbstractTimeStepper{T} end
 
-abstract type AbstractProblem end
 abstract type AbstractParams end
 abstract type AbstractVars end
 abstract type AbstractDiagnostic end

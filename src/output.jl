@@ -1,4 +1,4 @@
-const gridfieldstosave = [:nx, :ny, :Lx, :Ly, :X, :Y]
+const twodimgridfieldstosave = [:nx, :ny, :Lx, :Ly, :x, :y]
 
 """
     Output(prob, filename, fieldtuples...)
@@ -45,7 +45,7 @@ getindex(out::Output, key) = out.fields[key](out.prob)
 Save current output fields for file in out.filename.
 """
 function saveoutput(out::Output)
-  groupname = "timeseries"
+  groupname = "snapshots"
   jldopen(out.filename, "a+") do file
     file["$groupname/t/$(out.prob.step)"] = out.prob.t
     for fieldname in keys(out.fields)
@@ -55,25 +55,52 @@ function saveoutput(out::Output)
   nothing
 end
 
+function savefields(file, grid::TwoDGrid)
+  for field in [:nx, :ny, :Lx, :Ly, :x, :y]
+    file["grid/$field"] = getfield(grid, field)
+  end
+  nothing
+end
+
+function savefields(file, grid::OneDGrid)
+  for field in [:nx, :Lx, :x]
+    file["grid/$field"] = getfield(grid, field)
+  end
+  nothing
+end
+
+function savefields(file, params::AbstractParams)
+  for name in fieldnames(typeof(params))
+    field = getfield(params, name)
+    if !(typeof(field) <: Function)
+      file["params/$name"] = field
+    end
+  end
+  nothing
+end
+
+function savefields(file, clock::Clock)
+  file["clock/dt"] = clock.dt   # Timestepper
+  nothing
+end
+
+function savefields(file, eqn::Equation)
+  file["eqn/L"] = eqn.L       
+  file["eqn/dims"] = eqn.dims 
+  file["eqn/T"] = eqn.T 
+  nothing
+end
+
 """
     saveproblem(prob, filename)
 
 Save certain aspects of a problem timestepper, grid, and params. Functions
 that are fields in params are not saved.
 """
-function saveproblem(prob::AbstractProblem, filename::String)
+function saveproblem(prob::Problem, filename::String)
   jldopen(filename, "a+") do file
-    file["timestepper/dt"] = prob.ts.dt   # Timestepper
-
-    for field in gridfieldstosave         # Grid
-      file["grid/$field"] = getfield(prob.grid, field)
-    end
-
-    for name in fieldnames(typeof(prob.params))   # Params
-      field = getfield(prob.params, name)
-      if !(typeof(field) <: Function)
-        file["params/$name"] = field
-      end
+    for field in [:eqn, :clock, :grid, :params]
+      savefields(file, getfield(prob, field))
     end
   end
   nothing
@@ -86,9 +113,10 @@ saveproblem(out::Output) = saveproblem(out.prob, out.filename)
 
 Save diagnostics to file, labeled by the string diagname.
 """
-function savediagnostic(diag::AbstractDiagnostic, diagname::String, filename::String)
+function savediagnostic(diag::Diagnostic, diagname::String, filename::String)
   jldopen(filename, "a+") do file
-    file["diags/$diagname/time"] = diag.time
+    file["diags/$diagname/steps"] = diag.steps
+    file["diags/$diagname/t"] = diag.t
     file["diags/$diagname/data"] = diag.data
   end
   nothing
