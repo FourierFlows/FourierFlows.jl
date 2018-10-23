@@ -48,7 +48,7 @@ using
   Statistics,
   Interpolations
 
-import Base: resize!, getindex, setindex!, push!, append!
+import Base: resize!, getindex, setindex!, lastindex, push!, append!
 using Base: fieldnames
 using LinearAlgebra: mul!, ldiv!
 
