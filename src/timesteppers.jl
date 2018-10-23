@@ -330,7 +330,6 @@ end
 
 Construct a 3rd order Adams-Bashforth time stepper.
 """
-
 const ab3h1 = 23/12
 const ab3h2 = 16/12
 const ab3h3 = 5/12
