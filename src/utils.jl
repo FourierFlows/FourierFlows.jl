@@ -27,7 +27,8 @@ end
 
 Returns an expression that defines an `AbstractVars` type.
 """
-function varsexpression(name, fieldspecs; parent=:AbstractVars, typeparams=nothing)
+function varsexpression(name, fieldspecs; parent=:AbstractVars, 
+                        typeparams::Union{Nothing,Symbol,Array{Symbol,1}}=nothing)
   if typeparams == nothing
     signature = name
   else
