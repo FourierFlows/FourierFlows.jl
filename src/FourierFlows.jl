@@ -30,6 +30,7 @@ export
   @createarrays, 
   @superzeros,
   superzeros,
+  supersize,
 
   TimeStepper,
   ForwardEulerTimeStepper, 
@@ -117,6 +118,9 @@ macro superzeros(T, ad, vars...)
   append!(expr.args, [:( $(esc(var)) = superzeros($(esc(T)), $(esc(ad))); ) for var in vars])
   expr
 end
+
+supersize(a) = Tuple([size(ai) for ai in a])
+supersize(a::Array{T}) where T<:Number = size(a)
 
 # The meat and potatoes
 
