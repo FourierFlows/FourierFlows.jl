@@ -180,3 +180,13 @@ function test_varsexpression_specs_parent(g)
       size(v2.ah) == (g.nkr, g.nl)
   )
 end
+
+function test_supersize()
+  a = rand(16, 16)
+  dimsa = size(a)
+
+  b = [rand(1), rand(3, 34)]
+  dimsb = ((1,), (3, 34))
+
+  dimsa == supersize(a) && dimsb == supersize(b)
+end

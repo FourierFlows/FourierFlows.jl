@@ -114,6 +114,7 @@ end
   @test test_cxtype()
   @test test_innereltype()
   @test test_superzeros()
+  @test test_supersize()
 
   # Test on a rectangular grid
   nx, ny = 64, 128   # number of points
