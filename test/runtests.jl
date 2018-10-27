@@ -114,6 +114,7 @@ end
   @test test_cxtype()
   @test test_innereltype()
   @test test_superzeros()
+  @test test_supertuplezeros()
   @test test_supersize()
 
   # Test on a rectangular grid

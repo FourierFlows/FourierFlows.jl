@@ -3,10 +3,10 @@ struct Equation{T,TL,Tg<:AbstractFloat}
   calcN!::Function
   grid::AbstractGrid{Tg}
   dims::Tuple
-  T::T # type of the solution; ie typeof(sol) = Array{Float64,1} => T = Float64
+  T::T 
 end
 
-function Equation(L, calcN!, grid::AbstractGrid{Tg}; dims=supersize(L), T=nothing) where {Tg}
+function Equation(L, calcN!, grid::AbstractGrid{Tg}; dims=supersize(L), T=nothing) where Tg
   T = T == nothing ? T = cxtype(Tg) : T
   Equation(L, calcN!, grid, dims, T)
 end

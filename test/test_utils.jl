@@ -42,6 +42,14 @@ function test_superzeros()
     a2a == a2z && a2a == a2d && a2a == a2ma && a2a == a2md )
 end
 
+function test_supertuplezeros(; T1=Float64, T2=Complex{Float64}, dims1=(1,), dims2=(3, 3))
+  T = (T1, T2)
+  dims = (dims1, dims2)
+  a = superzeros(T, dims)
+  ( eltype(a[1]) == T1 && eltype(a[2]) == T2 &&
+    size(a[1]) == dims1 && size(a[2]) == dims2 ) 
+end
+
 function test_domainaverage(n)
   g = TwoDGrid(n, 2π)
   X, Y = gridpoints(g)

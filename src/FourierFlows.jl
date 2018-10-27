@@ -102,10 +102,10 @@ Returns an array like `A`, but full of zeros. If `innereltype(A)` can be promote
 the innermost elements of the array will have type `T`.
 """
 superzeros(T, A::AbstractArray) = T(0)*A
-
 superzeros(A::AbstractArray) = superzeros(innereltype(A), A)
 superzeros(T, dims::Tuple) = eltype(dims) <: Tuple ? [ superzeros(T, d) for d in dims ] : zeros(T, dims)
 superzeros(dims::Tuple) = superzeros(Float64, dims) # default
+superzeros(T::Tuple, dims::Tuple) = [ superzeros(T[i], dims[i]) for i=1:length(dims) ]
 
 """
     @superzeros T a b c d...

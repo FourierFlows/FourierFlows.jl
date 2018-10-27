@@ -69,6 +69,12 @@ end
 #   * Filtered ETDRK4
 #   * AB3
 #   * Filtered AB3
+#
+# Explicit time-steppers are constricted with the signature
+#   ts = ExplicitTimeStepper(eq::Equation)
+#
+# Implicit time-steppers are constricted with the signature
+#   ts = ImplicitTimeStepper(eq::Equation, dt)
 
 # --
 # Forward Euler
@@ -81,7 +87,7 @@ Initialize a forward Euler timestepper.
 """
 struct ForwardEulerTimeStepper{T} <: AbstractTimeStepper{T}
   N::T # Explicit linear and nonlinear terms
-  ForwardEulerTimeStepper(N::T) where T = new{T}(0*N)
+  ForwardEulerTimeStepper(N::T) where T = new{T}(0N)
 end
 
 function stepforward!(sol, cl, ts::ForwardEulerTimeStepper, eq, v, p, g)
