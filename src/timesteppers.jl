@@ -267,8 +267,7 @@ end
 
 function ETDRK4TimeStepper(eq, dt)
   dt = fltype(eq.T)(dt) # ensure dt is correct type.
-  expLdt  = @. exp(dt*eq.L)
-  expLdt2 = @. exp(0.5*dt*eq.L)
+  expLdt, expLdt2 = getexpLs(dt, eq)
   ζ, α, β, Γ = getetdcoeffs(dt, eq.L)
   @superzeros eq.T eq.dims sol₁ sol₂ N₁ N₂ N₃ N₄
   ETDRK4TimeStepper(ζ, α, β, Γ, expLdt, expLdt2, sol₁, sol₂, N₁, N₂, N₃, N₄)
@@ -410,6 +409,27 @@ end
 # --
 # Timestepper utils
 # --
+
+function getexpLs(dt, eq::Equation{T,TL,Tg}) where {T,TL<:Array{TLi},Tg} where TLi<:AbstractArray
+  expLdt = [ @.(exp(dt*L)) for L in eq.L ]
+  expLdt2 = [ @.(exp(0.5*dt*L)) for L in eq.L ]
+  expLdt, expLdt2
+end
+
+function getexpLs(dt, eq)
+  expLdt  = @. exp(dt*eq.L)
+  expLdt2 = @. exp(0.5*dt*eq.L)
+  expLdt, expLdt2
+end
+
+function getetdcoeffs(dt, L<:AbstractArray{T}; kwargs...) where T<:AbstractArray 
+  ζαβΓ = [ getetdcoeffs(dt, Li) for Li in L ]
+  ζ = map(x->x[1], ζαβΓ)
+  α = map(x->x[2], ζαβΓ)
+  β = map(x->x[3], ζαβΓ)
+  Γ = map(x->x[4], ζαβΓ)
+  ζ, α, β, Γ
+end 
 
 """
     getetdcoeffs(dt, L; ncirc=32, rcirc=1)
