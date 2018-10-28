@@ -13,9 +13,10 @@
     <a href="https://FourierFlows.github.io/FourierFlows.jl/latest">
         <img src="https://img.shields.io/badge/docs-latest-blue.svg">
     </a>
-    <a href="http://pkg.julialang.org/detail/FourierFlows">
+<!--    <a href="http://pkg.julialang.org/detail/FourierFlows">
         <img src="http://pkg.julialang.org/badges/FourierFlows_0.7.svg" title="FourierFlows">
     </a>
+-->
     <a href="https://codecov.io/gh/FourierFlows/FourierFlows.jl">
         <img src="https://codecov.io/gh/FourierFlows/FourierFlows.jl/branch/master/graph/badge.svg" title="codecov">
     </a>
