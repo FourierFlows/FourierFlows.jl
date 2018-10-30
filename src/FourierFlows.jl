@@ -1,6 +1,6 @@
 module FourierFlows
 
-export 
+export
   cxtype,
   fltype,
   innereltype,
@@ -9,42 +9,42 @@ export
   AbstractParams,
 
   AbstractGrid,
-  ZeroDGrid, 
-  OneDGrid, 
-  TwoDGrid, 
+  ZeroDGrid,
+  OneDGrid,
+  TwoDGrid,
   dealias!,
   gridpoints,
 
   Diagnostic,
-  resize!, 
-  update!, 
+  resize!,
+  update!,
   increment!,
-    
-  Output, 
-  saveoutput, 
-  saveproblem, 
-  groupsize, 
+
+  Output,
+  saveoutput,
+  saveproblem,
+  groupsize,
   savediagnostic,
 
   @zeros,
-  @createarrays, 
+  @createarrays,
   @superzeros,
   superzeros,
   supersize,
 
   TimeStepper,
-  ForwardEulerTimeStepper, 
+  ForwardEulerTimeStepper,
   FilteredForwardEulerTimeStepper,
-  RK4TimeStepper, 
+  RK4TimeStepper,
   FilteredRK4TimeStepper,
-  ETDRK4TimeStepper, 
+  ETDRK4TimeStepper,
   FilteredETDRK4TimeStepper,
-  AB3TimeStepper, 
+  AB3TimeStepper,
   FilteredAB3TimeStepper,
   stepforward!
 
-using 
-  FFTW, 
+using
+  FFTW,
   JLD2,
   Statistics,
   Interpolations
@@ -67,14 +67,14 @@ abstract type AbstractDiagnostic end
 
 """
     innereltype(x)
-    
-Recursively determine the 'innermost' type in by the collection `x` (which may be, for example, 
+
+Recursively determine the 'innermost' type in by the collection `x` (which may be, for example,
 a collection of a collection).
 """
 function innereltype(x)
   T = eltype(x)
   T <: AbstractArray ? innereltype(T) : return T
-end 
+end
 
 """
     cxtype(T)
@@ -91,6 +91,7 @@ Returns `T` when `T<:AbstractFloat` or `Tf` when `T<:Complex{Tf}`.
 """
 fltype(::Type{T})          where T<:AbstractFloat = T
 fltype(::Type{Complex{T}}) where T<:AbstractFloat = T
+fltype(T::Tuple) = fltype(T[1])
 
 cxeltype(x) = cxtype(innereltype(x))
 fleltype(x) = fltype(innereltype(x))
