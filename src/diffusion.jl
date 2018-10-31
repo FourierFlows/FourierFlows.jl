@@ -22,22 +22,22 @@ Construct a constant diffusivity problem with steady or time-varying flow.
 function Problem(;
             nx = 128,
             Lx = 2π,
-           kap = 0,
+         kappa = 0,
             dt = 0.01,
        stepper = "RK4",
              T = Float64
   )
 
     grid = OneDGrid(nx, Lx; T=T)
-  params = Params(kap)
+  params = Params(kappa)
     vars = Vars(grid)
-     eqn = Equation(kap, grid)
+     eqn = Equation(kappa, grid)
 
   FourierFlows.Problem(eqn, stepper, dt, grid, vars, params)
 end
 
 struct Params{T} <: AbstractParams
-  kap::T
+  kappa::T
 end
 
 """
@@ -45,11 +45,11 @@ end
 
 Returns the equation for constant diffusivity problem with params p and grid g.
 """
-function Equation(kap::T, g) where T<:Number
-  FourierFlows.Equation(-kap*g.kr.^2, calcN!, g)
+function Equation(kappa::T, g) where T<:Number
+  FourierFlows.Equation(-kappa*g.kr.^2, calcN!, g)
 end
 
-function Equation(kap::T, g::AbstractGrid{Tg}) where {T<:AbstractArray,Tg}
+function Equation(kappa::T, g::AbstractGrid{Tg}) where {T<:AbstractArray,Tg}
   FourierFlows.Equation(0, calcN!, g; dims=(g.nkr,), T=cxtype(Tg))
 end
 
@@ -80,7 +80,7 @@ calcN!(N, sol, t, cl, v, p::Params{T}, g) where T<:Number = nothing
 function calcN!(N, sol, t, cl, v, p::Params{T}, g) where T<:AbstractArray
   @. v.cxh = im * g.kr * sol
   ldiv!(v.cx, g.rfftplan, v.cxh)
-  @. v.cx *= p.kap
+  @. v.cx *= p.kappa
   ldiv!(v.cxh, g.rfftplan, v.cx)
   @. N = im*g.kr*v.cxh
   nothing

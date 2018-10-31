@@ -1,14 +1,14 @@
-function diffusionproblem(stepper; nx=6, Lx=2π, kap=1e-2, nsteps=1000)
+function diffusionproblem(stepper; nx=6, Lx=2π, kappa=1e-2, nsteps=1000)
   k1 = 2π/Lx
-   τ = 1/(kap*k1^2) # time-scale for diffusive decay
+   τ = 1/(kappa*k1^2) # time-scale for diffusive decay
   dt = 1e-9 * τ # dynamics are resolved.
 
-  prob = Problem(nx=nx, Lx=Lx, kap=kap, dt=dt, stepper=stepper)
+  prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper=stepper)
   g = prob.grid
 
   t1 = dt*nsteps
   c0 = @. sin(k1*g.x)
-  c1 = @. exp(-kap*k1^2*t1) * c0 # analytical solution
+  c1 = @. exp(-kappa*k1^2*t1) * c0 # analytical solution
 
   set_c!(prob, c0)
   tcomp = @elapsed stepforward!(prob, nsteps)

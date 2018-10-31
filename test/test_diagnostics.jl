@@ -7,15 +7,15 @@ function test_diagnosticsteps(; nsteps=100, freq=1, ndata=ceil(Int, (nsteps+1)/f
   d.steps[1:d.i] == expectedsteps
 end
 
-function test_scalardiagnostics(; nx=6, Lx=2π, kap=1e-2, nsteps=100, freq=1, ndata=ceil(Int, (nsteps+1)/freq))
+function test_scalardiagnostics(; nx=6, Lx=2π, kappa=1e-2, nsteps=100, freq=1, ndata=ceil(Int, (nsteps+1)/freq))
   k1 = 2π/Lx
-   τ = 1/(kap*k1^2) # time-scale for diffusive decay
+   τ = 1/(kappa*k1^2) # time-scale for diffusive decay
   dt = 1e-4 * τ # dynamics are resolved.
 
-  prob = Problem(nx=nx, Lx=Lx, kap=kap, dt=dt, stepper="ETDRK4")
+  prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper="ETDRK4")
   g = prob.grid
 
-  ct(t) = exp(-kap*k1^2*t)
+  ct(t) = exp(-kappa*k1^2*t)
 
   t1 = dt*nsteps
   c0 = @. sin(k1*g.x)
@@ -32,12 +32,12 @@ function test_scalardiagnostics(; nx=6, Lx=2π, kap=1e-2, nsteps=100, freq=1, nd
   isapprox(d[:data], da)
 end
 
-function test_basicdiagnostics(; nx=6, Lx=2π, kap=1e-2)
+function test_basicdiagnostics(; nx=6, Lx=2π, kappa=1e-2)
   k1 = 2π/Lx
-   τ = 1/(kap*k1^2) # time-scale for diffusive decay
+   τ = 1/(kappa*k1^2) # time-scale for diffusive decay
   dt = 1e-2 * τ # dynamics are resolved.
 
-  prob = Problem(nx=nx, Lx=Lx, kap=kap, dt=dt, stepper="ETDRK4")
+  prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper="ETDRK4")
   g = prob.grid
 
   c0 = @. sin(k1*g.x)
