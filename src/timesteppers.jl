@@ -233,7 +233,7 @@ function RK4update!(sol, RHS₁, RHS₂, RHS₃, RHS₄, dt)
 end
 
 function RK4update!(sol, RHS₁, RHS₂, RHS₃, RHS₄, filter, dt)
-  @. sol += dt*filter*(sixth*RHS₁ + third*RHS₂ + third*RHS₃ + sixth*RHS₄)
+  @. sol = filter * (sol + dt*(sixth*RHS₁ + third*RHS₂ + third*RHS₃ + sixth*RHS₄))
   nothing
 end
 
