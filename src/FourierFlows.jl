@@ -136,6 +136,5 @@ include("timesteppers.jl")
 # Physics
 
 include("diffusion.jl")
-#include("kuramotosivashinsky.jl")
 
 end # module

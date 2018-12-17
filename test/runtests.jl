@@ -1,6 +1,6 @@
 #!/usr/bin/env julia
 
-using 
+using
   FourierFlows,
   FourierFlows.Diffusion,
   FFTW,
