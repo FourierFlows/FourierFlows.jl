@@ -1,187 +1,163 @@
 """
-    cxeltype(a)
+    innereltype(x)
 
-Returns Complex{eltype(a)} if eltype(a) <: Real; eltype(a) otherwise.
+Recursively determine the 'innermost' type in by the collection `x` (which may be, for example,
+a collection of a collection).
 """
-cxeltype(a) = eltype(a) <: Real ? Complex{eltype(a)} : eltype(a)
-
-const steppers = [
-  "ForwardEuler",
-  "FilteredForwardEuler",
-  "AB3",
-  "FilteredAB3",
-  "RK4",
-  "FilteredRK4",
-  "ETDRK4",
-  "FilteredETDRK4",
-]
-
-const filteredsteppers = [
-  "FilteredForwardEuler",
-  "FilteredAB3",
-  "FilteredRK4",
-  "FilteredETDRK4",
-]
-
-
-"Returns a time-stepper of type `steppernameTimeStepper'."
-TimeStepper(steppername, args...) = autoconstructtimestepper(steppername, args...)
-
-"""
-    autoconstructtimestepper(stepper, dt, sol, g=ZeroDGrid())
-
-Returns a time-stepper type defined by the prefix `stepper`, timestep `dt`
-solution `sol` (used to construct variables 
-with identical type and size as the solution vector), and grid `g`.
-"""
-function autoconstructtimestepper(stepper, dt, sol, g::AbstractGrid=ZeroDGrid())
-  fullsteppername = Symbol(stepper, :TimeStepper)
-  tsexpr = occursin("Filtered", stepper) ?
-      Expr(:call, fullsteppername, dt, sol, g) : Expr(:call, fullsteppername, dt, sol)
-  eval(tsexpr)
+function innereltype(x)
+  T = eltype(x)
+  T <: AbstractArray ? innereltype(T) : return T
 end
 
 """
-    autoconstructtimestepper(stepper, dt, solc, solr, g=ZeroDGrid())
+    cxtype(T)
 
-Returns a time-stepper type defined by the prefix `stepper`, timestep `dt`
-complex solution `solc` and real solution `solr` (used to construct variables 
-with identical type and size as the solution vector), and grid `g`.
+Returns `T` when `T` is `Complex`, or `Complex{T}` when `T` is `Real`.
+"""
+cxtype(::Type{T}) where T<:Number = T
+cxtype(::Type{T}) where T<:Real = Complex{T}
 
 """
-function autoconstructtimestepper(stepper, dt, solc, solr, g::AbstractGrid=ZeroDGrid())
-  fullsteppername = Symbol(stepper, :TimeStepper)
-  tsexpr = occursin("Filtered", stepper) ?
-    Expr(:call, fullsteppername, dt, solc, solr, g) : Expr(:call, fullsteppername, dt, solc, solr)
-  eval(tsexpr)
+    fltype(T)
+
+Returns `T` when `T<:AbstractFloat` or `Tf` when `T<:Complex{Tf}`.
+"""
+fltype(::Type{T})          where T<:AbstractFloat = T
+fltype(::Type{Complex{T}}) where T<:AbstractFloat = T
+fltype(T::Tuple) = fltype(T[1])
+
+cxeltype(x) = cxtype(innereltype(x))
+fleltype(x) = fltype(innereltype(x))
+
+"""
+    superzeros(T, A)
+
+Returns an array like `A`, but full of zeros. If `innereltype(A)` can be promoted to `T`, then
+the innermost elements of the array will have type `T`.
+"""
+superzeros(T, A::AbstractArray) = T(0)*A
+superzeros(A::AbstractArray) = superzeros(innereltype(A), A)
+superzeros(T, dims::Tuple) = eltype(dims) <: Tuple ? [ superzeros(T, d) for d in dims ] : zeros(T, dims)
+superzeros(dims::Tuple) = superzeros(Float64, dims) # default
+superzeros(T::Tuple, dims::Tuple) = [ superzeros(T[i], dims[i]) for i=1:length(dims) ]
+
+"""
+    @superzeros T a b c d...
+    @superzeros T dims b c d...
+
+Generate arrays `b, c, d...` with the super-dimensions of `a` and innereltype `T`.
+"""
+macro superzeros(T, ad, vars...)
+  expr = Expr(:block)
+  append!(expr.args, [:( $(esc(var)) = superzeros($(esc(T)), $(esc(ad))); ) for var in vars])
+  expr
 end
 
-"""
-    @createarrays T dims a b c...
+supersize(a) = Tuple([size(ai) for ai in a])
+supersize(a::Array{T}) where T<:Number = size(a)
 
-Create arrays of all zeros with element type `T`, size `dims`, and global names
-`a`, `b`, `c` (for example). An arbitrary number of arrays may be created.
-"""
 macro createarrays(T, dims, vars...)
   expr = Expr(:block)
   append!(expr.args, [:($(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
   expr
 end
 
-"Returns an expression that defines a Composite Type of the AbstractVars variety."
-function structvarsexpr(name, physfields, transfields; vardims=2, parent=:AbstractVars, T=Float64, arraytype=:Array)
-  physexprs = [:($fld::$arraytype{T,$vardims}) for fld in physfields]
-  transexprs = [:($fld::$arraytype{Complex{T},$vardims}) for fld in transfields]
-  expr = :(struct $name{T} <: $parent; $(physexprs...); $(transexprs...); end)
+"""
+    @zeros T dims a b c...
+
+Create arrays of all zeros with element type `T`, size `dims`, and global names
+`a`, `b`, `c` (for example). An arbitrary number of arrays may be created.
+"""
+macro zeros(T, dims, vars...)
+  expr = Expr(:block)
+  append!(expr.args, [:($(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
+  expr
 end
 
-"""
-    structvarsexpr(name, fieldspecs; parent=nothing)
 
-Returns an expression that defines a composite type whose fields are given by
-the name::type pairs specifed by the tuples in fieldspecs. The convention is
-name = fieldspecs[i][1] and type = fieldspecs[i][2] for the ith element of
-fieldspecs.
 """
-function structvarsexpr(name, fieldspecs; parent=nothing)
-  # name = spec[1]; type = spec[2]
-  # example: fieldspecs[1] = (:u, Array{Float64,2})
-  fieldexprs = [ :( $(spec[1])::$(spec[2]) ) for spec in fieldspecs ]
-  if parent == nothing
-    expr = :(struct $name{T}; $(fieldexprs...); end)
+    varsexpression(name, fieldspecs; parent=:AbstractVars, typeparams=nothing)
+
+    varsexpression(name, fieldspecs...; parent=:AbstractVars, typeparams=nothing)
+
+    varsexpression(name, physicalfields, fourierfields; physicaltype=:Tp, fouriertype=:Tf,
+                   parent=:AbstractVars, typeparams=[physicaltype, fouriertype])
+
+Returns an expression that defines an `AbstractVars` type.
+"""
+function varsexpression(name, fieldspecs; parent=:AbstractVars,
+                        typeparams::Union{Nothing,Symbol,Array{Symbol,1}}=nothing)
+  if typeparams == nothing
+    signature = name
   else
-    expr = :(struct $name{T} <: $parent; $(fieldexprs...); end)
+    try
+      signature = Expr(:curly, name, typeparams...)
+    catch
+      signature = Expr(:curly, name, typeparams) # only one typeparam given?
+    end
   end
-  expr
+
+  fieldexprs = [ :( $(spec[1])::$(spec[2]); ) for spec in fieldspecs ]
+
+  :(struct $signature <: $parent; $(fieldexprs...); end)
+end
+
+function varsexpression(name, physicalfields, fourierfields; parent=:AbstractVars,  physicaltype=:Tp, fouriertype=:Tf,
+                        typeparams=[physicaltype, fouriertype])
+  physicalfieldspecs = getfieldspecs(physicalfields, physicaltype)
+   fourierfieldspecs = getfieldspecs(fourierfields, fouriertype)
+  varsexpression(name, cat(physicalfieldspecs, fourierfieldspecs; dims=1); parent=parent, typeparams=typeparams)
 end
 
 
 """
     getfieldspecs(fieldnames, fieldtype)
 
-Returns an array of (fieldname[i], fieldtype) tuples that can be given to the
-function getstructexpr. This function makes it convenient to construct
-fieldspecs for lists of variables of the same type.
+Returns an array of (fieldname[i], fieldtype) tuples.
 """
-getfieldspecs(fieldnames, fieldtype) = collect(zip(fieldnames, [ fieldtype for name in fieldnames ]))
-
-"""
-    fftwavenums(n; L=1)
-
-Return the fftwavenumber vector with length n and domain size L.
-"""
-fftwavenums(n::Int; L=1) = 2π/L*cat(0:n/2, -n/2+1:-1, dims=1)
-
-"""
-    rms(q)
-
-Return the root-mean-square of an array.
-"""
-rms(q) = sqrt(mean(q.^2))
-
-"""
-    peakedisotropicspectrum(g, kpeak, E0; mask=mask, allones=false)
-
-Generate a real and random two-dimensional vorticity field q(x, y) with
-a Fourier spectrum peaked around a central non-dimensional wavenumber kpeak and
-normalized so that its total energy is E0.
-"""
-function peakedisotropicspectrum(g::TwoDGrid, kpeak::Real, E0::Real; mask=ones(size(g.Kr)), allones=false)
-  if g.Lx !== g.Ly
-      error("the domain is not square")
-  else
-    k0 = kpeak*2π/g.Lx
-    modk = sqrt.(g.KKrsq)
-    psik = zeros(g.nk, g.nl)
-    psik =  (modk.^2 .* (1 .+ (modk/k0).^4)).^(-0.5)
-    psik[1, 1] = 0.0
-    psih = (randn(g.nkr, g.nl)+im*randn(g.nkr, g.nl)).*psik
-    if allones; psih = psik; end
-    psih = psih.*mask
-    Ein = real(sum(g.KKrsq.*abs2.(psih)/(g.nx*g.ny)^2))
-    psih = psih*sqrt(E0/Ein)
-    q = -irfft(g.KKrsq.*psih, g.nx)
-  end
-end
-
+getfieldspecs(fieldnames::AbstractArray, fieldtype) = [ (name, fieldtype) for name in fieldnames ]
 
 """
     parsevalsum2(uh, g)
 
-Calculate ∫|u|² = Σ|uh|² on a 2D grid, where uh is the Fourier transform of u.
-Accounts for DFT normalization, grid resolution, and whether or not uh
-is the product of fft or rfft.
+Returns `∫|u|² = Σ|uh|²` on the grid `g`, where `uh` is the Fourier transform of `u`.
 """
 function parsevalsum2(uh, g::TwoDGrid)
-  norm = g.Lx*g.Ly/(g.nx^2*g.ny^2)    # weird normalization for dft
-
-  if size(uh)[1] == g.nkr             # uh is conjugate symmetric
-    U = sum(abs2, uh[1, :])           # k=0 modes
-    U += 2*sum(abs2, uh[2:end, :])    # sum k>0 modes twice
-  else                                # count every mode once
+  if size(uh, 1) == g.nkr # uh is in conjugate symmetric form
+    U = @views sum(abs2, uh[1, :])           # k=0 modes
+    U += @views 2*sum(abs2, uh[2:end, :])    # sum k>0 modes twice
+  else # count every mode once
     U = sum(abs2, uh)
   end
+  norm = g.Lx*g.Ly/(g.nx^2*g.ny^2)    # normalization for dft
+  norm*U
+end
 
+function parsevalsum2(uh, g::OneDGrid)
+  if size(uh, 1) == g.nkr # uh is conjugate symmetric
+    U = sum(abs2, uh[1])                  # k=0 modes
+    U += @views 2*sum(abs2, uh[2:end])    # sum k>0 modes twice
+  else # count every mode once
+    U = sum(abs2, uh)
+  end
+  norm = g.Lx/g.nx^2 # normalization for dft
   norm*U
 end
 
 """
     parsevalsum(uh, g)
 
-Calculate real(Σ uh) on a 2D grid.  Accounts for DFT normalization,
-grid resolution, and whether or not uh is in a conjugate-symmetric form to
-save memory.
+Returns `real(Σ uh)` on the grid `g`.
 """
 function parsevalsum(uh, g::TwoDGrid)
-  norm = g.Lx*g.Ly/(g.nx^2*g.ny^2) # weird normalization for dft
-
-  if size(uh)[1] == g.nkr       # uh is conjugate symmetric
+  if size(uh, 1) == g.nkr       # uh is conjugate symmetric
     U = sum(uh[1, :])           # k=0 modes
     U += 2*sum(uh[2:end, :])    # sum k>0 modes twice
   else # count every mode once
     U = sum(uh)
   end
 
+  norm = g.Lx*g.Ly/(g.nx^2*g.ny^2) # weird normalization for dft
   norm*real(U)
 end
 
@@ -233,8 +209,8 @@ represented on the polar grid.
 """
 function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=2)
 
-  n = n == nothing ? refinement*maximum([g.nk, g.nl]) : n 
-  m = m == nothing ? refinement*maximum([g.nk, g.nl]) : m 
+  n = n == nothing ? refinement*maximum([g.nk, g.nl]) : n
+  m = m == nothing ? refinement*maximum([g.nk, g.nl]) : m
 
   # Calcualte shifted k and l
   lshift = range(-g.nl/2+1, stop=g.nl/2, length=g.nl)*2π/g.Ly
@@ -258,7 +234,7 @@ function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=2)
   ρ = range(0, stop=ρmax, length=n)
 
   # Interpolate ah onto fine grid in (ρ,θ).
-  ahρθ = zeros(eltype(ahshift), (n, m)) 
+  ahρθ = zeros(eltype(ahshift), (n, m))
 
   for i=2:n, j=1:m # ignore zeroth mode
     kk = ρ[i]*cos(θ[j])

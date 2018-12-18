@@ -1,25 +1,67 @@
-using FFTW
-
-test_fftwavenums() = FourierFlows.fftwavenums(6; L=2π) == [0, 1, 2, 3, -2, -1]
-
-function test_domainaverage(n; xdir=true)
-  g = TwoDGrid(n, 2π)
-  if xdir; c = cos.(g.X).^2
-  else;    c = cos.(g.Y).^2
-  end
-  0.5 ≈ FourierFlows.domainaverage(c, g)
+function test_fltype()
+  Tf = Float16
+  Tc = Complex{Tf}
+  Tf == fltype(Tf) && Tf == fltype(Tc)
 end
 
-function test_rms(n)
+function test_cxtype()
+  Tf = Float16
+  Tc = Complex{Tf}
+  Tc == cxtype(Tf) && Tc == cxtype(Tc)
+end
+
+function test_innereltype(T=Float32)
+  a = [zeros(T, 3), zeros(T, 2, 5)]
+  T == innereltype(a)
+end
+
+function test_superzeros()
+  T = Float64
+  dims1 = (2, 3)
+  dims2a = (7,)
+  dims2b = dims1
+  dims2 = (dims2a, dims2b)
+
+  a1 = rand(T, dims1)
+  a2 = [(1+im)*rand(T, dims2a), (2+im)*rand(T, dims2b)]
+
+  a1a = zeros(T, dims1)
+  a2a = [zeros(Complex{T}, dims2a), zeros(Complex{T}, dims2b)]
+
+  a1z = superzeros(a1)
+  a2z = superzeros(a2)
+  a1d = superzeros(dims1)
+  a2d = superzeros(Complex{T}, dims2)
+
+  @superzeros innereltype(a1) a1 a1ma dum
+  @superzeros innereltype(a2) a2 a2ma dum
+  @superzeros innereltype(a1) dims1 a1md dum
+  @superzeros innereltype(a2) dims2 a2md dum
+
+  ( a1a == a1z && a1a == a1d && a1a == a1ma && a1a == a1md &&
+    a2a == a2z && a2a == a2d && a2a == a2ma && a2a == a2md )
+end
+
+function test_supertuplezeros(; T1=Float64, T2=Complex{Float64}, dims1=(1,), dims2=(3, 3))
+  T = (T1, T2)
+  dims = (dims1, dims2)
+  a = superzeros(T, dims)
+  ( eltype(a[1]) == T1 && eltype(a[2]) == T2 &&
+    size(a[1]) == dims1 && size(a[2]) == dims2 ) 
+end
+
+function test_domainaverage(n)
   g = TwoDGrid(n, 2π)
-  q = cos.(g.X)
-  isapprox(FourierFlows.rms(q), sqrt(1/2))
+  X, Y = gridpoints(g)
+  cx = @. cos(X)^2
+  cy = @. cos(Y)^2
+  0.5 ≈ FourierFlows.domainaverage(cx, g) && 0.5 ≈ FourierFlows.domainaverage(cy, g)
 end
 
 # This test could use some further work.
 function test_radialspectrum(n, ahkl, ahρ; debug=false, atol=0.1)
   g = TwoDGrid(n, 2π)
-  ah = ahkl.(g.K, g.L)
+  ah = @. ahkl(g.k, g.l)
   ah[1, 1] = 0.0
 
   ρ, ahρ_estimate = FourierFlows.radialspectrum(ah, g; refinement=16)
@@ -59,180 +101,100 @@ function test_parsevalsum2(func, grid; realvalued=true)
   isapprox(integral, parsevalsum2; atol=1.0e-14)
 end
 
+"""
+Compute the jacobian J(a, b) and compare the result with `analytic`. Use `atol` for the comparison
+to ensure validity when `analytic=0`.
+"""
+test_jacobian(a, b, analytic, grid) = isapprox(FourierFlows.jacobian(a, b, grid), analytic; 
+                                               atol=grid.nx*grid.ny*10*eps())
 
 """
-Compute the J(a, b) and compare with analytic_answer.
+Test the zeros macro.
 """
-function test_jacobian(a, b, analytic_answer, grid)
-    # it's important to use atol for this test since when analytic_answer=0
-    # the rtol is not conclusive (e.g., isapprox(1e-5, 0, rtol=1e-10) is false)
-    isapprox(FourierFlows.jacobian(a, b, grid), analytic_answer;
-             atol=g.nx*g.ny*1e-14)
-end
-
-"""
-Test the createarrays macro.
-"""
-function test_createarrays(T=Float64, dims=(13, 45))
+function test_zeros(T=Float64, dims=(13, 45))
   a1, b1 = zeros(T, dims), zeros(T, dims)
-  FourierFlows.@createarrays T dims a2 b2
+  @zeros T dims a2 b2
   a1 == a2 && b1 == b2
 end
-
-"""
-Test the peakedisotropicspectrum function.
-"""
-function testpeakedisotropicspectrum()
-  n, L = 128, 2π
-  gr = TwoDGrid(n, L)
-  k0, E0 = 6, 0.5
-  qi = FourierFlows.peakedisotropicspectrum(gr, k0, E0; allones=true)
-  ρ, qhρ = FourierFlows.radialspectrum(rfft(qi).*gr.invKKrsq, gr)
-
-  ρtest = ρ[ (ρ.>15.0) .& (ρ.<=17.5)]
-  qhρtest = qhρ[ (ρ.>15.0) .& (ρ.<=17.5)]
-
-  isapprox(abs.(qhρtest)/abs(qhρtest[1]), (ρtest/ρtest[1]).^(-2), rtol=5e-3)
-end
-
-
 
 abstract type TestVars <: AbstractVars end
 
 physicalvars = [:a, :b]
-transformvars = [ Symbol(var, :h) for var in physicalvars ]
- forcedvar = [:Fh]
+ fouriervars = [:ah, :bh]
 
 varspecs = cat(FourierFlows.getfieldspecs(physicalvars, :(Array{T,2})),
-  FourierFlows.getfieldspecs(transformvars, :(Array{Complex{T},2})), dims=1)
+  FourierFlows.getfieldspecs(fouriervars, :(Array{Complex{T},2})), dims=1)
 
-eval(FourierFlows.structvarsexpr(:VarsFields, physicalvars, transformvars))
-eval(FourierFlows.structvarsexpr(:VarsFieldsParent, physicalvars, transformvars; parent=:TestVars))
-eval(FourierFlows.structvarsexpr(:VarsSpecs, varspecs))
-eval(FourierFlows.structvarsexpr(:VarsSpecsParent, varspecs; parent=:TestVars))
+eval(FourierFlows.varsexpression(:VarsFields, physicalvars, fouriervars))
+eval(FourierFlows.varsexpression(:VarsFieldsParent, physicalvars, fouriervars; parent=:TestVars))
 
-function VarsFields(g)
-  @createarrays typeof(g.Lx) (g.nx, g.ny) a b
-  @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) ah bh
-  VarsFields(a, b, ah, bh)
-end
+eval(FourierFlows.varsexpression(:VarsSpecs, varspecs; typeparams=:T))
+eval(FourierFlows.varsexpression(:VarsSpecsParent, varspecs; parent=:TestVars, typeparams=:T))
 
-function VarsFieldsParent(g)
-  @createarrays typeof(g.Lx) (g.nx, g.ny) a b
-  @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) ah bh
-  VarsFieldsParent(a, b, ah, bh)
-end
+function test_varsexpression_fields(g::AbstractGrid{T}) where T
+  @zeros T (g.nx, g.ny) a b
+  @zeros Complex{T} (g.nkr, g.nl) ah bh
+  v1 = VarsFields(a, b, ah, bh)
 
-function VarsSpecs(g)
-  @createarrays typeof(g.Lx) (g.nx, g.ny) a b
-  @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) ah bh
-  VarsSpecs(a, b, ah, bh)
-end
-
-function VarsSpecsParent(g)
-  @createarrays typeof(g.Lx) (g.nx, g.ny) a b
-  @createarrays Complex{typeof(g.Lx)} (g.nkr, g.nl) ah bh
-  VarsSpecsParent(a, b, ah, bh)
-end
-
-function test_structvarsexprFields(g)
-  v1 = VarsFields(g)
   (
-    typeof(v1.a)==Array{Float64,2} &&
-    typeof(v1.ah)==Array{Complex{Float64},2} &&
-    size(v1.a)==size(v1.b) &&
-    size(v1.ah)==size(v1.bh) &&
-    size(v1.a)==(g.nx, g.ny) &&
-    size(v1.ah) == (g.nkr, g.nl)
-  )
-  v2 = VarsFieldsParent(g)
-  (
-    typeof(v2.a)==Array{Float64,2} &&
-    typeof(v2.ah)==Array{Complex{Float64},2} &&
-    size(v2.a)==size(v2.b) &&
-    size(v2.ah)==size(v2.bh) &&
-    size(v2.a)==(g.nx, g.ny) &&
-    size(v2.ah) == (g.nkr, g.nl)
+     typeof(v1.a) == Array{T,2} &&
+    typeof(v1.ah) == Array{Complex{T},2} &&
+       size(v1.a) == size(v1.b) &&
+      size(v1.ah) == size(v1.bh) &&
+       size(v1.a) == (g.nx, g.ny) &&
+      size(v1.ah) == (g.nkr, g.nl)
   )
 end
 
-function test_structvarsexprSpecs(g)
-  v1 = VarsSpecs(g)
+function test_varsexpression_fields_parent(g)
+  @zeros T (g.nx, g.ny) a b
+  @zeros Complex{T} (g.nkr, g.nl) ah bh
+  v2 = VarsFieldsParent(a, b, ah, bh)
   (
-    typeof(v1.a)==Array{Float64,2} &&
-    typeof(v1.ah)==Array{Complex{Float64},2} &&
-    size(v1.a)==size(v1.b) &&
-    size(v1.ah)==size(v1.bh) &&
-    size(v1.a)==(g.nx, g.ny) &&
-    size(v1.ah) == (g.nkr, g.nl)
-  )
-  v2 = VarsSpecsParent(g)
-  (
-    typeof(v2.a)==Array{Float64,2} &&
-    typeof(v2.ah)==Array{Complex{Float64},2} &&
-    size(v2.a)==size(v2.b) &&
-    size(v2.ah)==size(v2.bh) &&
-    size(v2.a)==(g.nx, g.ny) &&
-    size(v2.ah) == (g.nkr, g.nl)
+     typeof(v2.a) == Array{T,2} &&
+    typeof(v2.ah) == Array{Complex{T},2} &&
+       size(v2.a) == size(v2.b) &&
+      size(v2.ah) == size(v2.bh) &&
+       size(v2.a) == (g.nx, g.ny) &&
+      size(v2.ah) == (g.nkr, g.nl)
   )
 end
 
+function test_varsexpression_specs(g::AbstractGrid{T}) where T
+  @zeros T (g.nx, g.ny) a b
+  @zeros Complex{T} (g.nkr, g.nl) ah bh
+  v1 = VarsSpecs(a, b, ah, bh)
 
-# Run tests -------------------------------------------------------------------
+  (
+     typeof(v1.a) == Array{T,2} &&
+    typeof(v1.ah) == Array{Complex{T},2} &&
+       size(v1.a) == size(v1.b) &&
+      size(v1.ah) == size(v1.bh) &&
+       size(v1.a) == (g.nx, g.ny) &&
+      size(v1.ah) == (g.nkr, g.nl)
+  )
+end
 
-# Test on a rectangular grid
-nx, ny = 64, 128   # number of points
-Lx, Ly = 2π, 3π    # Domain width
-g = TwoDGrid(nx, Lx, ny, Ly)
-x, y = g.X, g.Y
-k0, l0 = 2π/Lx, 2π/Ly
+function test_varsexpression_specs_parent(g)
+  @zeros T (g.nx, g.ny) a b
+  @zeros Complex{T} (g.nkr, g.nl) ah bh
+  e2 = VarsSpecsParent(a, b, ah, bh)
+  (
+     typeof(v2.a) == Array{T,2} &&
+    typeof(v2.ah) == Array{Complex{T},2} &&
+       size(v2.a) == size(v2.b) &&
+      size(v2.ah) == size(v2.bh) &&
+       size(v2.a) == (g.nx, g.ny) &&
+      size(v2.ah) == (g.nkr, g.nl)
+  )
+end
 
-# Real and complex-valued functions
-σ = 0.5
-f1 = exp.(-(x.^2 + y.^2)/(2σ^2))
-f2 = exp.( im*(2k0*x + 3l0*y.^2) ).*(
-      exp.(-(x.^2 + y.^2)/(2σ^2)) + 2im*exp.(-(x.^2 + y.^2)/(5σ^2)) )
+function test_supersize()
+  a = rand(16, 16)
+  dimsa = size(a)
 
-# Sine/Exp waves
-k1, l1 = 2*k0, 6*l0
-k2, l2 = 3*k0, -3*l0
+  b = [rand(1), rand(3, 34)]
+  dimsb = ((1,), (3, 34))
 
-sinkl1 = sin.(k1*x + l1*y)
-sinkl2 = sin.(k2*x + l2*y)
-expkl1 = exp.(im*(k1*x + l1*y))
-expkl2 = exp.(im*(k2*x + l2*y))
-
-# Analytical expression for the Jacobian of sin1 and sin2 and of exp1 and exp2
-Jsinkl1sinkl2 = (k1*l2-k2*l1)*cos.(k1*x + l1*y).*cos.(k2*x + l2*y)
-Jexpkl1expkl2 = (k2*l1-k1*l2)*exp.(im*((k1+k2)*x + (l1+l2)*y))
-
-@test test_parsevalsum(f1, g; realvalued=true)   # Real valued f with rfft
-@test test_parsevalsum(f1, g; realvalued=false)  # Real valued f with fft
-@test test_parsevalsum(f2, g; realvalued=false)  # Complex valued f with fft
-@test test_parsevalsum2(f1, g; realvalued=true)  # Real valued f with rfft
-@test test_parsevalsum2(f1, g; realvalued=false) # Real valued f with fft
-@test test_parsevalsum2(f2, g; realvalued=false) # Complex valued f with fft
-
-@test test_jacobian(sinkl1, sinkl1, 0*sinkl1, g)  # Test J(a, a) = 0
-@test test_jacobian(sinkl1, sinkl2, Jsinkl1sinkl2, g) # Test J(sin1, sin2) = Jsin1sin2
-@test test_jacobian(expkl1, expkl2, Jexpkl1expkl2, g) # Test J(exp1, exp2) = Jexp1exps2
-
-@test test_createarrays()
-@test test_fftwavenums()
-@test test_rms(32)
-@test test_domainaverage(32; xdir=true)
-@test test_domainaverage(32; xdir=false)
-@test test_structvarsexprFields(g)
-@test test_structvarsexprSpecs(g)
-
-# Radial spectrum tests. Note that ahρ = ∫ ah ρ dθ.
-n = 128; δ = n/10                 # Parameters
-ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) #  a = exp(-ρ²/2δ²)
-    ahρ(ρ) = 2π*ρ*exp(-ρ^2/2δ^2)  # aᵣ = 2π ρ exp(-ρ²/2δ²)
-@test test_radialspectrum(n, ahkl, ahρ)
-
-ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) * k^2/(k^2+l^2) #  a = exp(-ρ²/2δ²)*cos(θ)²
-    ahρ(ρ) = π*ρ*exp(-ρ^2/2δ^2)                   # aᵣ = π ρ exp(-ρ²/2δ²)
-@test test_radialspectrum(n, ahkl, ahρ)
-
-@test testpeakedisotropicspectrum()
+  dimsa == supersize(a) && dimsb == supersize(b)
+end

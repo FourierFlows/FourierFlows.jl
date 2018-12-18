@@ -1,46 +1,44 @@
-rtol = 1e-15
+testnx(g, nx) = isapprox(g.nx, nx) 
+testny(g, ny) = isapprox(g.ny, ny) 
 
 # Physical grid tests
-testdx(g) = abs(sum(g.x[2:end].-g.x[1:end-1]) - (g.nx-1)*g.dx) < 1e-15*(g.nx-1)
-testdy(g) = abs(sum(g.y[2:end].-g.y[1:end-1]) - (g.ny-1)*g.dy) < 1e-15*(g.nx-1)
+function testdx(g::AbstractGrid{T}) where T
+  dxgrid = @. g.x[2:end] - g.x[1:end-1]
+  dxones = g.dx*ones(T, size(dxgrid))
+  isapprox(dxgrid, dxones)
+end
 
-testx(g) = isapprox(g.x[end]-g.x[1], g.Lx-g.dx, rtol=rtol)
-testy(g) = isapprox(g.y[end]-g.y[1], g.Ly-g.dy, rtol=rtol)
+function testdy(g::AbstractGrid{T}) where T
+  dygrid = @. g.y[2:end] - g.y[1:end-1]
+  dyones = g.dy*ones(T, size(dygrid))
+  isapprox(dygrid, dyones)
+end
 
-testX(g) = sum(g.X[end, :].-g.X[1, :]) - (g.Lx-g.dx)*g.ny < 1e-15*g.ny
-testY(g) = sum(g.Y[:, end].-g.Y[:, 1]) - (g.Ly-g.dy)*g.nx < 1e-15*g.nx
+testx(g) = isapprox(g.x[end]-g.x[1], g.Lx-g.dx)
+testy(g) = isapprox(g.y[end]-g.y[1], g.Ly-g.dy)
 
-# Test proper arrangement of fft wavenumbers
-testk(g) = sum(g.k[2:g.nkr-1] .+ reverse(g.k[g.nkr+1:end], dims=1)) == 0.0
-testkr(g) = sum(g.k[1:g.nkr] .- g.kr) == 0.0
-testl(g) = sum(g.l[:, 2:Int(g.ny/2)] .+ reverse(g.l[:, Int(g.ny/2+2):end], dims=2)) == 0.0
+# Test proper arrangement of fft wavenumbers. k = [0:nx/2, -nx/2+1:-1].
+flippednegatives(k, mid) = -reverse(k[mid+2:end])
+function testwavenumberalignment(k, nx)
+  mid = Int(nx/2)
+  positives = k[2:mid]
+  negatives = flippednegatives(k, mid)
+  isapprox(reshape(positives, mid-1), reshape(negatives, mid-1))
+end
 
-testK(g) = sum(g.K[2:g.nkr-1, :] .+ reverse(g.K[g.nkr+1:end, :], dims=1)) == 0.0
-testL(g) = sum(g.L[:, 2:Int(g.ny/2)] .+ reverse(g.L[:, Int(g.ny/2+2):end], dims=2)) == 0.0
-testKr(g) = sum(g.K[1:g.nkr, :] .- g.Kr) == 0.0
-testLr(g) = sum(g.L[1:g.nkr, :] .- g.Lr) == 0.0
+testk(g) = testwavenumberalignment(g.k, g.nx)
+testl(g) = testwavenumberalignment(g.l, g.ny)
+testkr(g) = isapprox(g.k[1:g.nkr], g.kr)
 
-# Test 1D grid
-g1 = OneDGrid(32, 2π)
+#testk(g) = isapprox(g.k[2:g.nkr-1], flippednegatives(g.k, g.nkr, 1))
+#testk(g) = sum(g.k[2:g.nkr-1] .+ reverse(g.k[g.nkr+1:end], dims=1)) == 0.0
+#testl(g) = sum(g.l[:, 2:Int(g.ny/2)] .+ reverse(g.l[:, Int(g.ny/2+2):end], dims=2)) == 0.0
 
-@test testdx(g1)
-@test testx(g1)
-@test testk(g1)
-@test testkr(g1)
-
-# Test 2D rectangular grid
-g2 = TwoDGrid(32, 2π, 24, 4π)
-
-@test testdx(g2)
-@test testdy(g2)
-@test testx(g2)
-@test testy(g2)
-@test testX(g2)
-@test testY(g2)
-@test testk(g2)
-@test testkr(g2)
-@test testl(g2)
-@test testK(g2)
-@test testL(g2)
-@test testKr(g2)
-@test testLr(g2)
+function testgridpoints(g::AbstractGrid{T}) where T
+  X, Y = gridpoints(g)
+  dXgrid = @. X[2:end, :] - X[1:end-1, :]
+  dYgrid = @. Y[:, 2:end] - Y[:, 1:end-1]
+  dXones = g.dx*ones(T, size(dXgrid))
+  dYones = g.dy*ones(T, size(dYgrid))
+  isapprox(dXgrid, dXones) && isapprox(dYgrid, dYones)
+end
