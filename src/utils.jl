@@ -80,19 +80,19 @@ end
 
     varsexpression(name, fieldspecs...; parent=:AbstractVars, typeparams=nothing)
 
-    varsexpression(name, physicalfields, fourierfields; physicaltype=:Tp, fouriertype=:Tf, 
+    varsexpression(name, physicalfields, fourierfields; physicaltype=:Tp, fouriertype=:Tf,
                    parent=:AbstractVars, typeparams=[physicaltype, fouriertype])
 
 Returns an expression that defines an `AbstractVars` type.
 """
-function varsexpression(name, fieldspecs; parent=:AbstractVars, 
+function varsexpression(name, fieldspecs; parent=:AbstractVars,
                         typeparams::Union{Nothing,Symbol,Array{Symbol,1}}=nothing)
   if typeparams == nothing
     signature = name
   else
-    try 
+    try
       signature = Expr(:curly, name, typeparams...)
-    catch 
+    catch
       signature = Expr(:curly, name, typeparams) # only one typeparam given?
     end
   end
@@ -102,7 +102,7 @@ function varsexpression(name, fieldspecs; parent=:AbstractVars,
   :(struct $signature <: $parent; $(fieldexprs...); end)
 end
 
-function varsexpression(name, physicalfields, fourierfields; parent=:AbstractVars,  physicaltype=:Tp, fouriertype=:Tf, 
+function varsexpression(name, physicalfields, fourierfields; parent=:AbstractVars,  physicaltype=:Tp, fouriertype=:Tf,
                         typeparams=[physicaltype, fouriertype])
   physicalfieldspecs = getfieldspecs(physicalfields, physicaltype)
    fourierfieldspecs = getfieldspecs(fourierfields, fouriertype)
@@ -209,8 +209,8 @@ represented on the polar grid.
 """
 function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=2)
 
-  n = n == nothing ? refinement*maximum([g.nk, g.nl]) : n 
-  m = m == nothing ? refinement*maximum([g.nk, g.nl]) : m 
+  n = n == nothing ? refinement*maximum([g.nk, g.nl]) : n
+  m = m == nothing ? refinement*maximum([g.nk, g.nl]) : m
 
   # Calcualte shifted k and l
   lshift = range(-g.nl/2+1, stop=g.nl/2, length=g.nl)*2π/g.Ly
@@ -234,7 +234,7 @@ function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=2)
   ρ = range(0, stop=ρmax, length=n)
 
   # Interpolate ah onto fine grid in (ρ,θ).
-  ahρθ = zeros(eltype(ahshift), (n, m)) 
+  ahρθ = zeros(eltype(ahshift), (n, m))
 
   for i=2:n, j=1:m # ignore zeroth mode
     kk = ρ[i]*cos(θ[j])
