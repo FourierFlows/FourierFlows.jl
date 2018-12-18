@@ -1,3 +1,61 @@
+"""
+    innereltype(x)
+
+Recursively determine the 'innermost' type in by the collection `x` (which may be, for example,
+a collection of a collection).
+"""
+function innereltype(x)
+  T = eltype(x)
+  T <: AbstractArray ? innereltype(T) : return T
+end
+
+"""
+    cxtype(T)
+
+Returns `T` when `T` is `Complex`, or `Complex{T}` when `T` is `Real`.
+"""
+cxtype(::Type{T}) where T<:Number = T
+cxtype(::Type{T}) where T<:Real = Complex{T}
+
+"""
+    fltype(T)
+
+Returns `T` when `T<:AbstractFloat` or `Tf` when `T<:Complex{Tf}`.
+"""
+fltype(::Type{T})          where T<:AbstractFloat = T
+fltype(::Type{Complex{T}}) where T<:AbstractFloat = T
+fltype(T::Tuple) = fltype(T[1])
+
+cxeltype(x) = cxtype(innereltype(x))
+fleltype(x) = fltype(innereltype(x))
+
+"""
+    superzeros(T, A)
+
+Returns an array like `A`, but full of zeros. If `innereltype(A)` can be promoted to `T`, then
+the innermost elements of the array will have type `T`.
+"""
+superzeros(T, A::AbstractArray) = T(0)*A
+superzeros(A::AbstractArray) = superzeros(innereltype(A), A)
+superzeros(T, dims::Tuple) = eltype(dims) <: Tuple ? [ superzeros(T, d) for d in dims ] : zeros(T, dims)
+superzeros(dims::Tuple) = superzeros(Float64, dims) # default
+superzeros(T::Tuple, dims::Tuple) = [ superzeros(T[i], dims[i]) for i=1:length(dims) ]
+
+"""
+    @superzeros T a b c d...
+    @superzeros T dims b c d...
+
+Generate arrays `b, c, d...` with the super-dimensions of `a` and innereltype `T`.
+"""
+macro superzeros(T, ad, vars...)
+  expr = Expr(:block)
+  append!(expr.args, [:( $(esc(var)) = superzeros($(esc(T)), $(esc(ad))); ) for var in vars])
+  expr
+end
+
+supersize(a) = Tuple([size(ai) for ai in a])
+supersize(a::Array{T}) where T<:Number = size(a)
+
 macro createarrays(T, dims, vars...)
   expr = Expr(:block)
   append!(expr.args, [:($(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
@@ -206,33 +264,3 @@ xmoment(c, g, n=1) = sum(g.X.^n.*c)/sum(c)
 
 "Compute the `n`th y-moment of `c` on the grid `g`."
 ymoment(c, g, n=1) = sum(g.Y.^n.*c)/sum(c)
-
-#=
-"Returns an expression that defines a Composite Type of the AbstractVars variety."
-function structvarsexpr(name, physfields, transfields; vardims=2, parent=:AbstractVars, T=Float64, arraytype=:Array)
-  physexprs = [:($fld::$arraytype{T,$vardims}) for fld in physfields]
-  transexprs = [:($fld::$arraytype{Complex{T},$vardims}) for fld in transfields]
-  expr = :(struct $name{T} <: $parent; $(physexprs...); $(transexprs...); end)
-end
-
-
-"""
-    structvarsexpr(name, fieldspecs; parent=nothing)
-
-Returns an expression that defines a composite type whose fields are given by
-the name::type pairs specifed by the tuples in fieldspecs. The convention is
-name = fieldspecs[i][1] and type = fieldspecs[i][2] for the ith element of
-fieldspecs.
-"""
-function structvarsexpr(name, fieldspecs; parent=nothing)
-  # name = spec[1]; type = spec[2]
-  # example: fieldspecs[1] = (:u, Array{Float64,2})
-  fieldexprs = [ :( $(spec[1])::$(spec[2]) ) for spec in fieldspecs ]
-  if parent == nothing
-    expr = :(struct $name{T}; $(fieldexprs...); end)
-  else
-    expr = :(struct $name{T} <: $parent; $(fieldexprs...); end)
-  end
-  expr
-end
-=#
