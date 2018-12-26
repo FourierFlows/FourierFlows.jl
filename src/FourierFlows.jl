@@ -70,7 +70,7 @@ include("utils.jl")
 include("diagnostics.jl")
 include("output.jl")
 include("timesteppers.jl")
-
+println("hi navid")
 # Physics
 include("diffusion.jl")
 

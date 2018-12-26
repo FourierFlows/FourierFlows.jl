@@ -12,7 +12,7 @@ end
 
 Step forward `prob` for `nsteps`.
 """
-function stepforward!(prob::Problem, nsteps::Int) 
+function stepforward!(prob::Problem, nsteps::Int)
   for step = 1:nsteps
     stepforward!(prob)
   end
@@ -46,12 +46,12 @@ isexplicit(stepper) = any(Symbol(stepper) .== fullyexplicitsteppers)
 
 """
     TimeStepper(stepper, eq, dt=nothing)
-    
+
 Generalized timestepper constructor. If `stepper` is explicit, `dt` is not used.
 """
 function TimeStepper(stepper, eq, dt=nothing)
   fullsteppername = Symbol(stepper, :TimeStepper)
-  if isexplicit(stepper) 
+  if isexplicit(stepper)
     return eval(Expr(:call, fullsteppername, eq))
   else
     return eval(Expr(:call, fullsteppername, eq, dt))
@@ -116,7 +116,7 @@ end
 Construct a forward Euler timestepper with spectral filtering.
 """
 struct FilteredForwardEulerTimeStepper{T,Tf} <: AbstractTimeStepper{T}
-  N::T       
+  N::T
   filter::Tf
 end
 
@@ -147,7 +147,7 @@ const third = 1/3
 Construct a 4th-order Runge-Kutta time stepper.
 """
 struct RK4TimeStepper{T} <: AbstractTimeStepper{T}
-  sol₁::T 
+  sol₁::T
   RHS₁::T
   RHS₂::T
   RHS₃::T
@@ -160,7 +160,7 @@ end
 Construct a 4th-order Runge-Kutta time stepper with spectral filtering for the equation `eq`.
 """
 struct FilteredRK4TimeStepper{T,Tf} <: AbstractTimeStepper{T}
-  sol₁::T 
+  sol₁::T
   RHS₁::T
   RHS₂::T
   RHS₃::T
@@ -185,7 +185,7 @@ function addlinearterm!(RHS, L, sol)
 end
 
 function substepsol!(newsol, sol, RHS, dt)
-  @. newsol = sol + 0.5dt*RHS
+  @. newsol = sol + dt*RHS
   nothing
 end
 
@@ -194,11 +194,11 @@ function RK4substeps!(sol, cl, ts, eq, v, p, g, t, dt)
   eq.calcN!(ts.RHS₁, sol, t, cl, v, p, g)
   addlinearterm!(ts.RHS₁, eq.L, sol)
   # Substep 2
-  substepsol!(ts.sol₁, sol, ts.RHS₁, cl.dt)
+  substepsol!(ts.sol₁, sol, 0.5ts.RHS₁, cl.dt)
   eq.calcN!(ts.RHS₂, ts.sol₁, t+0.5dt, cl, v, p, g)
   addlinearterm!(ts.RHS₂, eq.L, ts.sol₁)
   # Substep 3
-  substepsol!(ts.sol₁, sol, ts.RHS₂, cl.dt)
+  substepsol!(ts.sol₁, sol, 0.5ts.RHS₂, cl.dt)
   eq.calcN!(ts.RHS₃, ts.sol₁, t+0.5dt, cl, v, p, g)
   addlinearterm!(ts.RHS₃, eq.L, ts.sol₁)
   # Substep 4
@@ -213,11 +213,11 @@ function RK4substeps!(sol::AbstractArray{T}, cl, ts, eq, v, p, g) where T<:Abstr
   eq.calcN!(ts.RHS₁, sol, t, cl, v, p, g)
   addlinearterm!.(ts.RHS₁, eq.L, sol)
   # Substep 2
-  substepsol!.(ts.sol₁, sol, ts.RHS₁, cl.dt)
+  substepsol!.(ts.sol₁, sol, 0.5ts.RHS₁, cl.dt)
   eq.calcN!(ts.RHS₂, ts.sol₁, t+0.5dt, cl, v, p, g)
   addlinearterm!.(ts.RHS₂, eq.L, ts.sol₁)
   # Substep 3
-  substepsol!.(ts.sol₁, sol, ts.RHS₂, cl.dt)
+  substepsol!.(ts.sol₁, sol, 0.5ts.RHS₂, cl.dt)
   eq.calcN!(ts.RHS₃, ts.sol₁, t+0.5dt, cl, v, p, g)
   addlinearterm!.(ts.RHS₃, eq.L, ts.sol₁)
   # Substep 4
@@ -272,7 +272,7 @@ Construct a 4th-order exponential-time-differencing Runge-Kutta time stepper. Th
 """
 struct ETDRK4TimeStepper{T,TL} <: AbstractTimeStepper{T}
   # ETDRK4 coefficents
-  ζ::TL 
+  ζ::TL
   α::TL
   β::TL
   Γ::TL
@@ -280,7 +280,7 @@ struct ETDRK4TimeStepper{T,TL} <: AbstractTimeStepper{T}
   expLdt2::TL
   sol₁::T
   sol₂::T
-  N₁::T 
+  N₁::T
   N₂::T
   N₃::T
   N₄::T
@@ -293,15 +293,15 @@ Construct a 4th-order exponential-time-differencing Runge-Kutta time stepper wit
 """
 struct FilteredETDRK4TimeStepper{T,TL,Tf} <: AbstractTimeStepper{T}
   # ETDRK4 coefficents:
-  ζ::TL   
+  ζ::TL
   α::TL
   β::TL
   Γ::TL
   expLdt::TL
   expLdt2::TL
-  sol₁::T 
+  sol₁::T
   sol₂::T
-  N₁::T 
+  N₁::T
   N₂::T
   N₃::T
   N₄::T
@@ -502,14 +502,14 @@ function getexpLs(dt, eq)
   expLdt, expLdt2
 end
 
-function getetdcoeffs(dt, L::AbstractArray{T}; kwargs...) where T<:AbstractArray 
+function getetdcoeffs(dt, L::AbstractArray{T}; kwargs...) where T<:AbstractArray
   ζαβΓ = [ getetdcoeffs(dt, Li) for Li in L ]
   ζ = map(x->x[1], ζαβΓ)
   α = map(x->x[2], ζαβΓ)
   β = map(x->x[3], ζαβΓ)
   Γ = map(x->x[4], ζαβΓ)
   ζ, α, β, Γ
-end 
+end
 
 """
     getetdcoeffs(dt, L; ncirc=32, rcirc=1)
@@ -545,6 +545,6 @@ function getetdcoeffs(dt, L; ncirc=32, rcirc=1)
     β = real.(β)
     Γ = real.(Γ)
   end
- 
+
   ζ, α, β, Γ
 end
