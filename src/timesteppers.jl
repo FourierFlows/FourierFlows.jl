@@ -194,15 +194,15 @@ function RK4substeps!(sol, cl, ts, eq, v, p, g, t, dt)
   eq.calcN!(ts.RHS₁, sol, t, cl, v, p, g)
   addlinearterm!(ts.RHS₁, eq.L, sol)
   # Substep 2
-  substepsol!(ts.sol₁, sol, 0.5ts.RHS₁, cl.dt)
+  substepsol!(ts.sol₁, sol, ts.RHS₁, 0.5dt)
   eq.calcN!(ts.RHS₂, ts.sol₁, t+0.5dt, cl, v, p, g)
   addlinearterm!(ts.RHS₂, eq.L, ts.sol₁)
   # Substep 3
-  substepsol!(ts.sol₁, sol, 0.5ts.RHS₂, cl.dt)
+  substepsol!(ts.sol₁, sol, ts.RHS₂, 0.5dt)
   eq.calcN!(ts.RHS₃, ts.sol₁, t+0.5dt, cl, v, p, g)
   addlinearterm!(ts.RHS₃, eq.L, ts.sol₁)
   # Substep 4
-  substepsol!(ts.sol₁, sol, ts.RHS₃, cl.dt)
+  substepsol!(ts.sol₁, sol, ts.RHS₃, dt)
   eq.calcN!(ts.RHS₄, ts.sol₁, t+dt, cl, v, p, g)
   addlinearterm!(ts.RHS₄, eq.L, ts.sol₁)
   nothing
@@ -213,15 +213,15 @@ function RK4substeps!(sol::AbstractArray{T}, cl, ts, eq, v, p, g) where T<:Abstr
   eq.calcN!(ts.RHS₁, sol, t, cl, v, p, g)
   addlinearterm!.(ts.RHS₁, eq.L, sol)
   # Substep 2
-  substepsol!.(ts.sol₁, sol, 0.5ts.RHS₁, cl.dt)
+  substepsol!.(ts.sol₁, sol, ts.RHS₁, 0.5dt)
   eq.calcN!(ts.RHS₂, ts.sol₁, t+0.5dt, cl, v, p, g)
   addlinearterm!.(ts.RHS₂, eq.L, ts.sol₁)
   # Substep 3
-  substepsol!.(ts.sol₁, sol, 0.5ts.RHS₂, cl.dt)
+  substepsol!.(ts.sol₁, sol, ts.RHS₂, 0.5dt)
   eq.calcN!(ts.RHS₃, ts.sol₁, t+0.5dt, cl, v, p, g)
   addlinearterm!.(ts.RHS₃, eq.L, ts.sol₁)
   # Substep 4
-  substepsol!.(ts.sol₁, sol, ts.RHS₃, cl.dt)
+  substepsol!.(ts.sol₁, sol, ts.RHS₃, dt)
   eq.calcN!(ts.RHS₄, ts.sol₁, t+dt, cl, v, p, g)
   addlinearterm!.(ts.RHS₄, eq.L, ts.sol₁)
   nothing
