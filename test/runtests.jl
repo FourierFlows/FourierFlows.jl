@@ -173,7 +173,8 @@ end
   include("test_timesteppers.jl")
 
   for stepper in steppers
-    @test diffusiontest(stepper)
+    @test constantdiffusiontest(stepper)
+    @test varyingdiffusiontest(stepper)
   end
 
 end

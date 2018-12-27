@@ -1,24 +1,64 @@
-function diffusionproblem(stepper; nx=6, Lx=2π, kappa=1e-2, nsteps=1000)
-  k1 = 2π/Lx
-   τ = 1/(kappa*k1^2) # time-scale for diffusive decay
+function constantdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=1000)
+   τ = 1/kappa  # time-scale for diffusive decay
   dt = 1e-9 * τ # dynamics are resolved.
 
+  kappa = kappa*ones(nx)
   prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper=stepper)
   g = prob.grid
 
-  t1 = dt*nsteps
-  c0 = @. sin(k1*g.x)
-  c1 = @. exp(-kappa*k1^2*t1) * c0 # analytical solution
+  # a gaussian initial condition c(x, t=0)
+  c0ampl, σ = 0.01, 0.2
+  c0func(x) = @. c0ampl*exp(-x^2/(2σ^2))
+  c0 = c0func.(g.x)
+
+  # analytic solution for for 1D heat equation with constant κ
+  tfinal = nsteps*dt
+  σt = sqrt(2*kappa[1]*tfinal + σ^2)
+  cfinal = @. c0ampl*σ/σt * exp(-g.x^2/(2*σt^2))
 
   set_c!(prob, c0)
   tcomp = @elapsed stepforward!(prob, nsteps)
   updatevars!(prob)
 
-  prob, c0, c1, nsteps, tcomp
+  prob, c0, cfinal, nsteps, tcomp
 end
 
-function diffusiontest(stepper; kwargs...)
-  prob, c0, c1, nsteps, tcomp = diffusionproblem(stepper; kwargs...)
+function varyingdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=1000)
+   τ = 1/kappa  # time-scale for diffusive decay
+  dt = 1e-9 * τ # dynamics are resolved.
+
+  kappa = kappa*ones(nx) # this is actually a constant diffusion but defining it as an array will force stepforward to use calcN! function instead of just the linear coefficients L*sol
+
+  prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper=stepper)
+  g = prob.grid
+
+  # a gaussian initial condition c(x, t=0)
+  c0ampl, σ = 0.01, 0.2
+  c0func(x) = @. c0ampl*exp(-x^2/(2σ^2))
+  c0 = c0func.(g.x)
+
+  # analytic solution for for 1D heat equation with constant κ
+  tfinal = nsteps*dt
+  σt = sqrt(2*kappa[1]*tfinal + σ^2)
+  cfinal = @. c0ampl*σ/σt * exp(-g.x^2/(2*σt^2))
+
+  set_c!(prob, c0)
+  tcomp = @elapsed stepforward!(prob, nsteps)
+  updatevars!(prob)
+
+  prob, c0, cfinal, nsteps, tcomp
+end
+
+
+function constantdiffusiontest(stepper; kwargs...)
+  prob, c0, c1, nsteps, tcomp = constantdiffusionproblem(stepper; kwargs...)
+  normmsg = "$stepper: relative error ="
+  @printf("% 40s %.2e (%.3f s)\n", normmsg, norm(c1-prob.vars.c)/norm(c1), tcomp)
+  isapprox(c1, prob.vars.c, rtol=nsteps*rtol_timesteppers)
+end
+
+function varyingdiffusiontest(stepper; kwargs...)
+  prob, c0, c1, nsteps, tcomp = varyingdiffusionproblem(stepper; kwargs...)
   normmsg = "$stepper: relative error ="
   @printf("% 40s %.2e (%.3f s)\n", normmsg, norm(c1-prob.vars.c)/norm(c1), tcomp)
   isapprox(c1, prob.vars.c, rtol=nsteps*rtol_timesteppers)
