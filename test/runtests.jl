@@ -13,7 +13,7 @@ using FourierFlows: parsevalsum2
 using LinearAlgebra: mul!, ldiv!, norm
 
 const rtol_fft = 1e-12
-const rtol_timesteppers = 1e-6
+const rtol_timesteppers = 1e-12
 
 const steppers = [
   "ForwardEuler",
@@ -173,7 +173,8 @@ end
   include("test_timesteppers.jl")
 
   for stepper in steppers
-    @test diffusiontest(stepper)
+    @test constantdiffusiontest(stepper)
+    @test varyingdiffusiontest(stepper)
   end
 
 end

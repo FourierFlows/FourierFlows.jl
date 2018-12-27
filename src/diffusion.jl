@@ -5,7 +5,7 @@ export
   updatevars!,
   set_c!
 
-using 
+using
   FFTW,
   Reexport
 
@@ -50,7 +50,7 @@ function Equation(kappa::T, g) where T<:Number
 end
 
 function Equation(kappa::T, g::AbstractGrid{Tg}) where {T<:AbstractArray,Tg}
-  FourierFlows.Equation(0, calcN!, g; dims=(g.nkr,), T=cxtype(Tg))
+  FourierFlows.Equation(0g.kr, calcN!, g; dims=(g.nkr,), T=cxtype(Tg))
 end
 
 # Construct Vars types
@@ -64,7 +64,7 @@ eval(varsexpression(:Vars, physicalvars, fouriervars))
 
 Returns the vars for constant diffusivity problem on grid g.
 """
-function Vars(g::AbstractGrid{T}) where T 
+function Vars(g::AbstractGrid{T}) where T
   @zeros T g.nx c cx
   @zeros Complex{T} g.nkr ch cxh
   Vars(c, cx, ch, cxh)
@@ -75,13 +75,16 @@ end
 
 Calculate the nonlinear term for the 1D heat equation.
 """
-calcN!(N, sol, t, cl, v, p::Params{T}, g) where T<:Number = nothing
+function calcN!(N, sol, t, cl, v, p::Params{T}, g) where T<:Number
+  @. N = 0
+  nothing
+end
 
 function calcN!(N, sol, t, cl, v, p::Params{T}, g) where T<:AbstractArray
   @. v.cxh = im * g.kr * sol
   ldiv!(v.cx, g.rfftplan, v.cxh)
   @. v.cx *= p.kappa
-  ldiv!(v.cxh, g.rfftplan, v.cx)
+  mul!(v.cxh, g.rfftplan, v.cx)
   @. N = im*g.kr*v.cxh
   nothing
 end
