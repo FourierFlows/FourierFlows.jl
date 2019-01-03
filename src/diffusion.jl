@@ -50,7 +50,7 @@ function Equation(kappa::T, g) where T<:Number
 end
 
 function Equation(kappa::T, g::AbstractGrid{Tg}) where {T<:AbstractArray,Tg}
-  FourierFlows.Equation(0g.kr, calcN!, g; dims=(g.nkr,), T=cxtype(Tg))
+  FourierFlows.Equation(0, calcN!, g; dims=(g.nkr,), T=cxtype(Tg))
 end
 
 # Construct Vars types
