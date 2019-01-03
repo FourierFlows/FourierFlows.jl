@@ -73,7 +73,7 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
   rfftplan = plan_rfft(Array{T,1}(undef, nx); flags=effort)
 
   kalias, kralias = getaliasedwavenumbers(nk, nkr, dealias)
-  
+
   OneDGrid(nx, nk, nkr, dx, Lx, x, k, kr, invksq, invkrsq, fftplan, rfftplan, kalias, kralias)
 end
 
@@ -152,7 +152,7 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
   # Index endpoints for aliasfrac i, j wavenumbers
   kalias, kralias = getaliasedwavenumbers(nk, nkr, dealias)
   lalias, _ = getaliasedwavenumbers(nl, nl, dealias)
-  
+
   TwoDGrid(nx, ny, nk, nl, nkr, dx, dy, Lx, Ly, x, y, k, l, kr, Ksq, invKsq, Krsq, invKrsq,
            fftplan, rfftplan, kalias, kralias, lalias)
 end
@@ -224,4 +224,4 @@ function makefilter(g::AbstractOneDGrid; realvars=true, kwargs...)
 end
 
 makefilter(g, T, sz; kwargs...) = ones(T, sz).*makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
-makefilter(eq) = makefilter(eq.grid, innereltype(eq.L), size(eq.L))
+makefilter(eq) = makefilter(eq.grid, fltype(eq.T), eq.dims)
