@@ -1,9 +1,9 @@
 name = "FourierFlows"
 uuid = "2aec4490-903f-5c70-9b11-9bed06a700e1"
-keywords = ["julia", "PDE", "partial differential equations", "spectral methods", "geophysical fluid dynamics"]
+keywords = ["julia", "PDE", "partial differential equations", "spectral methods"]
 license = "MIT"
 authors = ["Gregory L. Wagner <wagner.greg@gmail.com>", "Navid C. Constantinou <navidcy@gmail.com>"]
-description = "Solvers for partial differential equations on periodic domains using Fourier-based pseudospectral methods."
+description = "Tools for solving partial differential equations on periodic domains using Fourier-based pseudospectral methods."
 documentation = "https://fourierflows.github.io/FourierFlows.jl/latest/"
 repository = "https://github.com/FourierFlows/FourierFlows.jl"
 version = "0.3.0"

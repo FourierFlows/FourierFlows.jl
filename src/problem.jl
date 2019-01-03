@@ -1,9 +1,9 @@
 struct Equation{T,TL,Tg<:AbstractFloat}
-  L::TL 
+  L::TL
   calcN!::Function
   grid::AbstractGrid{Tg}
   dims::Tuple
-  T::T 
+  T::T # eltype or tuple of eltypes of sol and N
 end
 
 function Equation(L, calcN!, grid::AbstractGrid{Tg}; dims=supersize(L), T=nothing) where Tg
@@ -25,7 +25,7 @@ Clock(dt) = Clock(dt, 0dt, 0)
 Initialize a FourierFlows problem on grid g, with variables v, parameters p,
 equation eq, and timestepper ts.
 """
-struct Problem{T,Ta<:AbstractArray,Tg<:AbstractFloat,TL<:AbstractArray}
+struct Problem{T,Ta<:AbstractArray,Tg<:AbstractFloat,TL}
   sol::Ta
   clock::Clock{Tg}
   eqn::Equation{T,TL,Tg}
