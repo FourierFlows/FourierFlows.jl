@@ -2,7 +2,6 @@ function constantdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=10
    τ = 1/kappa  # time-scale for diffusive decay
   dt = 1e-9 * τ # dynamics are resolved.
 
-  kappa = kappa*ones(nx)
   prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper=stepper)
   g = prob.grid
 
@@ -13,7 +12,7 @@ function constantdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=10
 
   # analytic solution for for 1D heat equation with constant κ
   tfinal = nsteps*dt
-  σt = sqrt(2*kappa[1]*tfinal + σ^2)
+  σt = sqrt(2*kappa*tfinal + σ^2)
   cfinal = @. c0ampl*σ/σt * exp(-g.x^2/(2*σt^2))
 
   set_c!(prob, c0)
