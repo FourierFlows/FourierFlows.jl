@@ -1,6 +1,5 @@
 environment:
   matrix:
-  - julia_version: 0.7
   - julia_version: 1
   - julia_version: nightly
 
@@ -17,7 +16,6 @@ matrix:
 branches:
   only:
     - master
-    - TowardsJulia1.0
     - /release-.*/
 
 notifications:
