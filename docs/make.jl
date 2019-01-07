@@ -1,4 +1,4 @@
-using 
+using
   Documenter,
   FourierFlows
 
@@ -13,10 +13,6 @@ makedocs(
               "Home" => "index.md",
               "Code Basics" => "basics.md",
               "Forcing" => "forcing.md",
-              "Modules" => Any[
-                "modules/kuramotosivashinsky.md",
-                "modules/traceradvdiff.md",
-              ],
               "DocStrings" => Any[
               "man/types.md",
               "man/functions.md"]
@@ -26,8 +22,6 @@ makedocs(
 deploydocs(
        repo = "github.com/FourierFlows/FourierFlows.jl.git",
      target = "build",
-      julia = "0.7",
-     osname = "linux",
        deps = nothing,
        make = nothing
  )
