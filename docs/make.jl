@@ -1,3 +1,8 @@
+# Workaround for JuliaLang/julia/pull/28625
+if Base.HOME_PROJECT[] !== nothing
+  Base.HOME_PROJECT[] = abspath(Base.HOME_PROJECT[])
+end
+
 using
   Documenter,
   FourierFlows
@@ -19,9 +24,4 @@ makedocs(
              ]
 )
 
-deploydocs(
-       repo = "github.com/FourierFlows/FourierFlows.jl.git",
-     target = "build",
-       deps = nothing,
-       make = nothing
- )
+deploydocs(repo = "github.com/FourierFlows/FourierFlows.jl.git")
