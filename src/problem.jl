@@ -17,8 +17,6 @@ mutable struct Clock{T<:AbstractFloat}
   step::Int
 end
 
-Clock(dt) = Clock(dt, 0dt, 0)
-
 """
     Problem(sol, clock, grid, eqn, vars, params, timestepper)
 

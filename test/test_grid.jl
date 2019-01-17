@@ -1,5 +1,5 @@
-testnx(g, nx) = isapprox(g.nx, nx) 
-testny(g, ny) = isapprox(g.ny, ny) 
+testnx(g, nx) = isapprox(g.nx, nx)
+testny(g, ny) = isapprox(g.ny, ny)
 
 # Physical grid tests
 function testdx(g::AbstractGrid{T}) where T
@@ -41,4 +41,28 @@ function testgridpoints(g::AbstractGrid{T}) where T
   dXones = g.dx*ones(T, size(dXgrid))
   dYones = g.dy*ones(T, size(dYgrid))
   isapprox(dXgrid, dXones) && isapprox(dYgrid, dYones)
+end
+
+function testdealias(g::OneDGrid)
+  T = typeof(g.Lx)
+  fh = ones(Complex{T}, size(g.kr))
+  dealias!(fh, g)
+  kmax = round(maximum(g.kr)*2/3)
+  isapprox(sum(abs.(fh[ g.kr .>= kmax ])), 0)
+end
+
+function testdealias(g::TwoDGrid)
+  T = typeof(g.Lx)
+  fh = ones(Complex{T}, size(g.Krsq))
+  dealias!(fh, g)
+  kmax = round(maximum(g.kr)*2/3)
+  lmax = floor(maximum(g.l)*2/3)
+
+  temp = 0.0
+  for j = 1:g.nl, i=1:g.nkr
+    if ( g.kr[i] >= kmax ) & ( g.l[j] >= lmax || g.l[j] < -lmax )
+      temp += abs.(fh[i, j]) #temp = sum of |fh| for aliased wavenumbers
+    end
+  end
+  isapprox(temp, 0)
 end

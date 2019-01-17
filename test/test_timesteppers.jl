@@ -1,6 +1,6 @@
 function constantdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=1000)
    τ = 1/kappa  # time-scale for diffusive decay
-  dt = 1e-9 * τ # dynamics are resolved.
+  dt = 1e-9 * τ # dynamics are resolved
 
   prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper=stepper)
   g = prob.grid
@@ -24,9 +24,11 @@ end
 
 function varyingdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=1000)
    τ = 1/kappa  # time-scale for diffusive decay
-  dt = 1e-9 * τ # dynamics are resolved.
+  dt = 1e-9 * τ # dynamics are resolved
 
-  kappa = kappa*ones(nx) # this is actually a constant diffusion but defining it as an array will force stepforward to use calcN! function instead of just the linear coefficients L*sol
+  kappa = kappa*ones(nx) # this is actually a constant diffusion but defining it
+                         # as an array makes stepforward! call function calcN!
+                         # instead of just the linear coefficients L*sol
 
   prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper=stepper)
   g = prob.grid
