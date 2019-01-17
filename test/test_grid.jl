@@ -60,7 +60,7 @@ function testdealias(g::TwoDGrid)
 
   temp = 0.0
   for j = 1:g.nl, i=1:g.nkr
-    if (g.kr[i] >= kmax) & ( g.l[j] >= lmax || g.l[j] < -lmax )
+    if ( g.kr[i] >= kmax ) & ( g.l[j] >= lmax || g.l[j] < -lmax )
       temp += abs.(fh[i, j]) #temp = sum of |fh| for aliased wavenumbers
     end
   end
