@@ -41,6 +41,7 @@ include("createffttestfunctions.jl")
     @test testx(g₁)
     @test testk(g₁)
     @test testkr(g₁)
+    @test testdealias(g₁)
 
     # Test 2D rectangular grid
     ny, Ly = 8, 4π
@@ -55,6 +56,7 @@ include("createffttestfunctions.jl")
     @test testkr(g₂)
     @test testl(g₂)
     @test testgridpoints(g₂)
+    @test testdealias(g₂)
 end
 
 @time @testset "FFT tests" begin
