@@ -208,7 +208,7 @@ function RK4substeps!(sol, cl, ts, eq, v, p, g, t, dt)
   nothing
 end
 
-function RK4substeps!(sol::AbstractArray{T}, cl, ts, eq, v, p, g) where T<:AbstractArray
+function RK4substeps!(sol::AbstractArray{T}, cl, ts, eq, v, p, g, t, dt) where T<:AbstractArray
   # Substep 1
   eq.calcN!(ts.RHS₁, sol, t, cl, v, p, g)
   addlinearterm!.(ts.RHS₁, eq.L, sol)
@@ -448,39 +448,52 @@ function FilteredAB3TimeStepper(eq; filterkwargs...)
   FilteredAB3TimeStepper(getfield.(Ref(ts), fieldnames(typeof(ts)))..., filter)
 end
 
-
-function stepforward!(sol, cl, ts::AB3TimeStepper, eq, v, p, g)
-  eq.calcN!(ts.RHS, sol, cl.t, cl, v, p, g)
-  @. ts.RHS += eq.L*sol   # Add linear term to RHS
-
+function AB3update!(sol, ts, cl)
   if cl.step < 3  # forward Euler steps to initialize AB3
     @. sol += cl.dt*ts.RHS    # Update
   else   # Otherwise, stepforward with 3rd order Adams Bashforth:
     @. sol += cl.dt*(ab3h1*ts.RHS - ab3h2*ts.RHS₋₁ + ab3h3*ts.RHS₋₂)
   end
-
-  cl.t += cl.dt
-  cl.step += 1
-
-  @. ts.RHS₋₂ = ts.RHS₋₁          # Store
-  @. ts.RHS₋₁ = ts.RHS            # ... previous values of RHS
-
   nothing
 end
 
-function stepforward!(sol, cl, ts::FilteredAB3TimeStepper, eq, v, p, g)
-  eq.calcN!(ts.RHS, sol, cl.t, cl, v, p, g)
-  @. ts.RHS += eq.L*sol   # Add linear term to RHS
-
+function AB3update!(sol, ts::FilteredAB3TimeStepper, cl)
   if cl.step < 3  # forward Euler steps to initialize AB3
     @. sol = ts.filter*(sol + cl.dt*ts.RHS)    # Update
   else   # Otherwise, stepforward with 3rd order Adams Bashforth:
     @. sol = ts.filter*(sol + cl.dt*(ab3h1*ts.RHS - ab3h2*ts.RHS₋₁ + ab3h3*ts.RHS₋₂))
   end
+  nothing
+end
 
+function stepforward!(sol, cl, ts::AB3TimeStepper, eq, v, p, g)
+  eq.calcN!(ts.RHS, sol, cl.t, cl, v, p, g)
+  addlinearterm!(ts.RHS, eq.L, sol)
+  AB3update!(sol, ts, cl)
   cl.t += cl.dt
   cl.step += 1
+  @. ts.RHS₋₂ = ts.RHS₋₁          # Store
+  @. ts.RHS₋₁ = ts.RHS            # ... previous values of RHS
+  nothing
+end
 
+function stepforward!(sol::AbstractArray{T}, cl, ts::AB3TimeStepper, eq, v, p, g) where T<:AbstractArray
+  eq.calcN!(ts.RHS, sol, cl.t, cl, v, p, g)
+  addlinearterm!.(ts.RHS, eq.L, sol)
+  AB3update!(sol, ts, cl)
+  cl.t += cl.dt
+  cl.step += 1
+  @. ts.RHS₋₂ = ts.RHS₋₁          # Store
+  @. ts.RHS₋₁ = ts.RHS            # ... previous values of RHS
+  nothing
+end
+
+function stepforward!(sol, cl, ts::FilteredAB3TimeStepper, eq, v, p, g)
+  eq.calcN!(ts.RHS, sol, cl.t, cl, v, p, g)
+  addlinearterm!(ts.RHS, eq.L, sol)
+  AB3update!(sol, ts, cl)
+  cl.t += cl.dt
+  cl.step += 1
   @. ts.RHS₋₂ = ts.RHS₋₁          # Store
   @. ts.RHS₋₁ = ts.RHS            # ... previous values of RHS
   nothing
