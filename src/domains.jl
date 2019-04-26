@@ -24,7 +24,7 @@ end
 """
     OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
 
-Constrcut a OneDGrid object with size `Lx`, resolution `nx`, and leftmost
+Constructs a OneDGrid object with size `Lx`, resolution `nx`, and leftmost
 position `x0`. FFT plans are generated for `nthreads` CPUs using
 FFTW flag `effort`.
 """
@@ -80,7 +80,7 @@ end
 """
     TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
 
-Construct a TwoDGrid object.
+Constructs a TwoDGrid object.
 """
 struct TwoDGrid{T<:AbstractFloat,Ta<:AbstractArray,Tfft,Trfft} <: AbstractTwoDGrid{T}
   nx::Int
