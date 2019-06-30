@@ -52,6 +52,7 @@ end
 
 function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64, dealias=1/3)
 
+  Lx = T(Lx)
   dx = Lx/nx
   x = Array{T}(range(x0, step=dx, length=nx))
 
@@ -115,6 +116,9 @@ end
 
 function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64,
                   dealias=1/3)
+  Lx = T(Lx)
+  Ly = T(Ly)
+  
   dx = Lx/nx
   dy = Ly/ny
 
