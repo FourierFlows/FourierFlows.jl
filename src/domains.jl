@@ -28,7 +28,7 @@ Constructs a OneDGrid object with size `Lx`, resolution `nx`, and leftmost
 position `x0`. FFT plans are generated for `nthreads` CPUs using
 FFTW flag `effort`.
 """
-struct OneDGrid{T<:AbstractFloat,Ta<:AbstractArray,Tfft,Trfft} <: AbstractOneDGrid{T}
+struct OneDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractOneDGrid{T}
   nx::Int
   nk::Int
   nkr::Int
@@ -74,7 +74,11 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
 
   kalias, kralias = getaliasedwavenumbers(nk, nkr, dealias)
 
-  OneDGrid(nx, nk, nkr, dx, Lx, x, k, kr, invksq, invkrsq, fftplan, rfftplan, kalias, kralias)
+  Ta = typeof(x)
+  Tfft = typeof(fftplan)
+  Trfft = typeof(rfftplan)
+
+  OneDGrid{T, Ta, Tfft, Trfft}(nx, nk, nkr, dx, Lx, x, k, kr, invksq, invkrsq, fftplan, rfftplan, kalias, kralias)
 end
 
 """
@@ -82,7 +86,7 @@ end
 
 Constructs a TwoDGrid object.
 """
-struct TwoDGrid{T<:AbstractFloat,Ta<:AbstractArray,Tfft,Trfft} <: AbstractTwoDGrid{T}
+struct TwoDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractTwoDGrid{T}
   nx::Int
   ny::Int
   nk::Int
@@ -152,8 +156,12 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
   # Index endpoints for aliasfrac i, j wavenumbers
   kalias, kralias = getaliasedwavenumbers(nk, nkr, dealias)
   lalias, _ = getaliasedwavenumbers(nl, nl, dealias)
+  
+  Ta = typeof(x)
+  Tfft = typeof(fftplan)
+  Trfft = typeof(rfftplan)
 
-  TwoDGrid(nx, ny, nk, nl, nkr, dx, dy, Lx, Ly, x, y, k, l, kr, Ksq, invKsq, Krsq, invKrsq,
+  TwoDGrid{T, Ta, Tfft, Trfft}(nx, ny, nk, nl, nkr, dx, dy, Lx, Ly, x, y, k, l, kr, Ksq, invKsq, Krsq, invKrsq,
            fftplan, rfftplan, kalias, kralias, lalias)
 end
 

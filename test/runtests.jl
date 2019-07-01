@@ -57,6 +57,11 @@ include("createffttestfunctions.jl")
     @test testl(g₂)
     @test testgridpoints(g₂)
     @test testdealias(g₂)
+    
+    # Test typed grids
+    T = Float32
+    @test testtypedonedgrid(nx, Lx; T=T)
+    @test testtypedtwodgrid(nx, Lx, ny, Ly; T=T)
 end
 
 @time @testset "FFT tests" begin

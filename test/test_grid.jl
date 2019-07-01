@@ -66,3 +66,13 @@ function testdealias(g::TwoDGrid)
   end
   isapprox(temp, 0)
 end
+
+function testtypedonedgrid(nx, Lx; T=Float64)
+  gr = OneDGrid(nx, Lx, T=T)
+  typeof(gr.dx)==T && typeof(gr.x[1])==T && typeof(gr.Lx)==T 
+end
+
+function testtypedtwodgrid(nx, Lx, ny=Lx, Ly=Lx; T=Float64)
+  gr = TwoDGrid(nx, Lx, ny, Ly, T=T)
+  typeof(gr.dx)==T && typeof(gr.dy)==T && typeof(gr.x[1])==T && typeof(gr.y[1])==T && typeof(gr.Lx)==T && typeof(gr.Ly)==T 
+end
