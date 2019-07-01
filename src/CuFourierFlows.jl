@@ -1,4 +1,4 @@
-using CuArrays
+using .CuArrays
 
 # Discard `effort` argument for CuArrays
 plan_flows_fft(a::CuArray, effort) = plan_fft(a)
