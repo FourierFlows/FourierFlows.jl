@@ -1,3 +1,6 @@
+plan_flows_fft(a::Array, effort) = plan_fft(a; flags=effort)
+plan_flows_rfft(a::Array, effort) = plan_rfft(a; flags=effort)
+
 """
     ZeroDGrid()
 
@@ -29,39 +32,40 @@ position `x0`. FFT plans are generated for `nthreads` CPUs using
 FFTW flag `effort`.
 """
 struct OneDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractOneDGrid{T}
-  nx::Int
-  nk::Int
-  nkr::Int
+        nx :: Int
+        nk :: Int
+       nkr :: Int
 
-  dx::T
-  Lx::T
+        dx :: T
+        Lx :: T
 
-  x::Ta
-  k::Ta
-  kr::Ta
-  invksq::Ta
-  invkrsq::Ta
+         x :: Ta
+         k :: Ta
+        kr :: Ta
+    invksq :: Ta
+   invkrsq :: Ta
 
-  fftplan::Tfft
-  rfftplan::Trfft
+   fftplan :: Tfft
+  rfftplan :: Trfft
 
   # Range objects that access the aliased part of the wavenumber range
-  kalias::UnitRange{Int}
-  kralias::UnitRange{Int}
+    kalias :: UnitRange{Int}
+   kralias :: UnitRange{Int}
 end
 
-function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64, dealias=1/3)
+function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64, dealias=1/3,
+                  ArrayType=Array)
 
   dx = Lx/nx
-  x = Array{T}(range(x0, step=dx, length=nx))
+  x = ArrayType{T}(range(x0, step=dx, length=nx))
 
   nk = nx
   nkr = Int(nx/2+1)
 
   i₁ = 0:Int(nx/2)
   i₂ = Int(-nx/2+1):-1
-   k = Array{T}(2π/Lx*cat(i₁, i₂; dims=1))
-  kr = Array{T}(2π/Lx*cat(i₁; dims=1))
+   k = ArrayType{T}(2π/Lx*cat(i₁, i₂; dims=1))
+  kr = ArrayType{T}(2π/Lx*cat(i₁; dims=1))
 
    invksq = @. 1/k^2
   invkrsq = @. 1/kr^2
@@ -69,8 +73,8 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
   invkrsq[1] = 0
 
   FFTW.set_num_threads(nthreads)
-   fftplan = plan_fft(Array{Complex{T},1}(undef, nx); flags=effort)
-  rfftplan = plan_rfft(Array{T,1}(undef, nx); flags=effort)
+   fftplan = plan_flows_fft(ArrayType{Complex{T}, 1}(undef, nx), effort)
+  rfftplan = plan_flows_rfft(ArrayType{T, 1}(undef, nx), effort)
 
   kalias, kralias = getaliasedwavenumbers(nk, nkr, dealias)
 
@@ -78,7 +82,8 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
   Tfft = typeof(fftplan)
   Trfft = typeof(rfftplan)
 
-  OneDGrid{T, Ta, Tfft, Trfft}(nx, nk, nkr, dx, Lx, x, k, kr, invksq, invkrsq, fftplan, rfftplan, kalias, kralias)
+  OneDGrid{T, Ta, Tfft, Trfft}(nx, nk, nkr, dx, Lx, x, k, kr, 
+                               invksq, invkrsq, fftplan, rfftplan, kalias, kralias)
 end
 
 """
@@ -117,8 +122,9 @@ struct TwoDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractTwo
   lalias::UnitRange{Int}
 end
 
-function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64,
-                  dealias=1/3)
+function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, 
+                  effort=FFTW.MEASURE, T=Float64, dealias=1/3, ArrayType=Array)
+                  
   dx = Lx/nx
   dy = Ly/ny
 
@@ -127,8 +133,8 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
   nkr = Int(nx/2+1)
 
   # Physical grid
-  x = Array{T}(reshape(range(x0, step=dx, length=nx), (nx, 1)))
-  y = Array{T}(reshape(range(y0, step=dy, length=ny), (1, ny)))
+  x = ArrayType{T}(reshape(range(x0, step=dx, length=nx), (nx, 1)))
+  y = ArrayType{T}(reshape(range(y0, step=dy, length=ny), (1, ny)))
 
   # Wavenubmer grid
   i₁ = 0:Int(nx/2)
@@ -136,9 +142,9 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
   j₁ = 0:Int(ny/2)
   j₂ = Int(-ny/2+1):-1
 
-   k = Array{T}(reshape(2π/Lx*cat(i₁, i₂, dims=1), (nk, 1)))
-   l = Array{T}(reshape(2π/Ly*cat(j₁, j₂, dims=1), (1, nl)))
-  kr = Array{T}(reshape(2π/Lx*cat(i₁, dims=1), (nkr, 1)))
+   k = ArrayType{T}(reshape(2π/Lx*cat(i₁, i₂, dims=1), (nk, 1)))
+   l = ArrayType{T}(reshape(2π/Ly*cat(j₁, j₂, dims=1), (1, nl)))
+  kr = ArrayType{T}(reshape(2π/Lx*cat(i₁, dims=1), (nkr, 1)))
 
      Ksq = @. k^2 + l^2
   invKsq = @. 1/Ksq
@@ -150,8 +156,8 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
 
   # FFT plans
   FFTW.set_num_threads(nthreads)
-  fftplan = plan_fft(Array{Complex{T},2}(undef, nx, ny); flags=effort)
-  rfftplan = plan_rfft(Array{T,2}(undef, nx, ny); flags=effort)
+  fftplan = plan_flows_fft(ArrayType{Complex{T}, 2}(undef, nx, ny), effort)
+  rfftplan = plan_flows_rfft(ArrayType{T, 2}(undef, nx, ny), effort)
 
   # Index endpoints for aliasfrac i, j wavenumbers
   kalias, kralias = getaliasedwavenumbers(nk, nkr, dealias)
@@ -164,6 +170,9 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
   TwoDGrid{T, Ta, Tfft, Trfft}(nx, ny, nk, nl, nkr, dx, dy, Lx, Ly, x, y, k, l, kr, Ksq, invKsq, Krsq, invKrsq,
            fftplan, rfftplan, kalias, kralias, lalias)
 end
+
+OneDGrid(dev::CPU, args...; kwargs...) = OneDGrid(args...; ArrayType=Array, kwargs...)
+TwoDGrid(dev::CPU, args...; kwargs...) = TwoDGrid(args...; ArrayType=Array, kwargs...)
 
 """
     gridpoints(g)
