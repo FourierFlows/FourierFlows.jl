@@ -138,9 +138,6 @@ end
 # RK4
 # --
 
-const sixth = 1/6
-const third = 1/3
-
 """
     RK4TimeStepper(eq)
 
@@ -194,12 +191,12 @@ function RK4substeps!(sol, cl, ts, eq, v, p, g, t, dt)
   eq.calcN!(ts.RHS₁, sol, t, cl, v, p, g)
   addlinearterm!(ts.RHS₁, eq.L, sol)
   # Substep 2
-  substepsol!(ts.sol₁, sol, ts.RHS₁, 0.5dt)
-  eq.calcN!(ts.RHS₂, ts.sol₁, t+0.5dt, cl, v, p, g)
+  substepsol!(ts.sol₁, sol, ts.RHS₁, dt/2)
+  eq.calcN!(ts.RHS₂, ts.sol₁, t+dt/2, cl, v, p, g)
   addlinearterm!(ts.RHS₂, eq.L, ts.sol₁)
   # Substep 3
-  substepsol!(ts.sol₁, sol, ts.RHS₂, 0.5dt)
-  eq.calcN!(ts.RHS₃, ts.sol₁, t+0.5dt, cl, v, p, g)
+  substepsol!(ts.sol₁, sol, ts.RHS₂, dt/2)
+  eq.calcN!(ts.RHS₃, ts.sol₁, t+dt/2, cl, v, p, g)
   addlinearterm!(ts.RHS₃, eq.L, ts.sol₁)
   # Substep 4
   substepsol!(ts.sol₁, sol, ts.RHS₃, dt)
@@ -213,12 +210,12 @@ function RK4substeps!(sol::AbstractArray{T}, cl, ts, eq, v, p, g, t, dt) where T
   eq.calcN!(ts.RHS₁, sol, t, cl, v, p, g)
   addlinearterm!.(ts.RHS₁, eq.L, sol)
   # Substep 2
-  substepsol!.(ts.sol₁, sol, ts.RHS₁, 0.5dt)
-  eq.calcN!(ts.RHS₂, ts.sol₁, t+0.5dt, cl, v, p, g)
+  substepsol!.(ts.sol₁, sol, ts.RHS₁, dt/2)
+  eq.calcN!(ts.RHS₂, ts.sol₁, t+dt/2, cl, v, p, g)
   addlinearterm!.(ts.RHS₂, eq.L, ts.sol₁)
   # Substep 3
-  substepsol!.(ts.sol₁, sol, ts.RHS₂, 0.5dt)
-  eq.calcN!(ts.RHS₃, ts.sol₁, t+0.5dt, cl, v, p, g)
+  substepsol!.(ts.sol₁, sol, ts.RHS₂, dt/2)
+  eq.calcN!(ts.RHS₃, ts.sol₁, t+dt/2, cl, v, p, g)
   addlinearterm!.(ts.RHS₃, eq.L, ts.sol₁)
   # Substep 4
   substepsol!.(ts.sol₁, sol, ts.RHS₃, dt)
@@ -228,12 +225,12 @@ function RK4substeps!(sol::AbstractArray{T}, cl, ts, eq, v, p, g, t, dt) where T
 end
 
 function RK4update!(sol, RHS₁, RHS₂, RHS₃, RHS₄, dt)
-  @. sol += dt*(sixth*RHS₁ + third*RHS₂ + third*RHS₃ + sixth*RHS₄)
+  @. sol += dt*(RHS₁ / 6 + RHS₂ / 3  + RHS₃ / 3 + RHS₄ / 6)
   nothing
 end
 
 function RK4update!(sol, RHS₁, RHS₂, RHS₃, RHS₄, filter, dt)
-  @. sol = filter * (sol + dt*(sixth*RHS₁ + third*RHS₂ + third*RHS₃ + sixth*RHS₄))
+  @. sol = filter * (sol + dt*(RHS₁ / 6 + RHS₂ / 3  + RHS₃ / 3 + RHS₄ / 6))
   nothing
 end
 
@@ -352,7 +349,7 @@ function ETDRK4substeps!(sol, cl, ts, eq, v, p, g)
   ETDRK4substep12!(ts.sol₁, ts.expLdt2, sol, ts.ζ, ts.N₁)
   @. ts.sol₁ = ts.expLdt2*sol + ts.ζ*ts.N₁
   # Substep 2
-  t2 = cl.t + 0.5*cl.dt
+  t2 = cl.t + cl.dt/2
   eq.calcN!(ts.N₂, ts.sol₁, t2, cl, v, p, g)
   ETDRK4substep12!(ts.sol₂, ts.expLdt2, sol, ts.ζ, ts.N₂)
   # Substep 3
@@ -370,7 +367,7 @@ function ETDRK4substeps!(sol::AbstractArray{T}, cl, ts, eq, v, p, g) where T<:Ab
   ETDRK4substep12!.(ts.sol₁, ts.expLdt2, sol, ts.ζ, ts.N₁)
   @. ts.sol₁ = ts.expLdt2*sol + ts.ζ*ts.N₁
   # Substep 2
-  t2 = cl.t + 0.5*cl.dt
+  t2 = cl.t + cl.dt/2
   eq.calcN!(ts.N₂, ts.sol₁, t2, cl, v, p, g)
   ETDRK4substep12!.(ts.sol₂, ts.expLdt2, sol, ts.ζ, ts.N₂)
   # Substep 3
