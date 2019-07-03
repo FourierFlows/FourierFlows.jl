@@ -74,6 +74,20 @@ macro zeros(T, dims, vars...)
   expr
 end
 
+Base.zeros(::CPU, T, dims) = zeros(T, dims)
+
+"""
+    @devzeros T dims a b c...
+
+Create arrays of all zeros with element type `T`, size `dims`, and global names
+`a`, `b`, `c` (for example) on device `dev`.
+"""
+macro devzeros(dev, T, dims, vars...)
+  expr = Expr(:block)
+  append!(expr.args, [:($(esc(var)) = zeros($(esc(dev))(), $(esc(T)), $(esc(dims))); ) for var in vars])
+  expr
+end
+
 
 """
     varsexpression(name, fieldspecs; parent=:AbstractVars, typeparams=nothing)
@@ -291,3 +305,6 @@ function structvarsexpr(name, fieldspecs; parent=nothing)
   end
   expr
 end
+
+ArrayType(::CPU, T, dim) = Array{T, dim}
+ArrayType(::CPU) = Array
