@@ -1,20 +1,20 @@
-struct Equation{T, TL, Tg<:AbstractFloat}
-  L::TL
-  calcN!::Function
-  grid::AbstractGrid{Tg}
-  dims::Tuple
-  T::T # eltype or tuple of eltypes of sol and N
+struct Equation{T, TL, G<:AbstractFloat}
+       L :: TL
+  calcN! :: Function
+    grid :: AbstractGrid{G}
+    dims :: Tuple
+       T :: T # eltype or tuple of eltypes of sol and N
 end
 
-function Equation(L, calcN!, grid::AbstractGrid{Tg}; dims=supersize(L), T=nothing) where Tg
-  T = T == nothing ? T = cxtype(Tg) : T
+function Equation(L, calcN!, grid::AbstractGrid{G}; dims=supersize(L), T=nothing) where G
+  T = T == nothing ? T = cxtype(G) : T
   Equation(L, calcN!, grid, dims, T)
 end
 
 mutable struct Clock{T<:AbstractFloat}
-  dt::T
-  t::T
-  step::Int
+    dt :: T
+     t :: T
+  step :: Int
 end
 
 """
@@ -23,14 +23,14 @@ end
 Initialize a FourierFlows problem on grid g, with variables v, parameters p,
 equation eq, and timestepper ts.
 """
-struct Problem{T,Ta<:AbstractArray,Tg<:AbstractFloat,TL}
-  sol::Ta
-  clock::Clock{Tg}
-  eqn::Equation{T,TL,Tg}
-  grid::AbstractGrid{Tg}
-  vars::AbstractVars
-  params::AbstractParams
-  timestepper::AbstractTimeStepper{Ta}
+struct Problem{T, A<:AbstractArray, G<:AbstractFloat, TL, V, P}
+          sol :: A
+        clock :: Clock{G}
+          eqn :: Equation{T, TL, G}
+         grid :: AbstractGrid{G}
+         vars :: V
+       params :: P
+  timestepper :: AbstractTimeStepper{A}
 end
 
 struct EmptyParams <: AbstractParams end
