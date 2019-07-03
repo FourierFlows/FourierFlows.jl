@@ -1,4 +1,4 @@
-struct Equation{T,TL,Tg<:AbstractFloat}
+struct Equation{T, TL, Tg<:AbstractFloat}
   L::TL
   calcN!::Function
   grid::AbstractGrid{Tg}
