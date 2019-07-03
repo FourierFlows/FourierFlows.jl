@@ -1,6 +1,11 @@
 module FourierFlows
 
 export
+  Device,
+  CPU,
+  GPU,
+  ArrayType,
+
   cxtype,
   fltype,
   innereltype,
@@ -27,6 +32,7 @@ export
   savediagnostic,
 
   @zeros,
+  @devzeros,
   @createarrays,
   @superzeros,
   superzeros,
