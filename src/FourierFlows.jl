@@ -1,6 +1,10 @@
 module FourierFlows
 
 export
+  # Helper variables and macros for determining if machine is CUDA-enabled.
+  HAVE_CUDA,
+  @hascuda,
+  
   Device,
   CPU,
   GPU,
@@ -35,6 +39,7 @@ export
   @devzeros,
   @createarrays,
   @superzeros,
+  devzeros,
   superzeros,
   supersize,
 
@@ -84,6 +89,19 @@ include("timesteppers.jl")
 
 # Physics
 include("diffusion.jl")
+
+# Import CUDA utilities if cuda is detected.
+const HAVE_CUDA = try
+    using CuArrays
+    true
+catch
+    false
+end
+
+macro hascuda(ex)
+    return HAVE_CUDA ? :($(esc(ex))) : :(nothing)
+end
+
 
 function __init__()
     @require CuArrays = "3a865a2d-5b23-5a0f-bc46-62713ec82fae" include("CuFourierFlows.jl")
