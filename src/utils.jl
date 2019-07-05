@@ -52,8 +52,8 @@ macro superzeros(T, ad, vars...)
   append!(expr.args, [:( $(esc(var)) = superzeros($(esc(T)), $(esc(ad))); ) for var in vars])
   expr
 end
-
 supersize(a) = Tuple([size(ai) for ai in a])
+supersize(a::Array{T}) where T<:AbstractArray = Tuple([size(ai) for ai in a])
 supersize(a::Array{T}) where T<:Number = size(a)
 
 macro createarrays(T, dims, vars...)
@@ -77,7 +77,15 @@ end
 Base.zeros(::CPU, T, dims) = zeros(T, dims)
 
 """
-    @devzeros T dims a b c...
+    devzeros(dev, T, dims)
+
+Returns an array like `A` of type `T`, but full of zeros.
+"""
+devzeros(dev, T, dims) = zeros(dev, T, dims)
+
+
+"""
+    @devzeros dev T dims a b c...
 
 Create arrays of all zeros with element type `T`, size `dims`, and global names
 `a`, `b`, `c` (for example) on device `dev`.
