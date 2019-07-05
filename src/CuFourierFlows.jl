@@ -17,3 +17,12 @@ ArrayType(::GPU, T, dim) = CuArray{T, dim}
 ArrayType(::GPU) = CuArray
 
 supersize(a::CuArray) = size(a)
+
+getetdcoeffs(dt, L::CuArray; kwargs...) = 
+    (CuArray(ζ) for ζ in getetdcoeffs(dt, Array(L); kwargs...))
+
+makefilter(K::CuArray; kwargs...) = CuArray(makefilter(Array(K); kwargs...))
+
+function makefilter(g::AbstractGrid{Tg, <:CuArray}, T, sz; kwargs...) where Tg
+    CuArray(ones(T, sz)) .* makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
+end
