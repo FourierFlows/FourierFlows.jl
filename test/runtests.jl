@@ -21,16 +21,15 @@ const rtol_timesteppers = 1e-12
 const steppers = [
   "ForwardEuler",
   "RK4",
-  # "ETDRK4",                 # getetdcoeffs function has problems with CuArrays
+  "ETDRK4",
   "AB3",
-  # "FilteredForwardEuler",
-  # "FilteredRK4",
-  # "FilteredETDRK4",         # getetdcoeffs function has problems with CuArrays
-  # "FilteredAB3"
+  "FilteredForwardEuler",
+  "FilteredRK4",
+  "FilteredETDRK4",
+  "FilteredAB3"
 ]
 
 # Run tests
-
 include("createffttestfunctions.jl")
 
 @time @testset "Grid tests" begin
