@@ -59,6 +59,21 @@ function TimeStepper(stepper, eq, dt=nothing)
 end
 
 
+"""
+    TimeStepper(dev, stepper, eq, dt=nothing)
+
+Generalized timestepper constructor. If `stepper` is explicit, `dt` is not used.
+"""
+function TimeStepper(dev::Device, stepper, eq, dt=nothing)
+  fullsteppername = Symbol(stepper, :TimeStepper)
+  if isexplicit(stepper)
+    return eval(Expr(:call, fullsteppername, dev, eq))
+  else
+    return eval(Expr(:call, fullsteppername, dev, eq, dt))
+  end
+end
+
+
 # The following time-steppers are implemented below
 #
 #   * Forward Euler
@@ -91,6 +106,7 @@ struct ForwardEulerTimeStepper{T} <: AbstractTimeStepper{T}
 end
 
 ForwardEulerTimeStepper(eq::Equation) = ForwardEulerTimeStepper(superzeros(eq.T, eq.dims))
+ForwardEulerTimeStepper(dev::Device, eq::Equation) = ForwardEulerTimeStepper(devzeros(dev, eq.T, eq.dims))
 
 function stepforward!(sol, cl, ts::ForwardEulerTimeStepper, eq, v, p, g)
   eq.calcN!(ts.N, sol, cl.t, cl, v, p, g)
@@ -120,10 +136,16 @@ struct FilteredForwardEulerTimeStepper{T,Tf} <: AbstractTimeStepper{T}
   filter::Tf
 end
 
-function FilteredForwardEulerTimeStepper(eq; filterkwargs...)
+function FilteredForwardEulerTimeStepper(eq::Equation; filterkwargs...)
+  filter = makefilter(eq; filterkwargs...)
+  FilteredForwardEulerTimeStepper(devzeros(dev, eq.T, eq.dims), filter)
+end
+
+function FilteredForwardEulerTimeStepper(dev::Device, eq::Equation; filterkwargs...)
   filter = makefilter(eq; filterkwargs...)
   FilteredForwardEulerTimeStepper(superzeros(eq.T, eq.dims), filter)
 end
+
 
 function stepforward!(sol, cl, ts::FilteredForwardEulerTimeStepper, eq, v, p, g)
   eq.calcN!(ts.N, sol, cl.t, cl, v, p, g)
@@ -165,13 +187,25 @@ struct FilteredRK4TimeStepper{T,Tf} <: AbstractTimeStepper{T}
   filter::Tf
 end
 
-function RK4TimeStepper(eq)
+function RK4TimeStepper(eq::Equation)
   @superzeros eq.T eq.dims N sol₁ RHS₁ RHS₂ RHS₃ RHS₄
   RK4TimeStepper(sol₁, RHS₁, RHS₂, RHS₃, RHS₄)
 end
 
+function RK4TimeStepper(dev::Device, eq::Equation)
+  @devzeros typeof(dev) eq.T eq.dims N sol₁ RHS₁ RHS₂ RHS₃ RHS₄
+  RK4TimeStepper(sol₁, RHS₁, RHS₂, RHS₃, RHS₄)
+end
+
+
 function FilteredRK4TimeStepper(eq; filterkwargs...)
   ts = RK4TimeStepper(eq)
+  filter = makefilter(eq; filterkwargs...)
+  FilteredRK4TimeStepper(getfield.(Ref(ts), fieldnames(typeof(ts)))..., filter)
+end
+
+function FilteredRK4TimeStepper(dev::Device, eq::Equation; filterkwargs...)
+  ts = RK4TimeStepper(dev::Device, eq::Equation)
   filter = makefilter(eq; filterkwargs...)
   FilteredRK4TimeStepper(getfield.(Ref(ts), fieldnames(typeof(ts)))..., filter)
 end
@@ -305,7 +339,7 @@ struct FilteredETDRK4TimeStepper{T,TL,Tf} <: AbstractTimeStepper{T}
   filter::Tf
 end
 
-function ETDRK4TimeStepper(eq, dt)
+function ETDRK4TimeStepper(eq::Equation, dt)
   dt = fltype(eq.T)(dt) # ensure dt is correct type.
   expLdt, expLdt2 = getexpLs(dt, eq)
   ζ, α, β, Γ = getetdcoeffs(dt, eq.L)
@@ -313,11 +347,26 @@ function ETDRK4TimeStepper(eq, dt)
   ETDRK4TimeStepper(ζ, α, β, Γ, expLdt, expLdt2, sol₁, sol₂, N₁, N₂, N₃, N₄)
 end
 
-function FilteredETDRK4TimeStepper(eq, dt; filterkwargs...)
+function ETDRK4TimeStepper(dev::Device, eq::Equation, dt)
+  dt = fltype(eq.T)(dt) # ensure dt is correct type.
+  expLdt, expLdt2 = getexpLs(dt, eq)
+  ζ, α, β, Γ = getetdcoeffs(dt, eq.L)
+  @devzeros typeof(dev) eq.T eq.dims sol₁ sol₂ N₁ N₂ N₃ N₄
+  ETDRK4TimeStepper(ζ, α, β, Γ, expLdt, expLdt2, sol₁, sol₂, N₁, N₂, N₃, N₄)
+end
+
+function FilteredETDRK4TimeStepper(eq::Equation, dt; filterkwargs...)
   ts = ETDRK4TimeStepper(eq, dt)
   filter = makefilter(eq; filterkwargs...)
   FilteredETDRK4TimeStepper(getfield.(Ref(ts), fieldnames(typeof(ts)))..., filter)
 end
+
+function FilteredETDRK4TimeStepper(dev::Device, eq::Equation, dt; filterkwargs...)
+  ts = ETDRK4TimeStepper(dev, eq, dt)
+  filter = makefilter(eq; filterkwargs...)
+  FilteredETDRK4TimeStepper(getfield.(Ref(ts), fieldnames(typeof(ts)))..., filter)
+end
+
 
 function ETDRK4update!(sol, expLdt, α, β, Γ, N₁, N₂, N₃, N₄)
   @. sol = (expLdt*sol +  α * N₁
@@ -427,6 +476,12 @@ function AB3TimeStepper(eq)
   AB3TimeStepper(RHS, RHS₋₁, RHS₋₂)
 end
 
+function AB3TimeStepper(dev::Device, eq)
+  @devzeros typeof(dev) eq.T eq.dims RHS RHS₋₁ RHS₋₂
+  AB3TimeStepper(RHS, RHS₋₁, RHS₋₂)
+end
+
+
 """
     FilteredAB3TimeStepper(eq; filterkwargs...)_
 
@@ -444,6 +499,13 @@ function FilteredAB3TimeStepper(eq; filterkwargs...)
   filter = makefilter(eq; filterkwargs...)
   FilteredAB3TimeStepper(getfield.(Ref(ts), fieldnames(typeof(ts)))..., filter)
 end
+
+function FilteredAB3TimeStepper(dev::Device, eq; filterkwargs...)
+  ts = AB3TimeStepper(dev::Device, eq)
+  filter = makefilter(eq; filterkwargs...)
+  FilteredAB3TimeStepper(getfield.(Ref(ts), fieldnames(typeof(ts)))..., filter)
+end
+
 
 function AB3update!(sol, ts, cl)
   if cl.step < 3  # forward Euler steps to initialize AB3
@@ -535,7 +597,7 @@ function getetdcoeffs(dt, L; ncirc=32, rcirc=1)
   circ .= rcirc * exp.(2π*im/ncirc*(0.5:1:(ncirc-0.5)))
   circ = permutedims(circ, ndims(circ):-1:1)
 
-  zc = @. dt*L + circ
+  zc = dt*Array{eqn.T}(L) .+ circ
   M = ndims(L)+1
 
   # Four coefficients: ζ, α, β, Γ

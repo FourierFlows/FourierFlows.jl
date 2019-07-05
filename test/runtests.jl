@@ -1,5 +1,3 @@
-#!/usr/bin/env julia
-
 using
   FourierFlows,
   FourierFlows.Diffusion,
@@ -12,18 +10,23 @@ using FourierFlows: parsevalsum2
 
 using LinearAlgebra: mul!, ldiv!, norm
 
+# the devices on which tests will run
+Devices = (CPU(),)
+@hascuda Devices = (CPU(), GPU())
+@hascuda using CuArrays
+
 const rtol_fft = 1e-12
 const rtol_timesteppers = 1e-12
 
 const steppers = [
   "ForwardEuler",
   "RK4",
-  "ETDRK4",
+  # "ETDRK4",                 # getetdcoeffs function has problems with CuArrays
   "AB3",
-  "FilteredForwardEuler",
-  "FilteredRK4",
-  "FilteredETDRK4",
-  "FilteredAB3"
+  # "FilteredForwardEuler",
+  # "FilteredRK4",
+  # "FilteredETDRK4",         # getetdcoeffs function has problems with CuArrays
+  # "FilteredAB3"
 ]
 
 # Run tests
@@ -179,9 +182,12 @@ end
 @time @testset "Timestepper tests" begin
   include("test_timesteppers.jl")
 
-  for stepper in steppers
-    @test constantdiffusiontest(stepper)
-    @test varyingdiffusiontest(stepper)
+  for dev in Devices
+    println("testing on "*string(typeof(dev)))
+    for stepper in steppers
+      @test constantdiffusiontest(stepper, dev=dev)
+      @test varyingdiffusiontest(stepper, dev=dev)
+    end
   end
 
 end
