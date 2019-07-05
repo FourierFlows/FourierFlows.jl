@@ -15,3 +15,5 @@ end
 
 ArrayType(::GPU, T, dim) = CuArray{T, dim}
 ArrayType(::GPU) = CuArray
+
+supersize(a::CuArray) = size(a)
