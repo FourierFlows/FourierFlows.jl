@@ -67,9 +67,7 @@ using Base: fieldnames
 
 using LinearAlgebra: mul!, ldiv!
 
-abstract type AbstractGrid{T} end
-abstract type AbstractTwoDGrid{T} <: AbstractGrid{T} end
-abstract type AbstractOneDGrid{T} <: AbstractGrid{T} end
+abstract type AbstractGrid{T, Ta} end
 abstract type AbstractTimeStepper{T} end
 abstract type AbstractParams end
 abstract type AbstractVars end
