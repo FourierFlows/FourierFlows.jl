@@ -1,8 +1,8 @@
-function constantdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=1000)
+function constantdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=1000, dev=CPU())
    τ = 1/kappa  # time-scale for diffusive decay
   dt = 1e-9 * τ # dynamics are resolved
 
-  prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper=stepper)
+  prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper=stepper, dev=dev)
   g = prob.grid
 
   # a gaussian initial condition c(x, t=0)
@@ -22,7 +22,7 @@ function constantdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=10
   prob, c0, cfinal, nsteps, tcomp
 end
 
-function varyingdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=1000)
+function varyingdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=1000, dev=CPU())
    τ = 1/kappa  # time-scale for diffusive decay
   dt = 1e-9 * τ # dynamics are resolved
 
@@ -51,14 +51,14 @@ function varyingdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=100
 end
 
 
-function constantdiffusiontest(stepper; kwargs...)
+function constantdiffusiontest(stepper, dev=CPU(); kwargs...)
   prob, c0, c1, nsteps, tcomp = constantdiffusionproblem(stepper; kwargs...)
   normmsg = "$stepper: relative error ="
   @printf("% 40s %.2e (%.3f s)\n", normmsg, norm(c1-prob.vars.c)/norm(c1), tcomp)
   isapprox(c1, prob.vars.c, rtol=nsteps*rtol_timesteppers)
 end
 
-function varyingdiffusiontest(stepper; kwargs...)
+function varyingdiffusiontest(stepper, dev=CPU(); kwargs...)
   prob, c0, c1, nsteps, tcomp = varyingdiffusionproblem(stepper; kwargs...)
   normmsg = "$stepper: relative error ="
   @printf("% 40s %.2e (%.3f s)\n", normmsg, norm(c1-prob.vars.c)/norm(c1), tcomp)
