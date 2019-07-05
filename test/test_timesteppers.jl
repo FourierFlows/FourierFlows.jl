@@ -30,7 +30,7 @@ function varyingdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=100
                          # as an array makes stepforward! call function calcN!
                          # instead of just the linear coefficients L*sol
 
-  prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper=stepper)
+  prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper=stepper, dev=dev)
   g = prob.grid
 
   # a gaussian initial condition c(x, t=0)
