@@ -26,7 +26,7 @@ equation eq, and timestepper ts.
 struct Problem{T, A<:AbstractArray, Tg<:AbstractFloat, TL}
           sol :: A
         clock :: Clock{Tg}
-          eqn :: Equation{T,TL,Tg}
+          eqn :: Equation{T, TL, Tg}
          grid :: AbstractGrid{Tg}
          vars :: AbstractVars
        params :: AbstractParams
@@ -36,14 +36,14 @@ end
 struct EmptyParams <: AbstractParams end
 struct EmptyVars <: AbstractVars end
 
-function Problem(eqn::Equation, stepper, dt, grid::AbstractGrid{T}, vars=EmptyVars, params=EmptyParams) where T
+function Problem(eqn::Equation, stepper, dt, grid::AbstractGrid{T, Ta}, vars=EmptyVars, params=EmptyParams) where {T, Ta}
   clock = Clock{T}(dt, 0, 0)
   timestepper = TimeStepper(stepper, eqn, dt)
   sol = superzeros(eqn.T, eqn.dims)
   Problem(sol, clock, eqn, grid, vars, params, timestepper)
 end
 
-function Problem(dev::Device, eqn::Equation, stepper, dt, grid::AbstractGrid{T}, vars=EmptyVars, params=EmptyParams) where T
+function Problem(dev::Device, eqn::Equation, stepper, dt, grid::AbstractGrid{T, Ta}, vars=EmptyVars, params=EmptyParams) where {T, Ta}
   clock = Clock{T}(dt, 0, 0)
   timestepper = TimeStepper(dev, stepper, eqn, dt)
   sol = devzeros(dev, eqn.T, eqn.dims)
