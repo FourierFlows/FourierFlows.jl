@@ -34,7 +34,7 @@ function Problem(;
     vars = Vars(dev, grid)
      eqn = DiffusionEquation(dev, kappa, grid)
 
-  FourierFlows.Problem(eqn, stepper, dt, grid, vars, params)
+  FourierFlows.Problem(dev, eqn, stepper, dt, grid, vars, params)
 end
 
 struct Params{T} <: AbstractParams
