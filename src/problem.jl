@@ -23,13 +23,13 @@ end
 Initialize a FourierFlows problem on grid g, with variables v, parameters p,
 equation eq, and timestepper ts.
 """
-struct Problem{T, A<:AbstractArray, G<:AbstractFloat, TL, V, P}
+struct Problem{T, A<:AbstractArray, Tg<:AbstractFloat, TL}
           sol :: A
-        clock :: Clock{G}
-          eqn :: Equation{T, TL, G}
-         grid :: AbstractGrid{G}
-         vars :: V
-       params :: P
+        clock :: Clock{Tg}
+          eqn :: Equation{T,TL,Tg}
+         grid :: AbstractGrid{Tg}
+         vars :: AbstractVars
+       params :: AbstractParams
   timestepper :: AbstractTimeStepper{A}
 end
 
@@ -40,5 +40,12 @@ function Problem(eqn::Equation, stepper, dt, grid::AbstractGrid{T}, vars=EmptyVa
   clock = Clock{T}(dt, 0, 0)
   timestepper = TimeStepper(stepper, eqn, dt)
   sol = superzeros(eqn.T, eqn.dims)
+  Problem(sol, clock, eqn, grid, vars, params, timestepper)
+end
+
+function Problem(dev::Device, eqn::Equation, stepper, dt, grid::AbstractGrid{T}, vars=EmptyVars, params=EmptyParams) where T
+  clock = Clock{T}(dt, 0, 0)
+  timestepper = TimeStepper(dev, stepper, eqn, dt)
+  sol = devzeros(dev, eqn.T, eqn.dims)
   Problem(sol, clock, eqn, grid, vars, params, timestepper)
 end
