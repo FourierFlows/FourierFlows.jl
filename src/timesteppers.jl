@@ -138,12 +138,12 @@ end
 
 function FilteredForwardEulerTimeStepper(eq::Equation; filterkwargs...)
   filter = makefilter(eq; filterkwargs...)
-  FilteredForwardEulerTimeStepper(devzeros(dev, eq.T, eq.dims), filter)
+  FilteredForwardEulerTimeStepper(superzeros(eq.T, eq.dims), filter)
 end
 
 function FilteredForwardEulerTimeStepper(dev::Device, eq::Equation; filterkwargs...)
   filter = makefilter(eq; filterkwargs...)
-  FilteredForwardEulerTimeStepper(superzeros(eq.T, eq.dims), filter)
+  FilteredForwardEulerTimeStepper(devzeros(dev, eq.T, eq.dims), filter)
 end
 
 
