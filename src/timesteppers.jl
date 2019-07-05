@@ -597,7 +597,7 @@ function getetdcoeffs(dt, L; ncirc=32, rcirc=1)
   circ .= rcirc * exp.(2π*im/ncirc*(0.5:1:(ncirc-0.5)))
   circ = permutedims(circ, ndims(circ):-1:1)
 
-  zc = dt*Array{eqn.T}(L) .+ circ
+  zc = dt*L .+ circ
   M = ndims(L)+1
 
   # Four coefficients: ζ, α, β, Γ
