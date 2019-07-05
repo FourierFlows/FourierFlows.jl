@@ -6,7 +6,7 @@ plan_flows_rfft(a::Array, effort) = plan_rfft(a; flags=effort)
 
 Constructs a placeholder grid object for "0D" problems (in other words, systems of ODEs).
 """
-struct ZeroDGrid{T} <: AbstractGrid{T} end
+struct ZeroDGrid{T, Ta} <: AbstractGrid{T, Ta} end
 
 function getaliasedwavenumbers(nk, nkr, aliasfraction)
   # Index endpoints for aliased i, j wavenumbers
@@ -31,7 +31,7 @@ Constructs a OneDGrid object with size `Lx`, resolution `nx`, and leftmost
 position `x0`. FFT plans are generated for `nthreads` CPUs using
 FFTW flag `effort`.
 """
-struct OneDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractOneDGrid{T}
+struct OneDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractGrid{T, Ta}
         nx :: Int
         nk :: Int
        nkr :: Int
@@ -91,7 +91,7 @@ end
 
 Constructs a TwoDGrid object.
 """
-struct TwoDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractTwoDGrid{T}
+struct TwoDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractGrid{T, Ta}
   nx::Int
   ny::Int
   nk::Int
@@ -220,7 +220,7 @@ for K>innerK, thus removing high-wavenumber content from a spectrum it is multip
 The decay rate is determined by order and outerK determines the outer wavenumber at which
 the filter is smaller than Float64 machine precision.
 """
-function makefilter(K::AbstractArray; order=4, innerK=0.65, outerK=1)
+function makefilter(K::Array; order=4, innerK=0.65, outerK=1)
   TK = typeof(K)
   K = Array(K)
   decay = 15*log(10) / (outerK-innerK)^order # decay rate for filtering function
@@ -229,16 +229,16 @@ function makefilter(K::AbstractArray; order=4, innerK=0.65, outerK=1)
   TK(filt)
 end
 
-function makefilter(g::AbstractTwoDGrid; realvars=true, kwargs...)
+function makefilter(g::TwoDGrid; realvars=true, kwargs...)
   K = realvars ?
       @.(sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2)) : @.(sqrt((g.k*g.dx/π)^2 + (g.l*g.dy/π)^2))
   makefilter(K; kwargs...)
 end
 
-function makefilter(g::AbstractOneDGrid; realvars=true, kwargs...)
+function makefilter(g::OneDGrid; realvars=true, kwargs...)
   K = realvars ? g.kr*g.dx/π : @.(abs(g.k*g.dx/π))
   makefilter(K; kwargs...)
 end
 
-makefilter(g, T, sz; kwargs...) = ones(T, sz).*makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
+makefilter(g, T, sz; kwargs...) = ones(T, sz) .* makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
 makefilter(eq) = makefilter(eq.grid, fltype(eq.T), eq.dims)
