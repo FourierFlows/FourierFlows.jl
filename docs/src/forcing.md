@@ -358,9 +358,9 @@ We want now to transfer all the knowledge we got from the previous sections to P
 
 which is also equivalently written as:
 
-\begin{equation}
-\dd \nabla^2\psi_t(\bx) =  -\mu \nabla^2\psi_t(\bx) \dd t + \sqrt{\sigma} \dd W_t(\bx)
-\end{equation}
+```math
+\dd \nabla^2\psi_{t}(\bx) = -\mu \nabla^2 \psi_{t} (\bx) \dd t + \sqrt{\sigma} \dd W_{t} (\bx) \per
+```
 
 The form \eqref{eq:PDEcont} is the continuous version understood in the Stratonovich interpretation
 (similar to \eqref{eq:OUcont}). Thus, forcing $\xi$ obeys now:
