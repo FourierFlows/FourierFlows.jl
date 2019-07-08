@@ -9,7 +9,8 @@ using
 
 makedocs(
    modules = [FourierFlows],
-   doctest = false, clean = true,
+   doctest = false,
+     clean = true,
  checkdocs = :all,
     format = Documenter.HTML(prettyurls = get(ENV, "CI", nothing) == "true"),
    authors = "Gregory L. Wagner and Navid C. Constantinou",
