@@ -18,10 +18,13 @@ withoutjld2(path) = (length(path)>4 && path[end-4:end] == ".jld2") ? path[1:end-
 Returns `path` with a number appended if `isfile(path)`, incremented until `path` does not exist.
 """
 function uniquepath(path)
-  n = 0
+  n = 1
+  if isfile(path)
+    path = withoutjld2(path) * "_$n.jld2"
+  end
   while isfile(path)
     n += 1
-    path = withoutjld2(path) * "_$n.jld2"
+    path = withoutjld2(path)[1:end-length("_$(n-1)")] * "_$n.jld2"
   end
   path
 end
