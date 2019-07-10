@@ -32,12 +32,14 @@ const steppers = [
 # Run tests
 include("createffttestfunctions.jl")
 
-@time @testset "Grid tests" begin
-    include("test_grid.jl")
+for dev in Devices
+  println("testing on "*string(typeof(dev)))
 
+  @time @testset "Grid tests" begin
+    include("test_grid.jl")      
     # Test 1D grid
     nx, Lx = 6, 2π
-    g₁ = OneDGrid(nx, Lx)
+    g₁ = OneDGrid(dev, nx, Lx)
     @test testnx(g₁, nx)
     @test testdx(g₁)
     @test testx(g₁)
@@ -47,7 +49,7 @@ include("createffttestfunctions.jl")
 
     # Test 2D rectangular grid
     ny, Ly = 8, 4π
-    g₂ = TwoDGrid(nx, Lx, ny, Ly)
+    g₂ = TwoDGrid(dev, nx, Lx, ny, Ly)
     @test testnx(g₂, nx)
     @test testny(g₂, ny)
     @test testdx(g₂)
@@ -62,59 +64,70 @@ include("createffttestfunctions.jl")
     
     # Test typed grids
     T = Float32
-    @test testtypedonedgrid(nx, Lx; T=T)
-    @test testtypedtwodgrid(nx, Lx, ny, Ly; T=T)
+    @test testtypedonedgrid(dev, nx, Lx; T=T)
+    @test testtypedtwodgrid(dev, nx, Lx, ny, Ly; T=T)
+  end
+
+  @time @testset "FFT tests" begin
+    include("test_fft.jl")
+
+    # Test 1D grid
+    nx = 32             # number of points
+    Lx = 2π             # Domain width
+    g1 = OneDGrid(dev, nx, Lx)
+
+    # Test 2D rectangular grid
+    nx, ny = 32, 64     # number of points
+    Lx, Ly = 2π, 3π     # Domain width
+    g2 = TwoDGrid(dev, nx, Lx, ny, Ly)
+
+    @test test_fft_cosmx(g1)
+    @test test_rfft_cosmx(g1)
+    @test test_rfft_mul_cosmx(g1)
+
+    @test test_fft_cosmxcosny(g2)
+    @test test_rfft_cosmxcosny(g2)
+    @test test_rfft_mul_cosmxcosny(g2)
+    @test test_fft_sinmxny(g2)
+    @test test_rfft_sinmxny(g2)
+    @test test_rfft_mul_sinmxny(g2)
+  end
+
+  @time @testset "IFFT tests" begin
+    include("test_ifft.jl")
+
+    # Test 1D grid
+    nx = 32             # number of points
+    Lx = 2π             # Domain width
+    g1 = OneDGrid(dev, nx, Lx)
+
+    # Test 2D rectangular grid
+    nx, ny = 32, 64     # number of points
+    Lx, Ly = 2π, 3π     # Domain width
+    g2 = TwoDGrid(dev, nx, Lx, ny, Ly)
+
+    @test test_ifft_cosmx(g1)
+    @test test_irfft_cosmx(g1)
+    @test test_irfft_mul_cosmx(g1)
+
+    @test test_ifft_cosmxcosny(g2)
+    @test test_irfft_cosmxcosny(g2)
+    @test test_irfft_mul_cosmxcosny(g2)
+    @test test_ifft_sinmxny(g2)
+    @test test_irfft_sinmxny(g2)
+    @test test_irfft_mul_sinmxny(g2)
+  end
+
+  @time @testset "Timestepper tests" begin
+    include("test_timesteppers.jl")
+    for stepper in steppers
+      @test constantdiffusiontest(stepper, dev=dev)
+      @test varyingdiffusiontest(stepper, dev=dev)
+    end
+  end
+
 end
 
-@time @testset "FFT tests" begin
-  include("test_fft.jl")
-
-  # Test 1D grid
-  nx = 32             # number of points
-  Lx = 2π             # Domain width
-  g1 = OneDGrid(nx, Lx)
-
-  # Test 2D rectangular grid
-  nx, ny = 32, 64     # number of points
-  Lx, Ly = 2π, 3π     # Domain width
-  g2 = TwoDGrid(nx, Lx, ny, Ly)
-
-  @test test_fft_cosmx(g1)
-  @test test_rfft_cosmx(g1)
-  @test test_rfft_mul_cosmx(g1)
-
-  @test test_fft_cosmxcosny(g2)
-  @test test_rfft_cosmxcosny(g2)
-  @test test_rfft_mul_cosmxcosny(g2)
-  @test test_fft_sinmxny(g2)
-  @test test_rfft_sinmxny(g2)
-  @test test_rfft_mul_sinmxny(g2)
-end
-
-@time @testset "IFFT tests" begin
-  include("test_ifft.jl")
-
-  # Test 1D grid
-  nx = 32             # number of points
-  Lx = 2π             # Domain width
-  g1 = OneDGrid(nx, Lx)
-
-  # Test 2D rectangular grid
-  nx, ny = 32, 64     # number of points
-  Lx, Ly = 2π, 3π     # Domain width
-  g2 = TwoDGrid(nx, Lx, ny, Ly)
-
-  @test test_ifft_cosmx(g1)
-  @test test_irfft_cosmx(g1)
-  @test test_irfft_mul_cosmx(g1)
-
-  @test test_ifft_cosmxcosny(g2)
-  @test test_irfft_cosmxcosny(g2)
-  @test test_irfft_mul_cosmxcosny(g2)
-  @test test_ifft_sinmxny(g2)
-  @test test_irfft_sinmxny(g2)
-  @test test_irfft_mul_sinmxny(g2)
-end
 
 @time @testset "Utils tests" begin
   include("test_utils.jl")
@@ -178,18 +191,6 @@ end
   @test test_radialspectrum(n, ahkl, ahρ)
 end
 
-@time @testset "Timestepper tests" begin
-  include("test_timesteppers.jl")
-
-  for dev in Devices
-    println("testing on "*string(typeof(dev)))
-    for stepper in steppers
-      @test constantdiffusiontest(stepper, dev=dev)
-      @test varyingdiffusiontest(stepper, dev=dev)
-    end
-  end
-
-end
 
 @time @testset "Diagnostics tests" begin
   include("test_diagnostics.jl")
