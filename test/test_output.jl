@@ -2,7 +2,18 @@ function test_withoutjld2()
   namewithjld2 = "blahblah.jld2"
   namewithoutjld2 = "blahblah"
   
-  FourierFlows.withoutjld2(namewithjld2) == namewithoutjld2 && FourierFlows.withoutjld2(namewithoutjld2) == namewithoutjld2
+  return FourierFlows.withoutjld2(namewithjld2) == namewithoutjld2 && FourierFlows.withoutjld2(namewithoutjld2) == namewithoutjld2
+end
+
+function test_uniquepath()
+  path  = "foo.jld2"
+  path1 = "foo_1.jld2"
+  path2 = "foo_2.jld2"
+  touch(path)
+  test1 = FourierFlows.uniquepath(path) == path1
+  touch(path1)
+  test2 = FourierFlows.uniquepath(path) == path2
+  return test1 && test2
 end
 
 function test_outputconstructor()
@@ -14,5 +25,5 @@ function test_outputconstructor()
   out1 = Output(prob, filename, (:sol, get_sol))
   out2 = Output(prob, filename, (:sol, get_sol), (:c, get_c))
   
-  typeof(out1)<:Output && typeof(out2)<:Output
+  return  typeof(out1)<:Output && typeof(out2)<:Output
 end

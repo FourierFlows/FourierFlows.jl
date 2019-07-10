@@ -6,6 +6,7 @@ using
   FFTW,
   LinearAlgebra,
   Printf,
+  DelimitedFiles,
   Test
 
 using FourierFlows: parsevalsum2
@@ -201,5 +202,6 @@ end
   include("test_output.jl")
   
   @test test_withoutjld2()  
+  @test test_uniquepath()
   @test test_outputconstructor()
 end
