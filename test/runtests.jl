@@ -200,5 +200,6 @@ end
 @time @testset "Output tests" begin
   include("test_output.jl")
   
-  @test testwithoutjld2()  
+  @test test_withoutjld2()  
+  @test test_outputconstructor()
 end
