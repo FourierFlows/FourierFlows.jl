@@ -6,7 +6,6 @@ using
   FFTW,
   LinearAlgebra,
   Printf,
-  DelimitedFiles,
   Test
 
 using FourierFlows: parsevalsum2
