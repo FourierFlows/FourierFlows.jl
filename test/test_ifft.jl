@@ -10,9 +10,9 @@ function test_irfft_cosmx(g::OneDGrid)
     isapprox(f1, f1b, rtol=rtol_fft)
 end
 
-function test_irfft_mul_cosmx(g::OneDGrid)
+function test_irfft_mul_cosmx(g::OneDGrid{Tg, A}) where {Tg, A}
     f1, f1h, f1hr, f1hr_mul, f1h_th, f1hr_th = create_testfuncs(g)
-    f1b = Array{Float64}(undef, g.nx)
+    f1b = convert(A, zeros(g.nx,))
     ldiv!(f1b, g.rfftplan, deepcopy(f1hr))
     isapprox(f1, f1b, rtol=rtol_fft)
 end
@@ -29,9 +29,9 @@ function test_irfft_cosmxcosny(g::TwoDGrid)
     isapprox(f1, f1b, rtol=rtol_fft)
 end
 
-function test_irfft_mul_cosmxcosny(g::TwoDGrid)
+function test_irfft_mul_cosmxcosny(g::TwoDGrid{Tg, A}) where {Tg, A}
     f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mul, f2hr_mul, f1h_th, f1hr_th, f2h_th, f2hr_th = create_testfuncs(g)
-    f1b = Array{Float64}(undef, g.nx, g.ny)
+    f1b = convert(A, zeros(g.nx, g.ny))
     ldiv!(f1b, g.rfftplan, deepcopy(f1hr))
     isapprox(f1, f1b, rtol=rtol_fft)
 end
@@ -48,9 +48,9 @@ function test_irfft_sinmxny(g::TwoDGrid)
     isapprox(f2, f2b4, rtol=rtol_fft)
 end
 
-function test_irfft_mul_sinmxny(g::TwoDGrid)
+function test_irfft_mul_sinmxny(g::TwoDGrid{Tg, A}) where {Tg, A}
     f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mul, f2hr_mul, f1h_th, f1hr_th, f2h_th, f2hr_th = create_testfuncs(g)
-    f2b = Array{Float64}(undef, g.nx, g.ny)
+    f2b = convert(A, zeros(g.nx, g.ny))
     ldiv!(f2b, g.rfftplan, deepcopy(f2hr))
     isapprox(f2, f2b, rtol=rtol_fft)
 end
