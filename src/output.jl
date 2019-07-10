@@ -43,10 +43,10 @@ Save the fields in `out.fields` to `out.path`.
 """
 function saveoutput(out)
   groupname = "snapshots"
-  jldopen(out.filename, "a+") do file
-    file["$groupname/t/$(out.prob.step)"] = out.prob.t
+  jldopen(out.path, "a+") do path
+    path["$groupname/t/$(out.prob.clock.step)"] = out.prob.clock.t
     for fieldname in keys(out.fields)
-      file["$groupname/$fieldname/$(out.prob.step)"] = out[fieldname]
+      path["$groupname/$fieldname/$(out.prob.clock.step)"] = out[fieldname]
     end
   end
   nothing
@@ -107,7 +107,7 @@ function saveproblem(prob, filename)
   nothing
 end
 
-saveproblem(out::Output) = saveproblem(out.prob, out.filename)
+saveproblem(out::Output) = saveproblem(out.prob, out.path)
 
 """
     savediagnostic(diag, diagname)
