@@ -29,7 +29,7 @@ const steppers = [
 # Run tests
 
 include("createffttestfunctions.jl")
-#=
+
 @time @testset "Grid tests" begin
     include("test_grid.jl")
 
@@ -196,8 +196,6 @@ end
   @test test_scalardiagnostics(freq=1)
   @test test_scalardiagnostics(freq=2)
 end
-
-=#
 
 @time @testset "Output tests" begin
   include("test_output.jl")
