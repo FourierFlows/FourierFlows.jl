@@ -33,6 +33,7 @@ function Output(prob, path, fields::Dict{Symbol,Function})
 end
 
 Output(prob, path, fields...) = Output(prob, path, Dict{Symbol,Function}([fields...]))
+Output(prob, path, field::Tuple{Symbol,T}) where T = Output(prob, path, Dict{Symbol,Function}([field]))
 
 getindex(out::Output, key) = out.fields[key](out.prob)
 
