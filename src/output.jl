@@ -10,7 +10,7 @@ struct Output
   fields::Dict{Symbol,Function}
 end
 
-withoutjld2(path) = path[end-4:end] == ".jld2" ? path[1:end-5] : path
+withoutjld2(path) = (length(path)>4 && path[end-4:end] == ".jld2") ? path[1:end-5] : path
 
 """
     uniquepath(path)
