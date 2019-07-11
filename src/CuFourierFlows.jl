@@ -26,3 +26,9 @@ makefilter(K::CuArray; kwargs...) = CuArray(makefilter(Array(K); kwargs...))
 function makefilter(g::AbstractGrid{Tg, <:CuArray}, T, sz; kwargs...) where Tg
     CuArray(ones(T, sz)) .* makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
 end
+
+function gridpoints(g::AbstractGrid{Tg, <:CuArray}) where Tg
+  X = [ g.x[i] for i=1:g.nx, j=1:g.ny]
+  Y = [ g.y[j] for i=1:g.nx, j=1:g.ny]
+  CuArray(X), CuArray(Y)
+end
