@@ -35,6 +35,7 @@ const steppers = [
 include("createffttestfunctions.jl")
 
 for dev in devices
+  
   println("testing on "*string(typeof(dev)))
 
   @time @testset "Grid tests" begin
@@ -190,15 +191,15 @@ for dev in devices
     @test test_radialspectrum(dev, n, ahkl, ahρ)
   end
 
-end
+  @time @testset "Diagnostics tests" begin
+    include("test_diagnostics.jl")
 
-@time @testset "Diagnostics tests" begin
-  include("test_diagnostics.jl")
+    @test test_diagnosticsteps(dev, freq=1)
+    @test test_diagnosticsteps(dev, freq=2)
+    @test test_diagnosticsteps(dev, nsteps=100, freq=9, ndata=20)
+    @test test_basicdiagnostics(dev)
+    @test test_scalardiagnostics(dev, freq=1)
+    @test test_scalardiagnostics(dev, freq=2)
+  end
 
-  @test test_diagnosticsteps(freq=1)
-  @test test_diagnosticsteps(freq=2)
-  @test test_diagnosticsteps(nsteps=100, freq=9, ndata=20)
-  @test test_basicdiagnostics()
-  @test test_scalardiagnostics(freq=1)
-  @test test_scalardiagnostics(freq=2)
-end
+end # end loop over devices
