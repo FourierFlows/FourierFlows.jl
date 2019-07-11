@@ -61,21 +61,21 @@ end
 
 Saves some parameters of `prob.field`.
 """
-function savefields(file, grid::TwoDGrid)
+function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, grid::TwoDGrid)
   for field in [:nx, :ny, :Lx, :Ly, :x, :y]
     file["grid/$field"] = getfield(grid, field)
   end
   nothing
 end
 
-function savefields(file, grid::OneDGrid)
+function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, grid::OneDGrid)
   for field in [:nx, :Lx, :x]
     file["grid/$field"] = getfield(grid, field)
   end
   nothing
 end
 
-function savefields(file, params::AbstractParams)
+function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, params::AbstractParams)
   for name in fieldnames(typeof(params))
     field = getfield(params, name)
     if !(typeof(field) <: Function)
@@ -85,15 +85,15 @@ function savefields(file, params::AbstractParams)
   nothing
 end
 
-function savefields(file, clock::Clock)
+function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, clock::Clock)
   file["clock/dt"] = clock.dt   # Timestepper
   nothing
 end
 
-function savefields(file, eqn::Equation)
-  file["eqn/L"] = eqn.L       
-  file["eqn/dims"] = eqn.dims 
-  file["eqn/T"] = eqn.T 
+function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, eqn::Equation)
+  file["eqn/L"] = eqn.L 
+  file["eqn/dims"] = eqn.dims
+  file["eqn/T"] = eqn.T
   nothing
 end
 
@@ -103,11 +103,11 @@ end
 Save certain aspects of a problem.
 """
 function saveproblem(prob, filename)
-  jldopen(filename, "a+") do file
-    for field in [:eqn, :clock, :grid, :params]
-      savefields(file, getfield(prob, field))
-    end
+  file = jldopen(filename, "a+")
+  for field in [:eqn, :clock, :grid, :params]
+    savefields(file, getfield(prob, field))
   end
+  close(file)
   nothing
 end
 

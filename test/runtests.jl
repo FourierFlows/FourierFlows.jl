@@ -6,6 +6,7 @@ using
   FFTW,
   LinearAlgebra,
   Printf,
+  JLD2,
   Test
 
 using FourierFlows: parsevalsum2
@@ -205,4 +206,7 @@ end
   @test test_uniquepath()
   @test test_outputconstructor()
   @test test_getindex()
+  @test test_saveproblem_saveoutput()
+  @test test_saveproblemTwoDGrid()
+  @test test_savediagnostic()
 end
