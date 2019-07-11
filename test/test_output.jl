@@ -27,3 +27,17 @@ function test_outputconstructor()
   
   return  typeof(out1)<:Output && typeof(out2)<:Output
 end
+
+function test_getindex()
+  prob = FourierFlows.Diffusion.Problem(nx=32, Lx=2π, kappa=1e-2, dt=1e-7, stepper="ForwardEuler")
+  filename = joinpath(".", "testoutput.jld2")
+  
+  ctest = zeros((prob.grid.nx, ))
+  ctest[3] = π
+  prob.vars.c .= ctest
+  
+  get_c(prob) = prob.vars.c
+  out = Output(prob, filename, (:c, get_c))
+  
+  return isapprox(ctest, getindex(out, :c), rtol=rtol_output)
+end

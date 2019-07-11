@@ -13,6 +13,7 @@ using FourierFlows: parsevalsum2
 using LinearAlgebra: mul!, ldiv!, norm
 
 const rtol_fft = 1e-12
+const rtol_output = 1e-12
 const rtol_timesteppers = 1e-12
 
 const steppers = [
@@ -203,4 +204,5 @@ end
   @test test_withoutjld2()  
   @test test_uniquepath()
   @test test_outputconstructor()
+  @test test_getindex()
 end
