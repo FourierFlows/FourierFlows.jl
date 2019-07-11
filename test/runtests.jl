@@ -11,11 +11,13 @@ using FourierFlows: parsevalsum2
 using LinearAlgebra: mul!, ldiv!, norm
 
 # the devices on which tests will run
-Devices = (CPU(),)
-@hascuda Devices = (CPU(), GPU())
+devices = (CPU(),)
+@hascuda devices = (CPU(), GPU())
 @hascuda using CuArrays
 
 const rtol_fft = 1e-12
+const rtol_output = 1e-12
+const rtol_utils = 1e-13
 const rtol_timesteppers = 1e-12
 
 const steppers = [
@@ -32,7 +34,7 @@ const steppers = [
 # Run tests
 include("createffttestfunctions.jl")
 
-for dev in Devices
+for dev in devices
   println("testing on "*string(typeof(dev)))
 
   @time @testset "Grid tests" begin
@@ -126,71 +128,69 @@ for dev in Devices
     end
   end
 
+  @time @testset "Utils tests" begin
+    include("test_utils.jl")
+
+    @test test_fltype()
+    @test test_cxtype()
+    @test test_innereltype()
+    @test test_superzeros()
+    @test test_supertuplezeros()
+    @test test_supersize()
+
+    # Test on a rectangular grid
+    nx, ny = 64, 128   # number of points
+    Lx, Ly = 2π, 3π    # Domain width
+    g = TwoDGrid(dev, nx, Lx, ny, Ly)
+    x, y = gridpoints(g)
+    k0, l0 = 2π/Lx, 2π/Ly
+
+    # Real and complex-valued functions
+    σ = 0.5
+    f1 = @. exp(-(x^2 + y^2)/(2σ^2))
+    f2 = @. (cos(2k0*x + 3l0*y^2) + im*sin(2k0*x + 3l0*y^2)) * (exp(-(x^2 + y^2)/(2σ^2)) + 2im*exp(-(x^2 + y^2)/(5σ^2)))
+
+    # Sine/Exp waves
+    k1, l1 = 2*k0, 6*l0
+    k2, l2 = 3*k0, -3*l0
+
+    sinkl1 = @. sin(k1*x + l1*y)
+    sinkl2 = @. sin(k2*x + l2*y)
+    expkl1 = @. cos(k1*x + l1*y) + im*sin(k1*x + l1*y)
+    expkl2 = @. cos(k2*x + l2*y) + im*sin(k2*x + l2*y)
+
+    # Analytical expression for the Jacobian of sin1 and sin2 and of exp1 and exp2
+    Jsinkl1sinkl2 = @. (k1*l2-k2*l1)*cos(k1*x + l1*y)*cos(k2*x + l2*y)
+    Jexpkl1expkl2 = @. (k2*l1-k1*l2)*(cos((k1+k2)*x + (l1+l2)*y)+im*sin((k1+k2)*x + (l1+l2)*y))
+
+    @test test_parsevalsum(f1, g; realvalued=true)   # Real valued f with rfft
+    @test test_parsevalsum(f1, g; realvalued=false)  # Real valued f with fft
+    @test test_parsevalsum(f2, g; realvalued=false)  # Complex valued f with fft
+    @test test_parsevalsum2(f1, g; realvalued=true)  # Real valued f with rfft
+    @test test_parsevalsum2(f1, g; realvalued=false) # Real valued f with fft
+    @test test_parsevalsum2(f2, g; realvalued=false) # Complex valued f with fft
+
+    @test test_jacobian(sinkl1, sinkl1, 0*sinkl1, g)  # Test J(a, a) = 0
+    @test test_jacobian(sinkl1, sinkl2, Jsinkl1sinkl2, g) # Test J(sin1, sin2) = Jsin1sin2
+    @test test_jacobian(expkl1, expkl2, Jexpkl1expkl2, g) # Test J(exp1, exp2) = Jexp1exps2
+
+    @test test_zeros()
+    @test test_domainaverage(dev, 32)
+    @test test_varsexpression_fields(g)
+    @test test_varsexpression_specs(g)
+
+    # Radial spectrum tests. Note that ahρ = ∫ ah ρ dθ.
+    n = 128; δ = n/10                 # Parameters
+    ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) #  a = exp(-ρ²/2δ²)
+        ahρ(ρ) = 2π*ρ*exp(-ρ^2/2δ^2)  # aᵣ = 2π ρ exp(-ρ²/2δ²)
+    @test test_radialspectrum(dev, n, ahkl, ahρ)
+
+    ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) * k^2/(k^2+l^2) #  a = exp(-ρ²/2δ²)*cos(θ)²
+        ahρ(ρ) = π*ρ*exp(-ρ^2/2δ^2)                   # aᵣ = π ρ exp(-ρ²/2δ²)
+    @test test_radialspectrum(dev, n, ahkl, ahρ)
+  end
+
 end
-
-
-@time @testset "Utils tests" begin
-  include("test_utils.jl")
-
-  @test test_fltype()
-  @test test_cxtype()
-  @test test_innereltype()
-  @test test_superzeros()
-  @test test_supertuplezeros()
-  @test test_supersize()
-
-  # Test on a rectangular grid
-  nx, ny = 64, 128   # number of points
-  Lx, Ly = 2π, 3π    # Domain width
-  g = TwoDGrid(nx, Lx, ny, Ly)
-  x, y = gridpoints(g)
-  k0, l0 = 2π/Lx, 2π/Ly
-
-  # Real and complex-valued functions
-  σ = 0.5
-  f1 = @. exp(-(x^2 + y^2)/(2σ^2))
-  f2 = @. exp(im*(2k0*x + 3l0*y^2)) * (exp.(-(x^2 + y^2)/(2σ^2)) + 2im*exp(-(x^2 + y^2)/(5σ^2)))
-
-  # Sine/Exp waves
-  k1, l1 = 2*k0, 6*l0
-  k2, l2 = 3*k0, -3*l0
-
-  sinkl1 = @. sin(k1*x + l1*y)
-  sinkl2 = @. sin(k2*x + l2*y)
-  expkl1 = @. exp(im*(k1*x + l1*y))
-  expkl2 = @. exp(im*(k2*x + l2*y))
-
-  # Analytical expression for the Jacobian of sin1 and sin2 and of exp1 and exp2
-  Jsinkl1sinkl2 = @. (k1*l2-k2*l1)*cos(k1*x + l1*y)*cos.(k2*x + l2*y)
-  Jexpkl1expkl2 = @. (k2*l1-k1*l2)*exp(im*((k1+k2)*x + (l1+l2)*y))
-
-  @test test_parsevalsum(f1, g; realvalued=true)   # Real valued f with rfft
-  @test test_parsevalsum(f1, g; realvalued=false)  # Real valued f with fft
-  @test test_parsevalsum(f2, g; realvalued=false)  # Complex valued f with fft
-  @test test_parsevalsum2(f1, g; realvalued=true)  # Real valued f with rfft
-  @test test_parsevalsum2(f1, g; realvalued=false) # Real valued f with fft
-  @test test_parsevalsum2(f2, g; realvalued=false) # Complex valued f with fft
-
-  @test test_jacobian(sinkl1, sinkl1, 0*sinkl1, g)  # Test J(a, a) = 0
-  @test test_jacobian(sinkl1, sinkl2, Jsinkl1sinkl2, g) # Test J(sin1, sin2) = Jsin1sin2
-  @test test_jacobian(expkl1, expkl2, Jexpkl1expkl2, g) # Test J(exp1, exp2) = Jexp1exps2
-
-  @test test_zeros()
-  @test test_domainaverage(32)
-  @test test_varsexpression_fields(g)
-  @test test_varsexpression_specs(g)
-
-  # Radial spectrum tests. Note that ahρ = ∫ ah ρ dθ.
-  n = 128; δ = n/10                 # Parameters
-  ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) #  a = exp(-ρ²/2δ²)
-      ahρ(ρ) = 2π*ρ*exp(-ρ^2/2δ^2)  # aᵣ = 2π ρ exp(-ρ²/2δ²)
-  @test test_radialspectrum(n, ahkl, ahρ)
-
-  ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) * k^2/(k^2+l^2) #  a = exp(-ρ²/2δ²)*cos(θ)²
-      ahρ(ρ) = π*ρ*exp(-ρ^2/2δ^2)                   # aᵣ = π ρ exp(-ρ²/2δ²)
-  @test test_radialspectrum(n, ahkl, ahρ)
-end
-
 
 @time @testset "Diagnostics tests" begin
   include("test_diagnostics.jl")
