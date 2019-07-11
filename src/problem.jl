@@ -36,14 +36,14 @@ end
 struct EmptyParams <: AbstractParams end
 struct EmptyVars <: AbstractVars end
 
-function Problem(eqn::Equation, stepper, dt, grid::AbstractGrid{T, Ta}, vars=EmptyVars, params=EmptyParams) where {T, Ta}
+function Problem(eqn::Equation, stepper, dt, grid::AbstractGrid{T, A}, vars=EmptyVars, params=EmptyParams) where {T, A}
   clock = Clock{T}(dt, 0, 0)
   timestepper = TimeStepper(stepper, eqn, dt)
   sol = superzeros(eqn.T, eqn.dims)
   Problem(sol, clock, eqn, grid, vars, params, timestepper)
 end
 
-function Problem(dev::Device, eqn::Equation, stepper, dt, grid::AbstractGrid{T, Ta}, vars=EmptyVars, params=EmptyParams) where {T, Ta}
+function Problem(dev::Device, eqn::Equation, stepper, dt, grid::AbstractGrid{T, A}, vars=EmptyVars, params=EmptyParams) where {T, A}
   clock = Clock{T}(dt, 0, 0)
   timestepper = TimeStepper(dev, stepper, eqn, dt)
   sol = devzeros(dev, eqn.T, eqn.dims)
