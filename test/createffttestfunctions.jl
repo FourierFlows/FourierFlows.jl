@@ -89,13 +89,13 @@ end
 @hascuda begin
   function create_testfuncs(g::OneDGrid{Tg, <:CuArray}) where Tg
     cpugrid = OneDGrid(g.nx, g.Lx)
-    f₁, f₁h, f₁hr, f₁hr_mul, f₁h_analytical, f₁hr_analytical = create_testfuncs(cpugrid)
-    CuArray(f₁), CuArray(f₁h), CuArray(f₁hr), CuArray(f₁hr_mul), CuArray(f₁h_analytical), CuArray(f₁hr_analytical)
+    out = create_testfuncs(cpugrid)
+    return map(x->CuArray(x), out)
   end
 
   function create_testfuncs(g::TwoDGrid{Tg, <:CuArray}) where Tg
     cpugrid = TwoDGrid(g.nx, g.Lx, g.ny, g.Ly)
-    f₁, f₂, f₁h, f₂h, f₁hr, f₂hr, f₁hr_mul, f₂hr_mul, f₁h_analytical, f₁hr_analytical, f₂h_analytical, f₂hr_analytical = create_testfuncs(cpugrid)
-    CuArray(f₁), CuArray(f₂), CuArray(f₁h), CuArray(f₂h), CuArray(f₁hr), CuArray(f₂hr), CuArray(f₁hr_mul), CuArray(f₂hr_mul), CuArray(f₁h_analytical), CuArray(f₁hr_analytical), CuArray(f₂h_analytical), CuArray(f₂hr_analytical)
+    out = create_testfuncs(cpugrid)
+    return map(x->CuArray(x), out)
   end
 end
