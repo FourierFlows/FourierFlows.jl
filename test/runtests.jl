@@ -4,6 +4,7 @@ using
   FFTW,
   LinearAlgebra,
   Printf,
+  JLD2,
   Test
 
 using FourierFlows: parsevalsum2
@@ -202,4 +203,17 @@ for dev in devices
     @test test_scalardiagnostics(dev, freq=2)
   end
 
+  @time @testset "Output tests" begin
+    include("test_output.jl")
+    
+    @test test_withoutjld2()
+    @test test_uniquepath()
+    @test test_outputconstructor(dev)
+    @test test_getindex()
+    @test test_saveproblem_saveoutput(dev)
+    @test test_saveproblemTwoDGrid(dev)
+    @test test_savediagnostic()
+  end
+
 end # end loop over devices
+

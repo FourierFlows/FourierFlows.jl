@@ -10,7 +10,7 @@ struct Output
   fields::Dict{Symbol,Function}
 end
 
-withoutjld2(path) = path[end-4:end] == ".jld2" ? path[1:end-5] : path
+withoutjld2(path) = (length(path)>4 && path[end-4:end] == ".jld2") ? path[1:end-5] : path
 
 """
     uniquepath(path)
@@ -18,10 +18,13 @@ withoutjld2(path) = path[end-4:end] == ".jld2" ? path[1:end-5] : path
 Returns `path` with a number appended if `isfile(path)`, incremented until `path` does not exist.
 """
 function uniquepath(path)
-  n = 0
+  n = 1
+  if isfile(path)
+    path = withoutjld2(path) * "_$n.jld2"
+  end
   while isfile(path)
     n += 1
-    path = withoutjld2(path) * "_$n.jld2"
+    path = withoutjld2(path)[1:end-length("_$(n-1)")] * "_$n.jld2"
   end
   path
 end
@@ -33,6 +36,7 @@ function Output(prob, path, fields::Dict{Symbol,Function})
 end
 
 Output(prob, path, fields...) = Output(prob, path, Dict{Symbol,Function}([fields...]))
+Output(prob, path, field::Tuple{Symbol,T}) where T = Output(prob, path, Dict{Symbol,Function}([field]))
 
 getindex(out::Output, key) = out.fields[key](out.prob)
 
@@ -43,10 +47,10 @@ Save the fields in `out.fields` to `out.path`.
 """
 function saveoutput(out)
   groupname = "snapshots"
-  jldopen(out.filename, "a+") do file
-    file["$groupname/t/$(out.prob.step)"] = out.prob.t
+  jldopen(out.path, "a+") do path
+    path["$groupname/t/$(out.prob.clock.step)"] = out.prob.clock.t
     for fieldname in keys(out.fields)
-      file["$groupname/$fieldname/$(out.prob.step)"] = out[fieldname]
+      path["$groupname/$fieldname/$(out.prob.clock.step)"] = out[fieldname]
     end
   end
   nothing
@@ -57,21 +61,21 @@ end
 
 Saves some parameters of `prob.field`.
 """
-function savefields(file, grid::TwoDGrid)
+function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, grid::TwoDGrid)
   for field in [:nx, :ny, :Lx, :Ly, :x, :y]
     file["grid/$field"] = getfield(grid, field)
   end
   nothing
 end
 
-function savefields(file, grid::OneDGrid)
+function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, grid::OneDGrid)
   for field in [:nx, :Lx, :x]
     file["grid/$field"] = getfield(grid, field)
   end
   nothing
 end
 
-function savefields(file, params::AbstractParams)
+function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, params::AbstractParams)
   for name in fieldnames(typeof(params))
     field = getfield(params, name)
     if !(typeof(field) <: Function)
@@ -81,15 +85,15 @@ function savefields(file, params::AbstractParams)
   nothing
 end
 
-function savefields(file, clock::Clock)
+function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, clock::Clock)
   file["clock/dt"] = clock.dt   # Timestepper
   nothing
 end
 
-function savefields(file, eqn::Equation)
-  file["eqn/L"] = eqn.L       
-  file["eqn/dims"] = eqn.dims 
-  file["eqn/T"] = eqn.T 
+function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, eqn::Equation)
+  file["eqn/L"] = eqn.L 
+  file["eqn/dims"] = eqn.dims
+  file["eqn/T"] = eqn.T
   nothing
 end
 
@@ -99,15 +103,15 @@ end
 Save certain aspects of a problem.
 """
 function saveproblem(prob, filename)
-  jldopen(filename, "a+") do file
-    for field in [:eqn, :clock, :grid, :params]
-      savefields(file, getfield(prob, field))
-    end
+  file = jldopen(filename, "a+")
+  for field in [:eqn, :clock, :grid, :params]
+    savefields(file, getfield(prob, field))
   end
+  close(file)
   nothing
 end
 
-saveproblem(out::Output) = saveproblem(out.prob, out.filename)
+saveproblem(out::Output) = saveproblem(out.prob, out.path)
 
 """
     savediagnostic(diag, diagname)
