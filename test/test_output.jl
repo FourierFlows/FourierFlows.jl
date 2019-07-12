@@ -19,8 +19,8 @@ function test_uniquepath()
   return test1 && test2
 end
 
-function test_outputconstructor(dev::Device)
-  prob = FourierFlows.Diffusion.Problem(nx=32, Lx=2π, kappa=1e-2, dt=1e-7, stepper="ForwardEuler", dev=dev)
+function test_outputconstructor(dev::Device=CPU())
+  prob = Problem(nx=32, Lx=2π, kappa=1e-2, dt=1e-7, stepper="ForwardEuler", dev=dev)
   filename = joinpath(".", "testoutput.jld2")
   get_sol(prob) = prob.sol
   get_c(prob) = prob.vars.c
@@ -31,11 +31,11 @@ function test_outputconstructor(dev::Device)
   return  typeof(out1)<:Output && typeof(out2)<:Output
 end
 
-function test_getindex()
-  prob = FourierFlows.Diffusion.Problem(nx=32, Lx=2π, kappa=1e-2, dt=1e-7, stepper="ForwardEuler")
+function test_getindex(dev::Device=CPU())
+  prob = Problem(nx=32, Lx=2π, kappa=1e-2, dt=1e-7, stepper="ForwardEuler")
   filename = joinpath(".", "testoutput.jld2")
   
-  ctest = zeros((prob.grid.nx, ))
+  ctest = devzeros(dev, Float64, (prob.grid.nx, ))
   ctest[3] = π
   prob.vars.c .= ctest
   
@@ -45,12 +45,12 @@ function test_getindex()
   return isapprox(ctest, getindex(out, :c), rtol=rtol_output)
 end
 
-function test_saveproblem_saveoutput(dev::Device)
-  prob = FourierFlows.Diffusion.Problem(nx=32, Lx=2π, kappa=1e-2, dt=1e-7, stepper="ForwardEuler", dev=dev)
+function test_saveproblem_saveoutput(dev::Device=CPU())
+  prob = Problem(nx=32, Lx=2π, kappa=1e-2, dt=1e-7, stepper="ForwardEuler", dev=dev)
   filename = joinpath(".", "testoutput.jld2")
   if isfile(filename); rm(filename); end
   
-  ctest = zeros((prob.grid.nx, ))
+  ctest = devzeros(dev, Float64, (prob.grid.nx, ))
   ctest[3] = π
   prob.vars.c .= ctest
   
@@ -66,7 +66,7 @@ function test_saveproblem_saveoutput(dev::Device)
   return isfile(filename) && isapprox(file["snapshots"]["c"]["0"], ctest, rtol=rtol_output) && isapprox(file["grid"]["Lx"], prob.grid.Lx, rtol=rtol_output) && isapprox(file["eqn"]["L"], prob.eqn.L, rtol=rtol_output)
 end
 
-function test_saveproblemTwoDGrid(dev::Device)
+function test_saveproblemTwoDGrid(dev::Device=CPU())
        nx = 32
        Lx = 2π
     kappa = 1e-2
@@ -97,7 +97,7 @@ function test_saveproblemTwoDGrid(dev::Device)
   return isfile(filename) && isapprox(file["grid"]["Ly"], prob.grid.Ly, rtol=rtol_output) && isapprox(file["eqn"]["L"], prob.eqn.L, rtol=rtol_output)
 end
 
-function test_savediagnostic(dev::Device)
+function test_savediagnostic(dev::Device=CPU())
   filename = joinpath(".", "testoutput.jld2")
   if isfile(filename); rm(filename); end
 

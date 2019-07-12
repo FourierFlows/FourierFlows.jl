@@ -51,14 +51,14 @@ function varyingdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=100
 end
 
 
-function constantdiffusiontest(stepper, dev=CPU(); kwargs...)
+function constantdiffusiontest(stepper, dev::Device=CPU(); kwargs...)
   prob, c0, c1, nsteps, tcomp = constantdiffusionproblem(stepper; kwargs...)
   normmsg = "$stepper: relative error ="
   @printf("% 40s %.2e (%.3f s)\n", normmsg, norm(c1-prob.vars.c)/norm(c1), tcomp)
   isapprox(c1, prob.vars.c, rtol=nsteps*rtol_timesteppers)
 end
 
-function varyingdiffusiontest(stepper, dev=CPU(); kwargs...)
+function varyingdiffusiontest(stepper, dev::Device=CPU(); kwargs...)
   prob, c0, c1, nsteps, tcomp = varyingdiffusionproblem(stepper; kwargs...)
   normmsg = "$stepper: relative error ="
   @printf("% 40s %.2e (%.3f s)\n", normmsg, norm(c1-prob.vars.c)/norm(c1), tcomp)
