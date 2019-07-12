@@ -6,6 +6,7 @@ using
   FFTW,
   LinearAlgebra,
   Printf,
+  JLD2,
   Test
 
 using FourierFlows: parsevalsum2
@@ -13,6 +14,7 @@ using FourierFlows: parsevalsum2
 using LinearAlgebra: mul!, ldiv!, norm
 
 const rtol_fft = 1e-12
+const rtol_output = 1e-12
 const rtol_timesteppers = 1e-12
 
 const steppers = [
@@ -195,4 +197,16 @@ end
   @test test_basicdiagnostics()
   @test test_scalardiagnostics(freq=1)
   @test test_scalardiagnostics(freq=2)
+end
+
+@time @testset "Output tests" begin
+  include("test_output.jl")
+  
+  @test test_withoutjld2()  
+  @test test_uniquepath()
+  @test test_outputconstructor()
+  @test test_getindex()
+  @test test_saveproblem_saveoutput()
+  @test test_saveproblemTwoDGrid()
+  @test test_savediagnostic()
 end
