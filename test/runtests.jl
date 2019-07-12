@@ -210,9 +210,9 @@ end # end loop over devices
   
   @test test_withoutjld2()
   @test test_uniquepath()
-  @test test_outputconstructor(dev)
-  @test test_getindex(dev)
-  @test test_saveproblem_saveoutput(dev)
-  @test test_saveproblemTwoDGrid(dev)
-  @test test_savediagnostic(dev)
+  @test test_outputconstructor(CPU())
+  @test test_getindex(CPU())
+  @test test_saveproblem_saveoutput(CPU())
+  @test test_saveproblemTwoDGrid(CPU())
+  @test test_savediagnostic(CPU())
 end
