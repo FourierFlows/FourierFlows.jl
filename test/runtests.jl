@@ -203,15 +203,20 @@ for dev in devices
     @test test_scalardiagnostics(dev, freq=2)
   end
 
+  @time @testset "Output tests" begin
+    include("test_output.jl")
+    
+    @test test_withoutjld2()
+    @test test_uniquepath()
+    @test test_outputconstructor(dev)
+    @test test_getindex(dev)
+  end
+
 end # end loop over devices
 
 @time @testset "Output tests" begin
   include("test_output.jl")
   
-  @test test_withoutjld2()
-  @test test_uniquepath()
-  @test test_outputconstructor(CPU())
-  @test test_getindex(CPU())
   @test test_saveproblem_saveoutput(CPU())
   @test test_saveproblemTwoDGrid(CPU())
   @test test_savediagnostic(CPU())

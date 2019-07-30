@@ -32,7 +32,7 @@ function test_outputconstructor(dev::Device=CPU())
 end
 
 function test_getindex(dev::Device=CPU())
-  prob = Problem(nx=32, Lx=2π, kappa=1e-2, dt=1e-7, stepper="ForwardEuler")
+  prob = Problem(nx=32, Lx=2π, kappa=1e-2, dt=1e-7, stepper="ForwardEuler", dev=dev)
   filename = joinpath(".", "testoutput.jld2")
   
   ctest = devzeros(dev, Float64, (prob.grid.nx, ))
