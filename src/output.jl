@@ -101,7 +101,7 @@ function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, clock::Clock)
 end
 
 function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, eqn::Equation)
-  file["eqn/L"] = Array(eqn.L)  # convert to CPU Arrays before saving
+  file["eqn/L"] = collect(eqn.L)  # convert to CPU Arrays before saving
   file["eqn/dims"] = eqn.dims
   file["eqn/T"] = eqn.T
   nothing
