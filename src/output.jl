@@ -50,7 +50,7 @@ function saveoutput(out)
   jldopen(out.path, "a+") do path
     path["$groupname/t/$(out.prob.clock.step)"] = out.prob.clock.t
     for fieldname in keys(out.fields)
-      path["$groupname/$fieldname/$(out.prob.clock.step)"] = Array(out[fieldname])
+      path["$groupname/$fieldname/$(out.prob.clock.step)"] = out[fieldname]
     end
   end
   nothing
@@ -66,7 +66,7 @@ function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, grid::TwoDGrid)
     file["grid/$field"] = getfield(grid, field)
   end
   for field in [:x, :y]
-    file["grid/$field"] = Array(getfield(grid, field))
+    file["grid/$field"] = Array(getfield(grid, field))  # convert to CPU Arrays before saving
   end
   nothing
 end
@@ -76,7 +76,7 @@ function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, grid::OneDGrid)
     file["grid/$field"] = getfield(grid, field)
   end
   for field in [:x]
-    file["grid/$field"] = Array(getfield(grid, field))
+    file["grid/$field"] = Array(getfield(grid, field))  # convert to CPU Arrays before saving
   end
   nothing
 end
