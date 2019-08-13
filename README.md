@@ -10,8 +10,8 @@
     <a href="https://FourierFlows.github.io/FourierFlows.jl/stable">
         <img src="https://img.shields.io/badge/docs-stable-blue.svg">
     </a>
-    <a href="https://FourierFlows.github.io/FourierFlows.jl/latest">
-        <img src="https://img.shields.io/badge/docs-latest-blue.svg">
+    <a href="https://FourierFlows.github.io/FourierFlows.jl/dev">
+        <img src="https://img.shields.io/badge/docs-dev-blue.svg">
     </a>
     <a href="https://coveralls.io/github/FourierFlows/FourierFlows.jl?branch=master">
         <img src="https://coveralls.io/repos/github/FourierFlows/FourierFlows.jl/badge.svg?branch=master" title="coveralls">
