@@ -50,7 +50,7 @@ function saveoutput(out)
   jldopen(out.path, "a+") do path
     path["$groupname/t/$(out.prob.clock.step)"] = out.prob.clock.t
     for fieldname in keys(out.fields)
-      path["$groupname/$fieldname/$(out.prob.clock.step)"] = out[fieldname]
+      path["$groupname/$fieldname/$(out.prob.clock.step)"] = Array(out[fieldname])
     end
   end
   nothing
@@ -62,15 +62,21 @@ end
 Saves some parameters of `prob.field`.
 """
 function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, grid::TwoDGrid)
-  for field in [:nx, :ny, :Lx, :Ly, :x, :y]
+  for field in [:nx, :ny, :Lx, :Ly]
     file["grid/$field"] = getfield(grid, field)
+  end
+  for field in [:x, :y]
+    file["grid/$field"] = Array(getfield(grid, field))
   end
   nothing
 end
 
 function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, grid::OneDGrid)
-  for field in [:nx, :Lx, :x]
+  for field in [:nx, :Lx]
     file["grid/$field"] = getfield(grid, field)
+  end
+  for field in [:x]
+    file["grid/$field"] = Array(getfield(grid, field))
   end
   nothing
 end
@@ -79,19 +85,23 @@ function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, params::AbstractParams)
   for name in fieldnames(typeof(params))
     field = getfield(params, name)
     if !(typeof(field) <: Function)
-      file["params/$name"] = field
+      if typeof(field) <: CuArray
+        file["params/$name"] = Array(field)
+      else
+        file["params/$name"] = field
+      end
     end
   end
   nothing
 end
 
 function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, clock::Clock)
-  file["clock/dt"] = clock.dt   # Timestepper
+  file["clock/dt"] = clock.dt
   nothing
 end
 
 function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, eqn::Equation)
-  file["eqn/L"] = eqn.L 
+  file["eqn/L"] = Array(eqn.L)  # convert to CPU Arrays before saving
   file["eqn/dims"] = eqn.dims
   file["eqn/T"] = eqn.T
   nothing

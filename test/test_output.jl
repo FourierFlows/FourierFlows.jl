@@ -63,7 +63,7 @@ function test_saveproblem_saveoutput(dev::Device=CPU())
   
   file = jldopen(filename)
   
-  return isfile(filename) && isapprox(file["snapshots"]["c"]["0"], ctest, rtol=rtol_output) && isapprox(file["grid"]["Lx"], prob.grid.Lx, rtol=rtol_output) && isapprox(file["eqn"]["L"], prob.eqn.L, rtol=rtol_output)
+  return isfile(filename) && isapprox(file["snapshots"]["c"]["0"], Array(ctest), rtol=rtol_output) && isapprox(file["grid"]["Lx"], prob.grid.Lx, rtol=rtol_output) && isapprox(file["eqn"]["L"], Array(prob.eqn.L), rtol=rtol_output)
 end
 
 function test_saveproblemTwoDGrid(dev::Device=CPU())
@@ -94,7 +94,7 @@ function test_saveproblemTwoDGrid(dev::Device=CPU())
     
   file = jldopen(filename)
   
-  return isfile(filename) && isapprox(file["grid"]["Ly"], prob.grid.Ly, rtol=rtol_output) && isapprox(file["eqn"]["L"], prob.eqn.L, rtol=rtol_output)
+  return isfile(filename) && isapprox(file["grid"]["Ly"], prob.grid.Ly, rtol=rtol_output) && isapprox(file["eqn"]["L"], Array(prob.eqn.L), rtol=rtol_output)
 end
 
 function test_savediagnostic(dev::Device=CPU())

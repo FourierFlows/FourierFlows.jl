@@ -210,14 +210,17 @@ for dev in devices
     @test test_uniquepath()
     @test test_outputconstructor(dev)
     @test test_getindex(dev)
+    @test test_saveproblem_saveoutput(dev)
+    @test test_saveproblemTwoDGrid(dev)
+    @test test_savediagnostic(dev)
   end
 
 end # end loop over devices
 
-@time @testset "Output tests" begin
-  include("test_output.jl")
-  
-  @test test_saveproblem_saveoutput(CPU())
-  @test test_saveproblemTwoDGrid(CPU())
-  @test test_savediagnostic(CPU())
-end
+# @time @testset "Output tests" begin
+#   include("test_output.jl")
+# 
+#   @test test_saveproblem_saveoutput(CPU())
+#   @test test_saveproblemTwoDGrid(CPU())
+#   @test test_savediagnostic(CPU())
+# end
