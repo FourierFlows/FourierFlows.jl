@@ -85,7 +85,7 @@ function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, params::AbstractParams)
   for name in fieldnames(typeof(params))
     field = getfield(params, name)
     if !(typeof(field) <: Function)
-      if typeof(field) <: CuArray
+      if HAVE_CUDA && typeof(field) <: CuArray
         file["params/$name"] = Array(field)
       else
         file["params/$name"] = field
