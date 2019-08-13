@@ -179,10 +179,10 @@ TwoDGrid(dev::CPU, args...; kwargs...) = TwoDGrid(args...; ArrayType=Array, kwar
 
 Returns the collocation points of the grid `g` in 2D arrays `X, Y`.
 """
-function gridpoints(g::AbstractGrid{Tg, <:Array}) where Tg
+function gridpoints(g::AbstractGrid{T, A}) where {T, A}
   X = [ g.x[i] for i=1:g.nx, j=1:g.ny]
   Y = [ g.y[j] for i=1:g.nx, j=1:g.ny]
-  X, Y
+  A(X), A(Y)
 end
 
 """
