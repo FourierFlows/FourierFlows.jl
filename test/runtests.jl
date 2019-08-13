@@ -216,11 +216,3 @@ for dev in devices
   end
 
 end # end loop over devices
-
-# @time @testset "Output tests" begin
-#   include("test_output.jl")
-# 
-#   @test test_saveproblem_saveoutput(CPU())
-#   @test test_saveproblemTwoDGrid(CPU())
-#   @test test_savediagnostic(CPU())
-# end
