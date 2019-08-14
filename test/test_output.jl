@@ -55,7 +55,8 @@ function test_saveproblem_saveoutput(dev::Device=CPU())
   ctest[3] = π
   prob.vars.c .= ctest
   
-  get_c(prob) = prob.vars.c
+  get_c(prob) = collect(prob.vars.c)
+  
   out = Output(prob, filename, (:c, get_c))
   
   saveproblem(out)
@@ -64,7 +65,7 @@ function test_saveproblem_saveoutput(dev::Device=CPU())
   
   file = jldopen(filename)
   
-  return isfile(filename) && isapprox(file["snapshots"]["c"]["0"], Array(ctest), rtol=rtol_output) && isapprox(file["grid"]["Lx"], prob.grid.Lx, rtol=rtol_output) && isapprox(file["eqn"]["L"], Array(prob.eqn.L), rtol=rtol_output)
+  return isfile(filename) && isapprox(file["snapshots"]["c"]["0"], collect(ctest), rtol=rtol_output) && isapprox(file["grid"]["Lx"], prob.grid.Lx, rtol=rtol_output) && isapprox(file["eqn"]["L"], collect(prob.eqn.L), rtol=rtol_output)
 end
 
 function test_saveproblemTwoDGrid(dev::Device=CPU())
@@ -83,7 +84,7 @@ function test_saveproblemTwoDGrid(dev::Device=CPU())
       @. L = -kappa * grid.kr^2
       eqn = FourierFlows.Equation(L, FourierFlows.Diffusion.calcN!, grid)
 
-     prob = FourierFlows.Problem(dev, eqn, stepper, dt, grid, vars, params)
+     prob = FourierFlows.Problem(eqn, stepper, dt, grid, vars, params, dev)
   
   filename = joinpath(".", "testoutput.jld2")
   if isfile(filename); rm(filename); end
@@ -95,7 +96,7 @@ function test_saveproblemTwoDGrid(dev::Device=CPU())
     
   file = jldopen(filename)
   
-  return isfile(filename) && isapprox(file["grid"]["Ly"], prob.grid.Ly, rtol=rtol_output) && isapprox(file["eqn"]["L"], Array(prob.eqn.L), rtol=rtol_output)
+  return isfile(filename) && isapprox(file["grid"]["Ly"], prob.grid.Ly, rtol=rtol_output) && isapprox(file["eqn"]["L"], collect(prob.eqn.L), rtol=rtol_output)
 end
 
 function test_savediagnostic(dev::Device=CPU())
