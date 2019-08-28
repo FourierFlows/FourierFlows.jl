@@ -25,48 +25,55 @@ function Problem(;
          kappa = 0,
             dt = 0.01,
        stepper = "RK4",
-             T = Float64
+             T = Float64,
+           dev = CPU()
   )
 
-    grid = OneDGrid(nx, Lx; T=T)
-  params = Params(kappa)
-    vars = Vars(grid)
-     eqn = Equation(kappa, grid)
+    grid = OneDGrid(dev, nx, Lx; T=T)
+  params = Params(dev, kappa)
+    vars = Vars(dev, grid)
+     eqn = DiffusionEquation(dev, kappa, grid)
 
-  FourierFlows.Problem(eqn, stepper, dt, grid, vars, params)
+  FourierFlows.Problem(eqn, stepper, dt, grid, vars, params, dev)
 end
 
 struct Params{T} <: AbstractParams
   kappa::T
 end
 
+Params(dev, kappa::Number) = Params(kappa)
+Params(dev, kappa::AbstractArray) = Params(ArrayType(dev)(kappa))
+
 """
     Equation(p, g)
 
 Returns the equation for constant diffusivity problem with params p and grid g.
 """
-function Equation(kappa::T, g) where T<:Number
-  FourierFlows.Equation(-kappa*g.kr.^2, calcN!, g)
+function DiffusionEquation(dev::Device, kappa::T, grid) where T<:Number
+  L = zeros(dev, T, grid.nkr)
+  @. L = -kappa * grid.kr^2
+  FourierFlows.Equation(L, calcN!, grid)
 end
 
-function Equation(kappa::T, g::AbstractGrid{Tg}) where {T<:AbstractArray,Tg}
-  FourierFlows.Equation(0, calcN!, g; dims=(g.nkr,), T=cxtype(Tg))
+function DiffusionEquation(dev::Device, kappa::T, grid::AbstractGrid{Tg}) where {T<:AbstractArray, Tg}
+  FourierFlows.Equation(0, calcN!, grid; dims=(grid.nkr,), T=cxtype(Tg))
 end
 
-# Construct Vars types
-const physicalvars = [:c, :cx]
-const  fouriervars = [:ch, :cxh]
-
-eval(varsexpression(:Vars, physicalvars, fouriervars))
+struct Vars{Aphys, Atrans} <: AbstractVars
+    c :: Aphys
+   cx :: Aphys
+   ch :: Atrans
+  cxh :: Atrans
+end
 
 """
-    Vars(g)
+    Vars(dev, grid)
 
 Returns the vars for constant diffusivity problem on grid g.
 """
-function Vars(g::AbstractGrid{T}) where T
-  @zeros T g.nx c cx
-  @zeros Complex{T} g.nkr ch cxh
+function Vars(::Dev, grid::AbstractGrid{T}) where {Dev, T}
+  @devzeros Dev T grid.nx c cx
+  @devzeros Dev Complex{T} grid.nkr ch cxh
   Vars(c, cx, ch, cxh)
 end
 

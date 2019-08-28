@@ -52,8 +52,8 @@ macro superzeros(T, ad, vars...)
   append!(expr.args, [:( $(esc(var)) = superzeros($(esc(T)), $(esc(ad))); ) for var in vars])
   expr
 end
-
 supersize(a) = Tuple([size(ai) for ai in a])
+supersize(a::Array{T}) where T<:AbstractArray = Tuple([size(ai) for ai in a])
 supersize(a::Array{T}) where T<:Number = size(a)
 
 macro createarrays(T, dims, vars...)
@@ -71,6 +71,28 @@ Create arrays of all zeros with element type `T`, size `dims`, and global names
 macro zeros(T, dims, vars...)
   expr = Expr(:block)
   append!(expr.args, [:($(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
+  expr
+end
+
+Base.zeros(::CPU, T, dims) = zeros(T, dims)
+
+"""
+    devzeros(dev, T, dims)
+
+Returns an array like `A` of type `T`, but full of zeros.
+"""
+devzeros(dev, T, dims) = zeros(dev, T, dims)
+
+
+"""
+    @devzeros dev T dims a b c...
+
+Create arrays of all zeros with element type `T`, size `dims`, and global names
+`a`, `b`, `c` (for example) on device `dev`.
+"""
+macro devzeros(dev, T, dims, vars...)
+  expr = Expr(:block)
+  append!(expr.args, [:($(esc(var)) = zeros($(esc(dev))(), $(esc(T)), $(esc(dims))); ) for var in vars])
   expr
 end
 
@@ -291,3 +313,6 @@ function structvarsexpr(name, fieldspecs; parent=nothing)
   end
   expr
 end
+
+ArrayType(::CPU, T, dim) = Array{T, dim}
+ArrayType(::CPU) = Array

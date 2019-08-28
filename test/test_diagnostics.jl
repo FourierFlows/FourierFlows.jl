@@ -1,5 +1,5 @@
-function test_diagnosticsteps(; nsteps=100, freq=1, ndata=ceil(Int, (nsteps+1)/freq))
-  prob = Problem(nx=6, Lx=2π)
+function test_diagnosticsteps(dev::Device=CPU(); nsteps=100, freq=1, ndata=ceil(Int, (nsteps+1)/freq))
+  prob = Problem(nx=6, Lx=2π, dev=dev)
   getone(prob) = 1
   d = Diagnostic(getone, prob, nsteps=nsteps, freq=freq, ndata=ndata)
   stepforward!(prob, d, nsteps)
@@ -7,12 +7,12 @@ function test_diagnosticsteps(; nsteps=100, freq=1, ndata=ceil(Int, (nsteps+1)/f
   d.steps[1:d.i] == expectedsteps
 end
 
-function test_scalardiagnostics(; nx=6, Lx=2π, kappa=1e-2, nsteps=100, freq=1, ndata=ceil(Int, (nsteps+1)/freq))
+function test_scalardiagnostics(dev::Device=CPU(); nx=6, Lx=2π, kappa=1e-2, nsteps=100, freq=1, ndata=ceil(Int, (nsteps+1)/freq))
   k1 = 2π/Lx
    τ = 1/(kappa*k1^2) # time-scale for diffusive decay
   dt = 1e-4 * τ # dynamics are resolved.
 
-  prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper="ETDRK4")
+  prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper="ETDRK4", dev=dev)
   g = prob.grid
 
   ct(t) = exp(-kappa*k1^2*t)
@@ -32,12 +32,12 @@ function test_scalardiagnostics(; nx=6, Lx=2π, kappa=1e-2, nsteps=100, freq=1, 
   isapprox(d[:data], da)
 end
 
-function test_basicdiagnostics(; nx=6, Lx=2π, kappa=1e-2)
+function test_basicdiagnostics(dev::Device=CPU(); nx=6, Lx=2π, kappa=1e-2)
   k1 = 2π/Lx
    τ = 1/(kappa*k1^2) # time-scale for diffusive decay
   dt = 1e-2 * τ # dynamics are resolved.
 
-  prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper="ETDRK4")
+  prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper="ETDRK4", dev=dev)
   g = prob.grid
 
   c0 = @. sin(k1*g.x)

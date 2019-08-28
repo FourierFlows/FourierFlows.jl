@@ -50,8 +50,8 @@ function test_supertuplezeros(; T1=Float64, T2=Complex{Float64}, dims1=(1,), dim
     size(a[1]) == dims1 && size(a[2]) == dims2 ) 
 end
 
-function test_domainaverage(n)
-  g = TwoDGrid(n, 2π)
+function test_domainaverage(dev::Device, n)
+  g = TwoDGrid(dev, n, 2π)
   X, Y = gridpoints(g)
   cx = @. cos(X)^2
   cy = @. cos(Y)^2
@@ -59,8 +59,8 @@ function test_domainaverage(n)
 end
 
 # This test could use some further work.
-function test_radialspectrum(n, ahkl, ahρ; debug=false, atol=0.1)
-  g = TwoDGrid(n, 2π)
+function test_radialspectrum(dev::Device, n, ahkl, ahρ; debug=false, atol=0.1)
+  g = TwoDGrid(dev, n, 2π)
   ah = @. ahkl(g.k, g.l)
   ah[1, 1] = 0.0
 
@@ -87,7 +87,7 @@ function test_parsevalsum(func, grid; realvalued=true)
   elseif realvalued==false; funch = fft(func)
   end
   parsevalsum = FourierFlows.parsevalsum(abs2.(funch), grid)
-  isapprox(integral, parsevalsum; atol=1.0e-14)
+  isapprox(integral, parsevalsum; rtol=rtol_utils)
 end
 
 function test_parsevalsum2(func, grid; realvalued=true)
@@ -98,7 +98,7 @@ function test_parsevalsum2(func, grid; realvalued=true)
   elseif realvalued==false; funch = fft(func)
   end
   parsevalsum2 = FourierFlows.parsevalsum2(funch, grid)
-  isapprox(integral, parsevalsum2; atol=1.0e-14)
+  isapprox(integral, parsevalsum2; rtol=rtol_utils)
 end
 
 """

@@ -23,7 +23,6 @@ function test_rfft_cosmxcosny(g::TwoDGrid)
     isapprox(f1hr, f1hr_th, rtol=rtol_fft)
 end
 
-
 function test_fft_sinmxny(g::TwoDGrid)
     f1, f2, f1h, f2h, f1hr, f2hr, f1hr_mulPk, f2hr_mul, f1h_th, f1hr_th, f2h_th, f2hr_th = create_testfuncs(g)
     isapprox(f2h, f2h_th, rtol=rtol_fft)

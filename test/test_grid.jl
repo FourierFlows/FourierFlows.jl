@@ -2,13 +2,13 @@ testnx(g, nx) = isapprox(g.nx, nx)
 testny(g, ny) = isapprox(g.ny, ny)
 
 # Physical grid tests
-function testdx(g::AbstractGrid{T}) where T
+function testdx(g::AbstractGrid{T}) where {T, Ta}
   dxgrid = @. g.x[2:end] - g.x[1:end-1]
   dxones = g.dx*ones(T, size(dxgrid))
   isapprox(dxgrid, dxones)
 end
 
-function testdy(g::AbstractGrid{T}) where T
+function testdy(g::AbstractGrid{T, Ta}) where {T, Ta}
   dygrid = @. g.y[2:end] - g.y[1:end-1]
   dyones = g.dy*ones(T, size(dygrid))
   isapprox(dygrid, dyones)
@@ -34,7 +34,7 @@ testkr(g) = isapprox(g.k[1:g.nkr], g.kr)
 #testk(g) = sum(g.k[2:g.nkr-1] .+ reverse(g.k[g.nkr+1:end], dims=1)) == 0.0
 #testl(g) = sum(g.l[:, 2:Int(g.ny/2)] .+ reverse(g.l[:, Int(g.ny/2+2):end], dims=2)) == 0.0
 
-function testgridpoints(g::AbstractGrid{T}) where T
+function testgridpoints(g::AbstractGrid{T, Ta}) where {T, Ta}
   X, Y = gridpoints(g)
   dXgrid = @. X[2:end, :] - X[1:end-1, :]
   dYgrid = @. Y[:, 2:end] - Y[:, 1:end-1]
@@ -67,12 +67,12 @@ function testdealias(g::TwoDGrid)
   isapprox(temp, 0)
 end
 
-function testtypedonedgrid(nx, Lx; T=Float64)
+function testtypedonedgrid(dev::Device, nx, Lx; T=Float64)
   gr = OneDGrid(nx, Lx, T=T)
   typeof(gr.dx)==T && typeof(gr.x[1])==T && typeof(gr.Lx)==T 
 end
 
-function testtypedtwodgrid(nx, Lx, ny=Lx, Ly=Lx; T=Float64)
+function testtypedtwodgrid(dev::Device, nx, Lx, ny=Lx, Ly=Lx; T=Float64)
   gr = TwoDGrid(nx, Lx, ny, Ly, T=T)
   typeof(gr.dx)==T && typeof(gr.dy)==T && typeof(gr.x[1])==T && typeof(gr.y[1])==T && typeof(gr.Lx)==T && typeof(gr.Ly)==T 
 end
