@@ -8,6 +8,10 @@ struct Output
   prob::Problem
   path::String
   fields::Dict{Symbol,Function}
+  function Output(prob, path, fields::Dict{Symbol,Function})
+    truepath = uniquepath(withoutjld2(path)*".jld2") # ensure path ends in ".jld2"
+    new(prob, truepath, fields)
+  end
 end
 
 withoutjld2(path) = (length(path)>4 && path[end-4:end] == ".jld2") ? path[1:end-5] : path
@@ -29,12 +33,6 @@ function uniquepath(path)
   path
 end
     
-function Output(prob, path, fields::Dict{Symbol,Function})
-  truepath = uniquepath(withoutjld2(path)*".jld2") # ensure path ends in ".jld2"
-  saveproblem(prob, truepath)
-  Output(prob, filename, fields)
-end
-
 Output(prob, path, fields...) = Output(prob, path, Dict{Symbol,Function}([fields...]))
 Output(prob, path, field::Tuple{Symbol,T}) where T = Output(prob, path, Dict{Symbol,Function}([field]))
 
