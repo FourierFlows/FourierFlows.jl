@@ -45,9 +45,9 @@ Params(dev, kappa::Number) = Params(kappa)
 Params(dev, kappa::AbstractArray) = Params(ArrayType(dev)(kappa))
 
 """
-    Equation(p, g)
+    DiffusionEquation(dev, kappa, grid)
 
-Returns the equation for constant diffusivity problem with params p and grid g.
+Returns the equation for constant diffusivity problem with diffusivity kappa and grid.
 """
 function DiffusionEquation(dev::Device, kappa::T, grid) where T<:Number
   L = zeros(dev, T, grid.nkr)
