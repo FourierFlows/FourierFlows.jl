@@ -13,8 +13,8 @@ using LinearAlgebra: mul!, ldiv!, norm
 
 # the devices on which tests will run
 devices = (CPU(),)
-@hascuda devices = (CPU(), GPU())
-@hascuda using CuArrays
+@has_cuda devices = (CPU(), GPU())
+@has_cuda using CuArrays
 
 const rtol_fft = 1e-12
 const rtol_output = 1e-12

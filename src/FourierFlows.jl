@@ -2,8 +2,7 @@ module FourierFlows
 
 export
   # Helper variables and macros for determining if machine is CUDA-enabled.
-  HAVE_CUDA,
-  @hascuda,
+  @has_cuda,
   
   Device,
   CPU,
@@ -59,6 +58,7 @@ using
   JLD2,
   Statistics,
   Interpolations,
+  CUDAapi,
   Requires
 
 import Base: resize!, getindex, setindex!, lastindex, push!, append!
@@ -89,15 +89,18 @@ include("timesteppers.jl")
 include("diffusion.jl")
 
 # Import CUDA utilities if cuda is detected.
-const HAVE_CUDA = try
-    using CuArrays
-    true
-catch
-    false
+if has_cuda()
+  try
+    using CuArrays # we have CUDA, so this should not fail
+  catch ex
+    # something is wrong with the user's set-up (or there's a bug in CuArrays)
+    @warn "CUDA is installed, but CuArrays.jl fails to load" exception=(ex, catch_backtrace())
+  end
 end
 
-macro hascuda(ex)
-    return HAVE_CUDA ? :($(esc(ex))) : :(nothing)
+
+macro has_cuda(ex)
+  return has_cuda() ? :($(esc(ex))) : :(nothing)
 end
 
 
