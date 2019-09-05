@@ -87,7 +87,7 @@ function test_saveproblemTwoDGrid(dev::Device=CPU())
      prob = FourierFlows.Problem(eqn, stepper, dt, grid, vars, params, dev)
   
   filename = joinpath(".", "testoutput.jld2")
-  if isfile(filename); rm(filename); end
+  if isfile(filename); GC.gc(); rm(filename); end
     
   get_c(prob) = prob.vars.c
   out = Output(prob, filename, (:c, get_c))
@@ -101,7 +101,7 @@ end
 
 function test_savediagnostic(dev::Device=CPU())
   filename = joinpath(".", "testoutput.jld2")
-  if isfile(filename); rm(filename); end
+  if isfile(filename); GC.gc(); rm(filename); end
 
   prob = Problem(nx=6, Lx=2π, dev=dev)
   getone(prob) = 1
