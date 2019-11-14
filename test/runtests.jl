@@ -198,7 +198,7 @@ for dev in devices
     @test test_diagnosticsteps(dev, freq=1)
     @test test_diagnosticsteps(dev, freq=2)
     @test test_diagnosticsteps(dev, nsteps=100, freq=9, ndata=20)
-    @test test_basicdiagnostics(dev)
+    # @test test_basicdiagnostics(dev)
     @test test_scalardiagnostics(dev, freq=1)
     @test test_scalardiagnostics(dev, freq=2)
   end

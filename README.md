@@ -1,11 +1,14 @@
 # FourierFlows.jl
 
 <p align="left">
-    <a href="https://travis-ci.org/FourierFlows/FourierFlows.jl">
-        <img src="https://travis-ci.org/FourierFlows/FourierFlows.jl.svg?branch=master" title="Build Status">
+    <a href="https://travis-ci.com/FourierFlows/FourierFlows.jl">
+        <img alt="Build Status for CPU" src="https://img.shields.io/travis/com/FourierFlows/FourierFlows.jl/master?label=CPU&logo=travis&logoColor=white&style=flat-square">
+    </a>
+    <a href="https://gitlab.com/JuliaGPU/FourierFlows-jl/commits/master">
+      <img alt="Build Status for GPU" src="https://img.shields.io/gitlab/pipeline/JuliaGPU/FourierFlows-jl/master?label=GPU&logo=gitlab&logoColor=white&style=flat-square">
     </a>
     <a href="https://ci.appveyor.com/project/navidcy/fourierflows-jl">
-        <img src="https://ci.appveyor.com/api/projects/status/3hm86k8d4qdch730?svg=true" title="Build Status">
+        <img alt="Build Status for Window" src="https://img.shields.io/appveyor/ci/navidcy/fourierflows-jl/master?label=Window&logo=appveyor&logoColor=white&style=flat-square">
     </a>
     <a href="https://FourierFlows.github.io/FourierFlows.jl/stable">
         <img src="https://img.shields.io/badge/docs-stable-blue.svg">
@@ -59,7 +62,7 @@ and [Navid C. Constantinou][] (@navidcy).
 
 The code is citable via [zenodo](https://zenodo.org). Please cite as:
 
-> Gregory L. Wagner & Navid C. Constantinou. (2018). FourierFlows/FourierFlows.jl: FourierFlows v0.3.0 (Version v0.3.0). Zenodo.  [http://doi.org/10.5281/zenodo.1161724](http://doi.org/10.5281/zenodo.1161724)
+> Navid C. Constantinou & Gregory L. Wagner. (2019). FourierFlows/FourierFlows.jl: FourierFlows v0.3.2 (Version v0.3.2). Zenodo.  [http://doi.org/10.5281/zenodo.1161724](http://doi.org/10.5281/zenodo.1161724)
 
 
 
