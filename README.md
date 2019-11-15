@@ -2,19 +2,19 @@
 
 <p align="left">
     <a href="https://travis-ci.com/FourierFlows/FourierFlows.jl">
-        <img alt="Build Status for CPU" src="https://img.shields.io/travis/com/FourierFlows/FourierFlows.jl/master?label=CPU&logo=travis&logoColor=white&style=flat-square">
+        <img alt="Build Status for CPU" src="https://img.shields.io/travis/com/FourierFlows/FourierFlows.jl/master?label=CPU&logo=travis&logoColor=white">
     </a>
     <a href="https://gitlab.com/JuliaGPU/FourierFlows.jl/commits/master">
-      <img alt="Build Status for GPU" src="https://img.shields.io/gitlab/pipeline/JuliaGPU/FourierFlows.jl/master?label=GPU&logo=gitlab&logoColor=white&style=flat-square">
+      <img alt="Build Status for GPU" src="https://img.shields.io/gitlab/pipeline/JuliaGPU/FourierFlows.jl/master?label=GPU&logo=gitlab&logoColor=white">
     </a>
     <a href="https://ci.appveyor.com/project/navidcy/fourierflows-jl">
-        <img alt="Build Status for Window" src="https://img.shields.io/appveyor/ci/navidcy/fourierflows-jl/master?label=Window&logo=appveyor&logoColor=white&style=flat-square">
+        <img alt="Build Status for Windows" src="https://img.shields.io/appveyor/ci/navidcy/fourierflows-jl/master?label=Window&logo=appveyor&logoColor=white">
     </a>
     <a href="https://FourierFlows.github.io/FourierFlows.jl/stable">
-        <img src="https://img.shields.io/badge/docs-stable-blue.svg">
+        <img alt="stable docs" src="https://img.shields.io/badge/docs-stable-blue.svg">
     </a>
     <a href="https://FourierFlows.github.io/FourierFlows.jl/dev">
-        <img src="https://img.shields.io/badge/docs-dev-blue.svg">
+        <img alt="latest docs" src="https://img.shields.io/badge/docs-dev-blue.svg">
     </a>
     <a href="https://coveralls.io/github/FourierFlows/FourierFlows.jl?branch=master">
         <img src="https://coveralls.io/repos/github/FourierFlows/FourierFlows.jl/badge.svg?branch=master" title="coveralls">
@@ -23,14 +23,14 @@
         <img src="https://codecov.io/gh/FourierFlows/FourierFlows.jl/branch/master/graph/badge.svg" title="codecov">
     </a>
     <a href="https://doi.org/10.5281/zenodo.1161724">
-        <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.1161724.svg" alt="DOI">
+        <img alt="doi" src="https://zenodo.org/badge/DOI/10.5281/zenodo.1161724.svg" alt="DOI">
     </a>
 </p>
 
 ## Overview
 
 This software provides tools for partial differential equations on
-doubly-periodic domains using Fourier-based pseudospectral methods.
+periodic domains using Fourier-based pseudospectral methods.
 A central intent of the software's design is also to provide a framework
 for writing new, fast solvers for new physical problems.
 The code is written in [Julia][].
