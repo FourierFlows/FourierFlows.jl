@@ -4,9 +4,8 @@ variables:
 
 # See: https://github.com/JuliaGPU/gitlab-ci
 include:
-  - 'https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v5/test.yml'
-  - 'https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v5/coverage.yml'
-
+  - 'https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v6.yml'
+  
 test:v1.2:
   extends: .test:v1.2
 
