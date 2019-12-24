@@ -8,7 +8,7 @@ include:
   - 'https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v5/coverage.yml'
 
 test:v1.2:
-  extends: .test:v1.3
+  extends: .test:v1.2
 
 test:v1.3:
   extends: .test:v1.3
@@ -23,7 +23,7 @@ coverage:
   variables:
     CI_VERSION_TAG: 'v1.3'
   script:
-    - julia --project -e 'import Pkg; Pkg.add("Coverage")'
+    - julia --project -e 'using Pkg; Pkg.add("Coverage")'
     - julia --project -e 'using Coverage;
                           cl, tl = get_summary(process_folder());
                           println("(", cl/tl*100, "%) covered");
