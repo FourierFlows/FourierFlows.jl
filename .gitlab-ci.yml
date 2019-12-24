@@ -13,7 +13,7 @@ test:v1.3:
   extends: .julia:1.3
 
 test:dev:
-  extends: .test:dev
+  extends: .julia:nightly
   allow_failure: true
 
 coverage:
