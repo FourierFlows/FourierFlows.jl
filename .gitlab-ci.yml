@@ -7,26 +7,27 @@ include:
   - 'https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v6.yml'
 
 test:v1.2:
-  extends: .julia:1.2
+  extends:
+    - .julia:1.2
+    - .test
+  tags:
+    - nvidia
+  image: nvidia/cuda:latest
 
 test:v1.3:
-  extends: .julia:1.3
+  extends:
+    - .julia:1.3
+    - .test
+    - .coverage
+  tags:
+    - nvidia
+  image: nvidia/cuda:latest
 
-test:dev:
-  extends: .julia:nightly
-  allow_failure: true
-
-coverage:
-  stage: post
-  extends: .root
-  variables:
-    CI_VERSION_TAG: 'v1.3'
-  script:
-    - julia --project -e 'using Pkg; Pkg.add("Coverage")'
-    - julia --project -e 'using Coverage;
-                          cl, tl = get_summary(process_folder());
-                          println("(", cl/tl*100, "%) covered");
-                          Codecov.submit_local(Codecov.process_folder(), ".");
-                          Coveralls.submit_local(Coveralls.process_folder(), ".")'
-  coverage: '/\(\d+.\d+\%\) covered/'
+test:nightly:
+  extends:
+    - .julia:nightly
+    - .test
+  tags:
+    - nvidia
+  image: nvidia/cuda:latest
   allow_failure: true
