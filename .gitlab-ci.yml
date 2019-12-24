@@ -18,7 +18,6 @@ test:v1.3:
   extends:
     - .julia:1.3
     - .test
-    - .coverage
   tags:
     - nvidia
   image: nvidia/cuda:latest
@@ -30,4 +29,11 @@ test:nightly:
   tags:
     - nvidia
   image: nvidia/cuda:latest
+  allow_failure: true
+
+coverage:
+  extends:
+    - .julia:1.3
+  variables:
+    CI_VERSION_TAG: 'v1.3'
   allow_failure: true
