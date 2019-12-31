@@ -16,9 +16,11 @@
     <a href="https://FourierFlows.github.io/FourierFlows.jl/dev">
         <img alt="latest docs" src="https://img.shields.io/badge/docs-dev-blue.svg">
     </a>
+    <!-- removes coveralls since it does not report GPU coverage via gitlab/JuliaGPU
     <a href="https://coveralls.io/github/FourierFlows/FourierFlows.jl?branch=master">
         <img src="https://coveralls.io/repos/github/FourierFlows/FourierFlows.jl/badge.svg?branch=master" title="coveralls">
     </a>
+    -->
     <a href="https://codecov.io/gh/FourierFlows/FourierFlows.jl">
         <img src="https://codecov.io/gh/FourierFlows/FourierFlows.jl/branch/master/graph/badge.svg" title="codecov">
     </a>
@@ -49,8 +51,8 @@ and no more.
 
 ## Example(s)
 
-See the child package [GeophysicalFlows.jl][] for example usage of `FourierFlows.jl` for problems in 
-Geophysical Fluid Dynamics.
+See the child package [GeophysicalFlows.jl][] for example usage of 
+`FourierFlows.jl` for problems in Geophysical Fluid Dynamics.
 
 ## Developers
 
