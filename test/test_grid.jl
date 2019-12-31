@@ -101,7 +101,6 @@ function testdealias(g::ThreeDGrid)
       temp += abs.(fh[i, j, k]) #temp = sum of |fh| for aliased wavenumbers
     end
   end
-  temp
   isapprox(temp, 0)
 end
 
