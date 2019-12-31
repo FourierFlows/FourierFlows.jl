@@ -53,8 +53,8 @@ struct OneDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractGri
    kralias :: UnitRange{Int}
 end
 
-function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64, dealias=1/3,
-                  ArrayType=Array)
+function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, 
+                  T=Float64, dealias=1/3, ArrayType=Array)
 
   dx = Lx/nx
   x = ArrayType{T}(range(x0, step=dx, length=nx))
@@ -124,7 +124,7 @@ end
 
 function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, 
                   effort=FFTW.MEASURE, T=Float64, dealias=1/3, ArrayType=Array)
-                  
+
   dx = Lx/nx
   dy = Ly/ny
 
@@ -171,18 +171,125 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
            fftplan, rfftplan, kalias, kralias, lalias)
 end
 
+"""
+    ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-Lz/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
+
+Constructs a ThreeDGrid object.
+"""
+struct ThreeDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractGrid{T, Ta}
+  nx::Int
+  ny::Int
+  nz::Int
+  nk::Int
+  nl::Int
+  nm::Int
+  nkr::Int
+
+  dx::T
+  dy::T
+  dz::T
+  Lx::T
+  Ly::T
+  Lz::T
+
+  x::Ta
+  y::Ta
+  z::Ta
+  k::Ta
+  l::Ta
+  m::Ta
+  kr::Ta
+  Ksq::Ta
+  invKsq::Ta
+  Krsq::Ta
+  invKrsq::Ta
+
+  fftplan::Tfft
+  rfftplan::Trfft
+
+  # Range objects that access the aliased part of the wavenumber range
+  kalias::UnitRange{Int}
+  kralias::UnitRange{Int}
+  lalias::UnitRange{Int}
+  malias::UnitRange{Int}
+end
+
+function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-Lz/2,
+                  nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64, dealias=1/3, ArrayType=Array)
+
+  dx = Lx/nx
+  dy = Ly/ny
+  dz = Lz/nz
+
+  nk = nx
+  nl = ny
+  nm = nz
+  nkr = Int(nx/2+1)
+
+  # Physical grid
+  x = ArrayType{T}(reshape(range(x0, step=dx, length=nx), (nx, 1, 1)))
+  y = ArrayType{T}(reshape(range(y0, step=dy, length=ny), (1, ny, 1)))
+  z = ArrayType{T}(reshape(range(z0, step=dz, length=nz), (1, 1, nz)))
+
+  # Wavenubmer grid
+  i₁ = 0:Int(nx/2)
+  i₂ = Int(-nx/2+1):-1
+  j₁ = 0:Int(ny/2)
+  j₂ = Int(-ny/2+1):-1
+  k₁ = 0:Int(nz/2)
+  k₂ = Int(-nz/2+1):-1
+
+   k = ArrayType{T}(reshape(2π/Lx*cat(i₁, i₂, dims=1), (nk, 1, 1)))
+   l = ArrayType{T}(reshape(2π/Ly*cat(j₁, j₂, dims=1), (1, nl, 1)))
+   m = ArrayType{T}(reshape(2π/Ly*cat(k₁, k₂, dims=1), (1, 1, nm)))
+  kr = ArrayType{T}(reshape(2π/Lx*cat(i₁, dims=1), (nkr, 1, 1)))
+
+     Ksq = @. k^2 + l^2 + m^2
+  invKsq = @. 1/Ksq
+  invKsq[1, 1, 1] = 0
+
+     Krsq = @. kr^2 + l^2 + m^2
+  invKrsq = @. 1/Krsq
+  invKrsq[1, 1, 1] = 0
+
+  # FFT plans
+  FFTW.set_num_threads(nthreads)
+  fftplan = plan_flows_fft(ArrayType{Complex{T}, 3}(undef, nx, ny, nz), effort)
+  rfftplan = plan_flows_rfft(ArrayType{T, 3}(undef, nx, ny, nz), effort)
+
+  # Index endpoints for aliasfrac i, j wavenumbers
+  kalias, kralias = getaliasedwavenumbers(nk, nkr, dealias)
+  lalias, malias = getaliasedwavenumbers(nl, nm, dealias)
+  
+  Ta = typeof(x)
+  Tfft = typeof(fftplan)
+  Trfft = typeof(rfftplan)
+
+  ThreeDGrid{T, Ta, Tfft, Trfft}(nx, ny, nz, nk, nl, nm, nkr, dx, dy, dz, Lx, Ly, Lz,
+   x, y, z, k, l, m, kr, Ksq, invKsq, Krsq, invKrsq, fftplan, rfftplan, 
+   kalias, kralias, lalias, malias)
+end
+
 OneDGrid(dev::CPU, args...; kwargs...) = OneDGrid(args...; ArrayType=Array, kwargs...)
 TwoDGrid(dev::CPU, args...; kwargs...) = TwoDGrid(args...; ArrayType=Array, kwargs...)
+ThreeDGrid(dev::CPU, args...; kwargs...) = ThreeDGrid(args...; ArrayType=Array, kwargs...)
 
 """
     gridpoints(g)
 
-Returns the collocation points of the grid `g` in 2D arrays `X, Y`.
+Returns the collocation points of the grid `g` in 2D or 3D arrays `X, Y (and Z)`.
 """
-function gridpoints(g::AbstractGrid{T, A}) where {T, A}
+function gridpoints(g::TwoDGrid{T, A}) where {T, A}
   X = [ g.x[i] for i=1:g.nx, j=1:g.ny]
   Y = [ g.y[j] for i=1:g.nx, j=1:g.ny]
   A(X), A(Y)
+end
+
+function gridpoints(g::ThreeDGrid{T, A}) where {T, A}
+  X = [ g.x[i] for i=1:g.nx, j=1:g.ny, k=1:g.nz]
+  Y = [ g.y[j] for i=1:g.nx, j=1:g.ny, k=1:g.nz]
+  Z = [ g.z[k] for i=1:g.nx, j=1:g.ny, k=1:g.nz]
+  A(X), A(Y), A(Z)
 end
 
 """
@@ -212,6 +319,17 @@ function dealias!(a, g::TwoDGrid, kalias)
   nothing
 end
 
+function dealias!(a, g::ThreeDGrid)
+  kalias = size(a, 1) == g.nkr ? g.kralias : g.kalias
+  dealias!(a, g, kalias)
+  nothing
+end
+
+function dealias!(a, g::ThreeDGrid, kalias)
+  @views @. a[kalias, g.lalias, g.malias, :] = 0
+  nothing
+end
+
 """
     makefilter(K; order=4, innerK=0.65, outerK=1)
 
@@ -229,14 +347,20 @@ function makefilter(K::Array; order=4, innerK=0.65, outerK=1)
   TK(filt)
 end
 
+function makefilter(g::OneDGrid; realvars=true, kwargs...)
+  K = realvars ? g.kr*g.dx/π : @.(abs(g.k*g.dx/π))
+  makefilter(K; kwargs...)
+end
+
 function makefilter(g::TwoDGrid; realvars=true, kwargs...)
   K = realvars ?
       @.(sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2)) : @.(sqrt((g.k*g.dx/π)^2 + (g.l*g.dy/π)^2))
   makefilter(K; kwargs...)
 end
 
-function makefilter(g::OneDGrid; realvars=true, kwargs...)
-  K = realvars ? g.kr*g.dx/π : @.(abs(g.k*g.dx/π))
+function makefilter(g::ThreeDGrid; realvars=true, kwargs...)
+  K = realvars ?
+      @.(sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2 + (g.m*g.dz/π)^2)) : @.(sqrt((g.k*g.dx/π)^2 + (g.l*g.dy/π)^2 + (g.m*g.dz/π)^2))
   makefilter(K; kwargs...)
 end
 

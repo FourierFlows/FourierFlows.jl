@@ -40,7 +40,7 @@ for dev in devices
   println("testing on "*string(typeof(dev)))
 
   @time @testset "Grid tests" begin
-    include("test_grid.jl")      
+    include("test_grid.jl")
     # Test 1D grid
     nx, Lx = 6, 2π
     g₁ = OneDGrid(dev, nx, Lx)
@@ -66,10 +66,30 @@ for dev in devices
     @test testgridpoints(g₂)
     @test testdealias(g₂)
     
+    # Test 3D parallelogram grid
+    nz, Lz = 10, 3.0
+    g₃ = ThreeDGrid(dev, nx, Lx, ny, Ly, nz, Lz)
+    @test testnx(g₃, nx)
+    @test testny(g₃, ny)
+    @test testnz(g₃, nz)
+    @test testdx(g₃)
+    @test testdy(g₃)
+    @test testdz(g₃)
+    @test testx(g₃)
+    @test testy(g₃)
+    @test testz(g₃)
+    @test testk(g₃)
+    @test testkr(g₃)
+    @test testl(g₃)
+    @test testm(g₃)
+    @test testgridpoints(g₃)
+    @test testdealias(g₃)
+    
     # Test typed grids
     T = Float32
     @test testtypedonedgrid(dev, nx, Lx; T=T)
     @test testtypedtwodgrid(dev, nx, Lx, ny, Ly; T=T)
+    @test testtypedthreedgrid(dev, nx, Lx, ny, Ly, nz, Lz; T=T)
   end
 
   @time @testset "FFT tests" begin
