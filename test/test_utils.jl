@@ -198,3 +198,7 @@ function test_supersize()
 
   dimsa == supersize(a) && dimsb == supersize(b)
 end
+
+function test_arraytype(dev::Device=CPU())
+  dev==CPU() ? ArrayType(dev)==Array : ArrayType(dev)==CuArray
+end

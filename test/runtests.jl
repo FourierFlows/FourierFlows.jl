@@ -139,6 +139,7 @@ for dev in devices
     @test test_superzeros()
     @test test_supertuplezeros()
     @test test_supersize()
+    @test test_arraytype(dev)
 
     # Test on a rectangular grid
     nx, ny = 64, 128   # number of points
