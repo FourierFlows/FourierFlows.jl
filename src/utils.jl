@@ -314,5 +314,5 @@ function structvarsexpr(name, fieldspecs; parent=nothing)
   expr
 end
 
-ArrayType(::CPU, T, dim) = Array{T, dim}
 ArrayType(::CPU) = Array
+ArrayType(::CPU, T, dim) = Array{T, dim}

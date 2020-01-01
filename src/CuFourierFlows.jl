@@ -13,8 +13,8 @@ function Base.zeros(::GPU, T, dims)
     return a
 end
 
-ArrayType(::GPU, T, dim) = CuArray{T, dim}
 ArrayType(::GPU) = CuArray
+ArrayType(::GPU, T, dim) = CuArray{T, dim}
 
 supersize(a::CuArray) = size(a)
 
