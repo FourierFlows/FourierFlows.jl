@@ -203,6 +203,6 @@ function test_arraytype(dev::Device=CPU())
   dev==CPU() ? ArrayType(dev)==Array : ArrayType(dev)==CuArray
 end
 
-function test_arraytype(dev::Device=CPU(); T=Float64, dim=1)
+function test_arraytypeTdim(dev::Device=CPU(), T=Float64, dim=1)
   dev==CPU() ? ArrayType(dev, T, dim)==Array{T, dim} : ArrayType(dev, T, dim)==CuArray{T, dim}
 end
