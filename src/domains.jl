@@ -241,7 +241,7 @@ function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-
 
    k = ArrayType{T}(reshape(2π/Lx*cat(i₁, i₂, dims=1), (nk, 1, 1)))
    l = ArrayType{T}(reshape(2π/Ly*cat(j₁, j₂, dims=1), (1, nl, 1)))
-   m = ArrayType{T}(reshape(2π/Ly*cat(k₁, k₂, dims=1), (1, 1, nm)))
+   m = ArrayType{T}(reshape(2π/Lz*cat(k₁, k₂, dims=1), (1, 1, nm)))
   kr = ArrayType{T}(reshape(2π/Lx*cat(i₁, dims=1), (nkr, 1, 1)))
 
      Ksq = @. k^2 + l^2 + m^2

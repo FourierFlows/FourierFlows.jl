@@ -66,8 +66,6 @@ import Base: resize!, getindex, setindex!, lastindex, push!, append!
 
 using Base: fieldnames
 
-using LinearAlgebra: mul!, ldiv!
-
 abstract type AbstractGrid{T, Ta} end
 abstract type AbstractTimeStepper{T} end
 abstract type AbstractParams end
