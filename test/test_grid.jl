@@ -25,6 +25,14 @@ testx(g) = isapprox(g.x[end]-g.x[1], g.Lx-g.dx)
 testy(g) = isapprox(g.y[end]-g.y[1], g.Ly-g.dy)
 testz(g) = isapprox(g.z[end]-g.z[1], g.Lz-g.dz)
 
+testx(g) = isapprox(g.x[end]-g.x[1], g.Lx-g.dx)
+testy(g) = isapprox(g.y[end]-g.y[1], g.Ly-g.dy)
+testz(g) = isapprox(g.z[end]-g.z[1], g.Lz-g.dz)
+
+testdk(g::Union{OneDGrid, TwoDGrid, ThreeDGrid}) = isapprox(g.k[2], 2π/g.Lx)
+testdl(g::Union{TwoDGrid, ThreeDGrid}) = isapprox(g.l[2], 2π/g.Ly)
+testdm(g::ThreeDGrid) = isapprox(g.m[2], 2π/g.Lz)
+
 # Test proper arrangement of fft wavenumbers. k = [0:nx/2, -nx/2+1:-1].
 flippednegatives(k, mid) = -reverse(k[mid+2:end])
 function testwavenumberalignment(k, nx)
@@ -35,7 +43,7 @@ function testwavenumberalignment(k, nx)
 end
 
 testk(g) = testwavenumberalignment(g.k, g.nx)
-testl(g) = testwavenumberalignment(g.l, g.ny)
+testl(g::Union{TwoDGrid, ThreeDGrid}) = testwavenumberalignment(g.l, g.ny)
 testm(g::ThreeDGrid) = testwavenumberalignment(g.m, g.nz)
 testkr(g) = isapprox(g.k[1:g.nkr], g.kr)
 
