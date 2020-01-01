@@ -140,6 +140,7 @@ for dev in devices
     @test test_supertuplezeros()
     @test test_supersize()
     @test test_arraytype(dev)
+    test_arraytype(dev; T=Float32, dim=2)
 
     # Test on a rectangular grid
     nx, ny = 64, 128   # number of points
