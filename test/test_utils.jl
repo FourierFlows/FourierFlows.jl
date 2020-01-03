@@ -204,5 +204,5 @@ function test_arraytype(dev::Device)
 end
 
 function test_arraytypeTdim(dev::Device, T=Float64, dim=1)
-  dev==CPU() ? ArrayType(dev, T, dim)==Array{T, dim} : ArrayType(dev, T, dim)==CuArray{T, dim}
+  dev==CPU() ? ArrayType(dev, T, dim)<:Array{T, dim} : ArrayType(dev, T, dim)<:CuArray{T, dim}
 end
