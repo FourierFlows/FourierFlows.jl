@@ -191,6 +191,8 @@ for dev in devices
     @test test_superzeros()
     @test test_supertuplezeros()
     @test test_supersize()
+    @test test_arraytype(dev)
+    @test test_arraytypeTdim(dev, Float32, 2)
 
     # Test on a rectangular grid
     nx, ny = 64, 128   # number of points
@@ -205,9 +207,8 @@ for dev in devices
     f2 = @. (cos(2k0*x + 3l0*y^2) + im*sin(2k0*x + 3l0*y^2)) * (exp(-(x^2 + y^2)/(2σ^2)) + 2im*exp(-(x^2 + y^2)/(5σ^2)))
 
     # Sine/Exp waves
-    k1, l1 = 2*k0, 6*l0
+    k1, l1 = 2*k0,  6*l0
     k2, l2 = 3*k0, -3*l0
-
     sinkl1 = @. sin(k1*x + l1*y)
     sinkl2 = @. sin(k2*x + l2*y)
     expkl1 = @. cos(k1*x + l1*y) + im*sin(k1*x + l1*y)
@@ -224,7 +225,7 @@ for dev in devices
     @test test_parsevalsum2(f1, g; realvalued=false) # Real valued f with fft
     @test test_parsevalsum2(f2, g; realvalued=false) # Complex valued f with fft
 
-    @test test_jacobian(sinkl1, sinkl1, 0*sinkl1, g)  # Test J(a, a) = 0
+    @test test_jacobian(sinkl1, sinkl1, 0*sinkl1, g)      # Test J(a, a) = 0
     @test test_jacobian(sinkl1, sinkl2, Jsinkl1sinkl2, g) # Test J(sin1, sin2) = Jsin1sin2
     @test test_jacobian(expkl1, expkl2, Jexpkl1expkl2, g) # Test J(exp1, exp2) = Jexp1exps2
 
@@ -235,11 +236,11 @@ for dev in devices
 
     # Radial spectrum tests. Note that ahρ = ∫ ah ρ dθ.
     n = 128; δ = n/10                 # Parameters
-    ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) #  a = exp(-ρ²/2δ²)
+    ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) # a  = exp(-ρ²/2δ²)
         ahρ(ρ) = 2π*ρ*exp(-ρ^2/2δ^2)  # aᵣ = 2π ρ exp(-ρ²/2δ²)
     @test test_radialspectrum(dev, n, ahkl, ahρ)
 
-    ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) * k^2/(k^2+l^2) #  a = exp(-ρ²/2δ²)*cos(θ)²
+    ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) * k^2/(k^2+l^2) # a  = exp(-ρ²/2δ²)*cos(θ)²
         ahρ(ρ) = π*ρ*exp(-ρ^2/2δ^2)                   # aᵣ = π ρ exp(-ρ²/2δ²)
     @test test_radialspectrum(dev, n, ahkl, ahρ)
   end
