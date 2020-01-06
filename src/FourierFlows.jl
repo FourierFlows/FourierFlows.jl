@@ -20,6 +20,7 @@ export
   ZeroDGrid,
   OneDGrid,
   TwoDGrid,
+  ThreeDGrid,
   dealias!,
   gridpoints,
 

@@ -40,24 +40,30 @@ for dev in devices
   println("testing on "*string(typeof(dev)))
 
   @time @testset "Grid tests" begin
-    include("test_grid.jl")      
+    include("test_grid.jl")
+    
+    nx, Lx =  6, 2π
+    ny, Ly =  8, 4π
+    nz, Lz = 10, 3.0
+    
     # Test 1D grid
-    nx, Lx = 6, 2π
     g₁ = OneDGrid(dev, nx, Lx)
     @test testnx(g₁, nx)
     @test testdx(g₁)
+    @test testdk(g₁)
     @test testx(g₁)
     @test testk(g₁)
     @test testkr(g₁)
     @test testdealias(g₁)
 
     # Test 2D rectangular grid
-    ny, Ly = 8, 4π
     g₂ = TwoDGrid(dev, nx, Lx, ny, Ly)
     @test testnx(g₂, nx)
     @test testny(g₂, ny)
     @test testdx(g₂)
     @test testdy(g₂)
+    @test testdk(g₂)
+    @test testdl(g₂)
     @test testx(g₂)
     @test testy(g₂)
     @test testk(g₂)
@@ -66,10 +72,32 @@ for dev in devices
     @test testgridpoints(g₂)
     @test testdealias(g₂)
     
+    # Test 3D parallelogram grid
+    g₃ = ThreeDGrid(dev, nx, Lx, ny, Ly, nz, Lz)
+    @test testnx(g₃, nx)
+    @test testny(g₃, ny)
+    @test testnz(g₃, nz)
+    @test testdx(g₃)
+    @test testdy(g₃)
+    @test testdz(g₃)
+    @test testdk(g₃)
+    @test testdl(g₃)
+    @test testdm(g₃)
+    @test testx(g₃)
+    @test testy(g₃)
+    @test testz(g₃)
+    @test testk(g₃)
+    @test testkr(g₃)
+    @test testl(g₃)
+    @test testm(g₃)
+    @test testgridpoints(g₃)
+    @test testdealias(g₃)
+    
     # Test typed grids
     T = Float32
     @test testtypedonedgrid(dev, nx, Lx; T=T)
     @test testtypedtwodgrid(dev, nx, Lx, ny, Ly; T=T)
+    @test testtypedthreedgrid(dev, nx, Lx, ny, Ly, nz, Lz; T=T)
   end
 
   @time @testset "FFT tests" begin
@@ -79,15 +107,15 @@ for dev in devices
     nx = 32             # number of points
     Lx = 2π             # Domain width
     g1 = OneDGrid(dev, nx, Lx)
+    
+    @test test_fft_cosmx(g1)
+    @test test_rfft_cosmx(g1)
+    @test test_rfft_mul_cosmx(g1)
 
     # Test 2D rectangular grid
     nx, ny = 32, 64     # number of points
     Lx, Ly = 2π, 3π     # Domain width
     g2 = TwoDGrid(dev, nx, Lx, ny, Ly)
-
-    @test test_fft_cosmx(g1)
-    @test test_rfft_cosmx(g1)
-    @test test_rfft_mul_cosmx(g1)
 
     @test test_fft_cosmxcosny(g2)
     @test test_rfft_cosmxcosny(g2)
@@ -95,6 +123,18 @@ for dev in devices
     @test test_fft_sinmxny(g2)
     @test test_rfft_sinmxny(g2)
     @test test_rfft_mul_sinmxny(g2)
+
+    # Test 3D parallelogram grid
+    nx, ny, nz = 32, 30, 16     # number of points
+    Lx, Ly, Lz = 2π, 3π, 4.0    # Domain width
+    g3 = ThreeDGrid(dev, nx, Lx, ny, Ly, nz, Lz)
+
+    @test test_fft_cosmxcosny(g3)
+    @test test_rfft_cosmxcosny(g3)
+    @test test_rfft_mul_cosmxcosny(g3)
+    @test test_fft_sinmxny(g3)
+    @test test_rfft_sinmxny(g3)
+    @test test_rfft_mul_sinmxny(g3)
   end
 
   @time @testset "IFFT tests" begin
@@ -105,14 +145,14 @@ for dev in devices
     Lx = 2π             # Domain width
     g1 = OneDGrid(dev, nx, Lx)
 
+    @test test_ifft_cosmx(g1)
+    @test test_irfft_cosmx(g1)
+    @test test_irfft_mul_cosmx(g1)
+
     # Test 2D rectangular grid
     nx, ny = 32, 64     # number of points
     Lx, Ly = 2π, 3π     # Domain width
     g2 = TwoDGrid(dev, nx, Lx, ny, Ly)
-
-    @test test_ifft_cosmx(g1)
-    @test test_irfft_cosmx(g1)
-    @test test_irfft_mul_cosmx(g1)
 
     @test test_ifft_cosmxcosny(g2)
     @test test_irfft_cosmxcosny(g2)
@@ -120,6 +160,18 @@ for dev in devices
     @test test_ifft_sinmxny(g2)
     @test test_irfft_sinmxny(g2)
     @test test_irfft_mul_sinmxny(g2)
+
+    # Test 3D parallelogram grid
+    nx, ny, nz = 32, 30, 16     # number of points
+    Lx, Ly, Lz = 2π, 3π, 4.0    # Domain width
+    g3 = ThreeDGrid(dev, nx, Lx, ny, Ly, nz, Lz)
+
+    @test test_ifft_cosmxcosny(g3)
+    @test test_irfft_cosmxcosny(g3)
+    @test test_irfft_mul_cosmxcosny(g3)
+    @test test_ifft_sinmxny(g3)
+    @test test_irfft_sinmxny(g3)
+    @test test_irfft_mul_sinmxny(g3)
   end
 
   @time @testset "Timestepper tests" begin
