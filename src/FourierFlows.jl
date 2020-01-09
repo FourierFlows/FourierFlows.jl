@@ -85,7 +85,7 @@ struct GPU <: Device end
 # The main show
 include("problem.jl")
 include("domains.jl")
-# include("field.jl")
+include("field.jl")
 include("utils.jl")
 include("diagnostics.jl")
 include("output.jl")
