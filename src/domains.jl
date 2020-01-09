@@ -57,15 +57,16 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
                   T=Float64, dealias=1/3, ArrayType=Array)
 
   dx = Lx/nx
-  x = ArrayType{T}(range(x0, step=dx, length=nx))
-
+    
   nk = nx
   nkr = Int(nx/2+1)
 
-  i₁ = 0:Int(nx/2)
-  i₂ = Int(-nx/2+1):-1
-   k = ArrayType{T}(2π/Lx*cat(i₁, i₂; dims=1))
-  kr = ArrayType{T}(2π/Lx*cat(i₁; dims=1))
+  # Physical grid
+   x = ArrayType{T}(range(x0, step=dx, length=nx))
+
+  # Wavenubmer grid
+    k = ArrayType{T}(fftfreq(nx, 2π/Lx*nx))
+   kr = ArrayType{T}(rfftfreq(nx, 2π/Lx*nx))
 
    invksq = @. 1/k^2
   invkrsq = @. 1/kr^2
@@ -137,14 +138,9 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
   y = ArrayType{T}(reshape(range(y0, step=dy, length=ny), (1, ny)))
 
   # Wavenubmer grid
-  i₁ = 0:Int(nx/2)
-  i₂ = Int(-nx/2+1):-1
-  j₁ = 0:Int(ny/2)
-  j₂ = Int(-ny/2+1):-1
-
-   k = ArrayType{T}(reshape(2π/Lx*cat(i₁, i₂, dims=1), (nk, 1)))
-   l = ArrayType{T}(reshape(2π/Ly*cat(j₁, j₂, dims=1), (1, nl)))
-  kr = ArrayType{T}(reshape(2π/Lx*cat(i₁, dims=1), (nkr, 1)))
+  k = ArrayType{T}(reshape(fftfreq(nx, 2π/Lx*nx), (nk, 1)))
+  l = ArrayType{T}(reshape(fftfreq(ny, 2π/Ly*ny), (1, nl)))
+ kr = ArrayType{T}(reshape(rfftfreq(nx, 2π/Lx*nx), (nkr, 1)))
 
      Ksq = @. k^2 + l^2
   invKsq = @. 1/Ksq
@@ -232,17 +228,10 @@ function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-
   z = ArrayType{T}(reshape(range(z0, step=dz, length=nz), (1, 1, nz)))
 
   # Wavenubmer grid
-  i₁ = 0:Int(nx/2)
-  i₂ = Int(-nx/2+1):-1
-  j₁ = 0:Int(ny/2)
-  j₂ = Int(-ny/2+1):-1
-  k₁ = 0:Int(nz/2)
-  k₂ = Int(-nz/2+1):-1
-
-   k = ArrayType{T}(reshape(2π/Lx*cat(i₁, i₂, dims=1), (nk, 1, 1)))
-   l = ArrayType{T}(reshape(2π/Ly*cat(j₁, j₂, dims=1), (1, nl, 1)))
-   m = ArrayType{T}(reshape(2π/Lz*cat(k₁, k₂, dims=1), (1, 1, nm)))
-  kr = ArrayType{T}(reshape(2π/Lx*cat(i₁, dims=1), (nkr, 1, 1)))
+   k = ArrayType{T}(reshape(fftfreq(nx, 2π/Lx*nx), (nk, 1, 1)))
+   l = ArrayType{T}(reshape(fftfreq(ny, 2π/Ly*ny), (1, nl, 1)))
+   m = ArrayType{T}(reshape(fftfreq(nz, 2π/Lz*nz), (1, 1, nm)))
+  kr = ArrayType{T}(reshape(rfftfreq(nx, 2π/Lx*nx), (nkr, 1, 1)))
 
      Ksq = @. k^2 + l^2 + m^2
   invKsq = @. 1/Ksq

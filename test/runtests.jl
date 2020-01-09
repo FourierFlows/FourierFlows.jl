@@ -55,6 +55,7 @@ for dev in devices
     @test testk(g₁)
     @test testkr(g₁)
     @test testdealias(g₁)
+    @test testmakefilter(dev, g₁)
 
     # Test 2D rectangular grid
     g₂ = TwoDGrid(dev, nx, Lx, ny, Ly)
@@ -71,6 +72,7 @@ for dev in devices
     @test testl(g₂)
     @test testgridpoints(g₂)
     @test testdealias(g₂)
+    @test testmakefilter(dev, g₂)
     
     # Test 3D parallelogram grid
     g₃ = ThreeDGrid(dev, nx, Lx, ny, Ly, nz, Lz)
@@ -92,6 +94,7 @@ for dev in devices
     @test testm(g₃)
     @test testgridpoints(g₃)
     @test testdealias(g₃)
+    @test testmakefilter(dev, g₃)
     
     # Test typed grids
     T = Float32
