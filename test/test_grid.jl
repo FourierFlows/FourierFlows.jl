@@ -122,3 +122,11 @@ function testtypedthreedgrid(dev::Device, nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; T=
   gr = ThreeDGrid(nx, Lx, ny, Ly, nz, Lz, T=T)
   typeof(gr.dx)==T && typeof(gr.dy)==T && typeof(gr.dz)==T && typeof(gr.x[1])==T && typeof(gr.y[1])==T && typeof(gr.z[1])==T && typeof(gr.Lx)==T && typeof(gr.Ly)==T && typeof(gr.Lz)==T 
 end
+
+function testmakefilter(dev::Device, g::AbstractGrid{T}) where T
+  filter = FourierFlows.makefilter(g)
+  G = typeof(g)
+  nofilter = G<:OneDGrid ? filter[@. g.kr*g.dx/π < 0.65] : ( G<:TwoDGrid ? filter[@. sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2) < 0.65] : filter[@. sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2 + (g.m*g.dz/π)^2) < 0.65] )
+  fullfilter = G<:OneDGrid ? filter[@. g.kr*g.dx/π > 0.999] : ( G<:TwoDGrid ? filter[@. sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2) > 0.999] : filter[@. sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2 + (g.m*g.dz/π)^2) > 0.999] )
+  nofilter== zeros(dev, T, size(nofilter)) .+ 1 && isapprox(fullfilter, zeros(dev, T, size(fullfilter)), atol=1e-12)
+end
