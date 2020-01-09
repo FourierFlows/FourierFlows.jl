@@ -27,3 +27,8 @@ makefilter(K::CuArray; kwargs...) = CuArray(makefilter(Array(K); kwargs...))
 function makefilter(g::AbstractGrid{Tg, <:CuArray}, T, sz; kwargs...) where Tg
   CuArray(ones(T, sz)) .* makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
 end
+
+zerofield(g::OneDGrid{T, <:CuArray}; realvalued=true) where T = realvalued ? Field(devzeros(GPU(), T, size(g.x)), devzeros(GPU(), Complex{T}, size(g.kr)), g) : Field(devzeros(CPU(), Complex{T}, size(g.x)), devzeros(CPU(), Complex{T}, size(g.k)), g)
+
+zerofield(g::Union{TwoDGrid{T, <:Array}, ThreeDGrid{T, <:Array}}; realvalued=true) where T = realvalued ? Field(devzeros(CPU(), T, size(g.Ksq)), devzeros(CPU(), Complex{T}, size(g.Krsq)), g) : Field(devzeros(CPU(), Complex{T}, size(g.Ksq)), devzeros(CPU(), Complex{T}, size(g.Ksq)), g)
+
