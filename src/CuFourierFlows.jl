@@ -9,9 +9,9 @@ TwoDGrid(dev::GPU, args...; kwargs...) = TwoDGrid(args...; ArrayType=CuArray, kw
 ThreeDGrid(dev::GPU, args...; kwargs...) = ThreeDGrid(args...; ArrayType=CuArray, kwargs...)
 
 function Base.zeros(::GPU, T, dims)
-    a = CuArray{T}(undef, dims...)
-    a .= 0
-    return a
+  a = CuArray{T}(undef, dims...)
+  a .= 0
+  return a
 end
 
 ArrayType(::GPU) = CuArray
@@ -25,5 +25,5 @@ getetdcoeffs(dt, L::CuArray; kwargs...) =
 makefilter(K::CuArray; kwargs...) = CuArray(makefilter(Array(K); kwargs...))
 
 function makefilter(g::AbstractGrid{Tg, <:CuArray}, T, sz; kwargs...) where Tg
-    CuArray(ones(T, sz)) .* makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
+  CuArray(ones(T, sz)) .* makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
 end
