@@ -43,6 +43,9 @@ export
   devzeros,
   superzeros,
   supersize,
+  zerofield,
+  field_from_grid_valuesphysical,
+  field_from_coefficient_values,
 
   TimeStepper,
   ForwardEulerTimeStepper,
