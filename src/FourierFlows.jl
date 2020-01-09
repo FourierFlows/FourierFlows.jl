@@ -13,6 +13,7 @@ export
   fltype,
   innereltype,
 
+  AbstractField,
   AbstractVars,
   AbstractParams,
 
@@ -69,6 +70,7 @@ using AbstractFFTs: fftfreq, rfftfreq
 
 abstract type AbstractGrid{T, Ta} end
 abstract type AbstractTimeStepper{T} end
+abstract type AbstractField{T, Aphys, Atrans} end
 abstract type AbstractParams end
 abstract type AbstractVars end
 abstract type AbstractDiagnostic end
@@ -80,6 +82,7 @@ struct GPU <: Device end
 # The main show
 include("problem.jl")
 include("domains.jl")
+# include("field.jl")
 include("utils.jl")
 include("diagnostics.jl")
 include("output.jl")
