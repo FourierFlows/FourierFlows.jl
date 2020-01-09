@@ -3,7 +3,7 @@ module FourierFlows
 export
   # Helper variables and macros for determining if machine is CUDA-enabled.
   @has_cuda,
-  
+
   Device,
   CPU,
   GPU,
@@ -65,6 +65,7 @@ using
 import Base: resize!, getindex, setindex!, lastindex, push!, append!
 
 using Base: fieldnames
+using AbstractFFTs: fftfreq, rfftfreq
 
 abstract type AbstractGrid{T, Ta} end
 abstract type AbstractTimeStepper{T} end

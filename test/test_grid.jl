@@ -45,11 +45,7 @@ end
 testk(g) = testwavenumberalignment(g.k, g.nx)
 testl(g::Union{TwoDGrid, ThreeDGrid}) = testwavenumberalignment(g.l, g.ny)
 testm(g::ThreeDGrid) = testwavenumberalignment(g.m, g.nz)
-testkr(g) = isapprox(g.k[1:g.nkr], g.kr)
-
-#testk(g) = isapprox(g.k[2:g.nkr-1], flippednegatives(g.k, g.nkr, 1))
-#testk(g) = sum(g.k[2:g.nkr-1] .+ reverse(g.k[g.nkr+1:end], dims=1)) == 0.0
-#testl(g) = sum(g.l[:, 2:Int(g.ny/2)] .+ reverse(g.l[:, Int(g.ny/2+2):end], dims=2)) == 0.0
+testkr(g) = isapprox(cat(g.k[1:g.nkr-1], abs(g.k[g.nkr]), dims=1), g.kr)
 
 function testgridpoints(g::TwoDGrid{T, Ta}) where {T, Ta}
   X, Y = gridpoints(g)
