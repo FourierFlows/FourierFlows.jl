@@ -128,5 +128,5 @@ function testmakefilter(dev::Device, g::AbstractGrid{T}) where T
   G = typeof(g)
   nofilter = G<:OneDGrid ? filter[@. g.kr*g.dx/π < 0.65] : ( G<:TwoDGrid ? filter[@. sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2) < 0.65] : filter[@. sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2 + (g.m*g.dz/π)^2) < 0.65] )
   fullfilter = G<:OneDGrid ? filter[@. g.kr*g.dx/π > 0.999] : ( G<:TwoDGrid ? filter[@. sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2) > 0.999] : filter[@. sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2 + (g.m*g.dz/π)^2) > 0.999] )
-  nofilter== zeros(dev, T, size(nofilter)) .+ 1 && isapprox(fullfilter, zeros(dev, T, size(fullfilter)), atol=1e-12)
+  nofilter == zeros(dev, T, size(nofilter)) .+ 1 && isapprox(fullfilter, zeros(dev, T, size(fullfilter)), atol=1e-12)
 end
