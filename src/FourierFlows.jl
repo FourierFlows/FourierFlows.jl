@@ -44,7 +44,7 @@ export
   superzeros,
   supersize,
   zerofield,
-  field_from_grid_valuesphysical,
+  field_from_grid_values,
   field_from_coefficient_values,
 
   TimeStepper,
@@ -69,6 +69,7 @@ using
 import Base: resize!, getindex, setindex!, lastindex, push!, append!
 
 using Base: fieldnames
+using LinearAlgebra: mul!, ldiv!
 using AbstractFFTs: fftfreq, rfftfreq
 
 abstract type AbstractGrid{T, Ta} end

@@ -176,6 +176,40 @@ for dev in devices
     @test test_irfft_sinmxny(g3)
     @test test_irfft_mul_sinmxny(g3)
   end
+  
+  @time @testset "Field tests" begin
+    include("test_field.jl")
+    
+    # Test 1D grid
+    nx = 32             # number of points
+    Lx = 2π             # Domain width
+    g1 = OneDGrid(dev, nx, Lx)
+    
+    @test test_field_from_grid_values(g1; realvalued=true, dev=dev)
+    @test test_field_from_grid_values(g1; realvalued=false, dev=dev)
+    @test test_field_from_coefficient_values(g1; realvalued=true, dev=dev)
+    @test test_field_from_coefficient_values(g1; realvalued=false, dev=dev)
+    
+    # Test 2D rectangular grid
+    nx, ny = 32, 64     # number of points
+    Lx, Ly = 2π, 3π     # Domain width
+    g2 = TwoDGrid(dev, nx, Lx, ny, Ly)
+    
+    @test test_field_from_grid_values(g2; realvalued=true, dev=dev)
+    @test test_field_from_grid_values(g2; realvalued=false, dev=dev)
+    @test test_field_from_coefficient_values(g2; realvalued=true, dev=dev)
+    @test test_field_from_coefficient_values(g2; realvalued=false, dev=dev)
+    
+    # Test 3D parallelogram grid
+    nx, ny, nz = 32, 30, 16     # number of points
+    Lx, Ly, Lz = 2π, 3π, 4.0    # Domain width
+    g3 = ThreeDGrid(dev, nx, Lx, ny, Ly, nz, Lz)
+    
+    @test test_field_from_grid_values(g3; realvalued=true, dev=dev)
+    @test test_field_from_grid_values(g3; realvalued=false, dev=dev)
+    @test test_field_from_coefficient_values(g3; realvalued=true, dev=dev)
+    @test test_field_from_coefficient_values(g3; realvalued=false, dev=dev)
+  end
 
   @time @testset "Timestepper tests" begin
     include("test_timesteppers.jl")
