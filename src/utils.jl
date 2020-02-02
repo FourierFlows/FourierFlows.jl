@@ -287,32 +287,5 @@ xmoment(c, g, n=1) = sum(g.X.^n.*c)/sum(c)
 "Compute the `n`th y-moment of `c` on the grid `g`."
 ymoment(c, g, n=1) = sum(g.Y.^n.*c)/sum(c)
 
-
-#TODO: delete structvarsexpr() but first make sure that GeophysicalFlows.jl does not require it
-"Returns an expression that defines a Composite Type of the AbstractVars variety."
-function structvarsexpr(name, physfields, transfields; vardims=2, parent=:AbstractVars, T=Float64, arraytype=:Array)
-  physexprs = [:($fld::$arraytype{T,$vardims}) for fld in physfields]
-  transexprs = [:($fld::$arraytype{Complex{T},$vardims}) for fld in transfields]
-  expr = :(struct $name{T} <: $parent; $(physexprs...); $(transexprs...); end)
-end
-"""
-    structvarsexpr(name, fieldspecs; parent=nothing)
-Returns an expression that defines a composite type whose fields are given by
-the name::type pairs specifed by the tuples in fieldspecs. The convention is
-name = fieldspecs[i][1] and type = fieldspecs[i][2] for the ith element of
-fieldspecs.
-"""
-function structvarsexpr(name, fieldspecs; parent=nothing)
-  # name = spec[1]; type = spec[2]
-  # example: fieldspecs[1] = (:u, Array{Float64,2})
-  fieldexprs = [ :( $(spec[1])::$(spec[2]) ) for spec in fieldspecs ]
-  if parent == nothing
-    expr = :(struct $name{T}; $(fieldexprs...); end)
-  else
-    expr = :(struct $name{T} <: $parent; $(fieldexprs...); end)
-  end
-  expr
-end
-
 ArrayType(::CPU) = Array
 ArrayType(::CPU, T, dim) = Array{T, dim}
