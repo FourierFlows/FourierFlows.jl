@@ -12,7 +12,7 @@ Pkg.add("FourierFlows")
 ## Overview
 
 FourierFlows provides a framework to write solvers for partial differential equations on periodic domains with
-Fourier-based pseudospectral methods. We support 1- and 2-dimensional domains at the moment.
+Fourier-based pseudospectral methods. We support 1-, 2-, and 3-dimensional domains.
 
 ## Examples
 
