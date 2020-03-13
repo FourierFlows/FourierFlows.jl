@@ -25,7 +25,6 @@ using LinearAlgebra: mul!, ldiv!
 using Printf
 using Random
 
-nothingfunction(args...) = nothing
 
 function calcN!(N, sol, t, s, v, p, g)
   mul!(v.uh, g.rfftplan, deepcopy(v.u))
@@ -76,7 +75,7 @@ struct Params{T} <: AbstractParams
 end
 Params(ν, nν, g, h, f) = Params(ν, nν, g, h, f)
 
-function Equation(p, g)
+function Equation(p, g::AbstractGrid{T}) where T
   LC = zeros(Float64, g.nkr, 3)
   D = - p.ν*g.kr.^(2*p.nν)
   LC[:, 1] .= D # u
@@ -102,9 +101,9 @@ function set_uvη!(u0, v0, η0, prob)
     mul!(v.uh, g.rfftplan, u0)
     mul!(v.vh, g.rfftplan, v0)
     mul!(v.ηh, g.rfftplan, η0)
-    sol[:, 1] = rfft(u0)
-    sol[:, 2] = rfft(v0)
-    sol[:, 3] = rfft(η0)
+    sol[:, 1] = v.uh
+    sol[:, 2] = v.vh
+    sol[:, 3] = v.ηh
     updatevars!(prob)
 end
 
