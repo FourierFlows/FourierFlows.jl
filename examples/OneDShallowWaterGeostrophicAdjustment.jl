@@ -30,9 +30,9 @@ function calcN!(N, sol, t, s, v, p, g)
   mul!(v.uh, g.rfftplan, v.u)
   mul!(v.vh, g.rfftplan, v.v)
   mul!(v.ηh, g.rfftplan, v.η)
-  rhsu = p.f*v.vh + p.g*p.h*im*g.kr.*v.ηh
+  rhsu = p.f*v.vh - p.g*p.h*im*g.kr.*v.ηh
   rhsv = - p.f*v.uh
-  rhsη = im*g.kr.*v.uh
+  rhsη = - im*g.kr.*v.uh
   N[:, 1] .= rhsu
   N[:, 2] .= rhsv
   N[:, 3] .= rhsη
