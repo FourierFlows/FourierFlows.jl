@@ -8,7 +8,7 @@
 # ∂η/∂t + ∂u/∂x = - D.         (3)
 #
 # where D indicates a hyperviscous operator of
-# the form ν*Laplacian^nν, where ν is the viscosity
+# the form ν*(-1)^nν*Laplacian^nν, where ν is the viscosity
 # coefficient and nν is the order of the operator.
 # The code time-steps Equations (1-3) simultaneously.
 #
@@ -27,9 +27,9 @@ using Random
 
 
 function calcN!(N, sol, t, s, v, p, g)
-  mul!(v.uh, g.rfftplan, deepcopy(v.u))
-  mul!(v.vh, g.rfftplan, deepcopy(v.v))
-  mul!(v.ηh, g.rfftplan, deepcopy(v.η))
+  mul!(v.uh, g.rfftplan, v.u)
+  mul!(v.vh, g.rfftplan, v.v)
+  mul!(v.ηh, g.rfftplan, v.η)
   rhsu = p.f*v.vh + p.g*p.h*im*g.kr.*v.ηh
   rhsv = - p.f*v.uh
   rhsη = im*g.kr.*v.uh
@@ -52,9 +52,6 @@ end
 function Vars(::Dev, g::AbstractGrid{T}) where {Dev, T}
   @devzeros Dev T g.nx u v η
   @devzeros Dev Complex{T} (g.nkr) uh vh ηh
-  mul!(uh, g.rfftplan, u)
-  mul!(vh, g.rfftplan, v)
-  mul!(ηh, g.rfftplan, η)
   Vars(u, v, η, uh, vh, ηh)
 end
 
@@ -68,12 +65,12 @@ end
 Params(ν, nν, g, h, f) = Params(ν, nν, g, h, f)
 
 function Equation(p, g::AbstractGrid{T}) where T
-  LC = zeros(Float64, g.nkr, 3)
+  L = zeros(T, g.nkr, 3)
   D = - p.ν*g.kr.^(2*p.nν)
-  LC[:, 1] .= D # u
-  LC[:, 2] .= D # v
-  LC[:, 3] .= D # η
-  FourierFlows.Equation(LC, calcN!, g)
+  L[:, 1] .= D # u
+  L[:, 2] .= D # v
+  L[:, 3] .= D # η
+  FourierFlows.Equation(L, calcN!, g)
 end
 
 """
