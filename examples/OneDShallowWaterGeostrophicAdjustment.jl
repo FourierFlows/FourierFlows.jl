@@ -62,7 +62,6 @@ struct Params{T} <: AbstractParams
       h  :: T         # Fluid depth
       f  :: T         # Coriolis parameter
 end
-Params(ν, nν, g, h, f) = Params(ν, nν, g, h, f)
 
 function Equation(p, g::AbstractGrid{T}) where T
   L = zeros(T, g.nkr, 3)
