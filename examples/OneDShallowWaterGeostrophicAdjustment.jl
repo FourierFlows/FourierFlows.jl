@@ -1,14 +1,14 @@
-# This example solves the 1D rotating shallow water equations
+# This example solves the linear 1D rotating shallow water equations
 # for the depth-integrated velocities u and v and for the
 # surface elevation η in a fluid with constant depth h,
 # gravitational acceleration g and Coriolis parameter f:
 #
-# ∂u/∂t + u∂u/∂x - fv = -gh∂η/∂x - D,   (1)
-# ∂v/∂t + u∂v/∂x + fu = - D,            (2)
-# ∂η/∂t + ∂u/∂x = - D.                  (3)
+# ∂u/∂t - fv = -gh∂η/∂x - D,   (1)
+# ∂v/∂t + fu = - D,            (2)
+# ∂η/∂t + ∂u/∂x = - D.         (3)
 #
 # where D indicates a hyperviscous operator of
-# the form ν*Laplacian^nν, where ν is the viscosity
+# the form ν*(-1)^nν*Laplacian^nν, where ν is the viscosity
 # coefficient and nν is the order of the operator.
 # The code time-steps Equations (1-3) simultaneously.
 #
@@ -27,16 +27,12 @@ using Random
 
 
 function calcN!(N, sol, t, s, v, p, g)
-  mul!(v.uh, g.rfftplan, deepcopy(v.u))
-  mul!(v.vh, g.rfftplan, deepcopy(v.v))
-  mul!(v.ηh, g.rfftplan, deepcopy(v.η))
-  ldiv!(v.ux, g.rfftplan, -im*g.kr.*v.uh)
-  ldiv!(v.vx, g.rfftplan, -im*g.kr.*v.vh)
-  mul!(v.uuxh, g.rfftplan, v.u.*v.ux)
-  mul!(v.uvxh, g.rfftplan, v.u.*v.vx)
-  rhsu = p.f*v.vh + p.g*p.h*im*g.kr.*v.ηh - v.uuxh
-  rhsv = - p.f*v.uh - v.uvxh
-  rhsη = im*g.kr.*v.uh
+  mul!(v.uh, g.rfftplan, v.u)
+  mul!(v.vh, g.rfftplan, v.v)
+  mul!(v.ηh, g.rfftplan, v.η)
+  rhsu = p.f*v.vh - p.g*p.h*im*g.kr.*v.ηh
+  rhsv = - p.f*v.uh
+  rhsη = - im*g.kr.*v.uh
   N[:, 1] .= rhsu
   N[:, 2] .= rhsv
   N[:, 3] .= rhsη
@@ -48,22 +44,15 @@ struct Vars{Aphys, Atrans} <: AbstractVars
         u :: Aphys
         v :: Aphys
         η :: Aphys
-       ux :: Aphys
-       vx :: Aphys
        uh :: Atrans
        vh :: Atrans
        ηh :: Atrans
-     uuxh :: Atrans
-     uvxh :: Atrans
 end
 
 function Vars(::Dev, g::AbstractGrid{T}) where {Dev, T}
-  @devzeros Dev T g.nx u v η ux vx
-  @devzeros Dev Complex{T} (g.nkr) uh vh ηh uuxh uvxh
-  mul!(uh, g.rfftplan, u)
-  mul!(vh, g.rfftplan, v)
-  mul!(ηh, g.rfftplan, η)
-  Vars(u, v, η, ux, vx, uh, vh, ηh, uuxh, uvxh)
+  @devzeros Dev T g.nx u v η
+  @devzeros Dev Complex{T} (g.nkr) uh vh ηh
+  Vars(u, v, η, uh, vh, ηh)
 end
 
 struct Params{T} <: AbstractParams
@@ -73,15 +62,14 @@ struct Params{T} <: AbstractParams
       h  :: T         # Fluid depth
       f  :: T         # Coriolis parameter
 end
-Params(ν, nν, g, h, f) = Params(ν, nν, g, h, f)
 
 function Equation(p, g::AbstractGrid{T}) where T
-  LC = zeros(Float64, g.nkr, 3)
+  L = zeros(T, g.nkr, 3)
   D = - p.ν*g.kr.^(2*p.nν)
-  LC[:, 1] .= D # u
-  LC[:, 2] .= D # v
-  LC[:, 3] .= D # η
-  FourierFlows.Equation(LC, calcN!, g)
+  L[:, 1] .= D # u
+  L[:, 2] .= D # v
+  L[:, 3] .= D # η
+  FourierFlows.Equation(L, calcN!, g)
 end
 
 """
