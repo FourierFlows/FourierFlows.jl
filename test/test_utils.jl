@@ -50,14 +50,6 @@ function test_supertuplezeros(; T1=Float64, T2=Complex{Float64}, dims1=(1,), dim
     size(a[1]) == dims1 && size(a[2]) == dims2 ) 
 end
 
-function test_domainaverage(dev::Device, n)
-  g = TwoDGrid(dev, n, 2π)
-  X, Y = gridpoints(g)
-  cx = @. cos(X)^2
-  cy = @. cos(Y)^2
-  0.5 ≈ FourierFlows.domainaverage(cx, g) && 0.5 ≈ FourierFlows.domainaverage(cy, g)
-end
-
 # This test could use some further work.
 function test_radialspectrum(dev::Device, n, ahkl, ahρ; debug=false, atol=0.1)
   g = TwoDGrid(dev, n, 2π)
