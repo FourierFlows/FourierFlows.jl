@@ -1,7 +1,7 @@
 function test_fltype()
   Tf = Float16
   Tc = Complex{Tf}
-  Tf == fltype(Tf) && Tf == fltype(Tc)
+  Tf == fltype(Tf) && Tf == fltype(Tc) && Tf == fltype((Tc, Tf)) && Tf == fltype((Tf, Tc))
 end
 
 function test_cxtype()
