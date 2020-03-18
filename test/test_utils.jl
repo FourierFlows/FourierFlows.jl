@@ -71,7 +71,11 @@ function test_radialspectrum(dev::Device, n, ahkl, ahρ; debug=false, atol=0.1, 
   end
 end
 
-function integralsquare(func, grid)
+function integralsquare(func, grid::OneDGrid)
+    sum(abs2.(func))*grid.dx
+end
+
+function integralsquare(func, grid::TwoDGrid)
     sum(abs2.(func))*grid.dx*grid.dy
 end
 

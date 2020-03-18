@@ -235,7 +235,14 @@ for dev in devices
     @test test_zeros()
     @test test_varsexpression_fields(g)
     @test test_varsexpression_specs(g)
+    
+    g = OneDGrid(dev, nx, Lx)
+    σ = 0.5
+    f1 = @. exp(-g.x^2/(2σ^2))
+    @test test_parsevalsum2(f1, g; realvalued=true)  # Real valued f with rfft
+    @test test_parsevalsum2(f1, g; realvalued=false) # Real valued f with fft
 
+    
     # Radial spectrum tests. Note that ahρ = ∫ ah ρ dθ.
     n = 128; δ = n/10                 # Parameters
     ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) # a  = exp(-ρ²/2δ²)
