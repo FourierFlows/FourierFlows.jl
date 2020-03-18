@@ -10,7 +10,7 @@ function test_cxtype()
   Tc == cxtype(Tf) && Tc == cxtype(Tc)
 end
 
-function test_innereltype(T=Float32)
+function test_innereltype(T=Complex{Float32})
   a = [zeros(T, 3), zeros(T, 2, 5)]
   T == innereltype(a)
 end
@@ -51,9 +51,13 @@ function test_supertuplezeros(; T1=Float64, T2=Complex{Float64}, dims1=(1,), dim
 end
 
 # This test could use some further work.
-function test_radialspectrum(dev::Device, n, ahkl, ahρ; debug=false, atol=0.1)
+function test_radialspectrum(dev::Device, n, ahkl, ahρ; debug=false, atol=0.1, rfft=false)
   g = TwoDGrid(dev, n, 2π)
-  ah = @. ahkl(g.k, g.l)
+  if rfft==true
+    ah = @. ahkl(g.kr, g.l)
+  else   
+    ah = @. ahkl(g.k, g.l)
+  end
   ah[1, 1] = 0.0
 
   ρ, ahρ_estimate = FourierFlows.radialspectrum(ah, g; refinement=16)

@@ -241,10 +241,12 @@ for dev in devices
     ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) # a  = exp(-ρ²/2δ²)
         ahρ(ρ) = 2π*ρ*exp(-ρ^2/2δ^2)  # aᵣ = 2π ρ exp(-ρ²/2δ²)
     @test test_radialspectrum(dev, n, ahkl, ahρ)
+    @test test_radialspectrum(dev, n, ahkl, ahρ; rfft=true)
 
     ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) * k^2/(k^2+l^2) # a  = exp(-ρ²/2δ²)*cos(θ)²
         ahρ(ρ) = π*ρ*exp(-ρ^2/2δ^2)                   # aᵣ = π ρ exp(-ρ²/2δ²)
     @test test_radialspectrum(dev, n, ahkl, ahρ)
+    @test test_radialspectrum(dev, n, ahkl, ahρ; rfft=true)
   end
 
   @time @testset "Diagnostics tests" begin
