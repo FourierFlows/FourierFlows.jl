@@ -53,7 +53,6 @@ macro superzeros(T, ad, vars...)
   expr
 end
 supersize(a) = Tuple([size(ai) for ai in a])
-supersize(a::Array{T}) where T<:AbstractArray = Tuple([size(ai) for ai in a])
 supersize(a::Array{T}) where T<:Number = size(a)
 
 macro createarrays(T, dims, vars...)
