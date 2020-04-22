@@ -3,21 +3,21 @@ testny(g, ny) = isapprox(g.ny, ny)
 testnz(g, nz) = isapprox(g.nz, nz)
 
 # Physical grid tests
-function testdx(g::AbstractGrid{T}) where {T, Ta}
+function testdx(dev, g::Union{OneDGrid{T}, TwoDGrid{T}, ThreeDGrid{T}}) where T
   dxgrid = @. g.x[2:end] - g.x[1:end-1]
-  dxones = g.dx*ones(T, size(dxgrid))
+  dxones = ArrayType(dev)(g.dx*ones(T, size(dxgrid)))
   isapprox(dxgrid, dxones)
 end
 
-function testdy(g::AbstractGrid{T, Ta}) where {T, Ta}
+function testdy(dev, g::Union{TwoDGrid{T}, ThreeDGrid{T}}) where T
   dygrid = @. g.y[2:end] - g.y[1:end-1]
-  dyones = g.dy*ones(T, size(dygrid))
+  dyones = ArrayType(dev)(g.dy*ones(T, size(dygrid)))
   isapprox(dygrid, dyones)
 end
 
-function testdz(g::AbstractGrid{T, Ta}) where {T, Ta}
+function testdz(dev, g::ThreeDGrid{T}) where T
   dzgrid = @. g.z[2:end] - g.z[1:end-1]
-  dzones = g.dz*ones(T, size(dzgrid))
+  dzones = ArrayType(dev)(g.dz*ones(T, size(dzgrid)))
   isapprox(dzgrid, dzones)
 end
 
@@ -47,23 +47,23 @@ testl(g::Union{TwoDGrid, ThreeDGrid}) = testwavenumberalignment(g.l, g.ny)
 testm(g::ThreeDGrid) = testwavenumberalignment(g.m, g.nz)
 testkr(g) = isapprox(cat(g.k[1:g.nkr-1], abs(g.k[g.nkr]), dims=1), g.kr)
 
-function testgridpoints(g::TwoDGrid{T, Ta}) where {T, Ta}
+function testgridpoints(dev::Device, g::TwoDGrid{T}) where T
   X, Y = gridpoints(g)
   dXgrid = @. X[2:end, :] - X[1:end-1, :]
   dYgrid = @. Y[:, 2:end] - Y[:, 1:end-1]
-  dXones = g.dx*ones(T, size(dXgrid))
-  dYones = g.dy*ones(T, size(dYgrid))
+  dXones = ArrayType(dev)(g.dx*ones(T, size(dXgrid)))
+  dYones = ArrayType(dev)(g.dy*ones(T, size(dYgrid)))
   isapprox(dXgrid, dXones) && isapprox(dYgrid, dYones)
 end
 
-function testgridpoints(g::ThreeDGrid{T, Ta}) where {T, Ta}
+function testgridpoints(dev::Device, g::ThreeDGrid{T}) where T
   X, Y, Z = gridpoints(g)
   dXgrid = @. X[2:end, :, :] - X[1:end-1, :, :]
   dYgrid = @. Y[:, 2:end, :] - Y[:, 1:end-1, :]
   dZgrid = @. Z[:, :, 2:end] - Z[:, :, 1:end-1]
-  dXones = g.dx*ones(T, size(dXgrid))
-  dYones = g.dy*ones(T, size(dYgrid))
-  dZones = g.dz*ones(T, size(dZgrid))
+  dXones = ArrayType(dev)(g.dx*ones(T, size(dXgrid)))
+  dYones = ArrayType(dev)(g.dy*ones(T, size(dYgrid)))
+  dZones = ArrayType(dev)(g.dz*ones(T, size(dZgrid)))
   isapprox(dXgrid, dXones) && isapprox(dYgrid, dYones) && isapprox(dZgrid, dZones)
 end
 
