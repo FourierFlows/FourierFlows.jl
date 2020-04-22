@@ -1,7 +1,7 @@
 function test_fltype()
   Tf = Float16
   Tc = Complex{Tf}
-  Tf == fltype(Tf) && Tf == fltype(Tc)
+  Tf == fltype(Tf) && Tf == fltype(Tc) && Tf == fltype((Tc, Tf)) && Tf == fltype((Tf, Tc))
 end
 
 function test_cxtype()
@@ -10,7 +10,7 @@ function test_cxtype()
   Tc == cxtype(Tf) && Tc == cxtype(Tc)
 end
 
-function test_innereltype(T=Float32)
+function test_innereltype(T=Complex{Float32})
   a = [zeros(T, 3), zeros(T, 2, 5)]
   T == innereltype(a)
 end
@@ -50,18 +50,14 @@ function test_supertuplezeros(; T1=Float64, T2=Complex{Float64}, dims1=(1,), dim
     size(a[1]) == dims1 && size(a[2]) == dims2 ) 
 end
 
-function test_domainaverage(dev::Device, n)
-  g = TwoDGrid(dev, n, 2π)
-  X, Y = gridpoints(g)
-  cx = @. cos(X)^2
-  cy = @. cos(Y)^2
-  0.5 ≈ FourierFlows.domainaverage(cx, g) && 0.5 ≈ FourierFlows.domainaverage(cy, g)
-end
-
 # This test could use some further work.
-function test_radialspectrum(dev::Device, n, ahkl, ahρ; debug=false, atol=0.1)
+function test_radialspectrum(dev::Device, n, ahkl, ahρ; debug=false, atol=0.1, rfft=false)
   g = TwoDGrid(dev, n, 2π)
-  ah = @. ahkl(g.k, g.l)
+  if rfft==true
+    ah = @. ahkl(g.kr, g.l)
+  else   
+    ah = @. ahkl(g.k, g.l)
+  end
   ah[1, 1] = 0.0
 
   ρ, ahρ_estimate = FourierFlows.radialspectrum(ah, g; refinement=16)
@@ -75,7 +71,11 @@ function test_radialspectrum(dev::Device, n, ahkl, ahρ; debug=false, atol=0.1)
   end
 end
 
-function integralsquare(func, grid)
+function integralsquare(func, grid::OneDGrid)
+    sum(abs2.(func))*grid.dx
+end
+
+function integralsquare(func, grid::TwoDGrid)
     sum(abs2.(func))*grid.dx*grid.dy
 end
 

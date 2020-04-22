@@ -119,6 +119,4 @@ function set_c!(prob, c)
   updatevars!(prob)
 end
 
-set_c!(prob, c::Function) = set_c!(prob, c.(prob.grid.x))
-
 end # module

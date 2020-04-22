@@ -53,7 +53,6 @@ macro superzeros(T, ad, vars...)
   expr
 end
 supersize(a) = Tuple([size(ai) for ai in a])
-supersize(a::Array{T}) where T<:AbstractArray = Tuple([size(ai) for ai in a])
 supersize(a::Array{T}) where T<:Number = size(a)
 
 macro createarrays(T, dims, vars...)
@@ -276,16 +275,6 @@ function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=2)
 
   ρ, ahρ
 end
-
-# Moments and cumulants
-"Compute the average of `c` on the grid `g`."
-domainaverage(c, g) = g.dx*g.dy*sum(c)/(g.Lx*g.Ly)
-
-"Compute the `n`th x-moment of `c` on the grid `g`."
-xmoment(c, g, n=1) = sum(g.X.^n.*c)/sum(c)
-
-"Compute the `n`th y-moment of `c` on the grid `g`."
-ymoment(c, g, n=1) = sum(g.Y.^n.*c)/sum(c)
 
 ArrayType(::CPU) = Array
 ArrayType(::CPU, T, dim) = Array{T, dim}
