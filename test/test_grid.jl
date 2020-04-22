@@ -3,21 +3,39 @@ testny(g, ny) = isapprox(g.ny, ny)
 testnz(g, nz) = isapprox(g.nz, nz)
 
 # Physical grid tests
-function testdx(g::Union{OneDGrid{T,A}, TwoDGrid{T,A}, ThreeDGrid{T,A}}) where {T, A}
+function testdx(g::Union{OneDGrid{T,<:Array}, TwoDGrid{T,<:Array}, ThreeDGrid{T,<:Array}}) where T
   dxgrid = @. g.x[2:end] - g.x[1:end-1]
-  dxones = A(g.dx*ones(T, size(dxgrid)))
+  dxones = g.dx*ones(T, size(dxgrid))
   isapprox(dxgrid, dxones)
 end
 
-function testdy(g::Union{TwoDGrid{T,A}, ThreeDGrid{T,A}}) where {T, A}
+function testdy(g::Union{TwoDGrid{T,<:Array}, ThreeDGrid{T,<:Array}}) where T
   dygrid = @. g.y[2:end] - g.y[1:end-1]
-  dyones = A(g.dy*ones(T, size(dygrid)))
+  dyones = g.dy*ones(T, size(dygrid))
   isapprox(dygrid, dyones)
 end
 
-function testdz(g::ThreeDGrid{T,A}) where {T, A}
+function testdz(g::ThreeDGrid{T,<:Array}) where T
   dzgrid = @. g.z[2:end] - g.z[1:end-1]
-  dzones = A(g.dz*ones(T, size(dzgrid)))
+  dzones = g.dz*ones(T, size(dzgrid))
+  isapprox(dzgrid, dzones)
+end
+
+function testdx(g::Union{OneDGrid{T,<:CuArray}, TwoDGrid{T,<:CuArray}, ThreeDGrid{T,<:CuArray}}) where T
+  dxgrid = @. g.x[2:end] - g.x[1:end-1]
+  dxones = CuArray(g.dx*ones(T, size(dxgrid)))
+  isapprox(dxgrid, dxones)
+end
+
+function testdy(g::Union{TwoDGrid{T,<:CuArray}, ThreeDGrid{T,<:CuArray}}) where T
+  dygrid = @. g.y[2:end] - g.y[1:end-1]
+  dyones = CuArray(g.dy*ones(T, size(dygrid)))
+  isapprox(dygrid, dyones)
+end
+
+function testdz(g::ThreeDGrid{T,<:CuArray}) where T
+  dzgrid = @. g.z[2:end] - g.z[1:end-1]
+  dzones = CuArray(g.dz*ones(T, size(dzgrid)))
   isapprox(dzgrid, dzones)
 end
 
