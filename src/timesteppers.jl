@@ -100,16 +100,6 @@ function stepforward!(sol, cl, ts::ForwardEulerTimeStepper, eq, v, p, g)
   nothing
 end
 
-function stepforward!(sol::AbstractArray{T}, cl, ts::ForwardEulerTimeStepper, eq, v, p, g) where T<:AbstractArray
-  eq.calcN!(ts.N, sol, cl.t, cl, v, p, g)
-  for i = 1:length(sol)
-    @views @. sol[i] += cl.dt*(eq.L[i]*sol[i] + ts.N[i])
-  end
-  cl.t += cl.dt
-  cl.step += 1
-  nothing
-end
-
 """
     FilteredForwardEulerTimeStepper(eq, dev; filterkwargs...)
 
@@ -206,25 +196,6 @@ function RK4substeps!(sol, cl, ts, eq, v, p, g, t, dt)
   nothing
 end
 
-function RK4substeps!(sol::AbstractArray{T}, cl, ts, eq, v, p, g, t, dt) where T<:AbstractArray
-  # Substep 1
-  eq.calcN!(ts.RHS₁, sol, t, cl, v, p, g)
-  addlinearterm!.(ts.RHS₁, eq.L, sol)
-  # Substep 2
-  substepsol!.(ts.sol₁, sol, ts.RHS₁, dt/2)
-  eq.calcN!(ts.RHS₂, ts.sol₁, t+dt/2, cl, v, p, g)
-  addlinearterm!.(ts.RHS₂, eq.L, ts.sol₁)
-  # Substep 3
-  substepsol!.(ts.sol₁, sol, ts.RHS₂, dt/2)
-  eq.calcN!(ts.RHS₃, ts.sol₁, t+dt/2, cl, v, p, g)
-  addlinearterm!.(ts.RHS₃, eq.L, ts.sol₁)
-  # Substep 4
-  substepsol!.(ts.sol₁, sol, ts.RHS₃, dt)
-  eq.calcN!(ts.RHS₄, ts.sol₁, t+dt, cl, v, p, g)
-  addlinearterm!.(ts.RHS₄, eq.L, ts.sol₁)
-  nothing
-end
-
 function RK4update!(sol, RHS₁, RHS₂, RHS₃, RHS₄, dt)
   @. sol += dt*(RHS₁ / 6 + RHS₂ / 3  + RHS₃ / 3 + RHS₄ / 6)
   nothing
@@ -238,14 +209,6 @@ end
 function stepforward!(sol, cl, ts::RK4TimeStepper, eq, v, p, g)
   RK4substeps!(sol, cl, ts, eq, v, p, g, cl.t, cl.dt)
   RK4update!(sol, ts.RHS₁, ts.RHS₂, ts.RHS₃, ts.RHS₄, cl.dt)
-  cl.t += cl.dt
-  cl.step += 1
-  nothing
-end
-
-function stepforward!(sol::AbstractArray{T}, cl, ts::RK4TimeStepper, eq, v, p, g) where T<:AbstractArray
-  RK4substeps!(sol, cl, ts, eq, v, p, g, cl.t, cl.dt)
-  RK4update!.(sol, ts.RHS₁, ts.RHS₂, ts.RHS₃, ts.RHS₄, cl.dt)
   cl.t += cl.dt
   cl.step += 1
   nothing
@@ -363,35 +326,9 @@ function ETDRK4substeps!(sol, cl, ts, eq, v, p, g)
   nothing
 end
 
-function ETDRK4substeps!(sol::AbstractArray{T}, cl, ts, eq, v, p, g) where T<:AbstractArray
-  # Substep 1
-  eq.calcN!(ts.N₁, sol, cl.t, cl, v, p, g)
-  ETDRK4substep12!.(ts.sol₁, ts.expLdt2, sol, ts.ζ, ts.N₁)
-  @. ts.sol₁ = ts.expLdt2*sol + ts.ζ*ts.N₁
-  # Substep 2
-  t2 = cl.t + cl.dt/2
-  eq.calcN!(ts.N₂, ts.sol₁, t2, cl, v, p, g)
-  ETDRK4substep12!.(ts.sol₂, ts.expLdt2, sol, ts.ζ, ts.N₂)
-  # Substep 3
-  eq.calcN!(ts.N₃, ts.sol₂, t2, cl, v, p, g)
-  ETDRK4substep3!.(ts.sol₂, ts.expLdt2, ts.sol₁, ts.ζ, ts.N₁, ts.N₃)
-  # Substep 4
-  t3 = cl.t + cl.dt
-  eq.calcN!(ts.N₄, ts.sol₂, t3, cl, v, p, g)
-  nothing
-end
-
 function stepforward!(sol, cl, ts::ETDRK4TimeStepper, eq, v, p, g)
   ETDRK4substeps!(sol, cl, ts, eq, v, p, g)
   ETDRK4update!(sol, ts.expLdt, ts.α, ts.β, ts.Γ, ts.N₁, ts.N₂, ts.N₃, ts.N₄)
-  cl.t += cl.dt
-  cl.step += 1
-  nothing
-end
-
-function stepforward!(sol::AbstractArray{T}, cl, ts::ETDRK4TimeStepper, eq, v, p, g) where T<:AbstractArray
-  ETDRK4substeps!(sol, cl, ts, eq, v, p, g)
-  ETDRK4update!.(sol, ts.expLdt, ts.α, ts.β, ts.Γ, ts.N₁, ts.N₂, ts.N₃, ts.N₄)
   cl.t += cl.dt
   cl.step += 1
   nothing
@@ -479,17 +416,6 @@ function stepforward!(sol, cl, ts::AB3TimeStepper, eq, v, p, g)
   nothing
 end
 
-function stepforward!(sol::AbstractArray{T}, cl, ts::AB3TimeStepper, eq, v, p, g) where T<:AbstractArray
-  eq.calcN!(ts.RHS, sol, cl.t, cl, v, p, g)
-  addlinearterm!.(ts.RHS, eq.L, sol)
-  AB3update!(sol, ts, cl)
-  cl.t += cl.dt
-  cl.step += 1
-  @. ts.RHS₋₂ = ts.RHS₋₁          # Store
-  @. ts.RHS₋₁ = ts.RHS            # ... previous values of RHS
-  nothing
-end
-
 function stepforward!(sol, cl, ts::FilteredAB3TimeStepper, eq, v, p, g)
   eq.calcN!(ts.RHS, sol, cl.t, cl, v, p, g)
   addlinearterm!(ts.RHS, eq.L, sol)
@@ -505,25 +431,10 @@ end
 # Timestepper utils
 # --
 
-function getexpLs(dt, eq::Equation{T,TL,Tg}) where {T,TL<:Array{TLi},Tg} where TLi<:AbstractArray
-  expLdt = [ @.(exp(dt*L)) for L in eq.L ]
-  expLdt2 = [ @.(exp(dt*L/2)) for L in eq.L ]
-  expLdt, expLdt2
-end
-
 function getexpLs(dt, eq)
   expLdt  = @. exp(dt*eq.L)
   expLdt2 = @. exp(dt*eq.L/2)
   expLdt, expLdt2
-end
-
-function getetdcoeffs(dt, L::AbstractArray{T}; kwargs...) where T<:AbstractArray
-  ζαβΓ = [ getetdcoeffs(dt, Li) for Li in L ]
-  ζ = map(x->x[1], ζαβΓ)
-  α = map(x->x[2], ζαβΓ)
-  β = map(x->x[3], ζαβΓ)
-  Γ = map(x->x[4], ζαβΓ)
-  ζ, α, β, Γ
 end
 
 """
