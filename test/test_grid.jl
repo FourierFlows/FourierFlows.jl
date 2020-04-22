@@ -3,21 +3,21 @@ testny(g, ny) = isapprox(g.ny, ny)
 testnz(g, nz) = isapprox(g.nz, nz)
 
 # Physical grid tests
-function testdx(g::AbstractGrid{T}) where T
+function testdx(g::Union{OneDGrid{T,A}, TwoDGrid{T,A}, ThreeDGrid{T,A}}) where {T, A}
   dxgrid = @. g.x[2:end] - g.x[1:end-1]
-  dxones = ArrayType(dev)(g.dx*ones(T, size(dxgrid)))
+  dxones = A(g.dx*ones(T, size(dxgrid)))
   isapprox(dxgrid, dxones)
 end
 
-function testdy(g::AbstractGrid{T}) where T
+function testdy(g::Union{TwoDGrid{T,A}, ThreeDGrid{T,A}}) where {T, A}
   dygrid = @. g.y[2:end] - g.y[1:end-1]
-  dyones = ArrayType(dev)(g.dy*ones(T, size(dygrid)))
+  dyones = A(g.dy*ones(T, size(dygrid)))
   isapprox(dygrid, dyones)
 end
 
-function testdz(g::AbstractGrid{T, A}) where {T, A}
+function testdz(g::ThreeDGrid{T,A}) where {T, A}
   dzgrid = @. g.z[2:end] - g.z[1:end-1]
-  dzones = ArrayType(dev)(g.dz*ones(T, size(dzgrid)))
+  dzones = A(g.dz*ones(T, size(dzgrid)))
   isapprox(dzgrid, dzones)
 end
 
@@ -51,8 +51,8 @@ function testgridpoints(g::TwoDGrid{T}) where T
   X, Y = gridpoints(g)
   dXgrid = @. X[2:end, :] - X[1:end-1, :]
   dYgrid = @. Y[:, 2:end] - Y[:, 1:end-1]
-  dXones = ArrayType(dev)(g.dx*ones(T, size(dXgrid)))
-  dYones = ArrayType(dev)(g.dy*ones(T, size(dYgrid)))
+  dXones = g.dx*ones(T, size(dXgrid))
+  dYones = g.dy*ones(T, size(dYgrid))
   isapprox(dXgrid, dXones) && isapprox(dYgrid, dYones)
 end
 
@@ -61,9 +61,9 @@ function testgridpoints(g::ThreeDGrid{T}) where T
   dXgrid = @. X[2:end, :, :] - X[1:end-1, :, :]
   dYgrid = @. Y[:, 2:end, :] - Y[:, 1:end-1, :]
   dZgrid = @. Z[:, :, 2:end] - Z[:, :, 1:end-1]
-  dXones = ArrayType(dev)(g.dx*ones(T, size(dXgrid)))
-  dYones = ArrayType(dev)(g.dy*ones(T, size(dYgrid)))
-  dZones = ArrayType(dev)(g.dz*ones(T, size(dZgrid)))
+  dXones = g.dx*ones(T, size(dXgrid))
+  dYones = g.dy*ones(T, size(dYgrid))
+  dZones = g.dz*ones(T, size(dZgrid))
   isapprox(dXgrid, dXones) && isapprox(dYgrid, dYones) && isapprox(dZgrid, dZones)
 end
 
