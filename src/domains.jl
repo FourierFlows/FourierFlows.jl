@@ -21,7 +21,7 @@ function getaliasedwavenumbers(nk, nkr, aliasfraction)
    kalias = (aliasfraction > 0) ? (iL:iR) : Int(nx/2+1)
   kralias = (aliasfraction > 0) ? (iL:nkr) : nkr
 
-  kalias, kralias
+  return kalias, kralias
 end
 
 """
@@ -83,8 +83,8 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
   Tfft = typeof(fftplan)
   Trfft = typeof(rfftplan)
 
-  OneDGrid{T, Ta, Tfft, Trfft}(nx, nk, nkr, dx, Lx, x, k, kr, 
-                               invksq, invkrsq, fftplan, rfftplan, kalias, kralias)
+  return OneDGrid{T, Ta, Tfft, Trfft}(nx, nk, nkr, dx, Lx, x, k, kr, 
+                                      invksq, invkrsq, fftplan, rfftplan, kalias, kralias)
 end
 
 """
@@ -93,34 +93,34 @@ end
 Constructs a TwoDGrid object.
 """
 struct TwoDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractGrid{T, Ta}
-  nx::Int
-  ny::Int
-  nk::Int
-  nl::Int
-  nkr::Int
+        nx :: Int
+        ny :: Int
+        nk :: Int
+        nl :: Int
+       nkr :: Int
 
-  dx::T
-  dy::T
-  Lx::T
-  Ly::T
+        dx :: T
+        dy :: T
+        Lx :: T
+        Ly :: T
 
-  x::Ta
-  y::Ta
-  k::Ta
-  l::Ta
-  kr::Ta
-  Ksq::Ta
-  invKsq::Ta
-  Krsq::Ta
-  invKrsq::Ta
+         x :: Ta
+         y :: Ta
+         k :: Ta
+         l :: Ta
+        kr :: Ta
+       Ksq :: Ta
+    invKsq :: Ta
+      Krsq :: Ta
+   invKrsq :: Ta
 
-  fftplan::Tfft
-  rfftplan::Trfft
+   fftplan :: Tfft
+  rfftplan :: Trfft
 
   # Range objects that access the aliased part of the wavenumber range
-  kalias::UnitRange{Int}
-  kralias::UnitRange{Int}
-  lalias::UnitRange{Int}
+    kalias :: UnitRange{Int}
+   kralias :: UnitRange{Int}
+    lalias :: UnitRange{Int}
 end
 
 function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, 
@@ -163,8 +163,8 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
   Tfft = typeof(fftplan)
   Trfft = typeof(rfftplan)
 
-  TwoDGrid{T, Ta, Tfft, Trfft}(nx, ny, nk, nl, nkr, dx, dy, Lx, Ly, x, y, k, l, kr, Ksq, invKsq, Krsq, invKrsq,
-           fftplan, rfftplan, kalias, kralias, lalias)
+  return TwoDGrid{T, Ta, Tfft, Trfft}(nx, ny, nk, nl, nkr, dx, dy, Lx, Ly, x, y, k, l, kr, Ksq, invKsq, Krsq, invKrsq,
+                                      fftplan, rfftplan, kalias, kralias, lalias)
 end
 
 """
@@ -173,41 +173,41 @@ end
 Constructs a ThreeDGrid object.
 """
 struct ThreeDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractGrid{T, Ta}
-  nx::Int
-  ny::Int
-  nz::Int
-  nk::Int
-  nl::Int
-  nm::Int
-  nkr::Int
+        nx :: Int
+        ny :: Int
+        nz :: Int
+        nk :: Int
+        nl :: Int
+        nm :: Int
+       nkr :: Int
 
-  dx::T
-  dy::T
-  dz::T
-  Lx::T
-  Ly::T
-  Lz::T
+        dx :: T
+        dy :: T
+        dz :: T
+        Lx :: T
+        Ly :: T
+        Lz :: T
 
-  x::Ta
-  y::Ta
-  z::Ta
-  k::Ta
-  l::Ta
-  m::Ta
-  kr::Ta
-  Ksq::Ta
-  invKsq::Ta
-  Krsq::Ta
-  invKrsq::Ta
+         x :: Ta
+         y :: Ta
+         z :: Ta
+         k :: Ta
+         l :: Ta
+         m :: Ta
+        kr :: Ta
+       Ksq :: Ta
+    invKsq :: Ta
+      Krsq :: Ta
+   invKrsq :: Ta
 
-  fftplan::Tfft
-  rfftplan::Trfft
+   fftplan :: Tfft
+  rfftplan :: Trfft
 
   # Range objects that access the aliased part of the wavenumber range
-  kalias::UnitRange{Int}
-  kralias::UnitRange{Int}
-  lalias::UnitRange{Int}
-  malias::UnitRange{Int}
+    kalias :: UnitRange{Int}
+   kralias :: UnitRange{Int}
+    lalias :: UnitRange{Int}
+    malias :: UnitRange{Int}
 end
 
 function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-Lz/2,
@@ -254,10 +254,14 @@ function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-
   Tfft = typeof(fftplan)
   Trfft = typeof(rfftplan)
 
-  ThreeDGrid{T, Ta, Tfft, Trfft}(nx, ny, nz, nk, nl, nm, nkr, dx, dy, dz, Lx, Ly, Lz,
-   x, y, z, k, l, m, kr, Ksq, invKsq, Krsq, invKrsq, fftplan, rfftplan, 
-   kalias, kralias, lalias, malias)
+  return ThreeDGrid{T, Ta, Tfft, Trfft}(nx, ny, nz, nk, nl, nm, nkr, dx, dy, dz, Lx, Ly, Lz,
+                                        x, y, z, k, l, m, kr, Ksq, invKsq, Krsq, invKrsq, fftplan, rfftplan, 
+                                        kalias, kralias, lalias, malias)
 end
+
+Base.eltype(grid::OneDGrid) = eltype(grid.x)
+Base.eltype(grid::TwoDGrid) = eltype(grid.x)
+Base.eltype(grid::ThreeDGrid) = eltype(grid.x)
 
 OneDGrid(dev::CPU, args...; kwargs...) = OneDGrid(args...; ArrayType=Array, kwargs...)
 TwoDGrid(dev::CPU, args...; kwargs...) = TwoDGrid(args...; ArrayType=Array, kwargs...)
@@ -271,14 +275,14 @@ Returns the collocation points of the grid `g` in 2D or 3D arrays `X, Y (and Z)`
 function gridpoints(g::TwoDGrid{T, A}) where {T, A}
   X = [ g.x[i] for i=1:g.nx, j=1:g.ny]
   Y = [ g.y[j] for i=1:g.nx, j=1:g.ny]
-  A(X), A(Y)
+  return A(X), A(Y)
 end
 
 function gridpoints(g::ThreeDGrid{T, A}) where {T, A}
   X = [ g.x[i] for i=1:g.nx, j=1:g.ny, k=1:g.nz]
   Y = [ g.y[j] for i=1:g.nx, j=1:g.ny, k=1:g.nz]
   Z = [ g.z[k] for i=1:g.nx, j=1:g.ny, k=1:g.nz]
-  A(X), A(Y), A(Z)
+  return A(X), A(Y), A(Z)
 end
 
 """
@@ -289,34 +293,34 @@ Dealias `a` on the grid `g` with aliased x-wavenumbers `kalias`.
 function dealias!(a, g::OneDGrid)
   kalias = size(a, 1) == g.nkr ? g.kralias : g.kalias
   dealias!(a, g, kalias)
-  nothing
+  return nothing
 end
 
 function dealias!(a, g::OneDGrid, kalias)
   @views @. a[kalias, :] = 0
-  nothing
+  return nothing
 end
 
 function dealias!(a, g::TwoDGrid)
   kalias = size(a, 1) == g.nkr ? g.kralias : g.kalias
   dealias!(a, g, kalias)
-  nothing
+  return nothing
 end
 
 function dealias!(a, g::TwoDGrid, kalias)
   @views @. a[kalias, g.lalias, :] = 0
-  nothing
+  return nothing
 end
 
 function dealias!(a, g::ThreeDGrid)
   kalias = size(a, 1) == g.nkr ? g.kralias : g.kalias
   dealias!(a, g, kalias)
-  nothing
+  return nothing
 end
 
 function dealias!(a, g::ThreeDGrid, kalias)
   @views @. a[kalias, g.lalias, g.malias, :] = 0
-  nothing
+  return nothing
 end
 
 """
@@ -333,24 +337,24 @@ function makefilter(K::Array; order=4, innerK=0.65, outerK=1)
   decay = 15*log(10) / (outerK-innerK)^order # decay rate for filtering function
   filt = @. exp( -decay*(K-innerK)^order )
   filt[real.(K) .< innerK] .= 1
-  TK(filt)
+  return TK(filt)
 end
 
 function makefilter(g::OneDGrid; realvars=true, kwargs...)
   K = realvars ? g.kr*g.dx/π : @.(abs(g.k*g.dx/π))
-  makefilter(K; kwargs...)
+  return makefilter(K; kwargs...)
 end
 
 function makefilter(g::TwoDGrid; realvars=true, kwargs...)
   K = realvars ?
       @.(sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2)) : @.(sqrt((g.k*g.dx/π)^2 + (g.l*g.dy/π)^2))
-  makefilter(K; kwargs...)
+  return makefilter(K; kwargs...)
 end
 
 function makefilter(g::ThreeDGrid; realvars=true, kwargs...)
   K = realvars ?
       @.(sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2 + (g.m*g.dz/π)^2)) : @.(sqrt((g.k*g.dx/π)^2 + (g.l*g.dy/π)^2 + (g.m*g.dz/π)^2))
-  makefilter(K; kwargs...)
+  return makefilter(K; kwargs...)
 end
 
 makefilter(g, T, sz; kwargs...) = ones(T, sz) .* makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
