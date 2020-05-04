@@ -110,17 +110,17 @@ end
 
 function testtypedonedgrid(dev::Device, nx, Lx; T=Float64)
   gr = OneDGrid(nx, Lx, T=T)
-  typeof(gr.dx)==T && typeof(gr.x[1])==T && typeof(gr.Lx)==T 
+  typeof(gr.dx)==T && typeof(gr.x[1])==T && typeof(gr.Lx)==T && eltype(gr) == T
 end
 
 function testtypedtwodgrid(dev::Device, nx, Lx, ny=Lx, Ly=Lx; T=Float64)
   gr = TwoDGrid(nx, Lx, ny, Ly, T=T)
-  typeof(gr.dx)==T && typeof(gr.dy)==T && typeof(gr.x[1])==T && typeof(gr.y[1])==T && typeof(gr.Lx)==T && typeof(gr.Ly)==T 
+  typeof(gr.dx)==T && typeof(gr.dy)==T && typeof(gr.x[1])==T && typeof(gr.y[1])==T && typeof(gr.Lx)==T && typeof(gr.Ly)==T && eltype(gr) == T
 end
 
 function testtypedthreedgrid(dev::Device, nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; T=Float64)
   gr = ThreeDGrid(nx, Lx, ny, Ly, nz, Lz, T=T)
-  typeof(gr.dx)==T && typeof(gr.dy)==T && typeof(gr.dz)==T && typeof(gr.x[1])==T && typeof(gr.y[1])==T && typeof(gr.z[1])==T && typeof(gr.Lx)==T && typeof(gr.Ly)==T && typeof(gr.Lz)==T 
+  typeof(gr.dx)==T && typeof(gr.dy)==T && typeof(gr.dz)==T && typeof(gr.x[1])==T && typeof(gr.y[1])==T && typeof(gr.z[1])==T && typeof(gr.Lx)==T && typeof(gr.Ly)==T && typeof(gr.Lz)==T && eltype(gr) == T
 end
 
 function testmakefilter(dev::Device, g::AbstractGrid{T}) where T
