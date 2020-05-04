@@ -144,14 +144,17 @@ getfieldspecs(fieldnames::AbstractArray, fieldtype) = [ (name, fieldtype) for na
 Returns `∫|u|² = Σ|uh|²` on the grid `g`, where `uh` is the Fourier transform of `u`.
 """
 function parsevalsum2(uh, g::TwoDGrid)
+
   if size(uh, 1) == g.nkr # uh is in conjugate symmetric form
-    U = @views sum(abs2, uh[1, :])           # k=0 modes
-    U += @views 2*sum(abs2, uh[2:end, :])    # sum k>0 modes twice
+    U = sum(abs2, uh[1, :])           # k=0 modes
+    U += 2*sum(abs2, uh[2:end, :])    # sum k>0 modes twice
   else # count every mode once
     U = sum(abs2, uh)
   end
-  norm = g.Lx*g.Ly/(g.nx^2*g.ny^2)    # normalization for dft
-  norm*U
+
+  norm = g.Lx * g.Ly / (g.nx^2 * g.ny^2) # normalization for dft
+
+  return norm * U
 end
 
 function parsevalsum2(uh, g::OneDGrid)
