@@ -59,7 +59,7 @@ function TimeStepper(stepper, eq, dt=nothing, dev::Device=CPU(); kw...)
                                Expr(:call, fullsteppername, eq, dt, dev)
 
   # Add keyword arguments    
-  length(kw) > 0 && push!(expr, Tuple(Expr(:kw, p.first, p.second) for p in kw))
+  length(kw) > 0 && push!(expr.args, Tuple(Expr(:kw, p.first, p.second) for p in kw)...)
 
   return eval(expr)
 end

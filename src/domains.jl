@@ -358,4 +358,4 @@ function makefilter(g::ThreeDGrid; realvars=true, kwargs...)
 end
 
 makefilter(g, T, sz; kwargs...) = ones(T, sz) .* makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
-makefilter(eq) = makefilter(eq.grid, fltype(eq.T), eq.dims)
+makefilter(eq; kwargs...) = makefilter(eq.grid, fltype(eq.T), eq.dims; kwargs...)
