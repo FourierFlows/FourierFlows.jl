@@ -256,6 +256,17 @@ for dev in devices
     @test test_radialspectrum(dev, n, ahkl, ahρ; rfft=true)
   end
 
+  @time @testset "Problem instantiation tests" begin
+    include("test_instantiate_problem.jl")  
+
+    for stepper in steppers
+      @test instantiate_problem(dev, stepper)
+      if occursin("Filtered", stepper)
+        @test instantiate_problem_with_filter_kwargs(dev, stepper)
+      end
+    end
+  end
+
   @time @testset "Diagnostics tests" begin
     include("test_diagnostics.jl")
 

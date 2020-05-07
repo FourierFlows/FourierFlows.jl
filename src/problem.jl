@@ -36,9 +36,23 @@ end
 struct EmptyParams <: AbstractParams end
 struct EmptyVars <: AbstractVars end
 
-function Problem(eqn::Equation, stepper, dt, grid::AbstractGrid{T, A}, vars=EmptyVars, params=EmptyParams, dev::Device=CPU()) where {T, A}
+"""
+    Problem(eqn::Equation, stepper, dt, grid::AbstractGrid,
+            vars=EmptyVars, params=EmptyParams, dev::Device=CPU(); stepperkwargs...)
+
+Construct a `Problem` for `eqn` using the time`stepper` with timestep `dt`, on `grid` and 
+`dev`ice and with optional `vars`, and `params`. The `stepperkwargs` are passed to the time-stepper
+constructor.
+"""
+function Problem(eqn::Equation, stepper, dt, grid::AbstractGrid{T, A}, 
+                 vars=EmptyVars, params=EmptyParams, dev::Device=CPU(); stepperkwargs...) where {T, A}
+                 
   clock = Clock{T}(dt, 0, 0)
-  timestepper = TimeStepper(stepper, eqn, dt, dev)
+
+  timestepper = TimeStepper(stepper, eqn, dt, dev; stepperkwargs...)
+
   sol = devzeros(dev, eqn.T, eqn.dims)
-  Problem(sol, clock, eqn, grid, vars, params, timestepper)
+
+  return Problem(sol, clock, eqn, grid, vars, params, timestepper)
 end
+

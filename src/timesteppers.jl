@@ -45,17 +45,23 @@ const fullyexplicitsteppers= [
 isexplicit(stepper) = any(Symbol(stepper) .== fullyexplicitsteppers)
 
 """
-    TimeStepper(stepper, eq, dt=nothing)
+    TimeStepper(stepper, eq, dt=nothing, dev=CPU(); kw...)
 
-Generalized timestepper constructor. If `stepper` is explicit, `dt` is not used.
+Instantiate the Time`stepper` for `eq`uation with timestep `dt` and
+on the `dev`ice. The `kw` are passed to the timestepper constructor.
 """
-function TimeStepper(stepper, eq, dt=nothing, dev::Device=CPU())
+function TimeStepper(stepper, eq, dt=nothing, dev::Device=CPU(); kw...)
   fullsteppername = Symbol(stepper, :TimeStepper)
-  if isexplicit(stepper)
-    return eval(Expr(:call, fullsteppername, eq, dev))
-  else
-    return eval(Expr(:call, fullsteppername, eq, dt, dev))
-  end
+
+  # Create expression that instantiates the time-stepper, depending on whether 
+  # timestepper is explicit or not.
+  expr = isexplicit(stepper) ? Expr(:call, fullsteppername, eq, dev) :
+                               Expr(:call, fullsteppername, eq, dt, dev)
+
+  # Add keyword arguments    
+  length(kw) > 0 && push!(expr.args, Tuple(Expr(:kw, p.first, p.second) for p in kw)...)
+
+  return eval(expr)
 end
 
 
@@ -70,10 +76,10 @@ end
 #   * AB3
 #   * Filtered AB3
 #
-# Explicit time-steppers are constricted with the signature
+# Explicit time-steppers are constructed with the signature
 #   ts = ExplicitTimeStepper(eq::Equation)
 #
-# Implicit time-steppers are constricted with the signature
+# Implicit time-steppers are constructed with the signature
 #   ts = ImplicitTimeStepper(eq::Equation, dt)
 
 # --
