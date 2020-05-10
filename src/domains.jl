@@ -58,15 +58,15 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
 
   dx = Lx/nx
     
-  nk = nx
+   nk = nx
   nkr = Int(nx/2+1)
 
   # Physical grid
-   x = ArrayType{T}(range(x0, step=dx, length=nx))
+  x = range(x0, step=dx, length=nx)
 
   # Wavenubmer grid
-    k = ArrayType{T}(fftfreq(nx, 2π/Lx*nx))
-   kr = ArrayType{T}(rfftfreq(nx, 2π/Lx*nx))
+   k = ArrayType{T}( fftfreq(nx, 2π/Lx*nx))
+  kr = ArrayType{T}(rfftfreq(nx, 2π/Lx*nx))
 
    invksq = @. 1/k^2
   invkrsq = @. 1/kr^2
@@ -129,18 +129,18 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
   dx = Lx/nx
   dy = Ly/ny
 
-  nk = nx
-  nl = ny
+   nk = nx
+   nl = ny
   nkr = Int(nx/2+1)
 
   # Physical grid
-  x = ArrayType{T}(reshape(range(x0, step=dx, length=nx), (nx, 1)))
-  y = ArrayType{T}(reshape(range(y0, step=dy, length=ny), (1, ny)))
+  x = range(x0, step=dx, length=nx)
+  y = range(y0, step=dy, length=ny)
 
   # Wavenubmer grid
-  k = ArrayType{T}(reshape(fftfreq(nx, 2π/Lx*nx), (nk, 1)))
-  l = ArrayType{T}(reshape(fftfreq(ny, 2π/Ly*ny), (1, nl)))
- kr = ArrayType{T}(reshape(rfftfreq(nx, 2π/Lx*nx), (nkr, 1)))
+   k = ArrayType{T}(reshape( fftfreq(nx, 2π/Lx*nx), (nk, 1)))
+   l = ArrayType{T}(reshape( fftfreq(ny, 2π/Ly*ny), (1, nl)))
+  kr = ArrayType{T}(reshape(rfftfreq(nx, 2π/Lx*nx), (nkr, 1)))
 
      Ksq = @. k^2 + l^2
   invKsq = @. 1/Ksq
@@ -223,14 +223,14 @@ function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-
   nkr = Int(nx/2+1)
 
   # Physical grid
-  x = ArrayType{T}(reshape(range(x0, step=dx, length=nx), (nx, 1, 1)))
-  y = ArrayType{T}(reshape(range(y0, step=dy, length=ny), (1, ny, 1)))
-  z = ArrayType{T}(reshape(range(z0, step=dz, length=nz), (1, 1, nz)))
+  x = range(x0, step=dx, length=nx)
+  y = range(y0, step=dy, length=ny)
+  z = range(z0, step=dz, length=nz)
 
   # Wavenubmer grid
-   k = ArrayType{T}(reshape(fftfreq(nx, 2π/Lx*nx), (nk, 1, 1)))
-   l = ArrayType{T}(reshape(fftfreq(ny, 2π/Ly*ny), (1, nl, 1)))
-   m = ArrayType{T}(reshape(fftfreq(nz, 2π/Lz*nz), (1, 1, nm)))
+   k = ArrayType{T}(reshape( fftfreq(nx, 2π/Lx*nx), (nk, 1, 1)))
+   l = ArrayType{T}(reshape( fftfreq(ny, 2π/Ly*ny), (1, nl, 1)))
+   m = ArrayType{T}(reshape( fftfreq(nz, 2π/Lz*nz), (1, 1, nm)))
   kr = ArrayType{T}(reshape(rfftfreq(nx, 2π/Lx*nx), (nkr, 1, 1)))
 
      Ksq = @. k^2 + l^2 + m^2
@@ -268,20 +268,20 @@ TwoDGrid(dev::CPU, args...; kwargs...) = TwoDGrid(args...; ArrayType=Array, kwar
 ThreeDGrid(dev::CPU, args...; kwargs...) = ThreeDGrid(args...; ArrayType=Array, kwargs...)
 
 """
-    gridpoints(g)
+    gridpoints(grid)
 
-Returns the collocation points of the grid `g` in 2D or 3D arrays `X, Y (and Z)`.
+Returns the collocation points of the `grid` in 2D or 3D arrays `X, Y` (and `Z`).
 """
-function gridpoints(g::TwoDGrid{T, A}) where {T, A}
-  X = [ g.x[i] for i=1:g.nx, j=1:g.ny]
-  Y = [ g.y[j] for i=1:g.nx, j=1:g.ny]
+function gridpoints(grid::TwoDGrid{T, A}) where {T, A}
+  X = [ grid.x[i₁] for i₁=1:grid.nx, i₂=1:grid.ny]
+  Y = [ grid.y[i₂] for i₁=1:grid.nx, i₂=1:grid.ny]
   return A(X), A(Y)
 end
 
-function gridpoints(g::ThreeDGrid{T, A}) where {T, A}
-  X = [ g.x[i] for i=1:g.nx, j=1:g.ny, k=1:g.nz]
-  Y = [ g.y[j] for i=1:g.nx, j=1:g.ny, k=1:g.nz]
-  Z = [ g.z[k] for i=1:g.nx, j=1:g.ny, k=1:g.nz]
+function gridpoints(grid::ThreeDGrid{T, A}) where {T, A}
+  X = [ grid.x[i₁] for i₁=1:grid.nx, i₂=1:grid.ny, i₃=1:grid.nz]
+  Y = [ grid.y[i₂] for i₁=1:grid.nx, i₂=1:grid.ny, i₃=1:grid.nz]
+  Z = [ grid.z[i₃] for i₁=1:grid.nx, i₂=1:grid.ny, i₃=1:grid.nz]
   return A(X), A(Y), A(Z)
 end
 
