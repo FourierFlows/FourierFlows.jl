@@ -31,7 +31,7 @@ Constructs a OneDGrid object with size `Lx`, resolution `nx`, and leftmost
 position `x0`. FFT plans are generated for `nthreads` CPUs using
 FFTW flag `effort`.
 """
-struct OneDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractGrid{T, Ta}
+struct OneDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
         nx :: Int
         nk :: Int
        nkr :: Int
@@ -39,11 +39,12 @@ struct OneDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractGri
         dx :: T
         Lx :: T
 
-         x :: Ta
-         k :: Ta
-        kr :: Ta
-    invksq :: Ta
-   invkrsq :: Ta
+         x :: Tx
+         
+         k :: Tk
+        kr :: Tk
+    invksq :: Tk
+   invkrsq :: Tk
 
    fftplan :: Tfft
   rfftplan :: Trfft
@@ -62,7 +63,7 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
   nkr = Int(nx/2+1)
 
   # Physical grid
-  x = range(x0, step=dx, length=nx)
+  x = range(T(x0), step=T(dx), length=nx)
 
   # Wavenubmer grid
    k = ArrayType{T}( fftfreq(nx, 2π/Lx*nx))
@@ -79,11 +80,12 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
 
   kalias, kralias = getaliasedwavenumbers(nk, nkr, dealias)
 
-  Ta = typeof(x)
+  Tx = typeof(x)
+  Tk = typeof(k)
   Tfft = typeof(fftplan)
   Trfft = typeof(rfftplan)
 
-  return OneDGrid{T, Ta, Tfft, Trfft}(nx, nk, nkr, dx, Lx, x, k, kr, 
+  return OneDGrid{T, Tk, Tx, Tfft, Trfft}(nx, nk, nkr, dx, Lx, x, k, kr, 
                                       invksq, invkrsq, fftplan, rfftplan, kalias, kralias)
 end
 
@@ -92,7 +94,7 @@ end
 
 Constructs a TwoDGrid object.
 """
-struct TwoDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractGrid{T, Ta}
+struct TwoDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
         nx :: Int
         ny :: Int
         nk :: Int
@@ -104,15 +106,16 @@ struct TwoDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractGri
         Lx :: T
         Ly :: T
 
-         x :: Ta
-         y :: Ta
-         k :: Ta
-         l :: Ta
-        kr :: Ta
-       Ksq :: Ta
-    invKsq :: Ta
-      Krsq :: Ta
-   invKrsq :: Ta
+         x :: Tx
+         y :: Tx
+         
+         k :: Tk
+         l :: Tk
+        kr :: Tk
+       Ksq :: Tk
+    invKsq :: Tk
+      Krsq :: Tk
+   invKrsq :: Tk
 
    fftplan :: Tfft
   rfftplan :: Trfft
@@ -134,8 +137,8 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
   nkr = Int(nx/2+1)
 
   # Physical grid
-  x = range(x0, step=dx, length=nx)
-  y = range(y0, step=dy, length=ny)
+  x = range(T(x0), step=T(dx), length=nx)
+  y = range(T(y0), step=T(dy), length=ny)
 
   # Wavenubmer grid
    k = ArrayType{T}(reshape( fftfreq(nx, 2π/Lx*nx), (nk, 1)))
@@ -159,11 +162,12 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
   kalias, kralias = getaliasedwavenumbers(nk, nkr, dealias)
   lalias, _ = getaliasedwavenumbers(nl, nl, dealias)
   
-  Ta = typeof(x)
+  Tx = typeof(x)
+  Tk = typeof(k)
   Tfft = typeof(fftplan)
   Trfft = typeof(rfftplan)
 
-  return TwoDGrid{T, Ta, Tfft, Trfft}(nx, ny, nk, nl, nkr, dx, dy, Lx, Ly, x, y, k, l, kr, Ksq, invKsq, Krsq, invKrsq,
+  return TwoDGrid{T, Tk, Tx, Tfft, Trfft}(nx, ny, nk, nl, nkr, dx, dy, Lx, Ly, x, y, k, l, kr, Ksq, invKsq, Krsq, invKrsq,
                                       fftplan, rfftplan, kalias, kralias, lalias)
 end
 
@@ -172,7 +176,7 @@ end
 
 Constructs a ThreeDGrid object.
 """
-struct ThreeDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractGrid{T, Ta}
+struct ThreeDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
         nx :: Int
         ny :: Int
         nz :: Int
@@ -188,17 +192,18 @@ struct ThreeDGrid{T<:AbstractFloat, Ta<:AbstractArray, Tfft, Trfft} <: AbstractG
         Ly :: T
         Lz :: T
 
-         x :: Ta
-         y :: Ta
-         z :: Ta
-         k :: Ta
-         l :: Ta
-         m :: Ta
-        kr :: Ta
-       Ksq :: Ta
-    invKsq :: Ta
-      Krsq :: Ta
-   invKrsq :: Ta
+         x :: Tx
+         y :: Tx
+         z :: Tx
+         
+         k :: Tk
+         l :: Tk
+         m :: Tk
+        kr :: Tk
+       Ksq :: Tk
+    invKsq :: Tk
+      Krsq :: Tk
+   invKrsq :: Tk
 
    fftplan :: Tfft
   rfftplan :: Trfft
@@ -223,9 +228,9 @@ function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-
   nkr = Int(nx/2+1)
 
   # Physical grid
-  x = range(x0, step=dx, length=nx)
-  y = range(y0, step=dy, length=ny)
-  z = range(z0, step=dz, length=nz)
+  x = range(T(x0), step=T(dx), length=nx)
+  y = range(T(y0), step=T(dy), length=ny)
+  z = range(T(z0), step=T(dz), length=nz)
 
   # Wavenubmer grid
    k = ArrayType{T}(reshape( fftfreq(nx, 2π/Lx*nx), (nk, 1, 1)))
@@ -250,11 +255,12 @@ function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-
   kalias, kralias = getaliasedwavenumbers(nk, nkr, dealias)
   lalias, malias = getaliasedwavenumbers(nl, nm, dealias)
   
-  Ta = typeof(x)
+  Tx = typeof(x)
+  Tk = typeof(k)
   Tfft = typeof(fftplan)
   Trfft = typeof(rfftplan)
 
-  return ThreeDGrid{T, Ta, Tfft, Trfft}(nx, ny, nz, nk, nl, nm, nkr, dx, dy, dz, Lx, Ly, Lz,
+  return ThreeDGrid{T, Tk, Tx, Tfft, Trfft}(nx, ny, nz, nk, nl, nm, nkr, dx, dy, dz, Lx, Ly, Lz,
                                         x, y, z, k, l, m, kr, Ksq, invKsq, Krsq, invKrsq, fftplan, rfftplan, 
                                         kalias, kralias, lalias, malias)
 end
@@ -273,15 +279,15 @@ ThreeDGrid(dev::CPU, args...; kwargs...) = ThreeDGrid(args...; ArrayType=Array, 
 Returns the collocation points of the `grid` in 2D or 3D arrays `X, Y` (and `Z`).
 """
 function gridpoints(grid::TwoDGrid{T, A}) where {T, A}
-  X = [ grid.x[i₁] for i₁=1:grid.nx, i₂=1:grid.ny]
-  Y = [ grid.y[i₂] for i₁=1:grid.nx, i₂=1:grid.ny]
+  X = [ grid.x[i₁] for i₁=1:grid.nx, i₂=1:grid.ny ]
+  Y = [ grid.y[i₂] for i₁=1:grid.nx, i₂=1:grid.ny ] 
   return A(X), A(Y)
 end
 
 function gridpoints(grid::ThreeDGrid{T, A}) where {T, A}
-  X = [ grid.x[i₁] for i₁=1:grid.nx, i₂=1:grid.ny, i₃=1:grid.nz]
-  Y = [ grid.y[i₂] for i₁=1:grid.nx, i₂=1:grid.ny, i₃=1:grid.nz]
-  Z = [ grid.z[i₃] for i₁=1:grid.nx, i₂=1:grid.ny, i₃=1:grid.nz]
+  X = [ grid.x[i₁] for i₁=1:grid.nx, i₂=1:grid.ny, i₃=1:grid.nz ]
+  Y = [ grid.y[i₂] for i₁=1:grid.nx, i₂=1:grid.ny, i₃=1:grid.nz ]
+  Z = [ grid.z[i₃] for i₁=1:grid.nx, i₂=1:grid.ny, i₃=1:grid.nz ]
   return A(X), A(Y), A(Z)
 end
 
