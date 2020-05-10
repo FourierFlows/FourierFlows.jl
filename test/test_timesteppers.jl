@@ -8,12 +8,13 @@ function constantdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=10
   # a gaussian initial condition c(x, t=0)
   c0ampl, σ = 0.01, 0.2
   c0func(x) = @. c0ampl*exp(-x^2/(2σ^2))
-  c0 = c0func.(g.x)
+  x = ArrayType(dev)(g.x)
+  c0 = c0func.(x)
 
   # analytic solution for for 1D heat equation with constant κ
   tfinal = nsteps*dt
   σt = sqrt(2*kappa*tfinal + σ^2)
-  cfinal = @. c0ampl*σ/σt * exp(-g.x^2/(2*σt^2))
+  cfinal = @. c0ampl*σ/σt * exp(-x^2/(2*σt^2))
 
   set_c!(prob, c0)
   tcomp = @elapsed stepforward!(prob, nsteps)
@@ -36,12 +37,13 @@ function varyingdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=100
   # a gaussian initial condition c(x, t=0)
   c0ampl, σ = 0.01, 0.2
   c0func(x) = @. c0ampl*exp(-x^2/(2σ^2))
-  c0 = c0func.(g.x)
+  x = ArrayType(dev)(g.x)
+  c0 = c0func.(x)
 
   # analytic solution for for 1D heat equation with constant κ
   tfinal = nsteps*dt
   σt = sqrt(2*kappa[1]*tfinal + σ^2)
-  cfinal = @. c0ampl*σ/σt * exp(-g.x^2/(2*σt^2))
+  cfinal = @. c0ampl*σ/σt * exp(-x^2/(2*σt^2))
 
   set_c!(prob, c0)
   tcomp = @elapsed stepforward!(prob, nsteps)
