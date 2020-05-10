@@ -257,9 +257,12 @@ function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=2)
   ρmax = minimum([(g.nk/2-1)*2π/g.Lx, (g.nl/2-1)*2π/g.Ly])
   ρ = range(0, stop=ρmax, length=n)
 
-  # Interpolate ah onto fine grid in (ρ, θ).
+  # Interpolate ah onto fine grid in (ρ,θ).
   ahρθ = zeros(eltype(ahshift), (n, m))
-  ahρθ = [ itp(ρ[i₁]*cos(θ[i₂]), ρ[i₁]*sin(θ[i₂])) for i₁=2:n, i₂=1:m ] # ignore zeroth mode; i₁>1
+
+  for i₁=2:n, i₂=1:m # ignore zeroth mode; i₁≥2
+    ahρθ[i₁, i₂] = itp(ρ[i₁]*cos(θ[i₂]), ρ[i₁]*sin(θ[i₂]))
+  end
 
   # ahρ = ρ ∫ ah(ρ,θ) dθ  =>  Ah = ∫ ahρ dρ = ∫∫ ah dk dl
   dθ = θ[2]-θ[1]
