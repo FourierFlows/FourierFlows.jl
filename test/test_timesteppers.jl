@@ -3,18 +3,17 @@ function constantdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=10
   dt = 1e-9 * τ # dynamics are resolved
 
   prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper=stepper, dev=dev)
-  g = prob.grid
-
+  x = ArrayType(dev)(prob.grid.x) # convect range to array
+  
   # a gaussian initial condition c(x, t=0)
   c0ampl, σ = 0.01, 0.2
-  c0func(x) = @. c0ampl*exp(-x^2/(2σ^2))
-  x = ArrayType(dev)(g.x)
+  c0func(x) = @. c0ampl * exp(-x^2/(2σ^2))
   c0 = c0func.(x)
 
   # analytic solution for for 1D heat equation with constant κ
   tfinal = nsteps*dt
   σt = sqrt(2*kappa*tfinal + σ^2)
-  cfinal = @. c0ampl*σ/σt * exp(-x^2/(2*σt^2))
+  cfinal = @. c0ampl * σ/σt * exp(-x^2/(2*σt^2))
 
   set_c!(prob, c0)
   tcomp = @elapsed stepforward!(prob, nsteps)
@@ -32,18 +31,17 @@ function varyingdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=100
                          # instead of just the linear coefficients L*sol
 
   prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper=stepper, dev=dev)
-  g = prob.grid
-
+  x = ArrayType(dev)(prob.grid.x) # convect range to array
+  
   # a gaussian initial condition c(x, t=0)
   c0ampl, σ = 0.01, 0.2
-  c0func(x) = @. c0ampl*exp(-x^2/(2σ^2))
-  x = ArrayType(dev)(g.x)
+  c0func(x) = @. c0ampl * exp(-x^2/(2σ^2))
   c0 = c0func.(x)
 
   # analytic solution for for 1D heat equation with constant κ
   tfinal = nsteps*dt
   σt = sqrt(2*kappa[1]*tfinal + σ^2)
-  cfinal = @. c0ampl*σ/σt * exp(-x^2/(2*σt^2))
+  cfinal = @. c0ampl * σ/σt * exp(-x^2/(2*σt^2))
 
   set_c!(prob, c0)
   tcomp = @elapsed stepforward!(prob, nsteps)
