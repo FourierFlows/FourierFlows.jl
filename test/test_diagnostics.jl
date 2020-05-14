@@ -18,8 +18,7 @@ function test_scalardiagnostics(dev::Device=CPU(); nx=6, Lx=2π, kappa=1e-2, nst
   ct(t) = exp(-kappa*k1^2*t)
 
   t1 = dt*nsteps
-  x = ArrayType(dev)(g.x)
-  c0 = @. sin(k1*x)
+  c0 = @. sin(k1*g.x)
   c1 = @. ct(t1) * c0 # analytical solution
 
   set_c!(prob, c0)
@@ -41,9 +40,7 @@ function test_basicdiagnostics(dev::Device=CPU(); nx=6, Lx=2π, kappa=1e-2)
   prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper="ETDRK4", dev=dev)
   g = prob.grid
   
-  x = ArrayType(dev)(g.x)
-  x = ArrayType(dev)(g.x)
-  c0 = @. sin(k1*x)
+  c0 = @. sin(k1*g.x)
   set_c!(prob, c0)
 
   getsol(prob) = prob.sol
