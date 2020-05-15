@@ -64,7 +64,7 @@ and [Navid C. Constantinou][] (@navidcy).
 
 The code is citable via [zenodo](https://zenodo.org). Please cite as:
 
-> Navid C. Constantinou & Gregory L. Wagner. (2020). FourierFlows/FourierFlows.jl: FourierFlows v0.4.3 (Version v0.4.3). Zenodo.  [http://doi.org/10.5281/zenodo.1161724](http://doi.org/10.5281/zenodo.1161724)
+> Navid C. Constantinou & Gregory L. Wagner. (2020). FourierFlows/FourierFlows.jl: FourierFlows v0.4.4 (Version v0.4.4). Zenodo.  [http://doi.org/10.5281/zenodo.1161724](http://doi.org/10.5281/zenodo.1161724)
 
 
 
