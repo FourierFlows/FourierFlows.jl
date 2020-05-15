@@ -114,8 +114,9 @@ updatevars!(prob) = updatevars!(prob.vars, prob.grid, prob.sol)
 
 Set the solution as the transform of `c`.
 """
-function set_c!(prob::FourierFlows.Problem{T, A}, c) where {T, A}
-  prob.vars.c .= A(c) # this converts c to the ArrayType used in prob.vars.c (e.g., convert to CuArray if user gives c as Arrray)
+function set_c!(prob, c)
+  T = typeof(prob.vars.c)
+  prob.vars.c .= T(c) # this makes sure that c is converted to the ArrayType used in prob.vars.c (e.g., convert to CuArray if user gives c as Arrray)
   mul!(prob.sol, prob.grid.rfftplan, prob.vars.c)
   updatevars!(prob)
 end
