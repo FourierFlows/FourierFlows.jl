@@ -35,7 +35,7 @@ end
 
 function create_testfuncs(g::TwoDGrid{Tg,<:Array}) where Tg
     g.nx > 8 || error("nx must be > 8")
-    x, y = g.x, g.y
+    x, y = gridpoints(g)
     nx, ny = g.nx, g.ny
     m, n = 5, 2
     k₀, l₀ = g.k[2], g.l[2]
@@ -88,7 +88,7 @@ end
 
 function create_testfuncs(g::ThreeDGrid{Tg,<:Array}) where Tg
     g.nx > 8 || error("nx must be > 8")
-    x, y, z = g.x, g.y, g.z
+    x, y, z = gridpoints(g)
     nx, ny, nz = g.nx, g.ny, g.nz
     mx, my, mz = 5, 2, 3
     k₀, l₀, m₀ = g.k[2], g.l[2], g.m[2]

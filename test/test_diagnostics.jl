@@ -39,8 +39,8 @@ function test_basicdiagnostics(dev::Device=CPU(); nx=6, Lx=2π, kappa=1e-2)
 
   prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper="ETDRK4", dev=dev)
   g = prob.grid
-
-  c0(x) = sin(k1*x)
+  
+  c0 = @. sin(k1*g.x)
   set_c!(prob, c0)
 
   getsol(prob) = prob.sol
