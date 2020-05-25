@@ -10,10 +10,10 @@
     <a href="https://ci.appveyor.com/project/navidcy/fourierflows-jl">
         <img alt="Build Status for Windows" src="https://img.shields.io/appveyor/ci/navidcy/fourierflows-jl/master?label=Window&logo=appveyor&logoColor=white">
     </a>
-    <a href="https://FourierFlows.github.io/FourierFlows.jl/stable">
+    <a href="https://FourierFlows.github.io/FourierFlowsDocumentation.jl/stable">
         <img alt="stable docs" src="https://img.shields.io/badge/docs-stable-blue.svg">
     </a>
-    <a href="https://FourierFlows.github.io/FourierFlows.jl/dev">
+    <a href="https://FourierFlows.github.io/FourierFlowsDocumentation.jl/dev">
         <img alt="latest docs" src="https://img.shields.io/badge/docs-dev-blue.svg">
     </a>
     <!-- removes coveralls since it does not report GPU coverage via gitlab/JuliaGPU
@@ -37,7 +37,7 @@ A central intent of the software's design is also to provide a framework
 for writing new, fast solvers for new physical problems.
 The code is written in [Julia][].
 
-For more details refer to the [documentation](https://fourierflows.github.io/FourierFlows.jl/latest/).
+For more details refer to the [documentation](https://fourierflows.github.io/FourierFlowsDocumentation.jl/latest/).
 
 ## Installation
 
