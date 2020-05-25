@@ -5,7 +5,7 @@ using
 format = Documenter.HTML(
   collapselevel = 2,
      prettyurls = get(ENV, "CI", nothing) == "true",
-      canonical = "https://fourierflows.github.io/FourierFlows.jl/dev/"
+      canonical = "https://fourierflows.github.io/FourierFlowsDocumentation.jl/dev/"
 )
 
 makedocs(
@@ -27,7 +27,9 @@ makedocs(
                  ]
 )
 
-deploydocs(        repo = "github.com/FourierFlows/FourierFlows.jl.git",
-               versions = ["stable" => "v^", "v#.#.#"],
-           push_preview = true,
-)
+withenv("GITHUB_REPOSITORY" => "FourierFlows/FourierFlowsDocumentation.jl") do
+  deploydocs(        repo = "github.com/FourierFlows/FourierFlowsDocumentation.jl.git",
+                 versions = ["stable" => "v^", "v#.#"],
+             push_preview = true,
+  )
+end
