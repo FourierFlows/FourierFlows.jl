@@ -4,7 +4,7 @@ keywords = ["julia", "PDE", "partial differential equations", "spectral methods"
 license = "MIT"
 authors = ["Gregory L. Wagner <wagner.greg@gmail.com>", "Navid C. Constantinou <navidcy@gmail.com>"]
 description = "Tools for solving partial differential equations on periodic domains using Fourier-based pseudospectral methods."
-documentation = "https://fourierflows.github.io/FourierFlows.jl/dev/"
+documentation = "https://fourierflows.github.io/FourierFlowsDocumentation/dev/"
 repository = "https://github.com/FourierFlows/FourierFlows.jl"
 version = "0.4.4"
 
