@@ -65,7 +65,7 @@ using
 import Base: resize!, getindex, setindex!, lastindex, push!, append!
 
 using Base: fieldnames
-using AbstractFFTs: fftfreq, rfftfreq
+using FFTW: fftfreq, rfftfreq
 
 abstract type AbstractGrid{T, Ta} end
 abstract type AbstractTimeStepper{T} end
