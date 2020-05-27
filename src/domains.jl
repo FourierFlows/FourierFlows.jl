@@ -1,6 +1,3 @@
-plan_flows_fft(a::Array, effort) = plan_fft(a; flags=effort)
-plan_flows_rfft(a::Array, effort) = plan_rfft(a; flags=effort)
-
 """
     ZeroDGrid()
 
@@ -75,8 +72,8 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
   invkrsq[1] = 0
 
   FFTW.set_num_threads(nthreads)
-   fftplan = plan_flows_fft(ArrayType{Complex{T}, 1}(undef, nx), effort)
-  rfftplan = plan_flows_rfft(ArrayType{T, 1}(undef, nx), effort)
+   fftplan = plan_fft(ArrayType{Complex{T}, 1}(undef, nx), flags=effort)
+  rfftplan = plan_rfft(ArrayType{T, 1}(undef, nx), flags=effort)
 
   kalias, kralias = getaliasedwavenumbers(nk, nkr, dealias)
 
@@ -155,8 +152,8 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
 
   # FFT plans
   FFTW.set_num_threads(nthreads)
-  fftplan = plan_flows_fft(ArrayType{Complex{T}, 2}(undef, nx, ny), effort)
-  rfftplan = plan_flows_rfft(ArrayType{T, 2}(undef, nx, ny), effort)
+  fftplan = plan_fft(ArrayType{Complex{T}, 2}(undef, nx, ny), flags=effort)
+  rfftplan = plan_rfft(ArrayType{T, 2}(undef, nx, ny), flags=effort)
 
   # Index endpoints for aliasfrac i, j wavenumbers
   kalias, kralias = getaliasedwavenumbers(nk, nkr, dealias)
@@ -248,8 +245,8 @@ function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-
 
   # FFT plans
   FFTW.set_num_threads(nthreads)
-  fftplan = plan_flows_fft(ArrayType{Complex{T}, 3}(undef, nx, ny, nz), effort)
-  rfftplan = plan_flows_rfft(ArrayType{T, 3}(undef, nx, ny, nz), effort)
+  fftplan = plan_fft(ArrayType{Complex{T}, 3}(undef, nx, ny, nz), flags=effort)
+  rfftplan = plan_rfft(ArrayType{T, 3}(undef, nx, ny, nz), flags=effort)
 
   # Index endpoints for aliasfrac i, j wavenumbers
   kalias, kralias = getaliasedwavenumbers(nk, nkr, dealias)
