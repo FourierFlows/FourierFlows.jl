@@ -123,10 +123,35 @@ function testtypedthreedgrid(dev::Device, nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; T=
   typeof(gr.dx)==T && typeof(gr.dy)==T && typeof(gr.dz)==T && typeof(gr.x[1])==T && typeof(gr.y[1])==T && typeof(gr.z[1])==T && typeof(gr.Lx)==T && typeof(gr.Ly)==T && typeof(gr.Lz)==T && eltype(gr) == T
 end
 
-function testmakefilter(dev::Device, g::AbstractGrid{T}) where T
+function testmakefilter(dev::Device, g::AbstractGrid)
+  T = eltype(g)
   filter = FourierFlows.makefilter(g)
   G = typeof(g)
   nofilter = G<:OneDGrid ? filter[@. g.kr*g.dx/π < 0.65] : ( G<:TwoDGrid ? filter[@. sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2) < 0.65] : filter[@. sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2 + (g.m*g.dz/π)^2) < 0.65] )
   fullfilter = G<:OneDGrid ? filter[@. g.kr*g.dx/π > 0.999] : ( G<:TwoDGrid ? filter[@. sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2) > 0.999] : filter[@. sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2 + (g.m*g.dz/π)^2) > 0.999] )
   nofilter== zeros(dev, T, size(nofilter)) .+ 1 && isapprox(fullfilter, zeros(dev, T, size(fullfilter)), atol=1e-12)
+end
+
+function test_plan_flows_fftrfft(::CPU; T=Float64)
+  A = ArrayType(CPU())
+  return ( typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4,))))) == FFTW.cFFTWPlan{Complex{T},-1,false,1} &&
+  typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6))))) == FFTW.cFFTWPlan{Complex{T},-1,false,2} &&
+  typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))))) == FFTW.cFFTWPlan{Complex{T},-1,false,3} &&
+  FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))), [1, 2]).region == [1, 2] &&
+  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4,))))) == FFTW.rFFTWPlan{T,-1,false,1} &&
+  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6))))) == FFTW.rFFTWPlan{T,-1,false,2} &&
+  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) == FFTW.rFFTWPlan{T,-1,false,3} &&
+  FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2] )
+end
+
+function test_plan_flows_fftrfft(::GPU; T=Float64)
+  A = ArrayType(GPU())
+  return ( typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4,))))) == CuArrays.CUFFT.cCuFFTPlan{Complex{T},-1,false,1} &&
+  typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6))))) == CuArrays.CUFFT.cCuFFTPlan{Complex{T},-1,false,2} &&
+  typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))))) == CuArrays.CUFFT.cCuFFTPlan{Complex{T},-1,false,3} &&
+  FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))), [1, 2]).region == [1, 2] &&
+  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4,))))) == CuArrays.CUFFT.rCuFFTPlan{T,-1,false,1} &&
+  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6))))) == CuArrays.CUFFT.rCuFFTPlan{T,-1,false,2} &&
+  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) == CuArrays.CUFFT.rCuFFTPlan{T,-1,false,3} &&
+  FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2] )
 end
