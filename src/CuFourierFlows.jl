@@ -1,8 +1,8 @@
 using .CuArrays
 
 # Discard `effort` argument for CuArrays
-plan_flows_fft(a::CuArray, effort) = plan_fft(a)
-plan_flows_rfft(a::CuArray, effort) = plan_rfft(a)
+plan_flows_fft(a::CuArray, args...; flags=nothing, kwargs...) = plan_fft(a, args...; kwargs...)
+plan_flows_rfft(a::CuArray, args...; flags=nothing, kwargs...) = plan_rfft(a, args...; kwargs...)
 
 OneDGrid(dev::GPU, args...; kwargs...) = OneDGrid(args...; ArrayType=CuArray, kwargs...)
 TwoDGrid(dev::GPU, args...; kwargs...) = TwoDGrid(args...; ArrayType=CuArray, kwargs...)

@@ -95,9 +95,11 @@ for dev in devices
     @test testgridpoints(dev, g₃)
     @test testdealias(g₃)
     @test testmakefilter(dev, g₃)
+    @test test_plan_flows_fftrfft(dev)
     
     # Test typed grids
     T = Float32
+    @test test_plan_flows_fftrfft(dev, T=T)
     @test testtypedonedgrid(dev, nx, Lx; T=T)
     @test testtypedtwodgrid(dev, nx, Lx, ny, Ly; T=T)
     @test testtypedthreedgrid(dev, nx, Lx, ny, Ly, nz, Lz; T=T)
