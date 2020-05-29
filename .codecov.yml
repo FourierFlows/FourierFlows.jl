@@ -5,6 +5,10 @@ codecov:
     - !travis
 
 coverage:
+  ignore:
+    - "docs/*.jl"
+    - "examples/*.jl"
+    - "test/*.jl"
   status:
     patch: false
     project: false
