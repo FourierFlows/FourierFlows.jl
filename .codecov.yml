@@ -6,9 +6,9 @@ codecov:
 
 coverage:
   ignore:
-    - "docs/*.jl"
-    - "examples/*.jl"
-    - "test/*.jl"
+    - "docs"
+    - "examples"
+    - "test"
   status:
     patch: false
     project: false

@@ -4,13 +4,13 @@
 Construct a diagnostic which stores the result of `calc(prob)` with frequency `freq`
 """
 mutable struct Diagnostic{T,N} <: AbstractDiagnostic
-  calc::Function
-  prob::Problem
-  data::Vector{T}
-  t::Vector{Float64}
-  steps::Vector{Int}
-  freq::Int
-  i::Int
+   calc :: Function
+   prob :: Problem
+   data :: Vector{T}
+      t :: Vector{Float64}
+  steps :: Vector{Int}
+   freq :: Int
+      i :: Int
 end
 
 function Diagnostic(calc, prob; freq=1, nsteps=100, ndata=ceil(Int, (nsteps+1)/freq), N=ndata)
@@ -25,7 +25,7 @@ function Diagnostic(calc, prob; freq=1, nsteps=100, ndata=ceil(Int, (nsteps+1)/f
   t[1] = prob.clock.t
   steps[1] = prob.clock.step
 
-  Diagnostic{T,N}(calc, prob, data, t, steps, freq, 1)
+  return Diagnostic{T,N}(calc, prob, data, t, steps, freq, 1)
 end
 
 """
@@ -37,7 +37,7 @@ function extend!(d, n)
   resize!(d.data, length(d.steps)+n)
   resize!(d.t, length(d.steps)+n)
   resize!(d.steps, length(d.steps)+n)
-  nothing
+  return nothing
 end
 
 extend!(diag::Diagnostic{T,N}) where {T,N} = extend!(diag, N)
@@ -53,7 +53,7 @@ function update!(d, i)
       d.t[i] = d.prob.clock.t
   d.steps[i] = d.prob.clock.step
          d.i = i
-  nothing
+  return nothing
 end
 
 """
@@ -63,14 +63,14 @@ Increment the Diagnostic diag, or an array of Diagnostics diags.
 """
 function increment!(d)
   d.prob.clock.step % d.freq == 0 && update!(d, d.i+1)
-  nothing
+  return nothing
 end
 
 function increment!(diags::AbstractVector)
   for d in diags
     increment!(d)
   end
-  nothing
+  return nothing
 end
 
 """

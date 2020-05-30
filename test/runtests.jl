@@ -278,6 +278,9 @@ for dev in devices
     @test test_basicdiagnostics(dev)
     @test test_scalardiagnostics(dev, freq=1)
     @test test_scalardiagnostics(dev, freq=2)
+    @test test_incrementdiagnostic(dev)
+    @test test_extenddiagnostic(dev)
+    @test test_lastindex_getindex(dev)
   end
 
   @time @testset "Output tests" begin
