@@ -107,12 +107,12 @@ function test_lastindex_getindex(dev::Device=CPU(); nx=6, Lx=2π, kappa=1e-2)
   
   lastindex_at_beggining = FourierFlows.lastindex.(diagnostics)
   
-  ntimes=nsteps
+  ntimes=7
   for j=1:ntimes
     FourierFlows.increment!(diagnostics)
   end
   
   lastindex_at_end = FourierFlows.lastindex.(diagnostics)
   
-  return lastindex_at_beggining == 1.0*ones(2) && lastindex_at_end == (ntimes+1)*ones(2) && getindex(diagnostic2, 2:5) == 2.0im*ones(4) && lastindex(diagnostic1) == nsteps+1 && lastindex(diagnostic2) == nsteps+1
+  return lastindex_at_beggining == 1.0*ones(2) && lastindex_at_end == (ntimes+1)*ones(2) && getindex(diagnostic2, 2:5) == 2.0im*ones(4) && lastindex(diagnostic1) == ntimes+1 && lastindex(diagnostic2) == ntimes+1
 end
