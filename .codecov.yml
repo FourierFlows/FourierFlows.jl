@@ -4,12 +4,11 @@ codecov:
     - !appveyor
     - !travis
 
-ignore:
-  - "docs"
-  - "examples"
-  - "test"
-
 coverage:
+  ignore:
+    - "docs"
+    - "examples"
+    - "test"
   status:
     patch: false
     project: false
