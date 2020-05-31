@@ -4,7 +4,6 @@
 #md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/OneDShallowWaterGeostrophicAdjustment.ipynb).
 # 
 #
-#
 # This example solves the linear 1D rotating shallow water equations
 # for the $u(x, t)$, $v(x, t)$ and the surface surface elevation $\eta(x, t)$, 
 # for a fluid with constant rest-depth $H$. That is, the total fluid's depth 
@@ -193,7 +192,7 @@ function set_uvη!(prob, u0, v0, η0)
 end
 nothing #hide
 
-# ## A script that prescibes parameters and solves the PDE
+# ## Let's prescibe parameter values and solve the PDE
 #
 # We are now ready to write up a program that sets up parameter values, constructs 
 # the problem `prob`, # time steps the solutions `prob.sol` and plots it.
@@ -254,7 +253,7 @@ gaussian_width = 6e3
 gaussian_amplitude = 3.0
 gaussian_bump = @. gaussian_amplitude * exp( - grid.x^2 / (2*gaussian_width^2) )
 
-plot(grid.x/1e3, gaussian_bump,
+plot(grid.x / 1e3, gaussian_bump,    # divide with 1e3 to convert m -> km
      color = :black,
     legend = false,
  linewidth = 2,
@@ -305,7 +304,7 @@ v0 = zeros(grid.nx)
 
 set_uvη!(prob, u0, v0, η0)
 
-plot(grid.x/1e3, η0,
+plot(grid.x / 1e3, η0,    # divide with 1e3 to convert m -> km
      color = :black,
     legend = false,
  linewidth = 2,
@@ -425,4 +424,3 @@ title = plot(title = "Geostrophic balance", grid = false, showaxis = false, bott
 plot(title, plot_u, plot_v,
            layout = @layout([A{0.01h}; [B; C]]),
              size = (600, 400))
-             
