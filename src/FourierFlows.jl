@@ -62,7 +62,7 @@ using
   CUDAapi,
   Requires
 
-import Base: resize!, getindex, setindex!, lastindex, push!, append!
+import Base: resize!, getindex, setindex!, push!, append!
 
 using Base: fieldnames
 using FFTW: fftfreq, rfftfreq
