@@ -239,7 +239,7 @@ nothing #hide
 # ## Setting initial conditions
 
 # For initial condition we take the fluid at rest ($u=v=0$). The free surface elevation
-# is perturbed from its rest position ($\eta=0$); the disturbance we imposeis a Gaussian 
+# is perturbed from its rest position ($\eta=0$); the disturbance we impose a Gaussian 
 # bump with half-width greater than the deformation radius and on top of that we 
 # superimpose some random noise with scales smaller than the deformation radius. 
 # We mask the small-scale perturbations so that it only applies in the central part 
