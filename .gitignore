@@ -3,7 +3,6 @@
 **/*.jld2
 **/*.png
 **/*.mp4
-**/*.DS_Store
 **/*.mem
 **/*.pdf
 **/.nfs*
@@ -11,6 +10,15 @@
 
 docs/build/
 docs/site/
+docs/src/generated
 coverage/
 
 **/Manifest.toml
+
+# Model output
+**/*.jld
+**/*.jld2
+
+# MacOS stuff
+*.DS_Store
+
