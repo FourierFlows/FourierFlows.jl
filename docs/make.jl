@@ -22,9 +22,9 @@ examples = [
 
 for example in examples
   example_filepath = joinpath(EXAMPLES_DIR, example)
-  Literate.markdown(example_filepath, OUTPUT_DIR, documenter=true, repo_root_url="github.com/FourierFlowsDocumentation/")
-  Literate.notebook(example_filepath, OUTPUT_DIR, documenter=true, repo_root_url="github.com/FourierFlowsDocumentation/")
-  Literate.script(example_filepath, OUTPUT_DIR, documenter=true, repo_root_url="github.com/FourierFlowsDocumentation/")
+  Literate.markdown(example_filepath, OUTPUT_DIR, documenter=true, nbviewer_root_url="github.com/FourierFlowsDocumentation/")
+  Literate.notebook(example_filepath, OUTPUT_DIR, documenter=true, nbviewer_root_url="github.com/FourierFlowsDocumentation/")
+  Literate.script(example_filepath, OUTPUT_DIR, documenter=true, nbviewer_root_url="github.com/FourierFlowsDocumentation/")
 end
 
 #####
