@@ -22,8 +22,8 @@ examples = [
 
 for example in examples
   example_filepath = joinpath(EXAMPLES_DIR, example)
-  Literate.markdown(example_filepath, OUTPUT_DIR, documenter=true, nbviewer_root_url="github.com/FourierFlows/FourierFlowsDocumentation")
-  Literate.notebook(example_filepath, OUTPUT_DIR, documenter=true, nbviewer_root_url="github.com/FourierFlows/FourierFlowsDocumentation")
+  Literate.markdown(example_filepath, OUTPUT_DIR, documenter=true, binder_root_url="mybinder.org/v2/gh/FourierFlows/FourierFlowsDocumentation")
+  Literate.notebook(example_filepath, OUTPUT_DIR, documenter=true, binder_root_url="mybinder.org/v2/gh/FourierFlows/FourierFlowsDocumentation")
   Literate.script(example_filepath, OUTPUT_DIR, documenter=true)
 end
 
