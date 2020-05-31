@@ -223,7 +223,8 @@ nν = 1          # Viscosity order (nν = 1 means Laplacian ∇²)
 nothing # hide
 
 
-# ## Create a `grid` and also `params`, `vars`, and the `equation` structs. Then 
+# ## Construct the `struct`s and you are ready to go!
+# Create a `grid` and also `params`, `vars`, and the `equation` structs. Then 
 # give them all as input to the `FourierFlows.Problem()` constructor to get a
 # problem struct, `prob`, that contains all of the above.
 
@@ -237,14 +238,15 @@ nothing #hide
 
 # ## Setting initial conditions
 
-# The initial conditions prescribes a fluid at rest whose free surface elevation
-# is a Gaussian bump with width greater than the deformation radius and 
-# superimposed with some random noise with scales smaller than the deformation radius. The system develops geostrophically-balanced
-# jets around the Gaussian bump, while the smaller-scale noise
-# propagates away as inertia-gravity waves.
-
-# We set up the initial conditions, in this case the surface elevation $\eta$ is 
-# a large Gaussian bump whose half-width is much larger than the deformation length scale. Superimposed to this Gaussian bump we add small-scale noise. We apply a mask on the noise so that the noise only applies in the center part of the domain.
+# For initial condition we take the fluid at rest ($u=v=0$). The free surface elevation
+# is perturbed from its rest position ($\eta=0$); the disturbance we imposeis a Gaussian 
+# bump with half-width greater than the deformation radius and on top of that we 
+# superimpose some random noise with scales smaller than the deformation radius. 
+# We mask the small-scale perturbations so that it only applies in the central part 
+# of the domain by applying
+#
+# The system develops geostrophically-balanced jets around the Gaussian bump, 
+# while the smaller-scale noise propagates away as inertia-gravity waves. 
 
 # First let's construct the Gaussian bump.
 
@@ -364,10 +366,9 @@ nothing # hide
 
 # ## Time-stepping the `Problem` forward
 
-# We time-step the `Problem` forward in time. Every `nsubs` time steps we
-# update variables by calling `updatevars!()` and we also update the plot.
-# We enclose the `for` loop in an `@animate` macro to produce an animation
-# of the solution.
+# We time-step the `Problem` forward in time. We update variables by calling 
+# `updatevars!()` and we also update the plot. We enclose the `for` loop in 
+# an `@animate` macro to produce an animation of the solution.
 
 p = plot_output(prob)
 
