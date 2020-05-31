@@ -27,7 +27,7 @@
 # Disturbances with length scales much smaller than $L_d$ don't "feel" 
 # the rotation and propagate as inertia-gravity waves. Disturbances with 
 # length scales comparable or larger than $L_d$ should be approximately 
-# in geostrophic balance, i.e., the Coriolis accelaration
+# in geostrophic balance, i.e., the Coriolis acceleration
 # $f\widehat{\boldsymbol{z}} \times \boldsymbol{u}$ should be in approximate 
 # balance with the pressure gradient $-g \boldsymbol{\nabla} \eta$.
 
