@@ -133,11 +133,11 @@ function test_plan_flows_fftrfft(::CPU; T=Float64)
   return ( typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4,))))) == FFTW.cFFTWPlan{Complex{T},-1,false,1,UnitRange{Int64}} &&
   typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6))))) == FFTW.cFFTWPlan{Complex{T},-1,false,2,UnitRange{Int64}} &&
   typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))))) == FFTW.cFFTWPlan{Complex{T},-1,false,3,UnitRange{Int64}} &&
-  FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))), 1:2).region == [1, 2] &&
+  FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))), [1, 2]).region == [1, 2] &&
   typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4,))))) == FFTW.rFFTWPlan{T,-1,false,1,UnitRange{Int64}} &&
   typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6))))) == FFTW.rFFTWPlan{T,-1,false,2,UnitRange{Int64}} &&
   typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) == FFTW.rFFTWPlan{T,-1,false,3,UnitRange{Int64}} &&
-  FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), 1:2).region == [1, 2] )
+  FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2] )
 end
 
 function test_plan_flows_fftrfft(::GPU; T=Float64)
