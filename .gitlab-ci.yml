@@ -2,6 +2,7 @@ variables:
   CI_IMAGE_TAG: 'cuda'
   JULIA_NUM_THREADS: '1'
   JULIA_CUDA_VERBOSE: 'true'
+  JULIA_CUDA_USE_BINARYBUILDER: 'false' # reduce CI network traffic
 
 # See: https://github.com/JuliaGPU/gitlab-ci
 include:
