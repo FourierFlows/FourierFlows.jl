@@ -1,7 +1,7 @@
 using
   Documenter,
   Literate,
-  Plots,  # to not capture precompilation output
+  Plots,  # so that Literate.jl does not capture precompilation output
   FourierFlows
   
 # Gotta set this environment variable when using the GR run-time on Travis CI.
@@ -41,7 +41,8 @@ Timer(t -> println(" "), 0, interval=240)
 format = Documenter.HTML(
   collapselevel = 2,
      prettyurls = get(ENV, "CI", nothing) == "true",
-      canonical = "https://fourierflows.github.io/FourierFlowsDocumentation/dev/"
+      canonical = "https://fourierflows.github.io/FourierFlowsDocumentation/dev/",
+     # mathengine = Documenter.MathJax()
 )
 
 makedocs(
@@ -54,15 +55,18 @@ makedocs(
    sitename = "FourierFlows.jl",
   
       pages = Any[
-              "Home" => "index.md",
-              "Code Basics" => "basics.md",
-              "Forcing" => "forcing.md",
-              "Examples" => [ 
+                                   "Home" => "index.md",
+              "Installation instructions" => "installation_instructions.md",
+                            "Code Basics" => "basics.md",
+                                  "Grids" => "grids.md",
+                                "Forcing" => "forcing.md",
+                               "Examples" => [ 
                   "generated/OneDShallowWaterGeostrophicAdjustment.md",
-               ],
-              "DocStrings" => Any[
+                                             ],
+                             "DocStrings" => Any[
                   "man/types.md",
-                  "man/functions.md"]
+                  "man/functions.md"
+                                                ]
                  ]
 )
 
