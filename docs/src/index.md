@@ -16,8 +16,8 @@ Fourier-based pseudospectral methods. We support 1-, 2-, and 3-dimensional domai
 
 ## Examples
 
-For examples of `FourierFlows.jl` in action, see 
-[`GeophysicalFlows.jl`](https://github.com/FourierFlows/GeophysicalFlows.jl)
+For examples of `FourierFlows.jl` in action, see the child packages
+[`GeophysicalFlows.jl`](https://github.com/FourierFlows/GeophysicalFlows.jl) or [`PassiveTracerFlows.jl`](https://github.com/FourierFlows/PassiveTracerFlows.jl).
 
 ## Developers
 
