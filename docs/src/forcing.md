@@ -297,8 +297,8 @@ Therefore, work for a single forcing realization is computed numerically as:
 
 ```math
 \begin{aligned}
-{\color{Green}\text{Itô}} &: {\color{Green} P_j  =  -\overline{\psi(\boldsymbol{x}, t_j) \xi(\boldsymbol{x}, t_{j+1})}^{x,y}  + \varepsilon},\\
-{\color{Magenta}\text{Stratonovich}} &: {\color{Magenta} P_j = -\overline{\frac{\psi(\boldsymbol{x}, t_j)+\psi(\boldsymbol{x}, t_{j+1})}{2}  \xi(\boldsymbol{x}, t_{j+1}) }^{x,y}}. \tag{eq:PtStrat}
+{\color{Green} \text{Itô}} &: {\color{Green} P_j = -\overline{\psi(\boldsymbol{x}, t_j) \xi(\boldsymbol{x}, t_{j+1})}^{x,y} + \varepsilon},\\
+{\color{Magenta} \text{Stratonovich}} &: {\color{Magenta} P_j = -\overline{\frac{\psi(\boldsymbol{x}, t_j)+\psi(\boldsymbol{x}, t_{j+1})}{2} \xi(\boldsymbol{x}, t_{j+1})}^{x,y}}. \tag{eq:PtStrat}
 \end{aligned}
 ```
 
@@ -308,7 +308,7 @@ Remember, previously the work done by the stochastic forcing was:
 ```
 and by sampling over various forcing realizations:
 ```math
-\langle \mathrm{d} P_t\rangle = \frac{\sigma}{2} \mathrm{d} t = \langle \sqrt{\sigma} x_t \circ \mathrm{d} W_t\rangle
+\langle \mathrm{d} P_t \rangle = \frac{\sigma}{2} \mathrm{d} t = \langle \sqrt{\sigma} x_t \circ \mathrm{d} W_t \rangle
 ```
 
 The code uses Stratonovich. For example, the work done by the forcing in the `TwoDTurb` module is computed based
