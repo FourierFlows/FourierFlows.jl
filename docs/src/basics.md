@@ -5,9 +5,7 @@
 The code solves differential equations of the form
 
 ```math
- \begin{align}
  \partial_t u = \mathcal{L}u + \mathcal{N}(u)\ ,
- \end{align}
 ```
 using Fourier transforms on periodic domains. The right side term $\mathcal{L}u$ is a 'linear' part of the equation.
 The term $\mathcal{N}(u)$ is, in general, a 'nonlinear' part. In FourierFlows, $\mathcal{L}u$ is specified by 
