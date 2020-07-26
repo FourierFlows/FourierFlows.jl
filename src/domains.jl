@@ -2,37 +2,16 @@ plan_flows_fft(a::Array, args...; kwargs...) = plan_fft(a, args...; kwargs...)
 plan_flows_rfft(a::Array, args...; kwargs...) = plan_rfft(a, args...; kwargs...)
 
 """
-    ZeroDGrid()
+    ZeroDGridZeroDGrid{T, Ta} <: AbstractGrid{T, A}
 
-Constructs a placeholder grid object for "0D" problems (in other words, systems of ODEs).
+A placeholder grid object for "0D" problems (in other words, systems of ODEs).
 """
-struct ZeroDGrid{T, Ta} <: AbstractGrid{T, Ta} end
-
-function getaliasedwavenumbers(nk, nkr, aliasfraction)
-  # Index endpoints for aliased i, j wavenumbers
-  # 1/3 aliasfraction => upper 1/6 of +/- wavenumbers (1/3 total) are set to 0 after performing fft.
-  # 1/2 aliasfraction => upper 1/4 of +/- wavenumbers (1/2 total) are set to 0 after performing fft.
-  L = (1 - aliasfraction)/2 # (1 - 1/3) / 2 + 1 = 1/3.
-  R = (1 + aliasfraction)/2 # (1 + 1/3) / 2 - 1 = 2/3.
-  iL = floor(Int, L*nk) + 1
-  iR =  ceil(Int, R*nk)
-
-  aliasfraction < 1 || error("`aliasfraction` must be less than 1") # aliasfraction=1 is not sensible.
-   kalias = (aliasfraction > 0) ? (iL:iR) : Int(nx/2+1)
-  kralias = (aliasfraction > 0) ? (iL:nkr) : nkr
-
-  return kalias, kralias
-end
+struct ZeroDGrid{T, A} <: AbstractGrid{T, A} end
 
 """
-    OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, 
-                      T=Float64, dealias=1/3, ArrayType=Array)
+    OneDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
 
-Constructs a OneDGrid object with size `Lx`, resolution `nx`, and leftmost
-position `x0`. FFT plans are generated for `nthreads` CPUs using
-FFTW flag `effort`. The float type is `T` and the array types is `ArrayType`. 
-The `dealias` keyword determines the highest wavenubers that are being zero-ed
-out by `dealias()` function; 1/3 is the nominal value for quadratic nonlinearities. 
+A one-dimensional `grid` object.
 """
 struct OneDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
         nx :: Int
@@ -57,6 +36,16 @@ struct OneDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
    kralias :: UnitRange{Int}
 end
 
+"""
+    OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, 
+                      T=Float64, dealias=1/3, ArrayType=Array)
+
+Constructs a OneDGrid object with size `Lx`, resolution `nx`, and leftmost
+position `x0`. FFT plans are generated for `nthreads` CPUs using
+FFTW flag `effort`. The float type is `T` and the array types is `ArrayType`. 
+The `dealias` keyword determines the highest wavenubers that are being zero-ed
+out by `dealias()` function; 1/3 is the nominal value for quadratic nonlinearities. 
+"""
 function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, 
                   T=Float64, dealias=1/3, ArrayType=Array)
 
@@ -95,11 +84,7 @@ end
 """
     TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
 
-Constructs a TwoDGrid object with size `Lx`, `Ly`, resolution `nx`, `ny`, and leftmost
-positions `x0`, `y0`. FFT plans are generated for `nthreads` CPUs using
-FFTW flag `effort`. The float type is `T` and the array types is `ArrayType`. 
-The `dealias` keyword determines the highest wavenubers that are being zero-ed
-out by `dealias()` function; 1/3 is the nominal value for quadratic nonlinearities. 
+A two-dimensional `grid` object.
 """
 struct TwoDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
         nx :: Int
@@ -133,6 +118,15 @@ struct TwoDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
     lalias :: UnitRange{Int}
 end
 
+"""
+    TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
+
+Constructs a TwoDGrid object with size `Lx`, `Ly`, resolution `nx`, `ny`, and leftmost
+positions `x0`, `y0`. FFT plans are generated for `nthreads` CPUs using
+FFTW flag `effort`. The float type is `T` and the array types is `ArrayType`. 
+The `dealias` keyword determines the highest wavenubers that are being zero-ed
+out by `dealias()` function; 1/3 is the nominal value for quadratic nonlinearities. 
+"""
 function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, 
                   effort=FFTW.MEASURE, T=Float64, dealias=1/3, ArrayType=Array)
 
@@ -182,11 +176,7 @@ end
     ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-Lz/2, 
     nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64, dealias=1/3, ArrayType=Array)
 
- Constructs a TwoDGrid object with size `Lx`, `Ly`, `Lz`, resolution `nx`, `ny`,
- `nz` and leftmost positions `x0`, `y0`, `z0`. FFT plans are generated for `nthreads` 
- CPUs using FFTW flag `effort`. The float type is `T` and the array types is `ArrayType`. 
- The `dealias` keyword determines the highest wavenubers that are being zero-ed
- out by `dealias()` function; 1/3 is the nominal value for quadratic nonlinearities. 
+ A three-dimensional `grid` object. 
 """
 struct ThreeDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
         nx :: Int
@@ -227,6 +217,16 @@ struct ThreeDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
     malias :: UnitRange{Int}
 end
 
+"""
+    ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-Lz/2, 
+    nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64, dealias=1/3, ArrayType=Array)
+
+ Constructs a TwoDGrid object with size `Lx`, `Ly`, `Lz`, resolution `nx`, `ny`,
+ `nz` and leftmost positions `x0`, `y0`, `z0`. FFT plans are generated for `nthreads` 
+ CPUs using FFTW flag `effort`. The float type is `T` and the array types is `ArrayType`. 
+ The `dealias` keyword determines the highest wavenubers that are being zero-ed
+ out by `dealias()` function; 1/3 is the nominal value for quadratic nonlinearities. 
+"""
 function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-Lz/2,
                   nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64, dealias=1/3, ArrayType=Array)
 
@@ -304,9 +304,30 @@ function gridpoints(grid::ThreeDGrid{T, A}) where {T, A}
 end
 
 """
+    getaliasedwavenumbers(nk, nkr, aliasfraction)
+
+Returns the top `aliasfraction` highest wavenumbers.
+"""
+function getaliasedwavenumbers(nk, nkr, aliasfraction)
+  # Index endpoints for aliased i, j wavenumbers
+  # 1/3 aliasfraction => upper 1/6 of +/- wavenumbers (1/3 total) are set to 0 after performing fft.
+  # 1/2 aliasfraction => upper 1/4 of +/- wavenumbers (1/2 total) are set to 0 after performing fft.
+  L = (1 - aliasfraction)/2 # (1 - 1/3) / 2 + 1 = 1/3.
+  R = (1 + aliasfraction)/2 # (1 + 1/3) / 2 - 1 = 2/3.
+  iL = floor(Int, L*nk) + 1
+  iR =  ceil(Int, R*nk)
+
+  aliasfraction < 1 || error("`aliasfraction` must be less than 1") # aliasfraction=1 is not sensible.
+   kalias = (aliasfraction > 0) ? (iL:iR) : Int(nx/2+1)
+  kralias = (aliasfraction > 0) ? (iL:nkr) : nkr
+
+  return kalias, kralias
+end
+
+"""
     dealias!(a, g, kalias)
 
-Dealias `a` on the grid `g` with aliased x-wavenumbers `kalias`.
+Dealias array `a` on the grid `g` with aliased x-wavenumbers `kalias`.
 """
 function dealias!(a, g::OneDGrid)
   kalias = size(a, 1) == g.nkr ? g.kralias : g.kalias
@@ -345,9 +366,9 @@ end
     makefilter(K; order=4, innerK=0.65, outerK=1)
 
 Returns a filter acting on the non-dimensional wavenumber K that decays exponentially
-for K>innerK, thus removing high-wavenumber content from a spectrum it is multiplied with.
-The decay rate is determined by order and outerK determines the outer wavenumber at which
-the filter is smaller than Float64 machine precision.
+for K>innerK, thus removing high-wavenumber content from a spectrum it is multiplied
+with. The decay rate is determined by order and outerK determines the outer wavenumber
+at which the filter is smaller than Float64 machine precision.
 """
 function makefilter(K::Array; order=4, innerK=0.65, outerK=1)
   TK = typeof(K)
@@ -387,30 +408,30 @@ griddevice(grid::AbstractGrid{T, A}) where {T, A} = A<:Array ? "CPU" : "GPU"
 
 show(io::IO, g::OneDGrid{T}) where {T, A} =
      print(io, "OneDimensionalGrid\n",
-              "                Device: ", griddevice(g), '\n',
-              "             FloatType: $T", '\n', 
-              "               size Lx: ", g.Lx, '\n',
-              "         resolution nx: ", g.nx, '\n',
-              "       grid spacing dx: ", g.dx, '\n',
-              "                domain: x ∈ [$(g.x[1]), $(g.x[end])])")
+               "  ├─────────── Device: ", griddevice(g), '\n',
+               "  ├──────── FloatType: $T", '\n', 
+               "  ├────────── size Lx: ", g.Lx, '\n',
+               "  ├──── resolution nx: ", g.nx, '\n',
+               "  ├── grid spacing dx: ", g.dx, '\n',
+               "  └────────── domain: x ∈ [$(g.x[1]), $(g.x[end])]")
 
 show(io::IO, g::TwoDGrid{T}) where {T, A} =
      print(io, "TwoDimensionalGrid\n",
-               "                   Device: ", griddevice(g), '\n',
-               "                FloatType: $T", '\n', 
-               "            size (Lx, Ly): ", (g.Lx, g.Ly), '\n',
-               "      resolution (nx, ny): ", (g.nx, g.ny), '\n',
-               "    grid spacing (dx, dy): ", (g.dx, g.dy), '\n',
-               "                   domain: x ∈ [$(g.x[1]), $(g.x[end])])", '\n',
-               "                           y ∈ [$(g.y[1]), $(g.y[end])])")
+               "  ├───────────────── Device: ", griddevice(g), '\n',
+               "  ├────────────── FloatType: $T", '\n', 
+               "  ├────────── size (Lx, Ly): ", (g.Lx, g.Ly), '\n',
+               "  ├──── resolution (nx, ny): ", (g.nx, g.ny), '\n',
+               "  ├── grid spacing (dx, dy): ", (g.dx, g.dy), '\n',
+               "  └───────────────── domain: x ∈ [$(g.x[1]), $(g.x[end])]", '\n',
+               "                             y ∈ [$(g.y[1]), $(g.y[end])]")
 
 show(io::IO, g::ThreeDGrid{T}) where {T, A} =
      print(io, "ThreeDimensionalGrid\n",
-               "                       Device: ", griddevice(g), '\n',
-               "                    FloatType: $T", '\n', 
-               "            size (Lx, Ly, Lz): ", (g.Lx, g.Ly, g.Ly), '\n',
-               "      resolution (nx, ny, nz): ", (g.nx, g.ny, g.nz), '\n',
-               "    grid spacing (dx, dy, dz): ", (g.dx, g.dy, g.dz), '\n',
-               "                       domain: x ∈ [$(g.x[1]), $(g.x[end])])", '\n',
-               "                               y ∈ [$(g.y[1]), $(g.y[end])])", '\n',
-               "                               z ∈ [$(g.z[1]), $(g.z[end])])")
+               "  ├───────────────────── Device: ", griddevice(g), '\n',
+               "  ├────────────────── FloatType: $T", '\n', 
+               "  ├────────── size (Lx, Ly, Lz): ", (g.Lx, g.Ly, g.Ly), '\n',
+               "  ├──── resolution (nx, ny, nz): ", (g.nx, g.ny, g.nz), '\n',
+               "  ├── grid spacing (dx, dy, dz): ", (g.dx, g.dy, g.dz), '\n',
+               "  └────────────────────  domain: x ∈ [$(g.x[1]), $(g.x[end])]", '\n',
+               "                                 y ∈ [$(g.y[1]), $(g.y[end])]", '\n',
+               "                                 z ∈ [$(g.z[1]), $(g.z[end])]")
