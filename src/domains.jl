@@ -25,11 +25,14 @@ function getaliasedwavenumbers(nk, nkr, aliasfraction)
 end
 
 """
-    OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
+    OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, 
+                      T=Float64, dealias=1/3, ArrayType=Array)
 
 Constructs a OneDGrid object with size `Lx`, resolution `nx`, and leftmost
 position `x0`. FFT plans are generated for `nthreads` CPUs using
-FFTW flag `effort`.
+FFTW flag `effort`. The float type is `T` and the array types is `ArrayType`. 
+The `dealias` keyword determines the highest wavenubers that are being zero-ed
+out by `dealias()` function; 1/3 is the nominal value for quadratic nonlinearities. 
 """
 struct OneDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
         nx :: Int
@@ -92,7 +95,11 @@ end
 """
     TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
 
-Constructs a TwoDGrid object.
+Constructs a TwoDGrid object with size `Lx`, `Ly`, resolution `nx`, `ny`, and leftmost
+positions `x0`, `y0`. FFT plans are generated for `nthreads` CPUs using
+FFTW flag `effort`. The float type is `T` and the array types is `ArrayType`. 
+The `dealias` keyword determines the highest wavenubers that are being zero-ed
+out by `dealias()` function; 1/3 is the nominal value for quadratic nonlinearities. 
 """
 struct TwoDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
         nx :: Int
@@ -172,9 +179,14 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
 end
 
 """
-    ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-Lz/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
+    ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-Lz/2, 
+    nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64, dealias=1/3, ArrayType=Array)
 
-Constructs a ThreeDGrid object.
+ Constructs a TwoDGrid object with size `Lx`, `Ly`, `Lz`, resolution `nx`, `ny`,
+ `nz` and leftmost positions `x0`, `y0`, `z0`. FFT plans are generated for `nthreads` 
+ CPUs using FFTW flag `effort`. The float type is `T` and the array types is `ArrayType`. 
+ The `dealias` keyword determines the highest wavenubers that are being zero-ed
+ out by `dealias()` function; 1/3 is the nominal value for quadratic nonlinearities. 
 """
 struct ThreeDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
         nx :: Int
@@ -366,7 +378,12 @@ end
 makefilter(g, T, sz; kwargs...) = ones(T, sz) .* makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
 makefilter(eq; kwargs...) = makefilter(eq.grid, fltype(eq.T), eq.dims; kwargs...)
 
-griddevice(g::AbstractGrid{T, A}) where {T, A} = A<:Array ? "CPU" : "GPU"
+"""
+    griddevice(grid)
+
+Returns the device on which the `grid` lives on.
+"""
+griddevice(grid::AbstractGrid{T, A}) where {T, A} = A<:Array ? "CPU" : "GPU"
 
 show(io::IO, g::OneDGrid{T}) where {T, A} =
      print(io, "OneDimensionalGrid\n",
