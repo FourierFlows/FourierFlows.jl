@@ -27,8 +27,8 @@ OneDimensionalGrid
   └────────── domain: x ∈ [-3.141592653589793, 3.0434178831651124]
 ```
 
-The grid domain is, by default, constructed symmetrically around 0, but this can 
-be altered using the `x0` keyword argument of `OneDGrid` constructor. The grid 
+The grid domain is, by default, constructed symmetrically around $x=0$, but this 
+can be altered using the `x0` keyword argument of `OneDGrid` constructor. The grid 
 spacing is $L_x/n_x$. Note that the last point of the domain is a grid-spacing 
 before $L_x/2$. This is because periodicity implies that the value of any field 
 at the end-points of the domain are equal and, therefore, grid-point values at
