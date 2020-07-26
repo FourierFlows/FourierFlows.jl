@@ -47,7 +47,7 @@ format = Documenter.HTML(
 
 makedocs(
     modules = [FourierFlows],
-    doctest = false,
+    doctest = true,
       clean = true,
    checkdocs = :all,
      format = format,
