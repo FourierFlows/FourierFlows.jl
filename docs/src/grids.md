@@ -16,15 +16,15 @@ end
 
 ```jldoctest
 julia> nx, Lx = 64, 2π;
-julia> grid = OneDGrid(nx, Lx)
 
+julia> grid = OneDGrid(nx, Lx)
 OneDimensionalGrid
-                Device: CPU
-             FloatType: Float64
-               size Lx: 6.283185307179586
-         resolution nx: 64
-       grid spacing dx: 0.09817477042468103
-                domain: x ∈ [-3.141592653589793, 3.0434178831651124])
+  ├─────────── Device: CPU
+  ├──────── FloatType: Float64
+  ├────────── size Lx: 6.283185307179586
+  ├──── resolution nx: 64
+  ├── grid spacing dx: 0.09817477042468103
+  └────────── domain: x ∈ [-3.141592653589793, 3.0434178831651124]
 ```
 
 The grid domain is, by default, constructed symmetrically around 0, but this can 
@@ -41,8 +41,8 @@ grid as
 using FourierFlows
 using LinearAlgebra: mul!, ldiv!
 using Plots
-Plots.scalefontsizes(1.5)
-Plots.default(dpi=100)
+Plots.scalefontsizes(1.25)
+Plots.default(lw=2)
 nx, Lx = 64, 2π
 grid = OneDGrid(nx, Lx)
 ```
