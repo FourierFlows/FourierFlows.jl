@@ -406,16 +406,16 @@ Returns the device on which the `grid` lives on.
 """
 griddevice(grid::AbstractGrid{T, A}) where {T, A} = A<:Array ? "CPU" : "GPU"
 
-show(io::IO, g::OneDGrid{T}) where {T, A} =
+show(io::IO, g::OneDGrid{T}) where T =
      print(io, "OneDimensionalGrid\n",
                "  ├─────────── Device: ", griddevice(g), '\n',
                "  ├──────── FloatType: $T", '\n', 
                "  ├────────── size Lx: ", g.Lx, '\n',
                "  ├──── resolution nx: ", g.nx, '\n',
                "  ├── grid spacing dx: ", g.dx, '\n',
-               "  └────────── domain: x ∈ [$(g.x[1]), $(g.x[end])]")
+               "  └─────────── domain: x ∈ [$(g.x[1]), $(g.x[end])]")
 
-show(io::IO, g::TwoDGrid{T}) where {T, A} =
+show(io::IO, g::TwoDGrid{T}) where T =
      print(io, "TwoDimensionalGrid\n",
                "  ├───────────────── Device: ", griddevice(g), '\n',
                "  ├────────────── FloatType: $T", '\n', 
@@ -425,7 +425,7 @@ show(io::IO, g::TwoDGrid{T}) where {T, A} =
                "  └───────────────── domain: x ∈ [$(g.x[1]), $(g.x[end])]", '\n',
                "                             y ∈ [$(g.y[1]), $(g.y[end])]")
 
-show(io::IO, g::ThreeDGrid{T}) where {T, A} =
+show(io::IO, g::ThreeDGrid{T}) where T =
      print(io, "ThreeDimensionalGrid\n",
                "  ├───────────────────── Device: ", griddevice(g), '\n',
                "  ├────────────────── FloatType: $T", '\n', 
