@@ -12,9 +12,11 @@
 # The linearized equations for the evolution of $u$, $v$, $\eta$ are:
 #
 # ```math
-# \frac{\partial u}{\partial t} - f v = - g \frac{\partial \eta}{\partial x} - \mathrm{D} u, \\
-# \frac{\partial v}{\partial t} + f u = - \mathrm{D} v, \\
-# \frac{\partial \eta}{\partial t} + H \frac{\partial u}{\partial x} = - \mathrm{D} \eta.
+# \begin{aligned}
+# \frac{\partial u}{\partial t} - f v & = - g \frac{\partial \eta}{\partial x} - \mathrm{D} u, \\
+# \frac{\partial v}{\partial t} + f u & = - \mathrm{D} v, \\
+# \frac{\partial \eta}{\partial t} + H \frac{\partial u}{\partial x} & = - \mathrm{D} \eta.
+# \end{aligned}
 # ```
 #
 # Above, $g$ is the gravitational acceleration, $f$ is the  Coriolis parameter,
@@ -50,7 +52,7 @@ using Random
 # - `Equation` struct containining the coefficients of the linear operator $\mathcal{L}$ and the function that computes the nonlinear terms, usually named `calcN!()`.
 # 
 # The `Grid` structure is provided by FourierFlows.jl. One simply has to call one of
-# the `OneDGrid()`,  `TwoDGrid()`, or `ThreeDGrid()` grid constructors, depending
+# the `OneDGrid()`, `TwoDGrid()`, or `ThreeDGrid()` grid constructors, depending
 # on the dimensionality of the problem. All other structs mentioned above are problem-specific
 # and need to be constructed for every set of equations we want to solve.
 
@@ -97,9 +99,11 @@ nothing #hide
 # In Fourier space, the 1D linear shallow water dynamics are:
 #
 # ```math
-# \frac{\partial \hat{u}}{\partial t} = \underbrace{ f \hat{v} - \mathrm{i} k g \hat{\eta} }_{\mathcal{N}_u} \; \underbrace{- \nu |\boldsymbol{k}|^2 }_{\mathcal{L}_u} \hat{u}, \\
-# \frac{\partial \hat{v}}{\partial t} = \underbrace{ - f \hat{u} }_{\mathcal{N}_v} \; \underbrace{- \nu |\boldsymbol{k}|^2 }_{\mathcal{L}_v} \hat{v}, \\
-# \frac{\partial \hat{\eta}}{\partial t} = \underbrace{ - \mathrm{i} k H \hat{u} }_{\mathcal{N}_{\eta}} \; \underbrace{- \nu |\boldsymbol{k}|^2 }_{\mathcal{L}_{\eta}} \hat{\eta}.
+# \begin{aligned}
+# \frac{\partial \hat{u}}{\partial t} & = \underbrace{ f \hat{v} - \mathrm{i} k g \hat{\eta} }_{\mathcal{N}_u} \; \underbrace{- \nu |\boldsymbol{k}|^2 }_{\mathcal{L}_u} \hat{u}, \\
+# \frac{\partial \hat{v}}{\partial t} & = \underbrace{ - f \hat{u} }_{\mathcal{N}_v} \; \underbrace{- \nu |\boldsymbol{k}|^2 }_{\mathcal{L}_v} \hat{v}, \\
+# \frac{\partial \hat{\eta}}{\partial t} & = \underbrace{ - \mathrm{i} k H \hat{u} }_{\mathcal{N}_{\eta}} \; \underbrace{- \nu |\boldsymbol{k}|^2 }_{\mathcal{L}_{\eta}} \hat{\eta}.
+# \end{aligned}
 # ```
 # Although, e.g., terms involving the Coriolis accelaration are, in principle, 
 # linear we include them in the nonlinear term $\mathcal{N}$ because they render 
