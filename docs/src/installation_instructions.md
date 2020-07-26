@@ -1,4 +1,4 @@
-# Installation instructions
+# Installation Instructions
 
 Install the latest version of FourierFlows using the built-in package manager (accessed by pressing `]` in the
 Julia command prompt)
