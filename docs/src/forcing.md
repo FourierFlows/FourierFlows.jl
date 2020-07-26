@@ -1,20 +1,26 @@
 # Forcing
 
-The code implements forcing in various modules (currently in `TwoDTurb` and `BarotropicQG`). Forcing can be either
-deterministic or stochastic (random). For deterministic forcing the implementation is straightforward; for stochastic
-forcing there are two main train of thoughts: Itô calculus and Stratonovich calculus.
+The code implements forcing in various modules. Forcing can be either deterministic 
+or stochastic (random). For deterministic forcing the implementation is 
+straightforward; for stochastic forcing there are two main train of thoughts: 
+Itô calculus and Stratonovich calculus.
 
-Both stochastic calculi give the same results. But once we decide to use one of the two calculi we have to remain
-consistent and use that calculus for everywhere. There is a lot of confusion and mostly the confusion stems from not
-using the same stochastic calculus consistently throughout the computation but rather interchanging between the two.
+Both stochastic calculi give the same results. But once we decide to use one of 
+the two calculi we have to remain consistent and use that calculus for everywhere. 
+There is a lot of confusion and mostly the confusion stems from not using the same 
+stochastic calculus consistently throughout the computation but rather interchanging 
+between the two.
 
-`FourierFlows` uses Stratonovich calculus throughout the code. This choise was made because Stratonovich calculus
-works the same with both stochastic and deterministic forcing, i.e. with Stratonovich calculus we have the same
-chain rules for differentiation for stochastic functions as the chain rules we learn in normal-deterministic calculus).
-Therefore, the code written as is does not really "care" of what forcing the user implements.
+`FourierFlows.jl` uses Stratonovich calculus throughout. This choise was made 
+because Stratonovich calculus works the same with both stochastic and deterministic 
+forcing, i.e. with Stratonovich calculus we have the same chain rules for 
+differentiation for stochastic functions as the chain rules we learn in 
+normal-deterministic calculus). Therefore, the code written as is does not really 
+"care" of what forcing the user implements.
 
-If you are interested in learning more regarding the two stochastic calculi and how they are numerically
-implemented then read on; otherwise you can skip this section of the documentation and go to the Module Tutorials.
+If you are interested in learning more regarding the two stochastic calculi and 
+how they are numerically implemented then read on; otherwise you can skip this 
+section of the documentation.
 
 ## Stochastic Differential Equations (SDEs)
 
@@ -42,9 +48,10 @@ with $\mathrm{d} W_t$ a white-noise process, can be written in an integral form 
 	x(t) = \int_{t_0}^{t} f(x(s))\,\mathrm{d} s + \int_{t_0}^{t} g(x(s))\,\mathrm{d} W_s .
 ```
 
-Of course now, the last integral is a stochastic integral and there is not a single straight-forward way of
-computing it --- there are a lot of different ways we can approximate it as a Riemannian sum and each of them
-leads to a different answer. The two most popular ways for computing such stochastic integrals are:
+Of course now, the last integral is a stochastic integral and there is not a single 
+straight-forward way of computing it --- there are a lot of different ways we can 
+approximate it as a Riemannian sum and each of them leads to a different answer. 
+The two most popular ways for computing such stochastic integrals are:
 
 ```math
 {\color{Green}\text{Itô}: \int_{t_0}^{t} g(x(s))\,\mathrm{d} W_s\approx\sum_{j} g\left(x(t_j)\right)(W_{j+1}-W_j)},\\
