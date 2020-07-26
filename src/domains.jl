@@ -365,3 +365,35 @@ end
 
 makefilter(g, T, sz; kwargs...) = ones(T, sz) .* makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
 makefilter(eq; kwargs...) = makefilter(eq.grid, fltype(eq.T), eq.dims; kwargs...)
+
+griddevice(g::AbstractGrid{T, A}) where {T, A} = A<:Array ? "CPU" : "GPU"
+
+show(io::IO, g::OneDGrid{T}) where {T, A} =
+     print(io, "OneDimensionalGrid\n",
+              "                Device: ", griddevice(g), '\n',
+              "             FloatType: $T", '\n', 
+              "               size Lx: ", g.Lx, '\n',
+              "         resolution nx: ", g.nx, '\n',
+              "       grid spacing dx: ", g.dx, '\n',
+              "                domain: x ∈ [$(g.x[1]), $(g.x[end])])")
+
+show(io::IO, g::TwoDGrid{T}) where {T, A} =
+     print(io, "TwoDimensionalGrid\n",
+               "                   Device: ", griddevice(g), '\n',
+               "                FloatType: $T", '\n', 
+               "            size (Lx, Ly): ", (g.Lx, g.Ly), '\n',
+               "      resolution (nx, ny): ", (g.nx, g.ny), '\n',
+               "    grid spacing (dx, dy): ", (g.dx, g.dy), '\n',
+               "                   domain: x ∈ [$(g.x[1]), $(g.x[end])])", '\n',
+               "                           y ∈ [$(g.y[1]), $(g.y[end])])")
+
+show(io::IO, g::ThreeDGrid{T}) where {T, A} =
+     print(io, "ThreeDimensionalGrid\n",
+               "                       Device: ", griddevice(g), '\n',
+               "                    FloatType: $T", '\n', 
+               "            size (Lx, Ly, Lz): ", (g.Lx, g.Ly, g.Ly), '\n',
+               "      resolution (nx, ny, nz): ", (g.nx, g.ny, g.nz), '\n',
+               "    grid spacing (dx, dy, dz): ", (g.dx, g.dy, g.dz), '\n',
+               "                       domain: x ∈ [$(g.x[1]), $(g.x[end])])", '\n',
+               "                               y ∈ [$(g.y[1]), $(g.y[end])])", '\n',
+               "                               z ∈ [$(g.z[1]), $(g.z[end])])")
