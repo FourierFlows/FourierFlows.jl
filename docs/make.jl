@@ -48,8 +48,9 @@ format = Documenter.HTML(
 makedocs(
     modules = [FourierFlows],
     doctest = true,
+     strict = true,
       clean = true,
-   checkdocs = :all,
+  checkdocs = :all,
      format = format,
     authors = "Gregory L. Wagner and Navid C. Constantinou",
    sitename = "FourierFlows.jl",
