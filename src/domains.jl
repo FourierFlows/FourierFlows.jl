@@ -2,29 +2,6 @@ plan_flows_fft(a::Array, args...; kwargs...) = plan_fft(a, args...; kwargs...)
 plan_flows_rfft(a::Array, args...; kwargs...) = plan_rfft(a, args...; kwargs...)
 
 """
-    ZeroDGrid()
-
-Constructs a placeholder grid object for "0D" problems (in other words, systems of ODEs).
-"""
-struct ZeroDGrid{T, Ta} <: AbstractGrid{T, Ta} end
-
-function getaliasedwavenumbers(nk, nkr, aliasfraction)
-  # Index endpoints for aliased i, j wavenumbers
-  # 1/3 aliasfraction => upper 1/6 of +/- wavenumbers (1/3 total) are set to 0 after performing fft.
-  # 1/2 aliasfraction => upper 1/4 of +/- wavenumbers (1/2 total) are set to 0 after performing fft.
-  L = (1 - aliasfraction)/2 # (1 - 1/3) / 2 + 1 = 1/3.
-  R = (1 + aliasfraction)/2 # (1 + 1/3) / 2 - 1 = 2/3.
-  iL = floor(Int, L*nk) + 1
-  iR =  ceil(Int, R*nk)
-
-  aliasfraction < 1 || error("`aliasfraction` must be less than 1") # aliasfraction=1 is not sensible.
-   kalias = (aliasfraction > 0) ? (iL:iR) : Int(nx/2+1)
-  kralias = (aliasfraction > 0) ? (iL:nkr) : nkr
-
-  return kalias, kralias
-end
-
-"""
     OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
 
 Constructs a OneDGrid object with size `Lx`, resolution `nx`, and leftmost
