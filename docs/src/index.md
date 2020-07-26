@@ -1,14 +1,5 @@
 # FourierFlows.jl Documentation
 
-## Installation
-
-Install `FourierFlows.jl` from the `julia` `REPL` prompt with
-
-```julia
-using Pkg
-Pkg.add("FourierFlows")
-```
-
 ## Overview
 
 FourierFlows provides a framework to write solvers for partial differential equations on periodic domains with
