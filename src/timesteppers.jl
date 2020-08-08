@@ -20,23 +20,6 @@ function stepforward!(prob::Problem, nsteps::Int)
 end
 
 """
-    stepforward!(prob; stop_time=final_time)
-
-Step forward `prob` up to `t=stop_time`.
-"""
-function stepforward!(prob::Problem, stop_time::Union{Float64, Float32, Float16})
-  Δt = stop_time - prob.clock.t
-  dt = prob.clock.dt
-  nsteps = Int(floor(Δt/dt))
-  stepforward!(prob, nsteps)
-  t_remaining = Δt - nsteps * dt
-  prob.clock.dt = t_remaining
-  stepforward!(prob)
-  prob.clock.dt = dt
-  return nothing
-end
-
-"""
     stepforward!(prob, diags, nsteps)
 
 Step forward `prob` for `nsteps`, incrementing `diags` along the way. `diags` may be a single `Diagnostic` or
@@ -496,4 +479,31 @@ function getetdcoeffs(dt, L; ncirc=32, rcirc=1)
   end
 
   ζ, α, β, Γ
+end
+
+"""
+    step_until!(prob, stop_time)
+
+Step forward `prob` up to time `stop_time`.
+"""
+function step_until!(prob::Problem, stop_time::Union{Float64, Float32, Float16})
+  step_until!(prob::Problem, prob.timestepper::AbstractTimeStepper, stop_time)
+  return nothing
+end
+
+function step_until!(prob::Problem, ::Union{ETDRK4TimeStepper, FilteredETDRK4TimeStepper}, stop_time)
+  @error "step_until! requires fully explicit time stepper; does not work with ETDRK4"
+  return nothing
+end
+
+function step_until!(prob::Problem, timestepper, stop_time)
+  Δt = stop_time - prob.clock.t
+  dt = prob.clock.dt
+  nsteps = Int(floor(Δt/dt))
+  stepforward!(prob, nsteps)
+  t_remaining = Δt - nsteps * dt
+  prob.clock.dt = t_remaining
+  stepforward!(prob)
+  prob.clock.dt = dt
+  return nothing
 end
