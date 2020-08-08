@@ -20,6 +20,23 @@ function stepforward!(prob::Problem, nsteps::Int)
 end
 
 """
+    stepforward!(prob, stop_time=final_time)
+
+Step forward `prob` up to `t=final_time`.
+"""
+function stepforward!(prob::Problem, stop_time=final_time)
+  Δt = final_time - prob.clock.t
+  dt = prob.clock.dt
+  nsteps = Int(floor(Δt/dt))
+  stepforward!(prob, nsteps)
+  t_remaining = Δt - nsteps * dt
+  prob.clock.dt = t_remaining
+  stepforward!(prob)
+  prob.clock.dt = dt
+  return nothing
+end
+
+"""
     stepforward!(prob, diags, nsteps)
 
 Step forward `prob` for `nsteps`, incrementing `diags` along the way. `diags` may be a single `Diagnostic` or
