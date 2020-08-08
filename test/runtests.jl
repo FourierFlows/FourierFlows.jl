@@ -182,11 +182,12 @@ for dev in devices
   @time @testset "Timestepper tests" begin
     include("test_timesteppers.jl")
     for stepper in steppers
-      @test constantdiffusiontest(stepper, dev=dev)
-      if FourierFlows.isexplicit(stepper)
-        @test constantdiffusiontest_stoptime(stepper, dev=dev)
-      end
-      @test varyingdiffusiontest(stepper, dev=dev)
+      @test constantdiffusiontest_stepforward(stepper, dev=dev)
+      @test varyingdiffusiontest_stepforward(stepper, dev=dev)
+      @test constantdiffusiontest_step_until(stepper, dev=dev)
+      # if FourierFlows.isexplicit(stepper)
+      #   @test constantdiffusiontest_step_until(stepper, dev=dev)
+      # end
     end
   end
 

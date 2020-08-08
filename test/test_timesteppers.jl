@@ -1,93 +1,69 @@
-function constantdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=1000, dev=CPU())
-   τ = 1/kappa  # time-scale for diffusive decay
-  dt = 1e-9 * τ # dynamics are resolved
+gausian_solution(x, t; c₀=0.01, σ=0.2, κ=1e-2) = c₀ * σ / sqrt(σ^2 + 2κ*t) * exp(-x^2 / (2(σ^2 + 2κ*t)))
 
-  prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper=stepper, dev=dev)
-  
+function construct_diffusion_problem(stepper, κ, dt; nx=128, Lx=2π, dev=CPU())
+  prob = Problem(nx=nx, Lx=Lx, kappa=κ, dt=dt, stepper=stepper, dev=dev)
+  return prob
+end
+
+function constantdiffusion_stepforward(prob, nsteps; c₀=0.01, σ=0.2, κ=1e-2)
   # a gaussian initial condition c(x, t=0)
-  c0ampl, σ = 0.01, 0.2
-  c0func(x) = c0ampl * exp(-x^2/(2σ^2))
-  c0 = c0func.(prob.grid.x)
+  c_initial = @. gausian_solution(prob.grid.x, 0; c₀=c₀, σ=σ, κ=κ)
 
   # analytic solution for for 1D heat equation with constant κ
-  tfinal = nsteps*dt
-  σt = sqrt(2*kappa*tfinal + σ^2)
-  cfinal = @. c0ampl * σ/σt * exp(-prob.grid.x^2/(2*σt^2))
+  t_final = nsteps*prob.clock.dt
+  c_final = @. gausian_solution(prob.grid.x, t_final; c₀=c₀, σ=σ, κ=κ)
 
-  set_c!(prob, c0)
-  tcomp = @elapsed stepforward!(prob, nsteps)
+  set_c!(prob, c_initial)
+  t_compute = @elapsed stepforward!(prob, nsteps)
   updatevars!(prob)
 
-  prob, c0, cfinal, nsteps, tcomp
+  return c_initial, c_final, prob, t_compute
 end
 
-function varyingdiffusionproblem(stepper; nx=128, Lx=2π, kappa=1e-2, nsteps=1000, dev=CPU())
-   τ = 1/kappa  # time-scale for diffusive decay
-  dt = 1e-9 * τ # dynamics are resolved
-
-  kappa = kappa*ones(nx) # this is actually a constant diffusion but defining it
-                         # as an array makes stepforward! call function calcN!
-                         # instead of just the linear coefficients L*sol
-
-  prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper=stepper, dev=dev)
-  
+function constantdiffusion_step_until(prob, t_final; c₀=0.01, σ=0.2, κ=1e-2)
   # a gaussian initial condition c(x, t=0)
-  c0ampl, σ = 0.01, 0.2
-  c0func(x) = c0ampl * exp(-x^2/(2σ^2))
-  c0 = c0func.(prob.grid.x)
+  c_initial = @. gausian_solution(prob.grid.x, 0; c₀=c₀, σ=σ, κ=κ)
 
   # analytic solution for for 1D heat equation with constant κ
-  tfinal = nsteps*dt
-  σt = sqrt(2*kappa[1]*tfinal + σ^2)
-  cfinal = @. c0ampl * σ/σt * exp(-prob.grid.x^2/(2*σt^2))
+  c_final = @. gausian_solution(prob.grid.x, t_final; c₀=c₀, σ=σ, κ=κ)
 
-  set_c!(prob, c0)
-  tcomp = @elapsed stepforward!(prob, nsteps)
+  set_c!(prob, c_initial)
+  t_compute = @elapsed step_until!(prob, t_final)
   updatevars!(prob)
 
-  prob, c0, cfinal, nsteps, tcomp
+  return c_initial, c_final, prob, t_compute
 end
 
-function constantdiffusionproblem_stoptime(stepper; nx=128, Lx=2π, kappa=1e-2, stop_time=1e-4+1e-6/π, dev=CPU())
-   τ = 1/kappa  # time-scale for diffusive decay
-  dt = 1e-9 * τ # dynamics are resolved
+nx = 128
+ κ = 1e-2
+dt = 1e-9 * 1/κ # make sure diffusive decay dynamics are resolved
 
-  prob = Problem(nx=nx, Lx=Lx, kappa=kappa, dt=dt, stepper=stepper, dev=dev)
+function constantdiffusiontest_stepforward(stepper, dev::Device=CPU(); kwargs...)
+  nsteps = 1000
+    
+  prob = construct_diffusion_problem(stepper, κ, dt; nx=nx, Lx=2π, dev=CPU())
+  c_initial, c_final, prob, t_compute = constantdiffusion_stepforward(prob, nsteps; c₀=0.01, σ=0.2, κ=κ)
+  normmsg = "$stepper: relative error ="
+  @printf("% 40s %.2e (%.3f s)\n", normmsg, norm(c_final-Array(prob.vars.c))/norm(c_final), t_compute)
+  isapprox(c_final, Array(prob.vars.c), rtol=prob.clock.step*rtol_timesteppers)
+end
+
+function varyingdiffusiontest_stepforward(stepper, dev::Device=CPU(); kwargs...)
+  nsteps = 1000
   
-  # a gaussian initial condition c(x, t=0)
-  c0ampl, σ = 0.01, 0.2
-  c0func(x) = c0ampl * exp(-x^2/(2σ^2))
-  c0 = c0func.(prob.grid.x)
-
-  # analytic solution for for 1D heat equation with constant κ
-  tfinal = stop_time
-  σt = sqrt(2*kappa*tfinal + σ^2)
-  cfinal = @. c0ampl * σ/σt * exp(-prob.grid.x^2/(2*σt^2))
-
-  set_c!(prob, c0)
-  tcomp = @elapsed stepforward!(prob, tfinal)
-  updatevars!(prob)
-
-  prob, c0, cfinal, tfinal, tcomp
+  prob = construct_diffusion_problem(stepper, κ*ones(nx), dt; nx=nx, Lx=2π, dev=CPU())
+  c_initial, c_final, prob, t_compute = constantdiffusion_stepforward(prob, nsteps; c₀=0.01, σ=0.2, κ=κ)
+  normmsg = "$stepper: relative error ="
+  @printf("% 40s %.2e (%.3f s)\n", normmsg, norm(c_final-Array(prob.vars.c))/norm(c_final), t_compute)
+  isapprox(c_final, Array(prob.vars.c), rtol=prob.clock.step*rtol_timesteppers)
 end
 
-function constantdiffusiontest(stepper, dev::Device=CPU(); kwargs...)
-  prob, c0, cfinal, nsteps, tcomp = constantdiffusionproblem(stepper; kwargs...)
+function constantdiffusiontest_step_until(stepper, dev::Device=CPU(); kwargs...)
+  t_final = 1000*dt + 1e-6/π # make sure t_final is not integer multiple of dt
+  
+  prob = construct_diffusion_problem(stepper, κ, dt; nx=nx, Lx=2π, dev=CPU())
+  c_initial, c_final, prob, t_compute = constantdiffusion_step_until(prob, t_final; c₀=0.01, σ=0.2, κ=κ)
   normmsg = "$stepper: relative error ="
-  @printf("% 40s %.2e (%.3f s)\n", normmsg, norm(cfinal-Array(prob.vars.c))/norm(cfinal), tcomp)
-  isapprox(cfinal, Array(prob.vars.c), rtol=nsteps*rtol_timesteppers)
-end
-
-function constantdiffusiontest_stoptime(stepper, dev::Device=CPU(); kwargs...)
-  prob, c0, cfinal, tfinal, tcomp = constantdiffusionproblem_stoptime(stepper; kwargs...)
-  normmsg = "$stepper: relative error ="
-  @printf("% 40s %.2e (%.3f s)\n", normmsg, norm(cfinal-Array(prob.vars.c))/norm(cfinal), tcomp)
-  isapprox(cfinal, Array(prob.vars.c), rtol=prob.clock.step*rtol_timesteppers)
-end
-
-function varyingdiffusiontest(stepper, dev::Device=CPU(); kwargs...)
-  prob, c0, cfinal, nsteps, tcomp = varyingdiffusionproblem(stepper; kwargs...)
-  normmsg = "$stepper: relative error ="
-  @printf("% 40s %.2e (%.3f s)\n", normmsg, norm(cfinal-Array(prob.vars.c))/norm(cfinal), tcomp)
-  isapprox(cfinal, Array(prob.vars.c), rtol=nsteps*rtol_timesteppers)
+  @printf("% 40s %.2e (%.3f s)\n", normmsg, norm(c_final-Array(prob.vars.c))/norm(c_final), t_compute)
+  isapprox(c_final, Array(prob.vars.c), rtol=prob.clock.step*rtol_timesteppers)
 end
