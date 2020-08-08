@@ -184,10 +184,9 @@ for dev in devices
     for stepper in steppers
       @test constantdiffusiontest_stepforward(stepper, dev=dev)
       @test varyingdiffusiontest_stepforward(stepper, dev=dev)
-      @test constantdiffusiontest_step_until(stepper, dev=dev)
-      # if FourierFlows.isexplicit(stepper)
-      #   @test constantdiffusiontest_step_until(stepper, dev=dev)
-      # end
+      if FourierFlows.isexplicit(stepper)
+        @test constantdiffusiontest_step_until(stepper, dev=dev)
+      end
     end
   end
 
