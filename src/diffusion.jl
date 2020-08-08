@@ -5,13 +5,10 @@ export
   updatevars!,
   set_c!
 
-using
-  FFTW,
-  Reexport
+using Reexport
 
 @reexport using FourierFlows
 
-using FourierFlows: varsexpression
 using LinearAlgebra: mul!, ldiv!
 
 """
@@ -32,7 +29,7 @@ function Problem(;
       grid = OneDGrid(dev, nx, Lx; T=T)
     params = Params(dev, κ)
       vars = Vars(dev, grid)
-  equation = DiffusionEquation(dev, κ, grid)
+  equation = Equation(dev, κ, grid)
 
   FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
 end
@@ -45,17 +42,17 @@ Params(dev, κ::Number) = Params(κ)
 Params(dev, κ::AbstractArray) = Params(ArrayType(dev)(κ))
 
 """
-    DiffusionEquation(dev, κ, grid)
+    Equation(dev, κ, grid)
 
 Returns the equation for constant diffusivity problem with diffusivity κ and grid.
 """
-function DiffusionEquation(dev::Device, κ::T, grid) where T<:Number
+function Equation(dev::Device, κ::T, grid) where T<:Number
   L = zeros(dev, T, grid.nkr)
   @. L = - κ * grid.kr^2
   FourierFlows.Equation(L, calcN!, grid)
 end
 
-function DiffusionEquation(dev::Device, κ::T, grid::AbstractGrid{Tg}) where {T<:AbstractArray, Tg}
+function Equation(dev::Device, κ::T, grid::AbstractGrid{Tg}) where {T<:AbstractArray, Tg}
   FourierFlows.Equation(0, calcN!, grid; dims=(grid.nkr,), T=cxtype(Tg))
 end
 
