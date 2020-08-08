@@ -14,7 +14,7 @@ using LinearAlgebra: mul!, ldiv!
 """
     Problem(; parameters...)
 
-Construct a constant diffusivity problem with steady or time-varying flow.
+Construct a constant diffusivity problem.
 """
 function Problem(;
             nx = 128,
@@ -44,7 +44,7 @@ Params(dev, κ::AbstractArray) = Params(ArrayType(dev)(κ))
 """
     Equation(dev, κ, grid)
 
-Returns the equation for constant diffusivity problem with diffusivity κ and grid.
+Returns the equation for a constant diffusivity problem on `grid` with diffusivity κ.
 """
 function Equation(dev::Device, κ::T, grid) where T<:Number
   L = zeros(dev, T, grid.nkr)
@@ -66,7 +66,7 @@ end
 """
     Vars(dev, grid)
 
-Returns the vars for constant diffusivity problem on grid g.
+Returns the variables `vars` for a constant diffusivity problem on `grid`.
 """
 function Vars(::Dev, grid::AbstractGrid{T}) where {Dev, T}
   @devzeros Dev T grid.nx c cx
@@ -81,7 +81,7 @@ Calculate the nonlinear term for the 1D heat equation.
 """
 function calcN!(N, sol, t, clock, vars, params::Params{T}, grid) where T<:Number
   @. N = 0
-  nothing
+  return nothing
 end
 
 function calcN!(N, sol, t, clock, vars, params::Params{T}, grid) where T<:AbstractArray
@@ -90,18 +90,18 @@ function calcN!(N, sol, t, clock, vars, params::Params{T}, grid) where T<:Abstra
   @. vars.cx *= params.κ
   mul!(vars.cxh, grid.rfftplan, vars.cx)
   @. N = im * grid.kr * vars.cxh
-  nothing
+  return nothing
 end
 
 """
-    updatevars!(v, g, sol)
+    updatevars!(vars, grid, sol)
 
-Update the vars in v on the grid g with the solution in `sol`.
+Update the variables in `vars` on the `grid` with the solution in `sol`.
 """
 function updatevars!(vars, grid, sol)
   ldiv!(vars.c, grid.rfftplan, deepcopy(sol))
   @. vars.ch = sol
-  nothing
+  return nothing
 end
 
 updatevars!(prob) = updatevars!(prob.vars, prob.grid, prob.sol)
@@ -109,7 +109,7 @@ updatevars!(prob) = updatevars!(prob.vars, prob.grid, prob.sol)
 """
     set_c!(prob, c)
 
-Set the solution as the transform of `c`.
+Set the solution as the transform of `c` and update `vars`.
 """
 function set_c!(prob, c)
   T = typeof(prob.vars.c)
