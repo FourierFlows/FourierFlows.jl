@@ -16,16 +16,16 @@ function stepforward!(prob::Problem, nsteps::Int)
   for step = 1:nsteps
     stepforward!(prob)
   end
-  nothing
+  return nothing
 end
 
 """
-    stepforward!(prob, stop_time=final_time)
+    stepforward!(prob; stop_time=final_time)
 
-Step forward `prob` up to `t=final_time`.
+Step forward `prob` up to `t=stop_time`.
 """
-function stepforward!(prob::Problem, stop_time=final_time)
-  Δt = final_time - prob.clock.t
+function stepforward!(prob::Problem, stop_time::Union{Float64, Float32, Float16})
+  Δt = stop_time - prob.clock.t
   dt = prob.clock.dt
   nsteps = Int(floor(Δt/dt))
   stepforward!(prob, nsteps)
@@ -47,7 +47,7 @@ function stepforward!(prob::Problem, diags, nsteps::Int)
     stepforward!(prob)
     increment!(diags)
   end
-  nothing
+  return nothing
 end
 
 const fullyexplicitsteppers= [
@@ -120,7 +120,7 @@ function stepforward!(sol, cl, ts::ForwardEulerTimeStepper, eq, v, p, g)
   @. sol += cl.dt*(eq.L*sol + ts.N)
   cl.t += cl.dt
   cl.step += 1
-  nothing
+  return nothing
 end
 
 """
@@ -144,7 +144,7 @@ function stepforward!(sol, cl, ts::FilteredForwardEulerTimeStepper, eq, v, p, g)
   @. sol = ts.filter*(sol + cl.dt*(ts.N + eq.L*sol))
   cl.t += cl.dt
   cl.step += 1
-  nothing
+  return nothing
 end
 
 
@@ -192,12 +192,12 @@ end
 
 function addlinearterm!(RHS, L, sol)
   @. RHS += L*sol
-  nothing
+  return nothing
 end
 
 function substepsol!(newsol, sol, RHS, dt)
   @. newsol = sol + dt*RHS
-  nothing
+  return nothing
 end
 
 function RK4substeps!(sol, cl, ts, eq, v, p, g, t, dt)
@@ -216,17 +216,17 @@ function RK4substeps!(sol, cl, ts, eq, v, p, g, t, dt)
   substepsol!(ts.sol₁, sol, ts.RHS₃, dt)
   eq.calcN!(ts.RHS₄, ts.sol₁, t+dt, cl, v, p, g)
   addlinearterm!(ts.RHS₄, eq.L, ts.sol₁)
-  nothing
+  return nothing
 end
 
 function RK4update!(sol, RHS₁, RHS₂, RHS₃, RHS₄, dt)
   @. sol += dt*(RHS₁ / 6 + RHS₂ / 3  + RHS₃ / 3 + RHS₄ / 6)
-  nothing
+  return nothing
 end
 
 function RK4update!(sol, RHS₁, RHS₂, RHS₃, RHS₄, filter, dt)
   @. sol = filter * (sol + dt*(RHS₁ / 6 + RHS₂ / 3  + RHS₃ / 3 + RHS₄ / 6))
-  nothing
+  return nothing
 end
 
 function stepforward!(sol, cl, ts::RK4TimeStepper, eq, v, p, g)
@@ -234,7 +234,7 @@ function stepforward!(sol, cl, ts::RK4TimeStepper, eq, v, p, g)
   RK4update!(sol, ts.RHS₁, ts.RHS₂, ts.RHS₃, ts.RHS₄, cl.dt)
   cl.t += cl.dt
   cl.step += 1
-  nothing
+  return nothing
 end
 
 function stepforward!(sol, cl, ts::FilteredRK4TimeStepper, eq, v, p, g)
@@ -242,7 +242,7 @@ function stepforward!(sol, cl, ts::FilteredRK4TimeStepper, eq, v, p, g)
   RK4update!(sol, ts.RHS₁, ts.RHS₂, ts.RHS₃, ts.RHS₄, ts.filter, cl.dt)
   cl.t += cl.dt
   cl.step += 1
-  nothing
+  return nothing
 end
 
 
@@ -311,24 +311,24 @@ function ETDRK4update!(sol, expLdt, α, β, Γ, N₁, N₂, N₃, N₄)
   @. sol = (expLdt*sol +  α * N₁
                        + 2β * (N₂ + N₃)
                        +  Γ * N₄ )
-  nothing
+  return nothing
 end
 
 function ETDRK4update!(sol, ts, filter)
   @. sol = filter*(ts.expLdt*sol +   ts.α * ts.N₁
                                  + 2*ts.β * (ts.N₂ + ts.N₃)
                                  +   ts.Γ * ts.N₄ )
-  nothing
+  return nothing
 end
 
 function ETDRK4substep12!(sol₁, expLdt2, sol, ζ, N)
   @. sol₁ = expLdt2*sol + ζ*N
-  nothing
+  return nothing
 end
 
 function ETDRK4substep3!(sol₂, expLdt2, sol₁, ζ, N₁, N₃)
   @. sol₂ = expLdt2*sol₁ + ζ*(2N₃ - N₁)
-  nothing
+  return nothing
 end
 
 function ETDRK4substeps!(sol, cl, ts, eq, v, p, g)
@@ -346,7 +346,7 @@ function ETDRK4substeps!(sol, cl, ts, eq, v, p, g)
   # Substep 4
   t3 = cl.t + cl.dt
   eq.calcN!(ts.N₄, ts.sol₂, t3, cl, v, p, g)
-  nothing
+  return nothing
 end
 
 function stepforward!(sol, cl, ts::ETDRK4TimeStepper, eq, v, p, g)
@@ -354,7 +354,7 @@ function stepforward!(sol, cl, ts::ETDRK4TimeStepper, eq, v, p, g)
   ETDRK4update!(sol, ts.expLdt, ts.α, ts.β, ts.Γ, ts.N₁, ts.N₂, ts.N₃, ts.N₄)
   cl.t += cl.dt
   cl.step += 1
-  nothing
+  return nothing
 end
 
 function stepforward!(sol, cl, ts::FilteredETDRK4TimeStepper, eq, v, p, g)
@@ -362,7 +362,7 @@ function stepforward!(sol, cl, ts::FilteredETDRK4TimeStepper, eq, v, p, g)
   ETDRK4update!(sol, ts, ts.filter) # update
   cl.t += cl.dt
   cl.step += 1
-  nothing
+  return nothing
 end
 
 
@@ -416,7 +416,7 @@ function AB3update!(sol, ts, cl)
   else   # Otherwise, stepforward with 3rd order Adams Bashforth:
     @. sol += cl.dt*(ab3h1*ts.RHS - ab3h2*ts.RHS₋₁ + ab3h3*ts.RHS₋₂)
   end
-  nothing
+  return nothing
 end
 
 function AB3update!(sol, ts::FilteredAB3TimeStepper, cl)
@@ -425,7 +425,7 @@ function AB3update!(sol, ts::FilteredAB3TimeStepper, cl)
   else   # Otherwise, stepforward with 3rd order Adams Bashforth:
     @. sol = ts.filter*(sol + cl.dt*(ab3h1*ts.RHS - ab3h2*ts.RHS₋₁ + ab3h3*ts.RHS₋₂))
   end
-  nothing
+  return nothing
 end
 
 function stepforward!(sol, cl, ts::AB3TimeStepper, eq, v, p, g)
@@ -436,7 +436,7 @@ function stepforward!(sol, cl, ts::AB3TimeStepper, eq, v, p, g)
   cl.step += 1
   @. ts.RHS₋₂ = ts.RHS₋₁          # Store
   @. ts.RHS₋₁ = ts.RHS            # ... previous values of RHS
-  nothing
+  return nothing
 end
 
 function stepforward!(sol, cl, ts::FilteredAB3TimeStepper, eq, v, p, g)
@@ -447,7 +447,7 @@ function stepforward!(sol, cl, ts::FilteredAB3TimeStepper, eq, v, p, g)
   cl.step += 1
   @. ts.RHS₋₂ = ts.RHS₋₁          # Store
   @. ts.RHS₋₁ = ts.RHS            # ... previous values of RHS
-  nothing
+  return nothing
 end
 
 # --

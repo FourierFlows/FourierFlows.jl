@@ -183,6 +183,7 @@ for dev in devices
     include("test_timesteppers.jl")
     for stepper in steppers
       @test constantdiffusiontest(stepper, dev=dev)
+      @test constantdiffusiontest_stoptime(stepper, dev=dev)
       @test varyingdiffusiontest(stepper, dev=dev)
     end
   end
