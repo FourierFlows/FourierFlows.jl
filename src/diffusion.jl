@@ -22,40 +22,40 @@ Construct a constant diffusivity problem with steady or time-varying flow.
 function Problem(;
             nx = 128,
             Lx = 2π,
-         kappa = 0,
+             κ = 0,
             dt = 0.01,
        stepper = "RK4",
              T = Float64,
            dev = CPU()
   )
 
-    grid = OneDGrid(dev, nx, Lx; T=T)
-  params = Params(dev, kappa)
-    vars = Vars(dev, grid)
-     eqn = DiffusionEquation(dev, kappa, grid)
+      grid = OneDGrid(dev, nx, Lx; T=T)
+    params = Params(dev, κ)
+      vars = Vars(dev, grid)
+  equation = DiffusionEquation(dev, κ, grid)
 
-  FourierFlows.Problem(eqn, stepper, dt, grid, vars, params, dev)
+  FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
 end
 
 struct Params{T} <: AbstractParams
-  kappa::T
+  κ :: T
 end
 
-Params(dev, kappa::Number) = Params(kappa)
-Params(dev, kappa::AbstractArray) = Params(ArrayType(dev)(kappa))
+Params(dev, κ::Number) = Params(κ)
+Params(dev, κ::AbstractArray) = Params(ArrayType(dev)(κ))
 
 """
-    DiffusionEquation(dev, kappa, grid)
+    DiffusionEquation(dev, κ, grid)
 
-Returns the equation for constant diffusivity problem with diffusivity kappa and grid.
+Returns the equation for constant diffusivity problem with diffusivity κ and grid.
 """
-function DiffusionEquation(dev::Device, kappa::T, grid) where T<:Number
+function DiffusionEquation(dev::Device, κ::T, grid) where T<:Number
   L = zeros(dev, T, grid.nkr)
-  @. L = -kappa * grid.kr^2
+  @. L = - κ * grid.kr^2
   FourierFlows.Equation(L, calcN!, grid)
 end
 
-function DiffusionEquation(dev::Device, kappa::T, grid::AbstractGrid{Tg}) where {T<:AbstractArray, Tg}
+function DiffusionEquation(dev::Device, κ::T, grid::AbstractGrid{Tg}) where {T<:AbstractArray, Tg}
   FourierFlows.Equation(0, calcN!, grid; dims=(grid.nkr,), T=cxtype(Tg))
 end
 
@@ -82,17 +82,17 @@ end
 
 Calculate the nonlinear term for the 1D heat equation.
 """
-function calcN!(N, sol, t, cl, v, p::Params{T}, g) where T<:Number
+function calcN!(N, sol, t, clock, vars, params::Params{T}, grid) where T<:Number
   @. N = 0
   nothing
 end
 
-function calcN!(N, sol, t, cl, v, p::Params{T}, g) where T<:AbstractArray
-  @. v.cxh = im * g.kr * sol
-  ldiv!(v.cx, g.rfftplan, v.cxh)
-  @. v.cx *= p.kappa
-  mul!(v.cxh, g.rfftplan, v.cx)
-  @. N = im*g.kr*v.cxh
+function calcN!(N, sol, t, clock, vars, params::Params{T}, grid) where T<:AbstractArray
+  @. vars.cxh = im * grid.kr * sol
+  ldiv!(vars.cx, grid.rfftplan, vars.cxh)
+  @. vars.cx *= params.κ
+  mul!(vars.cxh, grid.rfftplan, vars.cx)
+  @. N = im * grid.kr * vars.cxh
   nothing
 end
 
@@ -101,9 +101,9 @@ end
 
 Update the vars in v on the grid g with the solution in `sol`.
 """
-function updatevars!(v, g, sol)
-  ldiv!(v.c, g.rfftplan, deepcopy(sol))
-  @. v.ch = sol
+function updatevars!(vars, grid, sol)
+  ldiv!(vars.c, grid.rfftplan, deepcopy(sol))
+  @. vars.ch = sol
   nothing
 end
 
