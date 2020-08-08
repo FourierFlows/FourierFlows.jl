@@ -43,6 +43,7 @@ export
   superzeros,
   supersize,
 
+  AbstractTimeStepper,
   TimeStepper,
   ForwardEulerTimeStepper,
   FilteredForwardEulerTimeStepper,
@@ -52,7 +53,8 @@ export
   FilteredETDRK4TimeStepper,
   AB3TimeStepper,
   FilteredAB3TimeStepper,
-  stepforward!
+  stepforward!,
+  step_until!
 
 using
   FFTW,
