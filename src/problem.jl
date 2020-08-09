@@ -96,9 +96,19 @@ show(io::IO, clock::FourierFlows.Clock) =
                "  └──────── time t: ", clock.t)
 
 show(io::IO, eqn::FourierFlows.Equation) =
-     print(io, "Clock\n",
+     print(io, "Equation\n",
                "  ├────── linear coefficients: L", '\n',
                "  │                            ├───type: ", eltype(eqn.L), '\n',
                "  │                            └───size: ", size(eqn.L), '\n', 
                "  ├─────────── nonlinear term: calcN!()", '\n',
                "  └─── type of state vector t: ", eqn.T)
+
+show(io::IO, problem::FourierFlows.Problem) =
+    print(io, "Problem\n",
+              "  ├─────────── grid: grid", '\n',
+              "  ├───── parameters: params", '\n',
+              "  ├────── variables: vars", '\n',
+              "  ├─── state vector: sol", '\n',
+              "  ├─────── equation: eqn", '\n',
+              "  ├────────── clock: clock", '\n',
+              "  └──── timestepper: ", string(nameof(typeof(problem.timestepper))))
