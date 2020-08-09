@@ -88,3 +88,9 @@ function Problem(eqn::Equation, stepper, dt, grid::AbstractGrid{T},
 
   return Problem(sol, clock, eqn, grid, vars, params, timestepper)
 end
+
+show(io::IO, clock::FourierFlows.Clock) =
+     print(io, "Clock\n",
+               "  ├─── timestep dt: ", clock.dt, '\n',
+               "  ├────────── step: ", clock.step, '\n',
+               "  └─────────time t: ", clock.t)
