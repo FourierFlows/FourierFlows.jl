@@ -162,17 +162,15 @@ nothing # hide
 and finally, let's plot our solution and compare with the analytic solution:
 
 ```@example 2
-plot(x -> cos(π * x) * exp(-prob.params.α * 2), label = "analytical")
-
-plot!(grid.x, prob.vars.u,
-            marker = :square,
-             label = "numerical",
-                lw = 0,
-             xlims = (-1, 1),
+plot(grid.x, prob.vars.u,
+        seriestype = :scatter,
+             label = "numerical",         
             xlabel = "x",
              title = "u(x, t="*string(round(prob.clock.t, digits=2))*")")
 
-plot!(x -> cos(π * x), linestyle=:dash, color=:gray, label = "initial condition")
+plot!(x -> cos(π * x) * exp(-prob.params.α * 2), -1, 1, label = "analytical")
+
+plot!(x -> cos(π * x), -1, 1, linestyle=:dash, color=:gray, label = "initial condition")
 
 savefig("assets/plot4.svg"); nothing # hide
 ```
