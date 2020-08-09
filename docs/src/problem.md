@@ -80,11 +80,12 @@ vars = Vars(zeros(Float64, (grid.nx,)), zeros(Complex{Float64}, (grid.nkr,)),)
 ```
 
 Note that the Fourier transform of a real-valued array `u` is complex-valued. Also
-because we will use the real Fourier transform, the array `uh` is smaller. In
-this simple example our state variable would be simply `uh`, i.e., `sol = uh`.
+because we use the real Fourier transform, the array `uh` is smaller.
+
+In this simple example our state variable is simply `uh`, i.e., `sol = uh`.
 
 Next we need to construct the equation struct. Equation contains the linear 
-coefficients for the linear part of the PDE stored in an array `L` and the 
+coefficients for the linear part of the PDE, stored in an array `L`, and the 
 function `calcN!()` that  calculates the nonlinear terms from the state variable 
 `sol`. In our case, our equation is linear and, therefore,
 
@@ -105,7 +106,7 @@ end
 nothing # hide
 ```
 
-Note that `calcN!()` has to have the above argument structure. With `L` and `calcN!`
+Note that `calcN!()` needs to have the above argument structure. With `L` and `calcN!`
 in hand we can construct our problem's equation:
 
 ```@example 2
@@ -128,12 +129,12 @@ The `problem.clock` contains the time-step `dt` and the current `step` and time
 `t` of the simulation:
 
 ```@example 2
-problem.clock
+prob.clock
 ```
 
 Let's initiate our problem with, e.g., $u(x, 0) = \cos(\pi x)$, integrate up 
-to $t = 2$ and compare with the analytic solution $u(x, t) = 
-\mathrm{e}^{-\alpha t} \cos(\pi x)$.
+to $t = 2$ and compare our numerical solution with the analytic solution 
+$u(x, t) = \mathrm{e}^{-\alpha t} \cos(\pi x)$.
 
 ```@example 2
 u0 = @. cos(π * grid.x)
