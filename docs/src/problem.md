@@ -62,13 +62,6 @@ wavenumber space, i.e.,
 \partial_t \hat{u}(k, t) = - \alpha \, \hat{u}(k, t) .
 ```
 
-```@example 2
-struct Vars <: AbstractVars
-    u :: Array{Float64,1}
-   uh :: Array{Complex{Float64}, 1}
-end
-```
-
 The variables involved are $u$ and its Fourier transform $\hat{u}$. Thus, we 
 construct the `vars` struct as:
 
@@ -79,7 +72,8 @@ struct Vars <: AbstractVars
 end
 ```
 
-and, like before, we use the `struct`'s constructor:
+and, like before, we use the `struct`'s constructor to populate the struct with 
+zero arrays,
 
 ```@example 2
 vars = Vars(zeros(Float64, (grid.nx,)), zeros(Complex{Float64}, (grid.nkr,)),)
@@ -130,30 +124,44 @@ prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 By default, the `Problem` contructor takes `sol` a complex valued array same 
 size as `L` filed with zeros.
 
-Let's initiate our problem with, e.g., $u(x, 0) = \sin(3\pi x)$, integrate up 
-to $t = 1$ and compare with the analytic solution $u(x, t) = 
-\mathrm{e}^{-\alpha t} \sin(3\pi x)$.
-
-Since our time-step is `dt=0.01` we need to step forward `prob` for $100$ 
-time-steps to reach $t=1$.
+The `problem.clock` contains the time-step `dt` and the current `step` and time 
+`t` of the simulation:
 
 ```@example 2
-u0 = @. sin(3π * grid.x)
+problem.clock
+```
+
+Let's initiate our problem with, e.g., $u(x, 0) = \cos(\pi x)$, integrate up 
+to $t = 2$ and compare with the analytic solution $u(x, t) = 
+\mathrm{e}^{-\alpha t} \cos(\pi x)$.
+
+```@example 2
+u0 = @. cos(π * grid.x)
 
 mul!(prob.sol, grid.rfftplan, u0)
 
-stepforward!(prob, 100)
+nothing # hide
+```
+
+Since our time-step is chosen `dt=0.01`, we need to step forward `prob` for $200$ 
+time-steps to reach $t=2$.
+
+```@example 2
+stepforward!(prob, 200)
 ```
 
 Now let's transform our state vector `sol` back in physical space
 
 ```@example 2
 ldiv!(prob.vars.u, grid.rfftplan, prob.sol)
+
+nothing # hide
 ```
 
 and finally, let's plot our solution and compare with the analytic solution:
+
 ```@example 2
-plot(x -> sin(3π*x)*exp(-prob.params.α * 1), label = "analytical")
+plot(x -> cos(π * x) * exp(-prob.params.α * 2), label = "analytical")
 
 plot!(grid.x, prob.vars.u,
             marker = :square,
@@ -161,9 +169,26 @@ plot!(grid.x, prob.vars.u,
                 lw = 0,
              xlims = (-1, 1),
             xlabel = "x",
-            ylabel = "u(x, t=1)")
+             title = "u(x, t="*string(round(prob.clock.t, digits=2))*")")
+
+plot!(x -> cos(π * x), linestyle=:dash, color=:gray, label = "initial condition")
 
 savefig("assets/plot4.svg"); nothing # hide
 ```
 
 ![](assets/plot4.svg)
+
+A good practice is to encompass all functions and `struct` definitions related 
+with a PDE under a module, e.g.,
+
+```julia
+module mypde
+
+...
+
+end # end module
+```
+
+For a somehow more elaborate example we urge you to have a look at the `Diffusion` 
+module found in `src/diffusion.jl` and also to the modules included in the 
+child package [GeophysicalFlows.jl](https://github.com/FourierFlows/GeophysicalFlows.jl).
