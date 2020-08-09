@@ -93,4 +93,12 @@ show(io::IO, clock::FourierFlows.Clock) =
      print(io, "Clock\n",
                "  ├─── timestep dt: ", clock.dt, '\n',
                "  ├────────── step: ", clock.step, '\n',
-               "  └─────────time t: ", clock.t)
+               "  └──────── time t: ", clock.t)
+
+show(io::IO, eqn::FourierFlows.Equation) =
+     print(io, "Clock\n",
+               "  ├────── linear coefficients: L", '\n',
+               "  │                            ├───type: ", eltype(eqn.L), '\n',
+               "  │                            └───size: ", size(eqn.L), '\n', 
+               "  ├─────────── nonlinear term: calcN!()", '\n',
+               "  └─── type of state vector t: ", eqn.T)
