@@ -97,11 +97,11 @@ show(io::IO, clock::FourierFlows.Clock) =
 
 show(io::IO, eqn::FourierFlows.Equation) =
      print(io, "Equation\n",
-               "  ├────── linear coefficients: L", '\n',
-               "  │                            ├───type: ", eltype(eqn.L), '\n',
-               "  │                            └───size: ", size(eqn.L), '\n', 
-               "  ├─────────── nonlinear term: calcN!()", '\n',
-               "  └─── type of state vector t: ", eqn.T)
+               "  ├──────── linear coefficients: L", '\n',
+               "  │                              ├───type: ", eltype(eqn.L), '\n',
+               "  │                              └───size: ", size(eqn.L), '\n', 
+               "  ├───────────── nonlinear term: calcN!()", '\n',
+               "  └─── type of state vector sol: ", eqn.T)
 
 show(io::IO, problem::FourierFlows.Problem) =
     print(io, "Problem\n",
