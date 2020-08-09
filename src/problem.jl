@@ -105,7 +105,7 @@ show(io::IO, eqn::FourierFlows.Equation) =
 
 show(io::IO, problem::FourierFlows.Problem) =
     print(io, "Problem\n",
-              "  ├─────────── grid: grid", '\n',
+              "  ├─────────── grid: grid (on " * FourierFlows.griddevice(problem.grid) * ")", '\n',
               "  ├───── parameters: params", '\n',
               "  ├────── variables: vars", '\n',
               "  ├─── state vector: sol", '\n',
