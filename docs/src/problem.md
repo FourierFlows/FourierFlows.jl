@@ -1,0 +1,169 @@
+# Problem
+
+```@setup 2
+using FourierFlows,  Plots
+using LinearAlgebra: mul!, ldiv!
+Plots.scalefontsizes(1.25)
+Plots.default(lw=2)
+```
+
+Everything needed to solve a PDE in `FourierFlows.jl` is gathered in a `Problem` 
+struct. The `Problem` struct contains various other structs, namely:
+
+- grid (`grid`),
+- parameters (`params`),
+- variables (`vars`),
+- equation details (`eqn`),
+- timestepper (`timestepper`),
+- clock (`clock`), and
+- state vector (`sol`).
+
+Here, we demonstrate we can construct such a `Problem` struct to solve the 1D
+equation:
+
+```math
+\partial_t u(x, t) = - \alpha \, u(x, t) ,
+```
+
+on domain $x \in [-1, 1]$.
+
+First, we construct our grid
+
+```@example 2
+nx, Lx = 32, 2.0
+
+grid = OneDGrid(nx, Lx)
+```
+
+Our problem has a parameter $\alpha$. We create a `Params` struct by:
+
+```@example 2
+struct Params <: AbstractParams
+  α :: Float64
+end
+```
+
+and then we use the `struct`'s constructor to populate our struct with the 
+parameter value, e.g., $\alpha=0.1$:
+
+```@example 2
+α = 0.1
+
+params = Params(α)
+```
+
+The particular equation is so simple that it makes no difference 
+performance-wise whether we time-step it in physical or in wavenumber space. 
+For, PDEs with nonlinear terms time-stepping in wavenumbers spaces is much more
+efficient. Thus, for demonstration purposes, we will time-step the equation in 
+wavenumber space, i.e.,
+
+```math
+\partial_t \hat{u}(k, t) = - \alpha \, \hat{u}(k, t) .
+```
+
+```@example 2
+struct Vars <: AbstractVars
+    u :: Array{Float64,1}
+   uh :: Array{Complex{Float64}, 1}
+end
+```
+
+The variables involved are $u$ and its Fourier transform $\hat{u}$. Thus, we 
+construct the `vars` struct as:
+
+```@example 2
+struct Vars <: AbstractVars
+    u :: Array{Float64,1}
+   uh :: Array{Complex{Float64}, 1}
+end
+```
+
+and, like before, we use the `struct`'s constructor:
+
+```@example 2
+vars = Vars(zeros(Float64, (grid.nx,)), zeros(Complex{Float64}, (grid.nkr,)),)
+```
+
+Note that the Fourier transform of a real-valued array `u` is complex-valued. Also
+because we will use the real Fourier transform, the array `uh` is smaller. In
+this simple example our state variable would be simply `uh`, i.e., `sol = uh`.
+
+Next we need to construct the equation struct. Equation contains the linear 
+coefficients for the linear part of the PDE stored in an array `L` and the 
+function `calcN!()` that  calculates the nonlinear terms from the state variable 
+`sol`. In our case, our equation is linear and, therefore,
+
+```@example 2
+L = - params.α * ones(grid.nkr)
+
+nothing # hide
+```
+
+and
+
+```@example 2
+function calcN!(N, sol, t, clock, vars, params, grid)
+  @. N = 0
+  return nothing
+end
+
+nothing # hide
+```
+
+Note that `calcN!()` has to have the above argument structure. With `L` and `calcN!`
+in hand we can construct our problem's equation:
+
+```@example 2
+equation = FourierFlows.Equation(L, calcN!, grid)
+```
+
+Last, we have to pick a time-stepper and a time-step `dt` and gather everything 
+a problem `struct`:
+
+```@example 2
+stepper, dt = "ForwardEuler", 0.01
+
+prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
+```
+
+By default, the `Problem` contructor takes `sol` a complex valued array same 
+size as `L` filed with zeros.
+
+Let's initiate our problem with, e.g., $u(x, 0) = \sin(3\pi x)$, integrate up 
+to $t = 1$ and compare with the analytic solution $u(x, t) = 
+\mathrm{e}^{-\alpha t} \sin(3\pi x)$.
+
+Since our time-step is `dt=0.01` we need to step forward `prob` for $100$ 
+time-steps to reach $t=1$.
+
+```@example 2
+u0 = @. sin(3π * grid.x)
+
+mul!(prob.sol, grid.rfftplan, u0)
+
+stepforward!(prob, 100)
+```
+
+Now let's transform our state vector `sol` back in physical space
+
+```@example 2
+ldiv!(prob.vars.u, grid.rfftplan, prob.sol)
+```
+
+and finally, let's plot our solution and compare with the analytic solution:
+```@example 2
+plot(x -> sin(3π*x)*exp(-prob.params.α * 1), label = "analytical")
+
+plot!(grid.x, prob.vars.u,
+            marker = :square,
+             label = "numerical",
+                lw = 0,
+             xlims = (-1, 1),
+            xlabel = "x",
+            ylabel = "u(x, t=1)")
+
+savefig("assets/plot4.svg"); nothing # hide
+```
+
+![](assets/plot4.svg)
