@@ -32,7 +32,7 @@ function test_scalardiagnostics(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2, nsteps
 end
 
 function test_basicdiagnostics(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2)
-  k₀ = 2π/Lx
+  k₀ = 2π / Lx
   dt = 1e-2 / (κ * k₀^2) # time-scale for diffusive decay dynamics are resolved
   prob = Problem(nx=nx, Lx=Lx, κ=κ, dt=dt, stepper="RK4", dev=dev)
   c0 = @. cos(k₀ * prob.grid.x)
