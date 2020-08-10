@@ -20,7 +20,7 @@ function test_uniquepath()
 end
 
 function test_outputconstructor(dev::Device=CPU())
-  prob = Problem(nx=32, Lx=2π, kappa=1e-2, dt=1e-7, stepper="ForwardEuler", dev=dev)
+  prob = Problem(nx=32, Lx=2π, κ=1e-2, dt=1e-7, stepper="ForwardEuler", dev=dev)
   filename = joinpath(".", "testoutput.jld2")
   get_sol(prob) = prob.sol
   get_c(prob) = prob.vars.c
@@ -32,7 +32,7 @@ function test_outputconstructor(dev::Device=CPU())
 end
 
 function test_getindex(dev::Device=CPU())
-  prob = Problem(nx=32, Lx=2π, kappa=1e-2, dt=1e-7, stepper="ForwardEuler", dev=dev)
+  prob = Problem(nx=32, Lx=2π, κ=1e-2, dt=1e-7, stepper="ForwardEuler", dev=dev)
   filename = joinpath(".", "testoutput.jld2")
   
   ctest = devzeros(dev, Float64, (prob.grid.nx, ))
@@ -47,7 +47,7 @@ end
 
 function test_saveproblem_saveoutput(dev::Device=CPU())
   nx = 32
-  prob = Problem(nx=nx, Lx=2π, kappa=1e-2*ones(nx), dt=1e-7, stepper="ForwardEuler", dev=dev)
+  prob = Problem(nx=nx, Lx=2π, κ=1e-2*ones(nx), dt=1e-7, stepper="ForwardEuler", dev=dev)
   filename = joinpath(".", "testoutput.jld2")
   if isfile(filename); rm(filename); end
   
@@ -71,17 +71,17 @@ end
 function test_saveproblemTwoDGrid(dev::Device=CPU())
        nx = 32
        Lx = 2π
-    kappa = 1e-2
+        κ = 1e-2
        dt = 1e-7
   stepper = "ForwardEuler"
 
      grid = TwoDGrid(dev, nx, Lx)
-   params = FourierFlows.Diffusion.Params(dev, kappa)
+   params = FourierFlows.Diffusion.Params(dev, κ)
      vars = FourierFlows.Diffusion.Vars(dev, grid)
      
       # manually construct an Equation for a 2D grid
       L = zeros(dev, Float64, (grid.nkr, grid.nl))
-      @. L = -kappa * grid.kr^2
+      @. L = - κ * grid.kr^2
       eqn = FourierFlows.Equation(L, FourierFlows.Diffusion.calcN!, grid)
 
      prob = FourierFlows.Problem(eqn, stepper, dt, grid, vars, params, dev)
