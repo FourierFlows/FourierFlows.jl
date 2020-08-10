@@ -9,3 +9,4 @@ jobs:
       - uses: JuliaRegistries/TagBot@v1.10.0
         with:
           token: ${{ secrets.TAGBOT_PAT }}
+          ssh: ${{ secrets.DOCUMENTER_KEY }}
