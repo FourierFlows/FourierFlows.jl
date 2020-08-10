@@ -34,7 +34,7 @@ before $L_x/2$. This is because periodicity implies that the value of any field
 at the end-points of the domain are equal and, therefore, grid-point values at
 both these end-points are reduntant.
 
-We can define an array `f` that contains the values of a function $f(x)$ on this 
+We can define an array `u` that contains the values of a function $u(x)$ on this 
 grid as
 
 ```@setup 1
@@ -48,33 +48,33 @@ grid = OneDGrid(nx, Lx)
 ```
 
 ```@example 1
-f = @. sin(2 * grid.x) + 1/2 * cos(5 * grid.x)
+u = @. sin(2 * grid.x) + 1/2 * cos(5 * grid.x)
 
 nothing # hide
 ```
 
 Note that we chose a function that *is* periodic on our domain. We can visualize
-`f` by
+`u` by
 
 ```@example 1
-plot(grid.x, f, label="f", xlabel="x")
+plot(grid.x, u, label="u", xlabel="x")
 savefig("assets/plot1.svg"); nothing # hide
 ```
 
 ![](assets/plot1.svg)
 
-Function $f(x)$ can be expanded in Fourier series:
+Function $u(x)$ can be expanded in Fourier series:
 
 ```math
-f(x) = \sum_{k} \hat{f}(k)\,\mathrm{e}^{\mathrm{i} k x},
+u(x) = \sum_{k} \hat{u}(k)\,\mathrm{e}^{\mathrm{i} k x},
 ```
 
-where $\hat{f}(k)$ is Fourier transform of $f(x)$ and $k$ the discrete set of 
-wavenumbers that fit within our finite domain. We can compute $\hat{f}$ via a 
-Fast Fourier Transform (FFT). Since our `f` array is real-valued then we should 
+where $\hat{u}(k)$ is Fourier transform of $u(x)$ and $k$ the discrete set of 
+wavenumbers that fit within our finite domain. We can compute $\hat{u}$ via a 
+Fast Fourier Transform (FFT). Since our `u` array is real-valued then we should 
 use the `real-FFT` algorithm. The real-valued FFT transform only saves the Fourier 
 coefficients for $k\ge 0$; the coefficients for negative wavenumbers can be 
-obtained via $\hat{f}(-k) = \hat{f}(k)^{*}$.
+obtained via $\hat{u}(-k) = \hat{u}(k)^{*}$.
 
 
 The wavenumbers used in FFT are contained in `grid.k` ordered as:
@@ -98,26 +98,26 @@ grid.fftplan
 grid.rfftplan
 ```
 
-We use the convention that variables names with `h` at the end stand for variable-hat, i.e., $\hat{f}$  is the Fourier transform of $f$ and is stored in array `fh`. Since `f` is of size $n_x$, the real-Fourier transform should be of size $n_{kr} = n_x/2+1$.
+We use the convention that variables names with `h` at the end stand for variable-hat, i.e., $\hat{u}$  is the Fourier transform of $u$ and is stored in array `uh`. Since `u` is of size $n_x$, the real-Fourier transform should be of size $n_{kr} = n_x/2+1$.
 
 ```@example 1
-fh = zeros(FourierFlows.cxeltype(grid), grid.nkr)
-mul!(fh, grid.rfftplan, f)
+uh = zeros(FourierFlows.cxeltype(grid), grid.nkr)
+mul!(uh, grid.rfftplan, u)
 
 nothing # hide
 ```
 
-The `FFT` algorithm does not output exactly the Fourier coefficients $\hat{f}(k)$ but
-rather due to different normalization, `FFT` outputs something proportional to $\hat{f}(k)$. 
-To obtain $\hat{f}$ we need to divide the `FFT` output by the length of the 
+The `FFT` algorithm does not output exactly the Fourier coefficients $\hat{u}(k)$ but
+rather due to different normalization, `FFT` outputs something proportional to $\hat{u}(k)$. 
+To obtain $\hat{u}$ we need to divide the `FFT` output by the length of the 
 original array and by $\mathrm{e}^{-\mathrm{i} k x_0}$, where $x_0$ is the first 
 point of our domain array.
 
 ```@example 1
-fhat = @. fh / (nx * exp(- im * grid.kr * grid.x[1])) # due to normalization of FFT
+uhat = @. uh / (nx * exp(- im * grid.kr * grid.x[1])) # due to normalization of FFT
 
-plot(grid.kr, [real.(fhat), imag.(fhat)],
-          label = ["real\\( f̂ \\)" "imag\\( f̂ \\)"],
+plot(grid.kr, [real.(uhat), imag.(uhat)],
+          label = ["real\\( û \\)" "imag\\( û \\)"],
          xlabel = "k",
           xlims = (-0.5, 10.5),
          xticks = 0:10,
@@ -133,27 +133,27 @@ We can compute its derivative via Fourier transforms. To do that we can use the
 where the values of the derivative will be stored,
 
 ```@example 1
-∂ₓf = similar(f)
-∂ₓfh = similar(fh)
+∂ₓu = similar(u)
+∂ₓuh = similar(uh)
 nothing # hide
 ```
 
 The grid contains the wavenumbers (both for real-value functions `grid.kr` and 
-for complex-valued functions `grid.k`). We populate array `∂ₓfh` is with $\mathrm{i} k \hat{f}$:
+for complex-valued functions `grid.k`). We populate array `∂ₓuh` is with $\mathrm{i} k \hat{u}$:
 
 ```@example 1
-@. ∂ₓfh = im * grid.kr * fh
+@. ∂ₓuh = im * grid.kr * uh
 
 nothing # hide
 ```
 
-Then the derivative in physical space, `∂ₓf`, is obtained with an inverse Fourier 
+Then the derivative in physical space, `∂ₓu`, is obtained with an inverse Fourier 
 tranform. The latter is obtained again using the `FFTW` plans but now via `ldiv!`:
 
 ```@example 1
-ldiv!(∂ₓf, grid.rfftplan, ∂ₓfh)
+ldiv!(∂ₓu, grid.rfftplan, ∂ₓuh)
 
-plot(grid.x, [f ∂ₓf], label=["f" "∂f/∂x"], xlabel="x")
+plot(grid.x, [u ∂ₓu], label=["u" "∂u/∂x"], xlabel="x")
 
 savefig("assets/plot3.svg"); nothing # hide
 ```
