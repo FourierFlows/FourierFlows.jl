@@ -76,7 +76,19 @@ use the `real-FFT` algorithm. The real-valued FFT transform only saves the Fouri
 coefficients for $k\ge 0$; the coefficients for negative wavenumbers can be 
 obtained via $\hat{f}(-k) = \hat{f}(k)^{*}$.
 
-The `grid` includes the `FFT` plans for both real-valued and complex valued transforms:
+
+The wavenumbers used in FFT are contained in `grid.k` ordered as:
+```math
+\frac{2\pi}{L_x}\{0, 1, \dots, n_x/2-1, -n_x/2, -n_x/2+1, \dots, -1\},
+```
+while the wavenumbers for real FFT are in `grid.kr` as:
+
+```math
+\frac{2\pi}{L_x}\{0, 1, \dots, n_x/2-1\}.
+```
+
+
+The `grid` also includes the `FFT` plans for both real-valued and complex valued transforms:
 
 ```@example 1
 grid.fftplan
