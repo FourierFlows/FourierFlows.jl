@@ -110,4 +110,33 @@ function __init__()
   @require CuArrays = "3a865a2d-5b23-5a0f-bc46-62713ec82fae" include("CuFourierFlows.jl")
 end
 
+
+function show(io::IO, vars::AbstractVars)
+  names = propertynames(vars)
+  showstring = ""
+  for name in names[1:end-1]
+    field = getproperty(vars, name)
+    showstring = string(showstring, "  ├───── variable: " * string(name) * ", size: ", size(field), ", type: ", eltype(field), "\n")
+  end
+  name = names[end]
+  field = getproperty(vars, name)
+  showstring = string(showstring, "  └───── variable: " * string(name) * ", size: ", size(field), ", type: ", eltype(field), "\n")
+  
+  return print(io, "Variables\n", showstring)
+end
+
+function show(io::IO, params::AbstractParams)
+  names = propertynames(params)
+  showstring = ""
+  for name in names[1:end-1]
+    field = getproperty(params, name)
+    showstring = string(showstring, "  ├───── parameter: " * string(name) * ", size: ", size(field), ", type: ", eltype(field), "\n")
+  end
+  name = names[end]
+  field = getproperty(params, name)
+  showstring = string(showstring, "  └───── parameter: " * string(name) * ", size: ", size(field), ", type: ", eltype(field), "\n")
+  
+  return print(io, "Parameters\n", showstring)
+end
+
 end # module

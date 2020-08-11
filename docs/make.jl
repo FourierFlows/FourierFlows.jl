@@ -60,6 +60,7 @@ makedocs(
               "Installation instructions" => "installation_instructions.md",
                             "Code Basics" => "basics.md",
                                   "Grids" => "grids.md",
+                                "Problem" => "problem.md",
                                 "Forcing" => "forcing.md",
                                "Examples" => [ 
                   "generated/OneDShallowWaterGeostrophicAdjustment.md",
