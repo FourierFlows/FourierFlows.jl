@@ -478,32 +478,38 @@ function getetdcoeffs(dt, L; ncirc=32, rcirc=1)
     Γ = real.(Γ)
   end
 
-  ζ, α, β, Γ
+  return ζ, α, β, Γ
 end
 
 """
     step_until!(prob, stop_time)
 
-Step forward `prob` up to time `stop_time`.
+Step forward `prob` until `stop_time`. Cannot be used with ETDRK4 time steppers.
 """
-function step_until!(prob::Problem, stop_time::Union{Float64, Float32, Float16})
-  step_until!(prob::Problem, prob.timestepper::AbstractTimeStepper, stop_time)
-  return nothing
-end
+step_until!(prob, stop_time) = step_until!(prob, prob.timestepper, stop_time)
 
-function step_until!(prob::Problem, ::Union{ETDRK4TimeStepper, FilteredETDRK4TimeStepper}, stop_time)
-  @error "step_until! requires fully explicit time stepper; does not work with ETDRK4"
-  return nothing
-end
+step_until!(prob, ::Union{ETDRK4TimeStepper, FilteredETDRK4TimeStepper}, stop_time) =
+  error("step_until! requires fully explicit time stepper; does not work with ETDRK4")
 
-function step_until!(prob::Problem, timestepper, stop_time)
-  Δt = stop_time >= prob.clock.t ? stop_time - prob.clock.t : error("stop_time must be > prob.clock.t")
+function step_until!(prob, timestepper, stop_time)
+  # Throw an error if stop_time is not greater than the current problem time
+  stop_time > prob.clock.t || error("stop_time must be greater than prob.clock.t")
+
+  # Extract current time step
   dt = prob.clock.dt
-  nsteps = Int(floor(Δt/dt))
+
+  # Step forward until just before stop_time
+  time_interval = stop_time - prob.clock.t
+  nsteps = floor(Int, time_interval / dt)
   stepforward!(prob, nsteps)
-  t_remaining = Δt - nsteps * dt
+
+  # Take one final small step so that prob.clock.t = stop_time
+  t_remaining = time_interval - prob.clock.t
   prob.clock.dt = t_remaining
   stepforward!(prob)
+
+  # Restore previous time-step
   prob.clock.dt = dt
+
   return nothing
 end
