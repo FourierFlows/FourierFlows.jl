@@ -497,7 +497,7 @@ function step_until!(prob::Problem, ::Union{ETDRK4TimeStepper, FilteredETDRK4Tim
 end
 
 function step_until!(prob::Problem, timestepper, stop_time)
-  Δt = stop_time > prob.clock.t ? stop_time - prob.clock.t : error("stop_time must be > prob.clock.t")
+  Δt = stop_time >= prob.clock.t ? stop_time - prob.clock.t : error("stop_time must be > prob.clock.t")
   dt = prob.clock.dt
   nsteps = Int(floor(Δt/dt))
   stepforward!(prob, nsteps)
