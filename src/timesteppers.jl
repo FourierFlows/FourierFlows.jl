@@ -203,21 +203,21 @@ function substepsol!(newsol, sol, RHS, dt)
   return nothing
 end
 
-function RK4substeps!(sol, cl, ts, eq, v, p, g, t, dt)
+function RK4substeps!(sol, clock, ts, eq, vars, params, grid, t, dt)
   # Substep 1
-  eq.calcN!(ts.RHS₁, sol, t, cl, v, p, g)
+  eq.calcN!(ts.RHS₁, sol, t, clock, vars, params, grid)
   addlinearterm!(ts.RHS₁, eq.L, sol)
   # Substep 2
   substepsol!(ts.sol₁, sol, ts.RHS₁, dt/2)
-  eq.calcN!(ts.RHS₂, ts.sol₁, t+dt/2, cl, v, p, g)
+  eq.calcN!(ts.RHS₂, ts.sol₁, t+dt/2, clock, vars, params, grid)
   addlinearterm!(ts.RHS₂, eq.L, ts.sol₁)
   # Substep 3
   substepsol!(ts.sol₁, sol, ts.RHS₂, dt/2)
-  eq.calcN!(ts.RHS₃, ts.sol₁, t+dt/2, cl, v, p, g)
+  eq.calcN!(ts.RHS₃, ts.sol₁, t+dt/2, clock, vars, params, grid)
   addlinearterm!(ts.RHS₃, eq.L, ts.sol₁)
   # Substep 4
   substepsol!(ts.sol₁, sol, ts.RHS₃, dt)
-  eq.calcN!(ts.RHS₄, ts.sol₁, t+dt, cl, v, p, g)
+  eq.calcN!(ts.RHS₄, ts.sol₁, t+dt, clock, vars, params, grid)
   addlinearterm!(ts.RHS₄, eq.L, ts.sol₁)
   return nothing
 end
@@ -232,19 +232,19 @@ function RK4update!(sol, RHS₁, RHS₂, RHS₃, RHS₄, filter, dt)
   return nothing
 end
 
-function stepforward!(sol, cl, ts::RK4TimeStepper, eq, v, p, g)
-  RK4substeps!(sol, cl, ts, eq, v, p, g, cl.t, cl.dt)
-  RK4update!(sol, ts.RHS₁, ts.RHS₂, ts.RHS₃, ts.RHS₄, cl.dt)
-  cl.t += cl.dt
-  cl.step += 1
+function stepforward!(sol, clock, ts::RK4TimeStepper, eq, vars, params, grid)
+  RK4substeps!(sol, clock, ts, eq, vars, params, grid, clock.t, clock.dt)
+  RK4update!(sol, ts.RHS₁, ts.RHS₂, ts.RHS₃, ts.RHS₄, clock.dt)
+  clock.t += clock.dt
+  clock.step += 1
   return nothing
 end
 
-function stepforward!(sol, cl, ts::FilteredRK4TimeStepper, eq, v, p, g)
-  RK4substeps!(sol, cl, ts, eq, v, p, g, cl.t, cl.dt)
-  RK4update!(sol, ts.RHS₁, ts.RHS₂, ts.RHS₃, ts.RHS₄, ts.filter, cl.dt)
-  cl.t += cl.dt
-  cl.step += 1
+function stepforward!(sol, clock, ts::FilteredRK4TimeStepper, eq, vars, params, grid)
+  RK4substeps!(sol, clock, ts, eq, vars, params, grid, clockt, clock.dt)
+  RK4update!(sol, ts.RHS₁, ts.RHS₂, ts.RHS₃, ts.RHS₄, ts.filter, clockdt)
+  clockt += clockdt
+  clockstep += 1
   return nothing
 end
 
@@ -344,7 +344,7 @@ function ETDRK4substep3!(sol₂, exp½Ldt, sol₁, ζ, N₁, N₃)
   return nothing
 end
 
-function ETDRK4substeps!(sol, cl, ts, eq, vars, params, grid)
+function ETDRK4substeps!(sol, clock, ts, eq, vars, params, grid)
   # Substep 1
   eq.calcN!(ts.N₁, sol, clock.t, clock, vars, params, grid)
   ETDRK4substep12!(ts.sol₁, ts.exp½Ldt, sol, ts.ζ, ts.N₁)
@@ -422,7 +422,7 @@ struct FilteredAB3TimeStepper{T, Tf} <: AbstractTimeStepper{T}
 end
 
 """
-    FilteredAB3TimeStepper(equation, dev; filterkwargs...)_
+    FilteredAB3TimeStepper(equation, dev; filterkwargs...)
 
 Construct a 3rd order Adams-Bashforth time stepper with spectral filtering.
 """
