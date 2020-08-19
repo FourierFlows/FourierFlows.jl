@@ -45,31 +45,35 @@ format = Documenter.HTML(
      # mathengine = Documenter.MathJax()
 )
 
+pages = [
+    "Home" => "index.md",
+    "Installation instructions" => "installation_instructions.md",
+    "Code Basics" => "basics.md",
+    "Grids" => "grids.md",
+    "Problem" => "problem.md",
+    "GPU" => "gpu.md",
+    "Forcing" => "forcing.md",
+    "Examples" => [ 
+        "generated/OneDShallowWaterGeostrophicAdjustment.md",
+        ],
+    "Library" => [ 
+        "Contents" => "library/outline.md",
+        "Public" => "library/public.md",
+        "Private" => "library/internals.md",
+        "Function index" => "library/function_index.md",
+        ],
+]
+
 makedocs(
+   sitename = "FourierFlows.jl",
+    authors = "Gregory L. Wagner and Navid C. Constantinou",
     modules = [FourierFlows],
+     format = format,
+      pages = pages,
     doctest = true,
      # strict = true,
       clean = true,
-  checkdocs = :all,
-     format = format,
-    authors = "Gregory L. Wagner and Navid C. Constantinou",
-   sitename = "FourierFlows.jl",
-  
-      pages = Any[
-                                   "Home" => "index.md",
-              "Installation instructions" => "installation_instructions.md",
-                            "Code Basics" => "basics.md",
-                                  "Grids" => "grids.md",
-                                "Problem" => "problem.md",
-                                "Forcing" => "forcing.md",
-                               "Examples" => [ 
-                  "generated/OneDShallowWaterGeostrophicAdjustment.md",
-                                             ],
-                             "DocStrings" => Any[
-                  "man/types.md",
-                  "man/functions.md"
-                                                ]
-                 ]
+  checkdocs = :exports
 )
 
 withenv("GITHUB_REPOSITORY" => "FourierFlows/FourierFlowsDocumentation") do
