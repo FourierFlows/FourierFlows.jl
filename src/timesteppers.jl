@@ -441,7 +441,7 @@ function AB3update!(sol, ts, clock)
   return nothing
 end
 
-function AB3update!(sol, ts::FilteredAB3TimeStepper, cl)
+function AB3update!(sol, ts::FilteredAB3TimeStepper, clock)
   if clock.step < 3  # forward Euler steps to initialize AB3
     @. sol = ts.filter * (sol + clock.dt * ts.RHS)    # Update
   else   # Otherwise, stepforward with 3rd order Adams Bashforth:
