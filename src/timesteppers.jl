@@ -241,9 +241,9 @@ function stepforward!(sol, clock, ts::RK4TimeStepper, eq, vars, params, grid)
 end
 
 function stepforward!(sol, clock, ts::FilteredRK4TimeStepper, eq, vars, params, grid)
-  RK4substeps!(sol, clock, ts, eq, vars, params, grid, clockt, clock.dt)
+  RK4substeps!(sol, clock, ts, eq, vars, params, grid, clock.t, clock.dt)
   RK4update!(sol, ts.RHS₁, ts.RHS₂, ts.RHS₃, ts.RHS₄, ts.filter, clockdt)
-  clockt += clockdt
+  clock.t += clock.dt
   clockstep += 1
   return nothing
 end
