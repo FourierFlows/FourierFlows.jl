@@ -1,3 +1,11 @@
+"""
+Main module for `FourierFlows.jl` -- an ecosystem for solving partial differential equations 
+on periodic domains using Fourier-based pseudospectral methods."a documentation generation 
+package for Julia.
+ 
+# Exports
+$(EXPORTS)
+"""
 module FourierFlows
 
 export
@@ -62,6 +70,7 @@ using
   Statistics,
   Interpolations,
   CUDAapi,
+  DocStringExtensions,
   Requires
 
 import Base: resize!, getindex, setindex!, push!, append!, show
@@ -69,7 +78,7 @@ import Base: resize!, getindex, setindex!, push!, append!, show
 using Base: fieldnames
 using FFTW: fftfreq, rfftfreq
 
-abstract type AbstractGrid{T, Ta} end
+abstract type AbstractGrid{T, A} end
 abstract type AbstractTimeStepper{T} end
 abstract type AbstractParams end
 abstract type AbstractVars end

@@ -2,15 +2,11 @@ plan_flows_fft(a::Array, args...; kwargs...) = plan_fft(a, args...; kwargs...)
 plan_flows_rfft(a::Array, args...; kwargs...) = plan_rfft(a, args...; kwargs...)
 
 """
-    ZeroDGridZeroDGrid{T, Ta} <: AbstractGrid{T, A}
-
-A placeholder grid object for "0D" problems (in other words, systems of ODEs).
+A placeholder grid object for `0D` problems (in other words, systems of ODEs).
 """
 struct ZeroDGrid{T, A} <: AbstractGrid{T, A} end
 
 """
-    OneDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
-
 A one-dimensional `grid` object.
 """
 struct OneDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
@@ -40,11 +36,11 @@ end
     OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, 
                       T=Float64, dealias=1/3, ArrayType=Array)
 
-Constructs a OneDGrid object with size `Lx`, resolution `nx`, and leftmost
-position `x0`. FFT plans are generated for `nthreads` CPUs using
-FFTW flag `effort`. The float type is `T` and the array types is `ArrayType`. 
-The `dealias` keyword determines the highest wavenubers that are being zero-ed
-out by `dealias()` function; 1/3 is the nominal value for quadratic nonlinearities. 
+Constructs a OneDGrid object with size `Lx`, resolution `nx`, and leftmost position `x0`. 
+FFT plans are generated for `nthreads` CPUs using FFTW flag `effort`. The float type is `T` 
+and the array types is `ArrayType`. The `dealias` keyword determines the highest  wavenubers 
+that are being zero-ed out by `dealias()` function; 1/3 is the nominal value for quadratic 
+nonlinearities. 
 """
 function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, 
                   T=Float64, dealias=1/3, ArrayType=Array)
@@ -52,7 +48,7 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
   dx = Lx/nx
     
    nk = nx
-  nkr = Int(nx/2+1)
+  nkr = Int(nx/2 + 1)
 
   # Physical grid
   x = range(T(x0), step=T(dx), length=nx)
@@ -61,8 +57,8 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
    k = ArrayType{T}( fftfreq(nx, 2π/Lx*nx))
   kr = ArrayType{T}(rfftfreq(nx, 2π/Lx*nx))
 
-   invksq = @. 1/k^2
-  invkrsq = @. 1/kr^2
+   invksq = @. 1 / k^2
+  invkrsq = @. 1 / kr^2
    invksq[1] = 0
   invkrsq[1] = 0
 
@@ -81,11 +77,7 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
                                       invksq, invkrsq, fftplan, rfftplan, kalias, kralias)
 end
 
-"""
-    TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
-
-A two-dimensional `grid` object.
-"""
+"A two-dimensional `grid` object."
 struct TwoDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
         nx :: Int
         ny :: Int
@@ -119,7 +111,8 @@ struct TwoDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
 end
 
 """
-    TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE)
+    TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, 
+                      effort=FFTW.MEASURE, T=Float64, dealias=1/3, ArrayType=Array)
 
 Constructs a TwoDGrid object with size `Lx`, `Ly`, resolution `nx`, `ny`, and leftmost
 positions `x0`, `y0`. FFT plans are generated for `nthreads` CPUs using
@@ -135,7 +128,7 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
 
    nk = nx
    nl = ny
-  nkr = Int(nx/2+1)
+  nkr = Int(nx/2 + 1)
 
   # Physical grid
   x = range(T(x0), step=T(dx), length=nx)
@@ -147,11 +140,11 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
   kr = ArrayType{T}(reshape(rfftfreq(nx, 2π/Lx*nx), (nkr, 1)))
 
      Ksq = @. k^2 + l^2
-  invKsq = @. 1/Ksq
+  invKsq = @. 1 / Ksq
   invKsq[1, 1] = 0
 
      Krsq = @. kr^2 + l^2
-  invKrsq = @. 1/Krsq
+  invKrsq = @. 1 / Krsq
   invKrsq[1, 1] = 0
 
   # FFT plans
@@ -172,12 +165,7 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
                                       fftplan, rfftplan, kalias, kralias, lalias)
 end
 
-"""
-    ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-Lz/2, 
-    nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64, dealias=1/3, ArrayType=Array)
-
- A three-dimensional `grid` object. 
-"""
+"A three-dimensional `grid` object."
 struct ThreeDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
         nx :: Int
         ny :: Int
@@ -237,7 +225,7 @@ function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-
   nk = nx
   nl = ny
   nm = nz
-  nkr = Int(nx/2+1)
+  nkr = Int(nx/2 + 1)
 
   # Physical grid
   x = range(T(x0), step=T(dx), length=nx)
@@ -251,11 +239,11 @@ function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-
   kr = ArrayType{T}(reshape(rfftfreq(nx, 2π/Lx*nx), (nkr, 1, 1)))
 
      Ksq = @. k^2 + l^2 + m^2
-  invKsq = @. 1/Ksq
+  invKsq = @. 1 / Ksq
   invKsq[1, 1, 1] = 0
 
      Krsq = @. kr^2 + l^2 + m^2
-  invKrsq = @. 1/Krsq
+  invKrsq = @. 1 / Krsq
   invKrsq[1, 1, 1] = 0
 
   # FFT plans
@@ -286,7 +274,8 @@ TwoDGrid(dev::CPU, args...; kwargs...) = TwoDGrid(args...; ArrayType=Array, kwar
 ThreeDGrid(dev::CPU, args...; kwargs...) = ThreeDGrid(args...; ArrayType=Array, kwargs...)
 
 """
-    gridpoints(grid)
+    gridpoints(grid::TwoDGrid)
+    gridpoints(grid::ThreeDGrid)
 
 Returns the collocation points of the `grid` in 2D or 3D arrays `X, Y` (and `Z`).
 """
@@ -314,11 +303,11 @@ function getaliasedwavenumbers(nk, nkr, aliasfraction)
   # 1/2 aliasfraction => upper 1/4 of +/- wavenumbers (1/2 total) are set to 0 after performing fft.
   L = (1 - aliasfraction)/2 # (1 - 1/3) / 2 + 1 = 1/3.
   R = (1 + aliasfraction)/2 # (1 + 1/3) / 2 - 1 = 2/3.
-  iL = floor(Int, L*nk) + 1
-  iR =  ceil(Int, R*nk)
+  iL = floor(Int, L * nk) + 1
+  iR =  ceil(Int, R * nk)
 
   aliasfraction < 1 || error("`aliasfraction` must be less than 1") # aliasfraction=1 is not sensible.
-   kalias = (aliasfraction > 0) ? (iL:iR) : Int(nx/2+1)
+   kalias = (aliasfraction > 0) ? (iL:iR) : Int(nx/2 + 1)
   kralias = (aliasfraction > 0) ? (iL:nkr) : nkr
 
   return kalias, kralias
