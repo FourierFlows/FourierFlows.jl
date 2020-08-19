@@ -78,14 +78,28 @@ import Base: resize!, getindex, setindex!, push!, append!, show
 using Base: fieldnames
 using FFTW: fftfreq, rfftfreq
 
+"Abstract supertype for grids."
 abstract type AbstractGrid{T, A} end
+
+"Abstract supertype for timesteppers."
 abstract type AbstractTimeStepper{T} end
+
+"Abstract supertype for parameters."
 abstract type AbstractParams end
+
+"Abstract supertype for variables."
 abstract type AbstractVars end
+
+"Abstract supertype for diagnostics."
 abstract type AbstractDiagnostic end
 
+"Abstract supertype for device."
 abstract type Device end
+
+"CPU device."
 struct CPU <: Device end
+
+"GPU device."
 struct GPU <: Device end
 
 # The main show
