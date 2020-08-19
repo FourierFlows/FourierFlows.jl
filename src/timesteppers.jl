@@ -133,7 +133,7 @@ function FilteredForwardEulerTimeStepper(equation::Equation, dev::Device=CPU(); 
 end
 
 function stepforward!(sol, clock, ts::FilteredForwardEulerTimeStepper, eq, vars, params, grid)
-  eq.calcN!(ts.N, sol, clock.t, clock, vvars, params, grid)
+  eq.calcN!(ts.N, sol, clock.t, clock, vars, params, grid)
   @. sol = ts.filter * (sol + clock.dt * (ts.N + eq.L * sol))
   clock.t += clock.dt
   clock.step += 1
