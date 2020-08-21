@@ -25,10 +25,6 @@ testx(g) = isapprox(g.x[end]-g.x[1], g.Lx-g.dx)
 testy(g) = isapprox(g.y[end]-g.y[1], g.Ly-g.dy)
 testz(g) = isapprox(g.z[end]-g.z[1], g.Lz-g.dz)
 
-testx(g) = isapprox(g.x[end]-g.x[1], g.Lx-g.dx)
-testy(g) = isapprox(g.y[end]-g.y[1], g.Ly-g.dy)
-testz(g) = isapprox(g.z[end]-g.z[1], g.Lz-g.dz)
-
 testdk(g::Union{OneDGrid, TwoDGrid, ThreeDGrid}) = isapprox(g.k[2], 2π/g.Lx)
 testdl(g::Union{TwoDGrid, ThreeDGrid}) = isapprox(g.l[2], 2π/g.Ly)
 testdm(g::ThreeDGrid) = isapprox(g.m[2], 2π/g.Lz)
@@ -134,13 +130,13 @@ end
 
 function test_plan_flows_fftrfft(::CPU; T=Float64)
   A = ArrayType(CPU())
-  return ( typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4,))))) == FFTW.cFFTWPlan{Complex{T},-1,false,1} &&
-  typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6))))) == FFTW.cFFTWPlan{Complex{T},-1,false,2} &&
-  typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))))) == FFTW.cFFTWPlan{Complex{T},-1,false,3} &&
+  return ( typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4,))))) <: FFTW.cFFTWPlan{Complex{T},-1,false,1} &&
+  typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6))))) <: FFTW.cFFTWPlan{Complex{T},-1,false,2} &&
+  typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))))) <: FFTW.cFFTWPlan{Complex{T},-1,false,3} &&
   FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))), [1, 2]).region == [1, 2] &&
-  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4,))))) == FFTW.rFFTWPlan{T,-1,false,1} &&
-  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6))))) == FFTW.rFFTWPlan{T,-1,false,2} &&
-  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) == FFTW.rFFTWPlan{T,-1,false,3} &&
+  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4,))))) <: FFTW.rFFTWPlan{T,-1,false,1} &&
+  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6))))) <: FFTW.rFFTWPlan{T,-1,false,2} &&
+  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) <: FFTW.rFFTWPlan{T,-1,false,3} &&
   FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2] )
 end
 

@@ -182,8 +182,11 @@ for dev in devices
   @time @testset "Timestepper tests" begin
     include("test_timesteppers.jl")
     for stepper in steppers
-      @test constantdiffusiontest(stepper, dev=dev)
-      @test varyingdiffusiontest(stepper, dev=dev)
+      @test constantdiffusiontest_stepforward(stepper, dev=dev)
+      @test varyingdiffusiontest_stepforward(stepper, dev=dev)
+      if FourierFlows.isexplicit(stepper)
+        @test constantdiffusiontest_step_until(stepper, dev=dev)
+      end
     end
   end
 
@@ -278,6 +281,9 @@ for dev in devices
     @test test_basicdiagnostics(dev)
     @test test_scalardiagnostics(dev, freq=1)
     @test test_scalardiagnostics(dev, freq=2)
+    @test test_incrementdiagnostic(dev)
+    @test test_extenddiagnostic(dev)
+    @test test_getindex(dev)
   end
 
   @time @testset "Output tests" begin

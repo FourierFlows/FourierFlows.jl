@@ -2,34 +2,31 @@ variables:
   CI_IMAGE_TAG: 'cuda'
   JULIA_NUM_THREADS: '1'
   JULIA_CUDA_VERBOSE: 'true'
+  JULIA_CUDA_USE_BINARYBUILDER: 'false' # reduce CI network traffic
 
 # See: https://github.com/JuliaGPU/gitlab-ci
 include:
   - 'https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v6.yml'
 
-image: nvidia/cuda:10.1-cudnn7-devel
-
-julia:1.0:
-  extends:
-    - .julia:1.0
-    - .test
-  tags:
-    - nvidia
-
 # the "primary" target, where we require a new GPU to make sure all tests are run
 julia:1.4:
-  image: juliagpu/cuda:10.1-cudnn7-cutensor1-devel-ubuntu18.04
   extends:
     - .julia:1.4
     - .test
   tags:
     - nvidia
-    - sm_75
   variables:
     CI_THOROUGH: 'true'
+
+test:nightly:
+  extends:
+    - .julia:nightly
+    - .test
+  allow_failure: true
 
 # other tasks
 coverage:
   extends:
     - .julia:1.4
     - .coverage
+    

@@ -5,6 +5,10 @@ codecov:
     - !travis
 
 coverage:
+  ignore:
+    - "docs"
+    - "examples"
+    - "test"
   status:
     patch: false
     project: false
