@@ -1,29 +1,27 @@
 ---
-title: 'Gala: A Python package for galactic dynamics'
+title: 'FourierFlows.jl: A Julia ecosystem for solving partial differential equations on periodic domains'
 tags:
-  - Python
-  - astronomy
-  - dynamics
-  - galactic dynamics
-  - milky way
+  - julia
+  - PDE
+  - pseudospectral
+  - Fourier methods
+  - gpu
 authors:
-  - name: Adrian M. Price-Whelan
-    orcid: 0000-0003-0872-7098
-    affiliation: "1, 2" # (Multiple affiliations must be quoted)
-  - name: Author Without ORCID
-    affiliation: 2
+  - name: Navid C. Constantinou
+    orcid: 0000-0002-8149-4094
+    affiliation: "1, 2"
+  - name: Gregory LeClaire Wagner
+    orcid: 0000-0001-5317-2445
+    affiliation: 3
 affiliations:
- - name: Lyman Spitzer, Jr. Fellow, Princeton University
+ - name: Australian National University
    index: 1
- - name: Institution 2
+ - name: ARC Centre of Excellence for Climate Extremes
    index: 2
-date: 13 August 2017
+ - name: Massachussetts Institute of Technology
+   index: 3
+date: 21 August 2020
 bibliography: paper.bib
-
-# Optional fields if submitting to a AAS journal too, see this blog post:
-# https://blog.joss.theoj.org/2018/12/a-new-collaboration-with-aas-publishing
-aas-doi: 10.3847/xxxxx <- update this with the DOI from AAS once you know it.
-aas-journal: Astrophysical Journal <- The name of the AAS journal.
 ---
 
 # Summary
@@ -103,7 +101,6 @@ for n in range(10):
 
 # Acknowledgements
 
-We acknowledge contributions from Brigitta Sipocz, Syrtis Major, and Semyeong
-Oh, and support from Kathryn Johnston during the genesis of this project.
+We acknowledge fruitful discussions with Cesar B. Rocha and Keaton Burns.
 
 # References
