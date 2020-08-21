@@ -78,7 +78,7 @@ makedocs(
 
 withenv("GITHUB_REPOSITORY" => "FourierFlows/FourierFlowsDocumentation") do
   deploydocs(        repo = "github.com/FourierFlows/FourierFlowsDocumentation.git",
-                 versions = ["stable" => "v^", "v#.#.#"],
-             push_preview = true,
+                 versions = ["stable" => "v^", "v#.#"],
+             push_preview = true
   )
 end
