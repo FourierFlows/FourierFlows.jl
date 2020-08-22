@@ -52,7 +52,6 @@ pages = [
     "Grids" => "grids.md",
     "Problem" => "problem.md",
     "GPU" => "gpu.md",
-    "Forcing" => "forcing.md",
     "Examples" => [ 
         "generated/OneDShallowWaterGeostrophicAdjustment.md",
         ],
