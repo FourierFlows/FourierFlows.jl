@@ -47,7 +47,7 @@ format = Documenter.HTML(
 
 pages = [
     "Home" => "index.md",
-    "Installation instructions" => "installation_instructions.md",
+    "Installation Instructions" => "installation_instructions.md",
     "Code Basics" => "basics.md",
     "Grids" => "grids.md",
     "Problem" => "problem.md",
