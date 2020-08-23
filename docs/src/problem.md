@@ -188,6 +188,6 @@ module mypde
 end # end module
 ```
 
-For more elaborate example we urge you to have a look at the `Diffusion` 
+For a more elaborate example we urge you to have a look at the `Diffusion` 
 module found in `src/diffusion.jl` and also to the modules included in the 
 child package [GeophysicalFlows.jl](https://github.com/FourierFlows/GeophysicalFlows.jl).
