@@ -129,8 +129,8 @@ savefig("assets/plot2.svg"); nothing # hide
 ![](assets/plot2.svg)
 
 We can compute its derivative via Fourier transforms. To do that we can use the
-`FFTW` plans that are constructed with the grid. First we allocate an empty array
-where the values of the derivative will be stored,
+`FFTW` plans that are constructed with the grid. First we allocate some empty arrays
+where the values of the derivative in physical and Fourier space will be stored,
 
 ```@example 1
 ∂ₓu = similar(u)
