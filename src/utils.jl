@@ -277,5 +277,12 @@ function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=2)
   ρ, ahρ
 end
 
+"""
+    ArrayType(::Device)
+    ArrayType(::Device, T, dim)
+
+Returns the proper array type according to the Device chosen. That is `Array` for CPU and
+`CuArray` for GPU.
+"""
 ArrayType(::CPU) = Array
 ArrayType(::CPU, T, dim) = Array{T, dim}
