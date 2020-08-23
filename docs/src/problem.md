@@ -177,7 +177,7 @@ savefig("assets/plot4.svg"); nothing # hide
 
 ![](assets/plot4.svg)
 
-A good practice is to encompass all functions and `struct` definitions related 
+A good practice is to encompass all functions and type definitions related 
 with a PDE under a module, e.g.,
 
 ```julia
@@ -188,6 +188,6 @@ module mypde
 end # end module
 ```
 
-For a somehow more elaborate example we urge you to have a look at the `Diffusion` 
+For more elaborate example we urge you to have a look at the `Diffusion` 
 module found in `src/diffusion.jl` and also to the modules included in the 
 child package [GeophysicalFlows.jl](https://github.com/FourierFlows/GeophysicalFlows.jl).
