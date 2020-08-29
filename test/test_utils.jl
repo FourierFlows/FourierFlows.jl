@@ -52,15 +52,15 @@ end
 
 # This test could use some further work.
 function test_radialspectrum(dev::Device, n, ahkl, ahρ; debug=false, atol=0.1, rfft=false)
-  g = TwoDGrid(dev, n, 2π)
+  grid = TwoDGrid(dev, n, 2π)
   if rfft==true
-    ah = @. ahkl(g.kr, g.l)
+    ah = @. ahkl(grid.kr, grid.l)
   else   
-    ah = @. ahkl(g.k, g.l)
+    ah = @. ahkl(grid.k, grid.l)
   end
   CUDA.@allowscalar ah[1, 1] = 0.0
 
-  ρ, ahρ_estimate = FourierFlows.radialspectrum(ah, g; refinement=16)
+  ρ, ahρ_estimate = FourierFlows.radialspectrum(ah, grid; refinement=16)
 
   if debug
     println(sum(ahρ.(ρ) - ahρ_estimate))
