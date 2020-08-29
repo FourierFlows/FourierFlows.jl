@@ -113,9 +113,7 @@ include("diffusion.jl")
 
 """
     @has_cuda expr
-A macro to compile and execute `expr` only if CUDA is installed and available. Generally 
-used to wrap expressions that can only be compiled if `CuArrays` and `CUDAnative` can be
-loaded.
+A macro to compile and execute `expr` only if CUDA is installed and available.
 """
 macro has_cuda(expr)
   return has_cuda() ? :($(esc(expr))) : :(nothing)
@@ -125,7 +123,6 @@ end
 @has_cuda include("CuFourierFlows.jl")
 
 function __init__()
-  
   threads = Threads.nthreads()
   if threads > 1
     @info "FourierFlows will use $threads threads"
