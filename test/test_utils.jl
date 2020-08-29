@@ -58,7 +58,7 @@ function test_radialspectrum(dev::Device, n, ahkl, ahρ; debug=false, atol=0.1, 
   else   
     ah = @. ahkl(g.k, g.l)
   end
-  ah[1, 1] = 0.0
+  CUDA.@allowscalar ah[1, 1] = 0.0
 
   ρ, ahρ_estimate = FourierFlows.radialspectrum(ah, g; refinement=16)
 
