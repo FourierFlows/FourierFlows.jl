@@ -97,48 +97,6 @@ end
 
 
 """
-    varsexpression(name, fieldspecs; parent=:AbstractVars, typeparams=nothing)
-
-    varsexpression(name, fieldspecs...; parent=:AbstractVars, typeparams=nothing)
-
-    varsexpression(name, physicalfields, fourierfields; physicaltype=:Tp, fouriertype=:Tf,
-                   parent=:AbstractVars, typeparams=[physicaltype, fouriertype])
-
-Returns an expression that defines an `AbstractVars` type.
-"""
-function varsexpression(name, fieldspecs; parent=:AbstractVars,
-                        typeparams::Union{Nothing,Symbol,Array{Symbol,1}}=nothing)
-  if typeparams == nothing
-    signature = name
-  else
-    try
-      signature = Expr(:curly, name, typeparams...)
-    catch
-      signature = Expr(:curly, name, typeparams) # only one typeparam given?
-    end
-  end
-
-  fieldexprs = [ :( $(spec[1])::$(spec[2]); ) for spec in fieldspecs ]
-
-  :(struct $signature <: $parent; $(fieldexprs...); end)
-end
-
-function varsexpression(name, physicalfields, fourierfields; parent=:AbstractVars,  physicaltype=:Tp, fouriertype=:Tf,
-                        typeparams=[physicaltype, fouriertype])
-  physicalfieldspecs = getfieldspecs(physicalfields, physicaltype)
-   fourierfieldspecs = getfieldspecs(fourierfields, fouriertype)
-  varsexpression(name, cat(physicalfieldspecs, fourierfieldspecs; dims=1); parent=parent, typeparams=typeparams)
-end
-
-
-"""
-    getfieldspecs(fieldnames, fieldtype)
-
-Returns an array of (fieldname[i], fieldtype) tuples.
-"""
-getfieldspecs(fieldnames::AbstractArray, fieldtype) = [ (name, fieldtype) for name in fieldnames ]
-
-"""
     parsevalsum2(uh, g)
 
 Returns `∫|u|² = Σ|uh|²` on the grid `g`, where `uh` is the Fourier transform of `u`.
