@@ -111,15 +111,6 @@ include("timesteppers.jl")
 # Physics
 include("diffusion.jl")
 
-if has_cuda()
-  try
-    include("CuFourierFlows.jl")
-  catch ex
-    # something is wrong with the user's set-up (or there's a bug in CuArrays)
-    @warn "CUDA is installed, but CuArrays.jl fails to load" exception=(ex, catch_backtrace())
-  end
-end
-
 
 """
     @has_cuda expr
@@ -147,6 +138,8 @@ function __init__()
     end
 
     CUDA.allowscalar(false)
+    
+    include("CuFourierFlows.jl")
   end
 end
 
