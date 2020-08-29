@@ -111,7 +111,6 @@ include("timesteppers.jl")
 # Physics
 include("diffusion.jl")
 
-
 """
     @has_cuda expr
 A macro to compile and execute `expr` only if CUDA is installed and available. Generally 
@@ -122,6 +121,8 @@ macro has_cuda(expr)
   return has_cuda() ? :($(esc(expr))) : :(nothing)
 end
 
+# CUDA functionality
+@has_cuda include("CuFourierFlows.jl")
 
 function __init__()
   
@@ -138,8 +139,6 @@ function __init__()
     end
 
     CUDA.allowscalar(false)
-    
-    include("CuFourierFlows.jl")
   end
 end
 
