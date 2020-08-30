@@ -9,8 +9,7 @@ repository = "https://github.com/FourierFlows/FourierFlows.jl"
 version = "0.5.2"
 
 [deps]
-CUDAapi = "3895d2a7-ec45-59b8-82bb-cfc6a382f9b3"
-CuArrays = "3a865a2d-5b23-5a0f-bc46-62713ec82fae"
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
 Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
@@ -18,18 +17,15 @@ JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
-Requires = "ae029012-a4dd-5104-9daa-d747884805df"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 
 [compat]
-CUDAapi = "^2, ^4"
-CuArrays = "^1, ^2"
+CUDA = "^1"
 DocStringExtensions = "^0.8"
 FFTW = "^1"
 Interpolations = "^0.12"
 JLD2 = "^0.1"
 Reexport = "^0.2"
-Requires = "^1"
 julia = "^1.4"
 
 [extras]

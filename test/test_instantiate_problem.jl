@@ -18,5 +18,5 @@ function instantiate_problem_with_filter_kwargs(dev, stepper)
 
     stepper = real_problem.timestepper
     
-    return stepper.filter[3] < 1e-16
+    return CUDA.@allowscalar stepper.filter[3] < 1e-16
 end
