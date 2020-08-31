@@ -25,9 +25,9 @@ testx(g) = isapprox(g.x[end]-g.x[1], g.Lx-g.dx)
 testy(g) = isapprox(g.y[end]-g.y[1], g.Ly-g.dy)
 testz(g) = isapprox(g.z[end]-g.z[1], g.Lz-g.dz)
 
-testdk(g::Union{OneDGrid, TwoDGrid, ThreeDGrid}) = isapprox(g.k[2], 2π/g.Lx)
-testdl(g::Union{TwoDGrid, ThreeDGrid}) = isapprox(g.l[2], 2π/g.Ly)
-testdm(g::ThreeDGrid) = isapprox(g.m[2], 2π/g.Lz)
+testdk(g::Union{OneDGrid, TwoDGrid, ThreeDGrid}) = CUDA.@allowscalar isapprox(g.k[2], 2π/g.Lx)
+testdl(g::Union{TwoDGrid, ThreeDGrid}) = CUDA.@allowscalar isapprox(g.l[2], 2π/g.Ly)
+testdm(g::ThreeDGrid) = CUDA.@allowscalar isapprox(g.m[2], 2π/g.Lz)
 
 # Test proper arrangement of fft wavenumbers. k = [0:nx/2, -nx/2+1:-1].
 flippednegatives(k, mid) = -reverse(k[mid+2:end])
@@ -41,7 +41,7 @@ end
 testk(g) = testwavenumberalignment(g.k, g.nx)
 testl(g::Union{TwoDGrid, ThreeDGrid}) = testwavenumberalignment(g.l, g.ny)
 testm(g::ThreeDGrid) = testwavenumberalignment(g.m, g.nz)
-testkr(g) = isapprox(cat(g.k[1:g.nkr-1], abs(g.k[g.nkr]), dims=1), g.kr)
+testkr(g) = CUDA.@allowscalar isapprox(cat(g.k[1:g.nkr-1], abs(g.k[g.nkr]), dims=1), g.kr)
 
 function testgridpoints(dev::Device, g::TwoDGrid{T}) where T
   X, Y = gridpoints(g)
@@ -68,7 +68,7 @@ function testdealias(g::OneDGrid)
   fh = ones(Complex{T}, size(g.kr))
   dealias!(fh, g)
   kmax = round(maximum(g.kr)*2/3)
-  isapprox(sum(abs.(fh[ g.kr .>= kmax ])), 0)
+  CUDA.@allowscalar isapprox(sum(abs.(fh[g.kr .>= kmax])), 0)
 end
 
 function testdealias(g::TwoDGrid)
@@ -80,7 +80,7 @@ function testdealias(g::TwoDGrid)
 
   temp = 0.0
   for j = 1:g.nl, i = 1:g.nkr
-    if ( g.kr[i] >= kmax ) & ( g.l[j] >= lmax || g.l[j] < -lmax )
+    if (CUDA.@allowscalar g.kr[i] >= kmax) & (CUDA.@allowscalar g.l[j] >= lmax || CUDA.@allowscalar g.l[j] < -lmax)
       temp += abs.(fh[i, j]) #temp = sum of |fh| for aliased wavenumbers
     end
   end
@@ -97,7 +97,7 @@ function testdealias(g::ThreeDGrid)
 
   temp = 0.0
   for k = 1:g.nm, j = 1:g.nl, i = 1:g.nkr
-    if ( g.kr[i] >= kmax ) & ( g.l[j] >= lmax || g.l[j] < -lmax ) & ( g.m[k] >= mmax || g.m[k] < -mmax )
+    if (CUDA.@allowscalar g.kr[i] >= kmax ) & (CUDA.@allowscalar g.l[j] >= lmax || CUDA.@allowscalar g.l[j] < -lmax) & (CUDA.@allowscalar g.m[k] >= mmax || CUDA.@allowscalar g.m[k] < -mmax)
       temp += abs.(fh[i, j, k]) #temp = sum of |fh| for aliased wavenumbers
     end
   end
@@ -130,24 +130,24 @@ end
 
 function test_plan_flows_fftrfft(::CPU; T=Float64)
   A = ArrayType(CPU())
-  return ( typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4,))))) <: FFTW.cFFTWPlan{Complex{T},-1,false,1} &&
+  return (typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4,))))) <: FFTW.cFFTWPlan{Complex{T},-1,false,1} &&
   typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6))))) <: FFTW.cFFTWPlan{Complex{T},-1,false,2} &&
   typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))))) <: FFTW.cFFTWPlan{Complex{T},-1,false,3} &&
   FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))), [1, 2]).region == [1, 2] &&
   typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4,))))) <: FFTW.rFFTWPlan{T,-1,false,1} &&
   typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6))))) <: FFTW.rFFTWPlan{T,-1,false,2} &&
   typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) <: FFTW.rFFTWPlan{T,-1,false,3} &&
-  FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2] )
+  FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2])
 end
 
 function test_plan_flows_fftrfft(::GPU; T=Float64)
   A = ArrayType(GPU())
-  return ( typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4,))))) == CuArrays.CUFFT.cCuFFTPlan{Complex{T},-1,false,1} &&
-  typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6))))) == CuArrays.CUFFT.cCuFFTPlan{Complex{T},-1,false,2} &&
-  typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))))) == CuArrays.CUFFT.cCuFFTPlan{Complex{T},-1,false,3} &&
+  return (typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4,))))) == CUDA.CUFFT.cCuFFTPlan{Complex{T},-1,false,1} &&
+  typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6))))) == CUDA.CUFFT.cCuFFTPlan{Complex{T},-1,false,2} &&
+  typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))))) == CUDA.CUFFT.cCuFFTPlan{Complex{T},-1,false,3} &&
   FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))), [1, 2]).region == [1, 2] &&
-  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4,))))) == CuArrays.CUFFT.rCuFFTPlan{T,-1,false,1} &&
-  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6))))) == CuArrays.CUFFT.rCuFFTPlan{T,-1,false,2} &&
-  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) == CuArrays.CUFFT.rCuFFTPlan{T,-1,false,3} &&
-  FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2] )
+  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4,))))) == CUDA.CUFFT.rCuFFTPlan{T,-1,false,1} &&
+  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6))))) == CUDA.CUFFT.rCuFFTPlan{T,-1,false,2} &&
+  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) == CUDA.CUFFT.rCuFFTPlan{T,-1,false,3} &&
+  FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2])
 end

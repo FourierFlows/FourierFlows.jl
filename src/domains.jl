@@ -59,8 +59,8 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
 
    invksq = @. 1 / k^2
   invkrsq = @. 1 / kr^2
-   invksq[1] = 0
-  invkrsq[1] = 0
+  CUDA.@allowscalar  invksq[1] = 0
+  CUDA.@allowscalar invkrsq[1] = 0
 
   FFTW.set_num_threads(nthreads)
    fftplan = plan_flows_fft(ArrayType{Complex{T}, 1}(undef, nx), flags=effort)
@@ -141,11 +141,11 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
 
      Ksq = @. k^2 + l^2
   invKsq = @. 1 / Ksq
-  invKsq[1, 1] = 0
+  CUDA.@allowscalar invKsq[1, 1] = 0
 
      Krsq = @. kr^2 + l^2
   invKrsq = @. 1 / Krsq
-  invKrsq[1, 1] = 0
+  CUDA.@allowscalar invKrsq[1, 1] = 0
 
   # FFT plans
   FFTW.set_num_threads(nthreads)
@@ -240,11 +240,11 @@ function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-
 
      Ksq = @. k^2 + l^2 + m^2
   invKsq = @. 1 / Ksq
-  invKsq[1, 1, 1] = 0
+  CUDA.@allowscalar invKsq[1, 1, 1] = 0
 
      Krsq = @. kr^2 + l^2 + m^2
   invKrsq = @. 1 / Krsq
-  invKrsq[1, 1, 1] = 0
+  CUDA.@allowscalar invKrsq[1, 1, 1] = 0
 
   # FFT plans
   FFTW.set_num_threads(nthreads)

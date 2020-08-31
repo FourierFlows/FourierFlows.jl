@@ -36,7 +36,7 @@ function test_getindex(dev::Device=CPU())
   filename = joinpath(".", "testoutput.jld2")
   
   ctest = devzeros(dev, Float64, (prob.grid.nx, ))
-  ctest[3] = π
+  CUDA.@allowscalar ctest[3] = π
   prob.vars.c .= ctest
   
   get_c(prob) = prob.vars.c
@@ -52,7 +52,7 @@ function test_saveproblem_saveoutput(dev::Device=CPU())
   if isfile(filename); rm(filename); end
   
   ctest = devzeros(dev, Float64, (prob.grid.nx, ))
-  ctest[3] = π
+  CUDA.@allowscalar ctest[3] = π
   prob.vars.c .= ctest
   
   get_c(prob) = collect(prob.vars.c)

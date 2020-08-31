@@ -1,5 +1,3 @@
-using .CuArrays
-
 # Discard `effort` argument for CuArrays
 plan_flows_fft(a::CuArray, args...; flags=nothing, kwargs...) = plan_fft(a, args...; kwargs...)
 plan_flows_rfft(a::CuArray, args...; flags=nothing, kwargs...) = plan_rfft(a, args...; kwargs...)
