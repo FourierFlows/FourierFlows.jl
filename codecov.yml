@@ -1,0 +1,21 @@
+coverage:
+  range: 50..90
+  round: down
+  precision: 2
+
+  ignore:
+    - "docs"
+    - "examples"
+    - "test"
+
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 5%
+    patch:
+      default:
+        target: auto
+        threshold: 20%
+
+comment: false
