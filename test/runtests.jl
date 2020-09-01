@@ -185,9 +185,14 @@ for dev in devices
     include("test_timesteppers.jl")
     for stepper in steppers
       @test constantdiffusiontest_stepforward(stepper, dev=dev)
+      
       @test varyingdiffusiontest_stepforward(stepper, dev=dev)
+      
       if FourierFlows.isexplicit(stepper)
         @test constantdiffusiontest_step_until(stepper, dev=dev)
+      else
+        prob = FourierFlows.Diffusion.Problem(stepper=stepper)
+        @test_throws Exception step_until!(prob, 1.0)
       end
     end
   end
