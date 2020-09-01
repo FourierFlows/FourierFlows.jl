@@ -88,7 +88,7 @@ function test_incrementdiagnostic(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2)
   return diagnostic1.data[2]==2.0 && diagnostic2.data[2]==2.0im
 end
 
-function test_getindex(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2)
+function test_getindex_lastindex(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2)
   k₀ = 2π / Lx
   dt = 1e-2 / (κ * k₀^2) # time-scale for diffusive decay dynamics are resolved
   prob = Problem(nx=nx, Lx=Lx, κ=κ, dt=dt, stepper="ETDRK4", dev=dev)
@@ -110,5 +110,5 @@ function test_getindex(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2)
     FourierFlows.increment!(diagnostics)
   end
   
-  return getindex(diagnostic1, 2:5) == 2.0*ones(4) && getindex(diagnostic2, 2:5) == 2.0im*ones(4)
+  return getindex(diagnostic1, 2:5) == 2.0*ones(4) && getindex(diagnostic2, 2:5) == 2.0im*ones(4) && FourierFlows.lastindex(diagnostic1) == diagnostic1.i
 end
