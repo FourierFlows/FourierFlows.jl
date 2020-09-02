@@ -191,8 +191,7 @@ for dev in devices
       if FourierFlows.isexplicit(stepper)
         @test constantdiffusiontest_step_until(stepper, dev=dev)
       else
-        prob = FourierFlows.Diffusion.Problem(stepper=stepper)
-        @test_throws Exception step_until!(prob, 1.0)
+        @test_throws Exception constantdiffusiontest_step_until(stepper, dev=dev)
       end
     end
   end
