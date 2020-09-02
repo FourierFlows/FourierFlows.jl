@@ -26,9 +26,6 @@ fltype(::Type{T})          where T<:AbstractFloat = T
 fltype(::Type{Complex{T}}) where T<:AbstractFloat = T
 fltype(T::Tuple) = fltype(T[1])
 
-cxeltype(x) = cxtype(innereltype(x))
-fleltype(x) = fltype(innereltype(x))
-
 """
     superzeros(T, A)
 
