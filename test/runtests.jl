@@ -307,7 +307,7 @@ for dev in devices
 
   @time @testset "show() methods tests" begin
 
-    prob = Diffusion.Problem()
+    prob = Diffusion.Problem(dev=dev)
     struct Params <: AbstractParams
       κ1 :: Float64
       κ2 :: Float64
@@ -315,12 +315,12 @@ for dev in devices
     params = Params(1.0, 2.0)
     
     #create a problem with more than 1 parameters so all lines of show() method are tested
-    prob = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params)
+    prob = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params, dev)
     
     @test repr(prob.params) == "Parameters\n  ├───── parameter: κ1 -> Float64\n  └───── parameter: κ2 -> Float64\n"
-    @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element Array{Float64,1}\n  ├───── variable: cx -> 128-element Array{Float64,1}\n  ├───── variable: ch -> 65-element Array{Complex{Float64},1}\n  └───── variable: cxh -> 65-element Array{Complex{Float64},1}\n"
+    @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element "*string(ArrayType(dev))*"{Float64,1}\n  ├───── variable: cx -> 128-element "*string(ArrayType(dev))*"{Float64,1}\n  ├───── variable: ch -> 65-element "*string(ArrayType(dev))*"{Complex{Float64},1}\n  └───── variable: cxh -> 65-element "*string(ArrayType(dev))*"{Complex{Float64},1}\n"
     @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: Complex{Float64}"
-    @test repr(prob) == "Problem\n  ├─────────── grid: grid (on CPU)\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"
+    @test repr(prob) == "Problem\n  ├─────────── grid: grid (on "*FourierFlows.griddevice(prob.grid)*")\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"
   end
 
 end # end loop over devices
