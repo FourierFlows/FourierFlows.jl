@@ -300,4 +300,13 @@ for dev in devices
     @test test_savediagnostic(dev)
   end
 
+  @time @testset "show() methods tests" begin
+    prob = Diffusion.Problem()
+    
+    @test repr(prob.params) == "Parameters\n  └───── parameter: κ -> Int64\n"
+    @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element Array{Float64,1}\n  ├───── variable: cx -> 128-element Array{Float64,1}\n  ├───── variable: ch -> 65-element Array{Complex{Float64},1}\n  └───── variable: cxh -> 65-element Array{Complex{Float64},1}\n"
+    @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: Complex{Float64}"
+    @test repr(prob) == "Problem\n  ├─────────── grid: grid (on CPU)\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"
+  end
+
 end # end loop over devices
