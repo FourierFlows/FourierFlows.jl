@@ -320,6 +320,7 @@ for dev in devices
     @test repr(prob.params) == "Parameters\n  ├───── parameter: κ1 -> Float64\n  └───── parameter: κ2 -> Float64\n"
     @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element "*string(ArrayType(dev))*"{Float64,1}\n  ├───── variable: cx -> 128-element "*string(ArrayType(dev))*"{Float64,1}\n  ├───── variable: ch -> 65-element "*string(ArrayType(dev))*"{Complex{Float64},1}\n  └───── variable: cxh -> 65-element "*string(ArrayType(dev))*"{Complex{Float64},1}\n"
     @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: Complex{Float64}"
+    @test repr(prob.clock) == "Clock\n  ├─── timestep dt: 0.01\n  ├────────── step: 0\n  └──────── time t: 0.0"
     @test repr(prob) == "Problem\n  ├─────────── grid: grid (on "*FourierFlows.griddevice(prob.grid)*")\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"
   end
 
