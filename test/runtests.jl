@@ -40,7 +40,7 @@ include("createffttestfunctions.jl")
 for dev in devices
   
   println("testing on " * string(typeof(dev)))
-
+  
   @time @testset "Grid tests" begin
     include("test_grid.jl")
     
@@ -105,6 +105,11 @@ for dev in devices
     @test testtypedonedgrid(dev, nx, Lx; T=T)
     @test testtypedtwodgrid(dev, nx, Lx, ny, Ly; T=T)
     @test testtypedthreedgrid(dev, nx, Lx, ny, Ly, nz, Lz; T=T)
+    
+    # Test show() methods
+    @test repr(g₁) == "OneDimensionalGrid\n  ├─────────── Device: "*FourierFlows.griddevice(g₁)*"\n  ├──────── FloatType: Float64\n  ├────────── size Lx: 6.283185307179586\n  ├──── resolution nx: 6\n  ├── grid spacing dx: 1.0471975511965976\n  └─────────── domain: x ∈ [-3.141592653589793, 2.094395102393195]"
+    @test repr(g₂) == "TwoDimensionalGrid\n  ├───────────────── Device: "*FourierFlows.griddevice(g₂)*"\n  ├────────────── FloatType: Float64\n  ├────────── size (Lx, Ly): (6.283185307179586, 12.566370614359172)\n  ├──── resolution (nx, ny): (6, 8)\n  ├── grid spacing (dx, dy): (1.0471975511965976, 1.5707963267948966)\n  └───────────────── domain: x ∈ [-3.141592653589793, 2.094395102393195]\n                             y ∈ [-6.283185307179586, 4.71238898038469]"
+    @test repr(g₃) == "ThreeDimensionalGrid\n  ├───────────────────── Device: "*FourierFlows.griddevice(g₃)*"\n  ├────────────────── FloatType: Float64\n  ├────────── size (Lx, Ly, Lz): (6.283185307179586, 12.566370614359172, 12.566370614359172)\n  ├──── resolution (nx, ny, nz): (6, 8, 10)\n  ├── grid spacing (dx, dy, dz): (1.0471975511965976, 1.5707963267948966, 0.3)\n  └────────────────────  domain: x ∈ [-3.141592653589793, 2.094395102393195]\n                                 y ∈ [-6.283185307179586, 4.71238898038469]\n                                 z ∈ [-1.5, 1.2]"
   end
 
   @time @testset "FFT tests" begin
@@ -301,9 +306,18 @@ for dev in devices
   end
 
   @time @testset "show() methods tests" begin
+
     prob = Diffusion.Problem()
+    struct Params <: AbstractParams
+      κ1 :: Float64
+      κ2 :: Float64
+    end
+    params = Params(1.0, 2.0)
     
-    @test repr(prob.params) == "Parameters\n  └───── parameter: κ -> Int64\n"
+    #create a problem with more than 1 parameters so all lines of show() method are tested
+    prob = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params)
+    
+    @test repr(prob.params) == "Parameters\n  ├───── parameter: κ1 -> Float64\n  └───── parameter: κ2 -> Float64\n"
     @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element Array{Float64,1}\n  ├───── variable: cx -> 128-element Array{Float64,1}\n  ├───── variable: ch -> 65-element Array{Complex{Float64},1}\n  └───── variable: cxh -> 65-element Array{Complex{Float64},1}\n"
     @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: Complex{Float64}"
     @test repr(prob) == "Problem\n  ├─────────── grid: grid (on CPU)\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"
