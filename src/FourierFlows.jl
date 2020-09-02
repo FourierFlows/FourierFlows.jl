@@ -145,11 +145,11 @@ function show(io::IO, vars::AbstractVars)
   showstring = ""
   for name in names[1:end-1]
     field = getproperty(vars, name)
-    showstring = string(showstring, "  ├───── variable: " * string(name) * ", type: ", eltype(field), "\n")
+    showstring = string(showstring, "  ├───── variable: " * string(name) * " -> ", summary(field), "\n")
   end
   name = names[end]
   field = getproperty(vars, name)
-  showstring = string(showstring, "  └───── variable: " * string(name) * ", type: ", eltype(field), "\n")
+  showstring = string(showstring, "  └───── variable: " * string(name) * " -> ", summary(field), "\n")
   
   return print(io, "Variables\n", showstring)
 end
@@ -159,11 +159,11 @@ function show(io::IO, params::AbstractParams)
   showstring = ""
   for name in names[1:end-1]
     field = getproperty(params, name)
-    showstring = string(showstring, "  ├───── parameter: " * string(name) * ", type: ", eltype(field), "\n")
+    showstring = string(showstring, "  ├───── parameter: " * string(name) * " -> ", summary(field), "\n")
   end
   name = names[end]
   field = getproperty(params, name)
-  showstring = string(showstring, "  └───── parameter: " * string(name) * ", type: ", eltype(field), "\n")
+  showstring = string(showstring, "  └───── parameter: " * string(name) * " -> ", summary(field), "\n")
   
   return print(io, "Parameters\n", showstring)
 end
