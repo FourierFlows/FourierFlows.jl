@@ -26,9 +26,6 @@ fltype(::Type{T})          where T<:AbstractFloat = T
 fltype(::Type{Complex{T}}) where T<:AbstractFloat = T
 fltype(T::Tuple) = fltype(T[1])
 
-cxeltype(x) = cxtype(innereltype(x))
-fleltype(x) = fltype(innereltype(x))
-
 """
     superzeros(T, A)
 
@@ -159,12 +156,12 @@ end
 
 function parsevalsum2(uh, g::OneDGrid)
   if size(uh, 1) == g.nkr # uh is conjugate symmetric
-    U = sum(abs2, CUDA.@allowscalar uh[1])   # k=0 modes
-    U += @views 2*sum(abs2, uh[2:end])       # sum k>0 modes twice
+    U = sum(abs2, uh[1])                  # k=0 modes
+    U += @views 2*sum(abs2, uh[2:end])    # sum k>0 modes twice
   else # count every mode once
     U = sum(abs2, uh)
   end
-  norm = g.Lx / g.nx^2 # normalization for dft
+  norm = g.Lx/g.nx^2 # normalization for dft
   norm*U
 end
 
@@ -181,40 +178,40 @@ function parsevalsum(uh, g::TwoDGrid)
     U = sum(uh)
   end
 
-  norm = g.Lx * g.Ly / (g.nx^2 * g.ny^2) # weird normalization for dft
+  norm = g.Lx*g.Ly/(g.nx^2*g.ny^2) # weird normalization for dft
   norm*real(U)
 end
 
 """
-    jacobianh(a, b, grid)
+    jacobianh(a, b, g)
 
-Returns the Fourier transform of the Jacobian of `a` and `b` on `grid`.
+Returns the transform of the Jacobian of two fields a, b on the grid g.
 """
-function jacobianh(a, b, grid::TwoDGrid)
+function jacobianh(a, b, g::TwoDGrid)
   if eltype(a) <: Real
     bh = rfft(b)
-    bx = irfft(im * grid.kr .* bh, grid.nx)
-    by = irfft(im * grid.l  .* bh, grid.nx)
-    return im * grid.kr .* rfft(a .* by) .- im * grid.l .* rfft(a .* bx)
+    bx = irfft(im*g.kr.*bh, g.nx)
+    by = irfft(im*g.l.*bh, g.nx)
+    return im*g.kr.*rfft(a.*by)-im*g.l.*rfft(a.*bx)
   else
-    # J(a, b) = ∂(a * ∂b/∂y)/∂x - ∂(a * ∂b/∂x)/∂y
+    # J(a, b) = dx(a b_y) - dy(a b_x)
     bh = fft(b)
-    bx = ifft(im * grid.k .* bh)
-    by = ifft(im * grid.l .* bh)
-    return im * grid.k .* fft(a .* by) .- im * grid.l .* fft(a .* bx)
+    bx = ifft(im*g.k.*bh)
+    by = ifft(im*g.l.*bh)
+    return im*g.k.*fft(a.*by).-im*g.l.*fft(a.*bx)
   end
 end
 
 """
-    jacobian(a, b, grid)
+    jacobian(a, b, g)
 
-Returns the Jacobian of `a` and `b` on `grid`.
+Returns the Jacobian of a and b.
 """
-function jacobian(a, b, grid::TwoDGrid)
+function jacobian(a, b, g::TwoDGrid)
   if eltype(a) <: Real
-   return irfft(jacobianh(a, b, grid), grid.nx)
+   return irfft(jacobianh(a, b, g), g.nx)
   else
-   return ifft(jacobianh(a, b, grid))
+   return ifft(jacobianh(a, b, g))
   end
 end
 
@@ -272,17 +269,10 @@ function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=2)
     ahρ =  ρ.*sum(ahρθ, dims=2)*dθ
   end
 
-  CUDA.@allowscalar ahρ[1] = ah[1, 1] # zeroth mode
+  ahρ[1] = ah[1, 1] # zeroth mode
 
   ρ, ahρ
 end
 
-"""
-    ArrayType(::Device)
-    ArrayType(::Device, T, dim)
-
-Returns the proper array type according to the Device chosen. That is `Array` for CPU and
-`CuArray` for GPU.
-"""
 ArrayType(::CPU) = Array
 ArrayType(::CPU, T, dim) = Array{T, dim}
