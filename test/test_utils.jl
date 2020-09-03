@@ -117,78 +117,9 @@ function test_zeros(T=Float64, dims=(13, 45))
   a1 == a2 && b1 == b2
 end
 
-abstract type TestVars <: AbstractVars end
-
-physicalvars = [:a, :b]
- fouriervars = [:ah, :bh]
-
-varspecs = cat(FourierFlows.getfieldspecs(physicalvars, :(Array{T,2})),
-  FourierFlows.getfieldspecs(fouriervars, :(Array{Complex{T},2})), dims=1)
-
-eval(FourierFlows.varsexpression(:VarsFields, physicalvars, fouriervars))
-eval(FourierFlows.varsexpression(:VarsFieldsParent, physicalvars, fouriervars; parent=:TestVars))
-
-eval(FourierFlows.varsexpression(:VarsSpecs, varspecs; typeparams=:T))
-eval(FourierFlows.varsexpression(:VarsSpecsParent, varspecs; parent=:TestVars, typeparams=:T))
-
-function test_varsexpression_fields(g::AbstractGrid{T}) where T
-  @zeros T (g.nx, g.ny) a b
-  @zeros Complex{T} (g.nkr, g.nl) ah bh
-  v1 = VarsFields(a, b, ah, bh)
-
-  (
-     typeof(v1.a) == Array{T,2} &&
-    typeof(v1.ah) == Array{Complex{T},2} &&
-       size(v1.a) == size(v1.b) &&
-      size(v1.ah) == size(v1.bh) &&
-       size(v1.a) == (g.nx, g.ny) &&
-      size(v1.ah) == (g.nkr, g.nl)
-  )
-end
-
-function test_varsexpression_fields_parent(g)
-  @zeros T (g.nx, g.ny) a b
-  @zeros Complex{T} (g.nkr, g.nl) ah bh
-  v2 = VarsFieldsParent(a, b, ah, bh)
-  (
-     typeof(v2.a) == Array{T,2} &&
-    typeof(v2.ah) == Array{Complex{T},2} &&
-       size(v2.a) == size(v2.b) &&
-      size(v2.ah) == size(v2.bh) &&
-       size(v2.a) == (g.nx, g.ny) &&
-      size(v2.ah) == (g.nkr, g.nl)
-  )
-end
-
-function test_varsexpression_specs(g::AbstractGrid{T}) where T
-  @zeros T (g.nx, g.ny) a b
-  @zeros Complex{T} (g.nkr, g.nl) ah bh
-  v1 = VarsSpecs(a, b, ah, bh)
-
-  (
-     typeof(v1.a) == Array{T,2} &&
-    typeof(v1.ah) == Array{Complex{T},2} &&
-       size(v1.a) == size(v1.b) &&
-      size(v1.ah) == size(v1.bh) &&
-       size(v1.a) == (g.nx, g.ny) &&
-      size(v1.ah) == (g.nkr, g.nl)
-  )
-end
-
-function test_varsexpression_specs_parent(g)
-  @zeros T (g.nx, g.ny) a b
-  @zeros Complex{T} (g.nkr, g.nl) ah bh
-  e2 = VarsSpecsParent(a, b, ah, bh)
-  (
-     typeof(v2.a) == Array{T,2} &&
-    typeof(v2.ah) == Array{Complex{T},2} &&
-       size(v2.a) == size(v2.b) &&
-      size(v2.ah) == size(v2.bh) &&
-       size(v2.a) == (g.nx, g.ny) &&
-      size(v2.ah) == (g.nkr, g.nl)
-  )
-end
-
+"""
+Test supersize().
+"""
 function test_supersize()
   a = rand(16, 16)
   dimsa = size(a)
@@ -199,6 +130,9 @@ function test_supersize()
   dimsa == supersize(a) && dimsb == supersize(b)
 end
 
+"""
+Test arraytype().
+"""
 function test_arraytype(dev::Device)
   dev==CPU() ? ArrayType(dev)==Array : ArrayType(dev)==CuArray
 end

@@ -249,8 +249,6 @@ for dev in devices
     @test test_jacobian(expkl1, expkl2, Jexpkl1expkl2, g) # Test J(exp1, exp2) = Jexp1exps2
 
     @test test_zeros()
-    @test test_varsexpression_fields(g)
-    @test test_varsexpression_specs(g)
     
     g = OneDGrid(dev, nx, Lx)
     σ = 0.5
