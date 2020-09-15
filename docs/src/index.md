@@ -8,10 +8,10 @@ Fourier-based pseudospectral methods that run seamlessly on CPUs and GPUs. We su
 ## Examples
 
 An example demonstrating how to code up and solve the linear shallow water equations is found
-in the [Examples](https://fourierflows.github.io/FourierFlowsDocumentation/stable/generated/OneDShallowWaterGeostrophicAdjustment/) section of the documentation.
+in the [Examples](generated/OneDShallowWaterGeostrophicAdjustment/) section of the documentation.
 
 !!! warning "Animations and Mac OS X Safari"
-    Often animations included the documentation, e.g., those in the [linear shallow water example](https://fourierflows.github.io/FourierFlowsDocumentation/stable/generated/OneDShallowWaterGeostrophicAdjustment/)
+    Often animations included the documentation, e.g., those in the [linear shallow water example](generated/OneDShallowWaterGeostrophicAdjustment/)
     don't show up in Safari. Until this issue is fixed we suggest using alternative browsers 
     to view the documentation.
 
