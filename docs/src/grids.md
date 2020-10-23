@@ -101,7 +101,7 @@ grid.rfftplan
 We use the convention that variables names with `h` at the end stand for variable-hat, i.e., $\hat{u}$  is the Fourier transform of $u$ and is stored in array `uh`. Since `u` is of size $n_x$, the real-Fourier transform should be of size $n_{kr} = n_x/2+1$.
 
 ```@example 1
-uh = zeros(FourierFlows.cxeltype(grid), grid.nkr)
+uh = zeros(cxtype(innereltype(grid)), grid.nkr)
 mul!(uh, grid.rfftplan, u)
 
 nothing # hide
