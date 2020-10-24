@@ -42,7 +42,7 @@ using Random
 # ## Coding up the equations
 # ### A demonstration of FourierFlows.jl framework
 #
-# What follows is a step-by-step tutorial showin how you can create your own
+# What follows is a step-by-step tutorial demonstrating how you can create your own
 # solver for an equation of your liking.
 
 # The basic building blocks for a `FourierFlows.Problem()` are:
