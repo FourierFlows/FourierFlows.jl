@@ -15,6 +15,8 @@ end
 ```
 
 ```jldoctest
+julia> using FourierFlows
+
 julia> nx, Lx = 64, 2π;
 
 julia> grid = OneDGrid(nx, Lx)
