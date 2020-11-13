@@ -104,6 +104,15 @@ We use the convention that variables names with `h` at the end stand for variabl
 
 ```@example 1
 uh = Complex.(zeros(grid.nkr))
+
+nothing # hide
+```
+
+The `FFT` transform is done as an in-place matrix multiplication using `mul!`.
+
+```@example 1
+using LinearAlgebra: mul!
+
 mul!(uh, grid.rfftplan, u)
 
 nothing # hide
@@ -153,6 +162,8 @@ Then the derivative in physical space, `∂ₓu`, is obtained with an inverse Fo
 tranform. The latter is obtained again using the `FFTW` plans but now via `ldiv!`:
 
 ```@example 1
+using LinearAlgebra: ldiv!
+
 ldiv!(∂ₓu, grid.rfftplan, ∂ₓuh)
 
 plot(grid.x, [u ∂ₓu], label=["u" "∂u/∂x"], xlabel="x")
