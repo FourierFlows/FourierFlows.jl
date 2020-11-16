@@ -126,7 +126,7 @@ function __init__()
   threads = Threads.nthreads()
   if threads > 1
     @info "FourierFlows will use $threads threads"
-    FFTW.set_num_threads(threads)
+    FFTW.set_num_threads(4*threads)
   end
 
   @has_cuda begin
