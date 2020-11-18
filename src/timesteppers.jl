@@ -112,6 +112,16 @@ function stepforward!(sol, clock, ts::ForwardEulerTimeStepper, eq, vars, params,
   return nothing
 end
 
+function stepforward!(sol::NamedTuple, clock, ts::ForwardEulerTimeStepper, eq, vars, params, grid)
+  eq.calcN!(ts.N, sol, clock.t, clock, vars, params, grid)
+  for (i, solᵢ) in enumerate(sol)
+      @. solᵢ += clock.dt * (eq.L[i] * solᵢ + ts.N[i])
+  end
+  clock.t += clock.dt
+  clock.step += 1
+  return nothing
+end
+
 """
     FilteredForwardEulerTimeStepper(eq, dev; filterkwargs...)
 
