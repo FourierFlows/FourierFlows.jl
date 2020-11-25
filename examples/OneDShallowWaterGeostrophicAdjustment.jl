@@ -68,7 +68,7 @@ end
 nothing #hide
 
 # Now the `Vars` struct that contains all variables used in this problem. For this
-# problem `Vars` includes the represenations of the flow fields in physical space 
+# problem `Vars` includes the representations of the flow fields in physical space 
 # `u`, `v` and `η` and their Fourier transforms `uh`, `vh`, and `ηh`.
 
 struct Vars{Aphys, Atrans} <: AbstractVars
@@ -231,12 +231,12 @@ nothing # hide
 # give them all as input to the `FourierFlows.Problem()` constructor to get a
 # problem struct, `prob`, that contains all of the above.
 
-grid = OneDGrid(dev, nx, Lx)
-params = Params(ν, nν, g, H, f)
-vars = Vars(dev, grid)
+    grid = OneDGrid(dev, nx, Lx)
+  params = Params(ν, nν, g, H, f)
+    vars = Vars(dev, grid)
 equation = Equation(dev, params, grid)
 
-prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
+    prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
 nothing #hide
 
 # ## Setting initial conditions
