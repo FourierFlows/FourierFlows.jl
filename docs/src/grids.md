@@ -15,6 +15,8 @@ end
 ```
 
 ```jldoctest
+julia> using FourierFlows
+
 julia> nx, Lx = 64, 2π;
 
 julia> grid = OneDGrid(nx, Lx)
@@ -101,7 +103,16 @@ grid.rfftplan
 We use the convention that variables names with `h` at the end stand for variable-hat, i.e., $\hat{u}$  is the Fourier transform of $u$ and is stored in array `uh`. Since `u` is of size $n_x$, the real-Fourier transform should be of size $n_{kr} = n_x/2+1$.
 
 ```@example 1
-uh = zeros(FourierFlows.cxeltype(grid), grid.nkr)
+uh = Complex.(zeros(grid.nkr))
+
+nothing # hide
+```
+
+The `FFT` transform is done as an in-place matrix multiplication using `mul!`.
+
+```@example 1
+using LinearAlgebra: mul!
+
 mul!(uh, grid.rfftplan, u)
 
 nothing # hide
@@ -151,6 +162,8 @@ Then the derivative in physical space, `∂ₓu`, is obtained with an inverse Fo
 tranform. The latter is obtained again using the `FFTW` plans but now via `ldiv!`:
 
 ```@example 1
+using LinearAlgebra: ldiv!
+
 ldiv!(∂ₓu, grid.rfftplan, ∂ₓuh)
 
 plot(grid.x, [u ∂ₓu], label=["u" "∂u/∂x"], xlabel="x")

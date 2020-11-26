@@ -1,7 +1,6 @@
 """
 Main module for `FourierFlows.jl` -- an ecosystem for solving partial differential equations 
-on periodic domains using Fourier-based pseudospectral methods."a documentation generation 
-package for Julia.
+on periodic domains using Fourier-based pseudospectral methods."
  
 # Exports
 $(EXPORTS)
@@ -69,9 +68,8 @@ using
   JLD2,
   Statistics,
   Interpolations,
-  CUDAapi,
-  DocStringExtensions,
-  Requires
+  CUDA,
+  DocStringExtensions
 
 import Base: resize!, getindex, setindex!, push!, append!, show
 
@@ -113,24 +111,32 @@ include("timesteppers.jl")
 # Physics
 include("diffusion.jl")
 
-# Import CUDA utilities if cuda is detected.
-if has_cuda()
-  try
-    using CuArrays # we have CUDA, so this should not fail
-  catch ex
-    # something is wrong with the user's set-up (or there's a bug in CuArrays)
-    @warn "CUDA is installed, but CuArrays.jl fails to load" exception=(ex, catch_backtrace())
-  end
+"""
+    @has_cuda expr
+A macro to compile and execute `expr` only if CUDA is installed and available.
+"""
+macro has_cuda(expr)
+  return has_cuda() ? :($(esc(expr))) : :(nothing)
 end
 
-
-macro has_cuda(ex)
-  return has_cuda() ? :($(esc(ex))) : :(nothing)
-end
-
+# CUDA functionality
+@has_cuda include("CuFourierFlows.jl")
 
 function __init__()
-  @require CuArrays = "3a865a2d-5b23-5a0f-bc46-62713ec82fae" include("CuFourierFlows.jl")
+  threads = Threads.nthreads()
+  if threads > 1
+    @info "FourierFlows will use $threads threads"
+    FFTW.set_num_threads(threads)
+  end
+
+  @has_cuda begin
+    @debug "CUDA-enabled GPU(s) detected:"
+    for (gpu, dev) in enumerate(CUDA.devices())
+      @debug "$dev: $(CUDA.name(dev))"
+    end
+
+    CUDA.allowscalar(false)
+  end
 end
 
 
@@ -139,11 +145,11 @@ function show(io::IO, vars::AbstractVars)
   showstring = ""
   for name in names[1:end-1]
     field = getproperty(vars, name)
-    showstring = string(showstring, "  ├───── variable: " * string(name) * ", size: ", size(field), ", type: ", eltype(field), "\n")
+    showstring = string(showstring, "  ├───── variable: " * string(name) * " -> ", summary(field), "\n")
   end
   name = names[end]
   field = getproperty(vars, name)
-  showstring = string(showstring, "  └───── variable: " * string(name) * ", size: ", size(field), ", type: ", eltype(field), "\n")
+  showstring = string(showstring, "  └───── variable: " * string(name) * " -> ", summary(field), "\n")
   
   return print(io, "Variables\n", showstring)
 end
@@ -153,11 +159,11 @@ function show(io::IO, params::AbstractParams)
   showstring = ""
   for name in names[1:end-1]
     field = getproperty(params, name)
-    showstring = string(showstring, "  ├───── parameter: " * string(name) * ", size: ", size(field), ", type: ", eltype(field), "\n")
+    showstring = string(showstring, "  ├───── parameter: " * string(name) * " -> ", summary(field), "\n")
   end
   name = names[end]
   field = getproperty(params, name)
-  showstring = string(showstring, "  └───── parameter: " * string(name) * ", size: ", size(field), ", type: ", eltype(field), "\n")
+  showstring = string(showstring, "  └───── parameter: " * string(name) * " -> ", summary(field), "\n")
   
   return print(io, "Parameters\n", showstring)
 end

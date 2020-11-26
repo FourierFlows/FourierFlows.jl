@@ -51,11 +51,13 @@ and no more.
 
 ## Usage
 
-See the documentation for tutorials on (i) how [construct grids](https://fourierflows.github.io/FourierFlowsDocumentation/stable/grids/) and use Fourier transform to compute derivatives and (ii) how to [set up a PDE](https://fourierflows.github.io/FourierFlowsDocumentation/stable/problem/), time-step it forward. and visualize.
+See the documentation for tutorials on (i) how [construct grids](https://fourierflows.github.io/FourierFlowsDocumentation/stable/grids/) and use Fourier transform to compute derivatives and (ii) how to [set up a PDE](https://fourierflows.github.io/FourierFlowsDocumentation/stable/problem/), time-step it forward. and visualize the output.
 
 ## Example(s)
 
-An example for solving the linear shallow water equations is [documented](https://fourierflows.github.io/FourierFlowsDocumentation/stable/generated/OneDShallowWaterGeostrophicAdjustment/). See also the child packages [GeophysicalFlows.jl][] for example usage of `FourierFlows.jl` for problems in Geophysical Fluid Dynamics.
+An example for coding up and solving the linear shallow water equations is [documented](https://fourierflows.github.io/FourierFlowsDocumentation/stable/generated/OneDShallowWaterGeostrophicAdjustment/).
+
+See also the child packages [GeophysicalFlows.jl][] for example usage of `FourierFlows.jl` for problems in Geophysical Fluid Dynamics.
 
 ## Developers
 
@@ -67,7 +69,7 @@ and [Navid C. Constantinou][] (@navidcy).
 
 The code is citable via [zenodo](https://zenodo.org). Please cite as:
 
-> Navid C. Constantinou & Gregory L. Wagner. (2020). FourierFlows/FourierFlows.jl: FourierFlows v0.5.2 (Version v0.5.2). Zenodo.  [http://doi.org/10.5281/zenodo.1161724](http://doi.org/10.5281/zenodo.1161724)
+> Navid C. Constantinou & Gregory L. Wagner. (2020). FourierFlows/FourierFlows.jl: FourierFlows v0.6.6 (Version v0.6.6). Zenodo.  [http://doi.org/10.5281/zenodo.1161724](http://doi.org/10.5281/zenodo.1161724)
 
 
 [Julia]: https://julialang.org/

@@ -29,7 +29,8 @@ OneDimensionalGrid
   └─────────── domain: x ∈ [-1.0, 0.875]
 ```
 
-gives out a grid whose arrays are `CuArrays`.
+gives out a grid whose arrays are `CuArrays`. (If you simply call `grid = OneDGrid(n, L)` it
+defaults to `grid = OneDGrid(CPU(), n, L)`.)
 
 When we construct the `Params`, `Vars`, and `Equation` for our problem we need to make sure
 that we create arrays on the appropriate device, i.e., `Arrays` for `CPU` or `CuArrays` for

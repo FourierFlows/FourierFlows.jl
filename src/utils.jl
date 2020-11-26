@@ -26,9 +26,6 @@ fltype(::Type{T})          where T<:AbstractFloat = T
 fltype(::Type{Complex{T}}) where T<:AbstractFloat = T
 fltype(T::Tuple) = fltype(T[1])
 
-cxeltype(x) = cxtype(innereltype(x))
-fleltype(x) = fltype(innereltype(x))
-
 """
     superzeros(T, A)
 
@@ -97,48 +94,6 @@ end
 
 
 """
-    varsexpression(name, fieldspecs; parent=:AbstractVars, typeparams=nothing)
-
-    varsexpression(name, fieldspecs...; parent=:AbstractVars, typeparams=nothing)
-
-    varsexpression(name, physicalfields, fourierfields; physicaltype=:Tp, fouriertype=:Tf,
-                   parent=:AbstractVars, typeparams=[physicaltype, fouriertype])
-
-Returns an expression that defines an `AbstractVars` type.
-"""
-function varsexpression(name, fieldspecs; parent=:AbstractVars,
-                        typeparams::Union{Nothing,Symbol,Array{Symbol,1}}=nothing)
-  if typeparams == nothing
-    signature = name
-  else
-    try
-      signature = Expr(:curly, name, typeparams...)
-    catch
-      signature = Expr(:curly, name, typeparams) # only one typeparam given?
-    end
-  end
-
-  fieldexprs = [ :( $(spec[1])::$(spec[2]); ) for spec in fieldspecs ]
-
-  :(struct $signature <: $parent; $(fieldexprs...); end)
-end
-
-function varsexpression(name, physicalfields, fourierfields; parent=:AbstractVars,  physicaltype=:Tp, fouriertype=:Tf,
-                        typeparams=[physicaltype, fouriertype])
-  physicalfieldspecs = getfieldspecs(physicalfields, physicaltype)
-   fourierfieldspecs = getfieldspecs(fourierfields, fouriertype)
-  varsexpression(name, cat(physicalfieldspecs, fourierfieldspecs; dims=1); parent=parent, typeparams=typeparams)
-end
-
-
-"""
-    getfieldspecs(fieldnames, fieldtype)
-
-Returns an array of (fieldname[i], fieldtype) tuples.
-"""
-getfieldspecs(fieldnames::AbstractArray, fieldtype) = [ (name, fieldtype) for name in fieldnames ]
-
-"""
     parsevalsum2(uh, g)
 
 Returns `∫|u|² = Σ|uh|²` on the grid `g`, where `uh` is the Fourier transform of `u`.
@@ -159,12 +114,12 @@ end
 
 function parsevalsum2(uh, g::OneDGrid)
   if size(uh, 1) == g.nkr # uh is conjugate symmetric
-    U = sum(abs2, uh[1])                  # k=0 modes
-    U += @views 2*sum(abs2, uh[2:end])    # sum k>0 modes twice
+    U = sum(abs2, CUDA.@allowscalar uh[1])   # k=0 modes
+    U += @views 2*sum(abs2, uh[2:end])       # sum k>0 modes twice
   else # count every mode once
     U = sum(abs2, uh)
   end
-  norm = g.Lx/g.nx^2 # normalization for dft
+  norm = g.Lx / g.nx^2 # normalization for dft
   norm*U
 end
 
@@ -181,40 +136,40 @@ function parsevalsum(uh, g::TwoDGrid)
     U = sum(uh)
   end
 
-  norm = g.Lx*g.Ly/(g.nx^2*g.ny^2) # weird normalization for dft
+  norm = g.Lx * g.Ly / (g.nx^2 * g.ny^2) # weird normalization for dft
   norm*real(U)
 end
 
 """
-    jacobianh(a, b, g)
+    jacobianh(a, b, grid)
 
-Returns the transform of the Jacobian of two fields a, b on the grid g.
+Returns the Fourier transform of the Jacobian of `a` and `b` on `grid`.
 """
-function jacobianh(a, b, g::TwoDGrid)
+function jacobianh(a, b, grid::TwoDGrid)
   if eltype(a) <: Real
     bh = rfft(b)
-    bx = irfft(im*g.kr.*bh, g.nx)
-    by = irfft(im*g.l.*bh, g.nx)
-    return im*g.kr.*rfft(a.*by)-im*g.l.*rfft(a.*bx)
+    bx = irfft(im * grid.kr .* bh, grid.nx)
+    by = irfft(im * grid.l  .* bh, grid.nx)
+    return im * grid.kr .* rfft(a .* by) .- im * grid.l .* rfft(a .* bx)
   else
-    # J(a, b) = dx(a b_y) - dy(a b_x)
+    # J(a, b) = ∂(a * ∂b/∂y)/∂x - ∂(a * ∂b/∂x)/∂y
     bh = fft(b)
-    bx = ifft(im*g.k.*bh)
-    by = ifft(im*g.l.*bh)
-    return im*g.k.*fft(a.*by).-im*g.l.*fft(a.*bx)
+    bx = ifft(im * grid.k .* bh)
+    by = ifft(im * grid.l .* bh)
+    return im * grid.k .* fft(a .* by) .- im * grid.l .* fft(a .* bx)
   end
 end
 
 """
-    jacobian(a, b, g)
+    jacobian(a, b, grid)
 
-Returns the Jacobian of a and b.
+Returns the Jacobian of `a` and `b` on `grid`.
 """
-function jacobian(a, b, g::TwoDGrid)
+function jacobian(a, b, grid::TwoDGrid)
   if eltype(a) <: Real
-   return irfft(jacobianh(a, b, g), g.nx)
+   return irfft(jacobianh(a, b, grid), grid.nx)
   else
-   return ifft(jacobianh(a, b, g))
+   return ifft(jacobianh(a, b, grid))
   end
 end
 
@@ -272,7 +227,7 @@ function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=2)
     ahρ =  ρ.*sum(ahρθ, dims=2)*dθ
   end
 
-  ahρ[1] = ah[1, 1] # zeroth mode
+  CUDA.@allowscalar ahρ[1] = ah[1, 1] # zeroth mode
 
   ρ, ahρ
 end

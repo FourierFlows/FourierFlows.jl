@@ -1,7 +1,7 @@
 # Problem
 
 ```@setup 2
-using FourierFlows,  Plots
+using FourierFlows, Plots
 using LinearAlgebra: mul!, ldiv!
 Plots.scalefontsizes(1.25)
 Plots.default(lw=2)
@@ -30,6 +30,8 @@ on domain $x \in [-1, 1]$.
 First, we construct our grid
 
 ```@example 2
+using FourierFlows
+
 nx, Lx = 32, 2.0
 
 grid = OneDGrid(nx, Lx)
@@ -100,6 +102,7 @@ and
 ```@example 2
 function calcN!(N, sol, t, clock, vars, params, grid)
   @. N = 0
+  
   return nothing
 end
 
@@ -122,6 +125,11 @@ stepper, dt = "ForwardEuler", 0.01
 prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 ```
 
+Currently, the implemented time-steppers are `ForwardEuler`, `AB3` (Adams-Basmforth 3rd order), 
+`RK4` (Runge-Kutta 4th order), and `ETDRK4` (Exponential Time Differencing Runge-Kutta 4th order).
+Also, there exist the `Filtered` versions of all the above, in which a high-wavenumber filter
+is applied after every time-step.
+
 By default, the `Problem` contructor takes `sol` a complex valued array same 
 size as `L` filed with zeros.
 
@@ -139,6 +147,8 @@ $u(x, t) = \mathrm{e}^{-\alpha t} \cos(\pi x)$.
 ```@example 2
 u0 = @. cos(π * grid.x)
 
+using LinearAlgebra: mul!
+
 mul!(prob.sol, grid.rfftplan, u0)
 
 nothing # hide
@@ -154,6 +164,8 @@ stepforward!(prob, 200)
 Now let's transform our state vector `sol` back in physical space
 
 ```@example 2
+using LinearAlgebra: ldiv!
+
 ldiv!(prob.vars.u, grid.rfftplan, prob.sol)
 
 nothing # hide
@@ -162,6 +174,8 @@ nothing # hide
 and finally, let's plot our solution and compare with the analytic solution:
 
 ```@example 2
+using Plots
+
 plot(grid.x, prob.vars.u,
         seriestype = :scatter,
              label = "numerical",         
