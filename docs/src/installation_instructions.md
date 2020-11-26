@@ -5,11 +5,11 @@ Julia command prompt)
 
 ```julia
 julia>]
-(v1.4) pkg> add FourierFlows
-(v1.4) pkg> instantiate
+(v1.5) pkg> add FourierFlows
+(v1.5) pkg> instantiate
 ```
 
-Then call
+Afterwards, press backspace to go back to Julia's REPL. Then call
 
 ```julia
 julia> using FourierFlows
@@ -20,5 +20,5 @@ and you are good to go.
 You can update to the latest tagged release from the package manager via
 
 ```julia
-(v1.4) pkg> update FourierFlows
+(v1.5) pkg> update FourierFlows
 ```

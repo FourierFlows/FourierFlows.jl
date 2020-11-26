@@ -7,32 +7,42 @@ The code solves partial differential equations of the form
 ```math
  \partial_t u = \mathcal{L}u + \mathcal{N}(u)\ ,
 ```
-using Fourier transforms on periodic domains. Above, $u(\bm{x}, t)$ is the state variable. 
-On the right-hand-side, term $\mathcal{L}u$ is a 'linear' part of the equation. The term 
-$\mathcal{N}(u)$ is, in general, a 'nonlinear' part.
+using Fourier transforms on periodic domains. Above, ``u(\bm{x}, t)`` is the state variable. 
+On the right-hand-side, term ``\mathcal{L} u`` is the 'linear' part of the equation. The term 
+``\mathcal{N}(u)`` is, in general, a 'nonlinear' part.
 
-In FourierFlows.jl, $\mathcal{L}u$ is specified by the various modules by prescribing the
-linear operator $\mathcal{L}$ as an array of the same dimension as $u$. The nonlinear term 
-$\mathcal{N}(u)$ is specified via a function that takes $u$ as its argument.
+In FourierFlows.jl, ``\mathcal{L} u`` is specified by the various modules by prescribing the
+linear operator ``\mathcal{L}`` as an array of the same dimension as ``u``. The nonlinear term 
+``\mathcal{N}(u)`` is specified via a function that takes ``u`` as its argument.
 
 Boundary conditions in all spatial dimensions are periodic. That allows us to expand all 
-variables using a Fourier decomposition. For example, if $u$ has only one spatial depends 
-only in one spatial dimension, $x$, which is defined over the domain $x\in[0, L_x]$, then:
+variables using a Fourier decomposition. For example, if ``u`` depends only in one spatial 
+dimension, ``x``, defined over the domain ``x \in [0, L_x]``, then:
 
 ```math
-u(x, t) = \sum_{k} \hat{u}(k, t)\,\mathrm{e}^{\mathrm{i} k x}\ ,
+u(x, t) = \sum_{k_x} \hat{u}(k_x, t) \, \mathrm{e}^{\mathrm{i} k_x x} \ ,
 ```
 
-where wavenumbers $k$ take the values $\tfrac{2\pi}{L_x}\{0,\pm 1,\pm 2,\dots\}$. In this 
-way, the differential equation transforms to:
+where wavenumbers ``k_x`` take the values ``\tfrac{2\pi}{L_x}\{0,\pm 1,\pm 2,\dots\}``. When we 
+further consider that ``x`` takes discrete values over ``[0, L_x]``, e.g., ``x_j``,
+``j = 0, 1, \dots, n_x``, then only ``n_x`` wavenumbers are indepented. If we denote ``u_j(t) \equiv u(x_j, t)`` and ``\hat{u}_k(t) \equiv \hat{u}(\tfrac{2\pi}{L_x} k, t)`` with ``k`` integer, then the 
+Fourier sum above truncates to:
+
+```math
+u_j(t) = \sum_{k=-n_x/2}^{n_x/2-1} \hat{u}_k(t)\,\mathrm{e}^{2\pi \mathrm{i} k x_j / L_x}\ .
+```
+
+(Above we assumed that ``n_x`` is even.)
+
+Applying the Fourier transform as above, the partial differential equation transforms to:
 
 ```math
  \partial_t \hat{u} = \hat{\mathcal{L}} \hat{u} + \widehat{ \mathcal{N}(u) }\ ,
 ```
 
-where $\hat{\mathcal{L}}$ above denotes the linear operator in Fourier space.
+where ``\hat{\mathcal{L}}`` above denotes the linear operator in Fourier space.
 
-Equations are oftentimes time-stepped forward in Fourier space. Doing so, $\hat{u}(k, t)$ 
+Equations are oftentimes time-stepped forward in Fourier space. Doing so, ``\hat{u}_k(t)`` 
 becomes our state variable, i.e., the array with all Fourier coefficients of the solution 
-$u$. Although time-stepping in Fourier space is by no means a restriction of the code, it 
+``u``. Although time-stepping in Fourier space is by no means a restriction of the code, it 
 usually enhances performance.
