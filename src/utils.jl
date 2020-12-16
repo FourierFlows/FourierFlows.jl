@@ -232,9 +232,9 @@ function radialspectrum(ah, grid::TwoDGrid; n=nothing, m=nothing, refinement=2)
   # ahρ = ρ ∫ ah(ρ,θ) dθ  =>  Ah = ∫ ahρ dρ = ∫∫ ah dk dl
   dθ = θ[2]-θ[1]
   if size(ah)[1] == grid.nkr
-    ahρ = 2ρ. * sum(ahρθ, dims=2) * dθ # multiply by 2 for conjugate symmetry
+    ahρ = 2ρ .* sum(ahρθ, dims=2) * dθ # multiply by 2 for conjugate symmetry
   else
-    ahρ =  ρ. * sum(ahρθ, dims=2) * dθ
+    ahρ =  ρ .* sum(ahρθ, dims=2) * dθ
   end
 
   CUDA.@allowscalar ahρ[1] = ah[1, 1] # zeroth mode
