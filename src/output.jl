@@ -117,7 +117,6 @@ Save certain aspects of a problem.
 function saveproblem(prob, filename)
   file = jldopen(filename, "a+")
   for field in [:eqn, :clock, :grid, :params]
-    if !(typeof(getfield(params, :rfftplan)) <: FFTW.FFTWPlan)
     savefields(file, getfield(prob, field))
   end
   close(file)
