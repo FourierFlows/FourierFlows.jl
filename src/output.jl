@@ -51,7 +51,8 @@ function saveoutput(out)
       path["$groupname/$fieldname/$(out.prob.clock.step)"] = out[fieldname]
     end
   end
-  nothing
+  
+  return nothing
 end
 
 """
@@ -71,36 +72,41 @@ function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, grid::TwoDGrid)
   for field in [:nx, :ny, :Lx, :Ly, :x, :y]
     savefield(file, "grid/$field", getfield(grid, field))
   end
-  nothing
+  
+  return nothing
 end
 
 function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, grid::OneDGrid)
   for field in [:nx, :Lx, :x]
     savefield(file, "grid/$field", getfield(grid, field))
   end
-  nothing
+  
+  return nothing
 end
 
 function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, params::AbstractParams)
   for name in fieldnames(typeof(params))
     field = getfield(params, name)
-    if !(typeof(field) <: Function)
+    if !(typeof(field) <: Function) || !(typeof(field) <: FFTW.FFTWPlan)
       savefield(file, "params/$name", field)
     end
   end
-  nothing
+  
+  return nothing
 end
 
 function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, clock::Clock)
   file["clock/dt"] = clock.dt
-  nothing
+  
+  return nothing
 end
 
 function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, eqn::Equation)
   savefield(file, "eqn/L", eqn.L)
   file["eqn/dims"] = eqn.dims
   file["eqn/T"] = eqn.T
-  nothing
+  
+  return nothing
 end
 
 """
@@ -111,10 +117,12 @@ Save certain aspects of a problem.
 function saveproblem(prob, filename)
   file = jldopen(filename, "a+")
   for field in [:eqn, :clock, :grid, :params]
+    if !(typeof(getfield(params, :rfftplan)) <: FFTW.FFTWPlan)
     savefields(file, getfield(prob, field))
   end
   close(file)
-  nothing
+
+  return nothing
 end
 
 saveproblem(out::Output) = saveproblem(out.prob, out.path)
@@ -130,5 +138,6 @@ function savediagnostic(diag, diagname, filename)
     file["diags/$diagname/t"] = diag.t
     file["diags/$diagname/data"] = diag.data
   end
-  nothing
+  
+  return nothing
 end
