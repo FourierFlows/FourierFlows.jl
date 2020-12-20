@@ -87,7 +87,7 @@ end
 function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, params::AbstractParams)
   for name in fieldnames(typeof(params))
     field = getfield(params, name)
-    if !(typeof(field) <: Function) || !(typeof(field) <: FFTW.FFTWPlan)
+    if !(typeof(field) <: Function) && !(typeof(field) <: FFTW.FFTWPlan)
       savefield(file, "params/$name", field)
     end
   end
