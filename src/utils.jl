@@ -233,6 +233,23 @@ function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=2)
 end
 
 """
+    on_grid(func, grid)
+
+Returns an array, of the ArrayType of the device `grid` lives on, that contains the values of
+function `func` evaluated on the `grid`.
+"""
+on_grid(func, grid::OneDGrid{T, A}) where {T, A} = @. func(grid.x)
+
+function on_grid(func, grid::TwoDGrid{T, A}) where {T, A}
+  x, y = gridpoints(grid)
+  return func.(x, y)
+end
+function on_grid(func, grid::ThreeDGrid{T, A}) where {T, A}
+  x, y, z = gridpoints(grid)
+  return func.(x, y, z)
+end
+
+"""
     ArrayType(::Device)
     ArrayType(::Device, T, dim)
 
