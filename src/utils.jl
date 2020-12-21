@@ -47,15 +47,17 @@ Generate arrays `b, c, d...` with the super-dimensions of `a` and innereltype `T
 macro superzeros(T, ad, vars...)
   expr = Expr(:block)
   append!(expr.args, [:( $(esc(var)) = superzeros($(esc(T)), $(esc(ad))); ) for var in vars])
-  expr
+  
+  return expr
 end
 supersize(a) = Tuple([size(ai) for ai in a])
 supersize(a::Array{T}) where T<:Number = size(a)
 
 macro createarrays(T, dims, vars...)
   expr = Expr(:block)
-  append!(expr.args, [:($(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
-  expr
+  append!(expr.args, [:( $(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
+  
+  return expr
 end
 
 """
@@ -66,8 +68,9 @@ Create arrays of all zeros with element type `T`, size `dims`, and global names
 """
 macro zeros(T, dims, vars...)
   expr = Expr(:block)
-  append!(expr.args, [:($(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
-  expr
+  append!(expr.args, [:( $(esc(var)) = zeros($(esc(T)), $(esc(dims))); ) for var in vars])
+  
+  return expr
 end
 
 Base.zeros(::CPU, T, dims) = zeros(T, dims)
@@ -88,56 +91,63 @@ Create arrays of all zeros with element type `T`, size `dims`, and global names
 """
 macro devzeros(dev, T, dims, vars...)
   expr = Expr(:block)
-  append!(expr.args, [:($(esc(var)) = zeros($(esc(dev))(), $(esc(T)), $(esc(dims))); ) for var in vars])
-  expr
+  append!(expr.args, [:( $(esc(var)) = zeros($(esc(dev))(), $(esc(T)), $(esc(dims))); ) for var in vars])
+  
+  return expr
 end
 
 
 """
-    parsevalsum2(uh, g)
+    parsevalsum2(uh, grid)
 
-Returns `∫|u|² = Σ|uh|²` on the grid `g`, where `uh` is the Fourier transform of `u`.
+Returns `∫ u² dxdy = Σ|uh|²` on the `grid`. More specifically, it returns
+```math
+\\int u(\\boldsymbol{x})^2 \\, \\mathrm{d}^2 \\boldsymbol{x} = \\sum_{\\boldsymbol{k}} |\\hat{u}_{\\boldsymbol{k}}|^2 L_x L_y
+```
+where ``\\hat{u}_{\\boldsymbol{k}} =`` `uh / grid.nx`. 
 """
-function parsevalsum2(uh, g::TwoDGrid)
-
-  if size(uh, 1) == g.nkr # uh is in conjugate symmetric form
+function parsevalsum2(uh, grid::TwoDGrid)
+  if size(uh, 1) == grid.nkr # uh is in conjugate symmetric form
     U = sum(abs2, uh[1, :])           # k=0 modes
     U += 2*sum(abs2, uh[2:end, :])    # sum k>0 modes twice
   else # count every mode once
     U = sum(abs2, uh)
   end
 
-  norm = g.Lx * g.Ly / (g.nx^2 * g.ny^2) # normalization for dft
+  norm = grid.Lx * grid.Ly / (grid.nx^2 * grid.ny^2) # normalization for dft
 
   return norm * U
 end
 
-function parsevalsum2(uh, g::OneDGrid)
-  if size(uh, 1) == g.nkr # uh is conjugate symmetric
+function parsevalsum2(uh, grid::OneDGrid)
+  if size(uh, 1) == grid.nkr                 # uh is conjugate symmetric
     U = sum(abs2, CUDA.@allowscalar uh[1])   # k=0 modes
-    U += @views 2*sum(abs2, uh[2:end])       # sum k>0 modes twice
+    U += @views 2 * sum(abs2, uh[2:end])     # sum k>0 modes twice
   else # count every mode once
     U = sum(abs2, uh)
   end
-  norm = g.Lx / g.nx^2 # normalization for dft
-  norm*U
+  
+  norm = grid.Lx / grid.nx^2 # normalization for dft
+  
+  return norm * U
 end
 
 """
-    parsevalsum(uh, g)
+    parsevalsum(uh, grid)
 
-Returns `real(Σ uh)` on the grid `g`.
+Returns `real(Σ uh)` on the `grid`.
 """
-function parsevalsum(uh, g::TwoDGrid)
-  if size(uh, 1) == g.nkr       # uh is conjugate symmetric
+function parsevalsum(uh, grid::TwoDGrid)
+  if size(uh, 1) == grid.nkr    # uh is conjugate symmetric
     U = sum(uh[1, :])           # k=0 modes
     U += 2*sum(uh[2:end, :])    # sum k>0 modes twice
   else # count every mode once
     U = sum(uh)
   end
 
-  norm = g.Lx * g.Ly / (g.nx^2 * g.ny^2) # weird normalization for dft
-  norm*real(U)
+  norm = grid.Lx * grid.Ly / (grid.nx^2 * grid.ny^2) # weird normalization for dft
+  
+  return norm * real(U)
 end
 
 """
@@ -167,76 +177,76 @@ Returns the Jacobian of `a` and `b` on `grid`.
 """
 function jacobian(a, b, grid::TwoDGrid)
   if eltype(a) <: Real
-   return irfft(jacobianh(a, b, grid), grid.nx)
+    return irfft(jacobianh(a, b, grid), grid.nx)
   else
-   return ifft(jacobianh(a, b, grid))
+    return ifft(jacobianh(a, b, grid))
   end
 end
 
 """
-    radialspectrum(ah, g; n=nothing, m=nothing, refinement=2)
+    radialspectrum(ah, grid; n=nothing, m=nothing, refinement=2)
 
-Returns `aρ = ∫ ah(ρ,θ) ρ dρ dθ`, the radial spectrum of `ah` known on the
-Cartesian wavenumber grid (k,l).
+Returns `aρ = ∫ ah(ρ, θ) ρ dρ dθ`, the radial spectrum of `ah` known on the
+Cartesian wavenumber grid `(k, l)`.
 
-`aρ` is found by intepolating `ah` onto a polar wavenumber grid (ρ,θ), and
-then integrating over `θ` to find `aρ`. The default resolution (n,m) for the
-polar wave number grid is `n=refinement*maximum(nk, nl),
-m=refinement*maximum(nk, nl)`, where `refinement=2` by default. If
+`aρ` is found by intepolating `ah` onto a polar wavenumber grid (ρ, θ), and
+then integrating over `θ` to find `aρ`. The default resolution (n, m) for the
+polar wave number grid is `n=refinement * maximum(nk, nl),
+m = refinement * maximum(nk, nl)`, where `refinement = 2` by default. If
 `ah` is in conjugate symmetric form only the upper half plane in `θ` is
 represented on the polar grid.
 """
-function radialspectrum(ah, g::TwoDGrid; n=nothing, m=nothing, refinement=2)
+function radialspectrum(ah, grid::TwoDGrid; n=nothing, m=nothing, refinement=2)
 
-  n = n == nothing ? refinement*maximum([g.nk, g.nl]) : n
-  m = m == nothing ? refinement*maximum([g.nk, g.nl]) : m
+  n = n == nothing ? refinement * maximum([grid.nk, grid.nl]) : n
+  m = m == nothing ? refinement * maximum([grid.nk, grid.nl]) : m
 
   # Calcualte shifted k and l
-  lshift = range(-g.nl/2+1, stop=g.nl/2, length=g.nl)*2π/g.Ly
+  lshift = range(-grid.nl/2+1, stop=grid.nl/2, length=grid.nl) * 2π/grid.Ly
 
-  if size(ah)[1] == g.nkr # conjugate symmetric form
+  if size(ah)[1] == grid.nkr # conjugate symmetric form
     m = Int(m/2)                         # => half resolution in θ
     θ = range(-π/2, stop=π/2, length=m)  # θ-grid from k=0 to max(kr)
     ahshift = fftshift(ah, 2)            # shifted ah
-    kshift = range(0, stop=g.nkr-1, length=g.nkr)*2π/g.Lx
+    kshift = range(0, stop=grid.nkr-1, length=grid.nkr) * 2π/grid.Lx
   else # ordinary form
     θ = range(0, stop=2π, length=m)      # θ grid
     ahshift = fftshift(ah, [1, 2])       # shifted ah
-    kshift = range(-g.nk/2+1, stop=g.nk/2, length=g.nk)*2π/g.Lx
+    kshift = range(-grid.nk/2+1, stop=grid.nk/2, length=grid.nk) * 2π/grid.Lx
   end
 
   # Interpolator for ah
   itp = scale(interpolate(ahshift, BSpline(Linear())), kshift, lshift)
 
   # Get radial wavenumber vector
-  ρmax = minimum([(g.nk/2-1)*2π/g.Lx, (g.nl/2-1)*2π/g.Ly])
+  ρmax = minimum([(grid.nk/2-1) * 2π/grid.Lx, (grid.nl/2-1) * 2π/grid.Ly])
   ρ = range(0, stop=ρmax, length=n)
 
   # Interpolate ah onto fine grid in (ρ,θ).
   ahρθ = zeros(eltype(ahshift), (n, m))
 
   for i₁=2:n, i₂=1:m # ignore zeroth mode; i₁≥2
-    ahρθ[i₁, i₂] = itp(ρ[i₁]*cos(θ[i₂]), ρ[i₁]*sin(θ[i₂]))
+    ahρθ[i₁, i₂] = itp(ρ[i₁] * cos(θ[i₂]), ρ[i₁] * sin(θ[i₂]))
   end
 
   # ahρ = ρ ∫ ah(ρ,θ) dθ  =>  Ah = ∫ ahρ dρ = ∫∫ ah dk dl
   dθ = θ[2]-θ[1]
-  if size(ah)[1] == g.nkr
-    ahρ = 2ρ.*sum(ahρθ, dims=2)*dθ # multiply by 2 for conjugate symmetry
+  if size(ah)[1] == grid.nkr
+    ahρ = 2ρ .* sum(ahρθ, dims=2) * dθ # multiply by 2 for conjugate symmetry
   else
-    ahρ =  ρ.*sum(ahρθ, dims=2)*dθ
+    ahρ =  ρ .* sum(ahρθ, dims=2) * dθ
   end
 
   CUDA.@allowscalar ahρ[1] = ah[1, 1] # zeroth mode
 
-  ρ, ahρ
+  return ρ, ahρ
 end
 
 """
     ArrayType(::Device)
     ArrayType(::Device, T, dim)
 
-Returns the proper array type according to the Device chosen. That is `Array` for CPU and
+Returns the proper array type according to the Device chosen, i.e., `Array` for CPU and
 `CuArray` for GPU.
 """
 ArrayType(::CPU) = Array
