@@ -18,7 +18,7 @@ It's easy to construct a grid that lives on the GPU. Calling:
 ```julia
 dev = GPU()
 n, L = 16, 2.0
-grid = OneDGrid(GPU(), n, L)
+grid = OneDGrid(dev, n, L)
 
 OneDimensionalGrid
   ├─────────── Device: GPU
