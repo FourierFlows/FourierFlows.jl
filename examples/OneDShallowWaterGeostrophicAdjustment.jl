@@ -5,11 +5,11 @@
 # 
 #
 # This example solves the linear 1D rotating shallow water equations
-# for the $u(x, t)$, $v(x, t)$ and the surface surface elevation $\eta(x, t)$, 
-# for a fluid with constant rest-depth $H$. That is, the total fluid's depth 
-# is $H+\eta(x,t)$ with $|\eta| \ll H$.
+# for the ``u(x, t)``, ``v(x, t)`` and the surface surface elevation ``\eta(x, t)``, 
+# for a fluid with constant rest-depth ``H``. That is, the total fluid's depth 
+# is ``H + \eta(x, t)`` with ``|\eta| \ll H``.
 # 
-# The linearized equations for the evolution of $u$, $v$, $\eta$ are:
+# The linearized equations for the evolution of ``u``, ``v``, ``\eta`` are:
 #
 # ```math
 # \begin{aligned}
@@ -19,18 +19,18 @@
 # \end{aligned}
 # ```
 #
-# Above, $g$ is the gravitational acceleration, $f$ is the  Coriolis parameter,
-# and $\mathrm{D}$ indicates a hyperviscous linear operator of the
-# form $(-1)^{n_\nu} \nu \nabla^{2 n_\nu}$, with $\nu$ the viscosity
-# coefficient and $n_\nu$ the order of the operator.
+# Above, ``g`` is the gravitational acceleration, ``f`` is the  Coriolis parameter,
+# and ``\mathrm{D}`` indicates a hyperviscous linear operator of the
+# form ``(-1)^{n_\nu} \nu \nabla^{2 n_\nu}``, with ``\nu`` the viscosity
+# coefficient and ``n_\nu`` the order of the operator.
 #
-# Rotation introduces the deformation length scale, $L_d = \sqrt{g H}/f$. 
-# Disturbances with length scales much smaller than $L_d$ don't "feel" 
+# Rotation introduces the deformation length scale, ``L_d = \sqrt{g H} / f``. 
+# Disturbances with length scales much smaller than ``L_d`` don't "feel" 
 # the rotation and propagate as inertia-gravity waves. Disturbances with 
-# length scales comparable or larger than $L_d$ should be approximately 
+# length scales comparable or larger than ``L_d`` should be approximately 
 # in geostrophic balance, i.e., the Coriolis acceleration
-# $f\widehat{\boldsymbol{z}} \times \boldsymbol{u}$ should be in approximate 
-# balance with the pressure gradient $-g \boldsymbol{\nabla} \eta$.
+# ``f\widehat{\boldsymbol{z}} \times \boldsymbol{u}`` should be in approximate 
+# balance with the pressure gradient ``-g \boldsymbol{\nabla} \eta``.
 
 
 using FourierFlows, Plots
@@ -49,7 +49,7 @@ using Random
 # - `Grid` struct containining the physical and wavenumber grid for the problem,
 # - `Params` struct containining all the parameters of the problem,
 # - `Vars` struct containining arrays with the variables used in the problem,
-# - `Equation` struct containining the coefficients of the linear operator $\mathcal{L}$ and the function that computes the nonlinear terms, usually named `calcN!()`.
+# - `Equation` struct containining the coefficients of the linear operator ``\mathcal{L}`` and the function that computes the nonlinear terms, usually named `calcN!()`.
 # 
 # The `Grid` structure is provided by FourierFlows.jl. One simply has to call one of
 # the `OneDGrid()`, `TwoDGrid()`, or `ThreeDGrid()` grid constructors, depending
@@ -106,8 +106,8 @@ nothing #hide
 # \end{aligned}
 # ```
 # Although, e.g., terms involving the Coriolis accelaration are, in principle, 
-# linear we include them in the nonlinear term $\mathcal{N}$ because they render 
-# the linear operator $\mathcal{L}$ non-diagonal.
+# linear we include them in the nonlinear term ``\mathcal{N}`` because they render 
+# the linear operator ``\mathcal{L}`` non-diagonal.
 #
 # With these in mind, we construct function `calcN!` that computes the nonlinear terms.
 #
@@ -150,8 +150,8 @@ nothing #hide
 
 # We now have all necessary building blocks to construct a `FourierFlows.Problem`. 
 # It would be useful, however, to define some more "helper functions". For example,
-# a function that updates all variables given the solution `sol` which comprises $\hat{u}$,
-# $\hat{v}$ and $\hat{\eta}$:
+# a function that updates all variables given the solution `sol` which comprises ``\hat{u}``,
+# ``\hat{v}`` and ``\hat{\eta}``:
 
 """
     updatevars!(prob)
@@ -241,8 +241,8 @@ nothing #hide
 
 # ## Setting initial conditions
 
-# For initial condition we take the fluid at rest ($u=v=0$). The free surface elevation
-# is perturbed from its rest position ($\eta=0$); the disturbance we impose a Gaussian 
+# For initial condition we take the fluid at rest (``u = v = 0``). The free surface elevation
+# is perturbed from its rest position (``\eta=0``); the disturbance we impose a Gaussian 
 # bump with half-width greater than the deformation radius and on top of that we 
 # superimpose some random noise with scales smaller than the deformation radius. 
 # We mask the small-scale perturbations so that it only applies in the central part 
@@ -257,7 +257,7 @@ gaussian_width = 6e3
 gaussian_amplitude = 3.0
 gaussian_bump = @. gaussian_amplitude * exp( - grid.x^2 / (2*gaussian_width^2) )
 
-plot(grid.x / 1e3, gaussian_bump,    # divide with 1e3 to convert m -> km
+plot(grid.x/1e3, gaussian_bump,    # divide with 1e3 to convert m -> km
      color = :black,
     legend = false,
  linewidth = 2,
@@ -268,14 +268,14 @@ plot(grid.x / 1e3, gaussian_bump,    # divide with 1e3 to convert m -> km
      title = "A gaussian bump with half-width ≈ "*string(gaussian_width/1e3)*" km",
       size = (600, 260))
 
-# Next the noisy perturbation. The `mask` is simply a product of $\tanh$ functions.
+# Next the noisy perturbation. The `mask` is simply a product of ``\tanh`` functions.
 mask = @. 1/4 * (1 + tanh( -(grid.x-100e3)/10e3 )) * (1 + tanh( (grid.x+100e3)/10e3 ))
 
 noise_amplitude = 0.1 # the amplitude of the noise for η(x,t=0) (m)
 η_noise = noise_amplitude * Random.randn(size(grid.x))
 @. η_noise *= mask    # mask the noise
 
-plot_noise = plot(grid.x / 1e3, η_noise,    # divide with 1e3 to convert m -> km
+plot_noise = plot(grid.x/1e3, η_noise,    # divide with 1e3 to convert m -> km
                  color = :black,
                 legend = :false,
              linewidth = [3 2],
@@ -285,7 +285,7 @@ plot_noise = plot(grid.x / 1e3, η_noise,    # divide with 1e3 to convert m -> k
                 xlabel = "x [km]",
                 ylabel = "η [m]")
 
-plot_mask = plot(grid.x / 1e3, mask,    # divide with 1e3 to convert m -> km
+plot_mask = plot(grid.x/1e3, mask,    # divide with 1e3 to convert m -> km
                  color = :gray,
                 legend = :false,
              linewidth = [3 2],
@@ -308,7 +308,7 @@ v0 = zeros(grid.nx)
 
 set_uvη!(prob, u0, v0, η0)
 
-plot(grid.x / 1e3, η0,    # divide with 1e3 to convert m -> km
+plot(grid.x/1e3, η0,    # divide with 1e3 to convert m -> km
      color = :black,
     legend = false,
  linewidth = 2,
@@ -322,11 +322,11 @@ plot(grid.x / 1e3, η0,    # divide with 1e3 to convert m -> km
 
 # ## Visualizing the simulation
 
-# We define a function that plots the surface elevation $\eta$ and the 
-# depth-integrated velocities $u$ and $v$. 
+# We define a function that plots the surface elevation ``\eta`` and the 
+# depth-integrated velocities ``u`` and ``v``.
 
 function plot_output(prob)
-  plot_η = plot(grid.x / 1e3, vars.η,    # divide with 1e3 to convert m -> km
+  plot_η = plot(grid.x/1e3, vars.η,    # divide with 1e3 to convert m -> km
                  color = :blue,
                 legend = false,
              linewidth = 2,
@@ -335,7 +335,7 @@ function plot_output(prob)
                 xlabel = "x [km]",
                 ylabel = "η [m]")
 
-  plot_u = plot(grid.x / 1e3, vars.u,    # divide with 1e3 to convert m -> km
+  plot_u = plot(grid.x/1e3, vars.u,    # divide with 1e3 to convert m -> km
                  color = :red,
                 legend = false,
              linewidth = 2,
@@ -345,7 +345,7 @@ function plot_output(prob)
                 xlabel = "x [km]",
                 ylabel = "u [m s⁻¹]")
 
-  plot_v = plot(grid.x / 1e3, vars.v,    # divide with 1e3 to convert m -> km
+  plot_v = plot(grid.x/1e3, vars.v,    # divide with 1e3 to convert m -> km
                  color = :green,
                 legend = false,
              linewidth = 2,
@@ -379,23 +379,23 @@ anim = @animate for j=0:nsteps
   updatevars!(prob)
     
   p[2][1][:y] = vars.η    # updates the plot for η
-  p[2][:title] = "t = "*@sprintf("%.1f", prob.clock.t / 60 )*" min" # updates time in the title
+  p[2][:title] = "t = " * @sprintf("%.1f", prob.clock.t/60) * " min" # updates time in the title
   p[3][1][:y] = vars.u    # updates the plot for u
   p[4][1][:y] = vars.v    # updates the plot for v
 
   stepforward!(prob)
 end
 
-mp4(anim, "onedshallowwater.mp4", fps=18)
+gif(anim, "onedshallowwater.gif", fps=18)
 
 
 # ## Geostrophic balance
 
-# It is instructive to compare the solution for $v$ with its geostrophically balanced approximation, $f \widehat{\boldsymbol{z}} \times \boldsymbol{u}_{\rm geostrophic} = - g \boldsymbol{\nabla} \eta$, i.e.,
+# It is instructive to compare the solution for ``v`` with its geostrophically balanced approximation, ``f \widehat{\boldsymbol{z}} \times \boldsymbol{u}_{\rm geostrophic} = - g \boldsymbol{\nabla} \eta``, i.e.,
 #
 # ```math
-# v_{\rm geostrophic} =  \frac{g}{f} \frac{\partial \eta}{\partial x}, \\
-# u_{\rm geostrophic} = -\frac{g}{f} \frac{\partial \eta}{\partial y} = 0.
+# v_{\rm geostrophic} =   \frac{g}{f} \frac{\partial \eta}{\partial x} \ , \\
+# u_{\rm geostrophic} = - \frac{g}{f} \frac{\partial \eta}{\partial y} = 0 \ .
 # ```
 # The geostrophic solution should capture well the the behavior of the flow in 
 # the center of the domain, after small-scale disturbances propagate away.
@@ -403,7 +403,7 @@ mp4(anim, "onedshallowwater.mp4", fps=18)
 u_geostrophic = zeros(grid.nx)  # -g/f ∂η/∂y = 0
 v_geostrophic = params.g/params.f * irfft(im * grid.kr .* vars.ηh, grid.nx)  #g/f ∂η/∂x
 
-plot_u = plot(grid.x / 1e3, [vars.u u_geostrophic],    # divide with 1e3 to convert m -> km
+plot_u = plot(grid.x/1e3, [vars.u u_geostrophic],    # divide with 1e3 to convert m -> km
                  color = [:red :purple],
                 labels = ["u" "- g/f ∂η/∂y"],
              linewidth = [3 2],
@@ -413,7 +413,7 @@ plot_u = plot(grid.x / 1e3, [vars.u u_geostrophic],    # divide with 1e3 to conv
                 xlabel = "x [km]",
                 ylabel = "u [m s⁻¹]")
 
-plot_v = plot(grid.x / 1e3, [vars.v v_geostrophic],    # divide with 1e3 to convert m -> km
+plot_v = plot(grid.x/1e3, [vars.v v_geostrophic],    # divide with 1e3 to convert m -> km
                  color = [:green :purple],
                 labels = ["v" "g/f ∂η/∂x"],
              linewidth = [3 2],
