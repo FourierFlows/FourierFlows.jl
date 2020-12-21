@@ -6,7 +6,7 @@ authors = ["Gregory L. Wagner <wagner.greg@gmail.com>", "Navid C. Constantinou <
 description = "Tools for solving partial differential equations on periodic domains using Fourier-based pseudospectral methods."
 documentation = "https://fourierflows.github.io/FourierFlowsDocumentation/stable/"
 repository = "https://github.com/FourierFlows/FourierFlows.jl"
-version = "0.6.6"
+version = "0.6.7"
 
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
