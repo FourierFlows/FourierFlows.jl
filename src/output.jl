@@ -84,10 +84,12 @@ function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, grid::OneDGrid)
   return nothing
 end
 
+forbidden_output_types = [Function, FFTW.FFTWPlan]
+
 function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, params::AbstractParams)
   for name in fieldnames(typeof(params))
     field = getfield(params, name)
-    if !(typeof(field) <: Function) && !(typeof(field) <: FFTW.FFTWPlan)
+    if !(any([typeof(field) <: forbidden for forbidden in forbidden_output_types]))
       savefield(file, "params/$name", field)
     end
   end
