@@ -5,9 +5,10 @@ Define output for `prob` with fields and functions that calculate
 the output in the list of tuples `fieldtuples = (fldname, func)...`.
 """
 struct Output
-  prob::Problem
-  path::String
-  fields::Dict{Symbol,Function}
+    prob :: Problem
+    path :: String
+  fields :: Dict{Symbol,Function}
+  
   function Output(prob, path, fields::Dict{Symbol,Function})
     truepath = uniquepath(withoutjld2(path)*".jld2") # ensure path ends in ".jld2"
     new(prob, truepath, fields)
@@ -23,14 +24,17 @@ Returns `path` with a number appended if `isfile(path)`, incremented until `path
 """
 function uniquepath(path)
   n = 1
+  
   if isfile(path)
     path = withoutjld2(path) * "_$n.jld2"
   end
+  
   while isfile(path)
     n += 1
     path = withoutjld2(path)[1:end-length("_$(n-1)")] * "_$n.jld2"
   end
-  path
+  
+  return path
 end
     
 Output(prob, path, fields...) = Output(prob, path, Dict{Symbol,Function}([fields...]))
