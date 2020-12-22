@@ -139,8 +139,8 @@ function test_savefields(dev::Device=CPU(); parameter=2.2)
   filename = joinpath(".", "testsavefields.jld2")
   if isfile(filename); GC.gc(); rm(filename); end
   
-  # out = Output(prob, filename)
   file = jldopen(filename, "a+")
   FourierFlows.savefields(file, params)
+  
   return file
 end
