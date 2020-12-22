@@ -37,7 +37,7 @@ function test_getindex(dev::Device=CPU())
   
   ctest = devzeros(dev, Float64, (prob.grid.nx, ))
   CUDA.@allowscalar ctest[3] = π
-  prob.vars.c .= ctest
+  @. prob.vars.c = ctest
   
   get_c(prob) = prob.vars.c
   out = Output(prob, filename, (:c, get_c))
@@ -113,11 +113,34 @@ function test_savediagnostic(dev::Device=CPU())
   expectedsteps = cat([0], freq:freq:nsteps, dims=1)
   
   get_c(prob) = prob.vars.c
-  out = Output(prob, filename, (:c, get_c))  
+  out = Output(prob, filename, (:c, get_c))
   saveproblem(out)
   savediagnostic(d, "mydiagnostic", filename)
   
   file = jldopen(filename)
   
   return isfile(filename) && file["diags"]["mydiagnostic"]["steps"]==expectedsteps
+end
+
+struct TestbedParams{T, Trfft} <: AbstractParams
+  parameter :: T
+       func :: Function
+       plan :: Trfft
+end
+
+function test_savefields(dev::Device=CPU(); parameter=2.2)  
+  func(x) = sin(x^2)
+  
+  grid = TwoDGrid(dev, 6, 2π)
+  plan = grid.rfftplan
+  
+  params = TestbedParams(parameter, func, plan)
+  
+  filename = joinpath(".", "testsavefields.jld2")
+  if isfile(filename); GC.gc(); rm(filename); end
+  
+  # out = Output(prob, filename)
+  file = jldopen(filename, "a+")
+  FourierFlows.savefields(file, params)
+  return file
 end

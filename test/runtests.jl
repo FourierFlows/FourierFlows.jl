@@ -305,6 +305,12 @@ for dev in devices
     @test test_saveproblem_saveoutput(dev)
     @test test_saveproblemTwoDGrid(dev)
     @test test_savediagnostic(dev)
+    
+    file = test_savefields(dev; parameter=2.2)
+    @test file["params"]["parameter"] == 2.2
+    @test_throws KeyError file["params"]["func"] == func
+    @test_throws KeyError file["params"]["plan"] == plan
+    close(file)
   end
 
   @time @testset "show() methods tests" begin
