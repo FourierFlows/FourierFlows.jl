@@ -159,11 +159,11 @@ function show(io::IO, params::AbstractParams)
   showstring = ""
   for name in names[1:end-1]
     field = getproperty(params, name)
-    showstring = string(showstring, "  ├───── parameter: " * string(name) * " -> ", summary(field), "\n")
+    showstring = string(showstring, "  ├───── parameter: " * string(name) * " -> ", typeof(field) <: Function ? "Function" : summary(field), "\n")
   end
   name = names[end]
   field = getproperty(params, name)
-  showstring = string(showstring, "  └───── parameter: " * string(name) * " -> ", summary(field), "\n")
+  showstring = string(showstring, "  └───── parameter: " * string(name) * " -> ", typeof(field) <: Function ? "Function" : summary(field), "\n")
   
   return print(io, "Parameters\n", showstring)
 end
