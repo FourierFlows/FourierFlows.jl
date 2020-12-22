@@ -88,7 +88,7 @@ function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, grid::OneDGrid)
   return nothing
 end
 
-forbidden_output_types = [Function, FFTW.FFTWPlan]
+forbidden_output_types = [Function, FFTW.FFTWPlan, CUDA.CUFFT.CuFFTPlan]
 
 function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, params::AbstractParams)
   for name in fieldnames(typeof(params))
