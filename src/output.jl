@@ -10,7 +10,7 @@ struct Output
   fields :: Dict{Symbol,Function}
   
   function Output(prob, path, fields::Dict{Symbol,Function})
-    truepath = uniquepath(withoutjld2(path)*".jld2") # ensure path ends in ".jld2"
+    truepath = uniquepath(withoutjld2(path) * ".jld2") # ensure path ends in ".jld2"
     new(prob, truepath, fields)
   end
 end
