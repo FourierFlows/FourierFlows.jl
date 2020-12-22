@@ -12,11 +12,6 @@ At the moment we have a lot of modules for solving PDEs related geophysical sett
 An example demonstrating how to code up and solve the linear shallow water equations is found
 in the [Examples](generated/OneDShallowWaterGeostrophicAdjustment/) section of the documentation.
 
-!!! warning "Animations and Mac OS X Safari"
-    Often animations included the documentation, e.g., those in the [linear shallow water example](generated/OneDShallowWaterGeostrophicAdjustment/)
-    don't show up in Safari. Until this issue is fixed we suggest using alternative browsers 
-    to view the documentation.
-
 For more examples of `FourierFlows.jl` in action, see the child packages
 [`GeophysicalFlows.jl`](https://github.com/FourierFlows/GeophysicalFlows.jl) or [`PassiveTracerFlows.jl`](https://github.com/FourierFlows/PassiveTracerFlows.jl).
 

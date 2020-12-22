@@ -3,10 +3,10 @@ uuid = "2aec4490-903f-5c70-9b11-9bed06a700e1"
 keywords = ["julia", "PDE", "partial differential equations", "spectral methods"]
 license = "MIT"
 authors = ["Gregory L. Wagner <wagner.greg@gmail.com>", "Navid C. Constantinou <navidcy@gmail.com>"]
-description = "Tools for solving partial differential equations on periodic domains using Fourier-based pseudospectral methods."
+description = "Tools for building fast, hackable, pseudospectral partial differential equation solvers on periodic domains."
 documentation = "https://fourierflows.github.io/FourierFlowsDocumentation/stable/"
 repository = "https://github.com/FourierFlows/FourierFlows.jl"
-version = "0.6.6"
+version = "0.6.7"
 
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
