@@ -1,0 +1,19 @@
+env:
+  JULIA_VERSION: "1.5.3"
+  JULIA_MINOR_VERSION: "1.5"
+  GKSwstype: "100" # See: https://github.com/jheinen/GR.jl/issues/278
+
+
+steps:
+  - label: "Julia 1.5"
+    plugins:
+      - JuliaCI/julia#v0.5:
+          version: 1.5
+      - JuliaCI/julia-test#v0.3: ~
+      - JuliaCI/julia-coverage#v0.3:
+          codecov: true
+    agents:
+      queue: "juliagpu"
+      cuda: "*"
+    if: build.message !~ /\[skip tests\]/
+    timeout_in_minutes: 60
