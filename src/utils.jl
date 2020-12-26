@@ -244,6 +244,7 @@ function on_grid(func, grid::TwoDGrid)
   x, y = gridpoints(grid)
   return func.(x, y)
 end
+
 function on_grid(func, grid::ThreeDGrid)
   x, y, z = gridpoints(grid)
   return func.(x, y, z)
