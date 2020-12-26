@@ -140,3 +140,22 @@ end
 function test_arraytypeTdim(dev::Device, T=Float64, dim=1)
   dev==CPU() ? ArrayType(dev, T, dim)<:Array{T, dim} : ArrayType(dev, T, dim)<:CuArray{T, dim}
 end
+
+function test_ongrid(dev::Device)
+  nx, ny, nz = 6, 8, 10
+  Lx, Ly, Lz = 2π, 2.0, 3.0
+  
+  g₁ = OneDGrid(nx, Lx)
+  X₁ = ArrayType(dev)(g₁.x)
+  f₁(x) = x^2
+  
+  g₂ = TwoDGrid(nx, Lx, ny, Ly)
+  X₂, Y₂ = gridpoints(g₂)
+  f₂(x, y) = x^2 - y^3
+  
+  g₃ = ThreeDGrid(nx, Lx, ny, Ly, nz, Lz)
+  X₃, Y₃, Z₃ = gridpoints(g₃)
+  f₃(x, y, z) = x^2 - y^3 + sin(z)
+  
+  return (FourierFlows.on_grid(f₁, g₁) == f₁.(X₁) && FourierFlows.on_grid(f₂, g₂) == f₂.(X₂, Y₂) && FourierFlows.on_grid(f₃, g₃) == f₃.(X₃, Y₃, Z₃))
+end
