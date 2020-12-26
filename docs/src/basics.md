@@ -5,22 +5,22 @@
 The code solves partial differential equations of the form
 
 ```math
- \partial_t u = \mathcal{L}u + \mathcal{N}(u)\ ,
+ \partial_t u = Lu + N(u)\ ,
 ```
 using Fourier transforms on periodic domains. Above, ``u(\bm{x}, t)`` is the state variable. 
-On the right-hand-side, term ``\mathcal{L} u`` is the 'linear' part of the equation. The term 
-``\mathcal{N}(u)`` is, in general, a 'nonlinear' part.
+On the right-hand-side, term ``L u`` is the 'linear' part of the equation. The term 
+``N(u)`` is, in general, a 'nonlinear' part.
 
-In FourierFlows.jl, ``\mathcal{L} u`` is specified by the various modules by prescribing the
-linear operator ``\mathcal{L}`` as an array of the same dimension as ``u``. The nonlinear term 
-``\mathcal{N}(u)`` is specified via a function that takes ``u`` as its argument.
+In FourierFlows.jl, ``L u`` is specified by the various modules by prescribing the
+linear operator ``L`` as an array of the same dimension as ``u``. The nonlinear term 
+``N(u)`` is specified via a function that takes ``u`` as its argument.
 
 Boundary conditions in all spatial dimensions are periodic. That allows us to expand all 
 variables using a Fourier decomposition. For example, if ``u`` depends only in one spatial 
 dimension, ``x``, defined over the domain ``x \in [0, L_x]``, then:
 
 ```math
-u(x, t) = \sum_{k_x} \hat{u}(k_x, t) \, \mathrm{e}^{\mathrm{i} k_x x} \ ,
+u(x, t) = \sum_{k_x} \hat{u}(k_x, t) \, e^{i k_x x} \ ,
 ```
 
 where wavenumbers ``k_x`` take the values ``\tfrac{2\pi}{L_x}\{0,\pm 1,\pm 2,\dots\}``. When we 
@@ -29,7 +29,7 @@ further consider that ``x`` takes discrete values over ``[0, L_x]``, e.g., ``x_j
 Fourier sum above truncates to:
 
 ```math
-u_j(t) = \sum_{k=-n_x/2}^{n_x/2-1} \hat{u}_k(t)\,\mathrm{e}^{2\pi \mathrm{i} k x_j / L_x}\ .
+u_j(t) = \sum_{k=-n_x/2}^{n_x/2-1} \hat{u}_k(t)\,e^{2\pi i k x_j / L_x}\ .
 ```
 
 (Above we assumed that ``n_x`` is even.)
@@ -37,10 +37,10 @@ u_j(t) = \sum_{k=-n_x/2}^{n_x/2-1} \hat{u}_k(t)\,\mathrm{e}^{2\pi \mathrm{i} k x
 Applying the Fourier transform as above, the partial differential equation transforms to:
 
 ```math
- \partial_t \hat{u} = \hat{\mathcal{L}} \hat{u} + \widehat{ \mathcal{N}(u) }\ ,
+ \partial_t \hat{u} = \hat{L} \hat{u} + \widehat{ N(u) }\ ,
 ```
 
-where ``\hat{\mathcal{L}}`` above denotes the linear operator in Fourier space.
+where ``\hat{L}`` above denotes the linear operator in Fourier space.
 
 Equations are oftentimes time-stepped forward in Fourier space. Doing so, ``\hat{u}_k(t)`` 
 becomes our state variable, i.e., the array with all Fourier coefficients of the solution 

@@ -19,18 +19,17 @@
 # \end{aligned}
 # ```
 #
-# Above, ``g`` is the gravitational acceleration, ``f`` is the  Coriolis parameter,
-# and ``\mathrm{D}`` indicates a hyperviscous linear operator of the
-# form ``(-1)^{n_\nu} \nu \nabla^{2 n_\nu}``, with ``\nu`` the viscosity
-# coefficient and ``n_\nu`` the order of the operator.
+# Above, ``g`` is the gravitational acceleration, ``f`` is the  Coriolis parameter, and 
+# ``\mathrm{D}`` indicates a hyperviscous linear operator of the form ``(-1)^{n_ν} ν \nabla^{2 n_ν}``, 
+# with ``ν`` the viscosity coefficient and ``n_ν`` the order of the operator.
 #
 # Rotation introduces the deformation length scale, ``L_d = \sqrt{g H} / f``. 
 # Disturbances with length scales much smaller than ``L_d`` don't "feel" 
 # the rotation and propagate as inertia-gravity waves. Disturbances with 
 # length scales comparable or larger than ``L_d`` should be approximately 
 # in geostrophic balance, i.e., the Coriolis acceleration
-# ``f\widehat{\boldsymbol{z}} \times \boldsymbol{u}`` should be in approximate 
-# balance with the pressure gradient ``-g \boldsymbol{\nabla} \eta``.
+# ``f\widehat{z}} \times \bm{u}`` should be in approximate 
+# balance with the pressure gradient ``-g \bm{\nabla} \eta``.
 
 
 using FourierFlows, Plots
@@ -49,7 +48,7 @@ using Random
 # - `Grid` struct containining the physical and wavenumber grid for the problem,
 # - `Params` struct containining all the parameters of the problem,
 # - `Vars` struct containining arrays with the variables used in the problem,
-# - `Equation` struct containining the coefficients of the linear operator ``\mathcal{L}`` and the function that computes the nonlinear terms, usually named `calcN!()`.
+# - `Equation` struct containining the coefficients of the linear operator ``L`` and the function that computes the nonlinear terms, usually named `calcN!()`.
 # 
 # The `Grid` structure is provided by FourierFlows.jl. One simply has to call one of
 # the `OneDGrid()`, `TwoDGrid()`, or `ThreeDGrid()` grid constructors, depending
@@ -100,14 +99,14 @@ nothing #hide
 #
 # ```math
 # \begin{aligned}
-# \frac{\partial \hat{u}}{\partial t} & = \underbrace{ f \hat{v} - \mathrm{i} k g \hat{\eta} }_{\mathcal{N}_u} \; \underbrace{- \nu |\boldsymbol{k}|^2 }_{\mathcal{L}_u} \hat{u}, \\
-# \frac{\partial \hat{v}}{\partial t} & = \underbrace{ - f \hat{u} }_{\mathcal{N}_v} \; \underbrace{- \nu |\boldsymbol{k}|^2 }_{\mathcal{L}_v} \hat{v}, \\
-# \frac{\partial \hat{\eta}}{\partial t} & = \underbrace{ - \mathrm{i} k H \hat{u} }_{\mathcal{N}_{\eta}} \; \underbrace{- \nu |\boldsymbol{k}|^2 }_{\mathcal{L}_{\eta}} \hat{\eta}.
+# \frac{\partial \hat{u}}{\partial t} & = \underbrace{ f \hat{v} - i k g \hat{\eta} }_{N_u} \; \underbrace{- \nu |\bm{k}|^2 }_{L_u} \hat{u}, \\
+# \frac{\partial \hat{v}}{\partial t} & = \underbrace{ - f \hat{u} }_{N_v} \; \underbrace{- \nu |\bm{k}|^2 }_{L_v} \hat{v}, \\
+# \frac{\partial \hat{\eta}}{\partial t} & = \underbrace{ - i k H \hat{u} }_{N_{\eta}} \; \underbrace{- \nu |\bm{k}|^2 }_{L_{\eta}} \hat{\eta}.
 # \end{aligned}
 # ```
 # Although, e.g., terms involving the Coriolis accelaration are, in principle, 
-# linear we include them in the nonlinear term ``\mathcal{N}`` because they render 
-# the linear operator ``\mathcal{L}`` non-diagonal.
+# linear we include them in the nonlinear term ``N`` because they render 
+# the linear operator ``L`` non-diagonal.
 #
 # With these in mind, we construct function `calcN!` that computes the nonlinear terms.
 #
@@ -391,7 +390,7 @@ gif(anim, "onedshallowwater.gif", fps=18)
 
 # ## Geostrophic balance
 
-# It is instructive to compare the solution for ``v`` with its geostrophically balanced approximation, ``f \widehat{\boldsymbol{z}} \times \boldsymbol{u}_{\rm geostrophic} = - g \boldsymbol{\nabla} \eta``, i.e.,
+# It is instructive to compare the solution for ``v`` with its geostrophically balanced approximation, ``f \widehat{\bm{z}} \times \bm{u}_{\rm geostrophic} = - g \bm{\nabla} \eta``, i.e.,
 #
 # ```math
 # v_{\rm geostrophic} =   \frac{g}{f} \frac{\partial \eta}{\partial x} \ , \\
@@ -401,7 +400,7 @@ gif(anim, "onedshallowwater.gif", fps=18)
 # the center of the domain, after small-scale disturbances propagate away.
 
 u_geostrophic = zeros(grid.nx)  # -g/f ∂η/∂y = 0
-v_geostrophic = params.g/params.f * irfft(im * grid.kr .* vars.ηh, grid.nx)  #g/f ∂η/∂x
+v_geostrophic = params.g / params.f * irfft(im * grid.kr .* vars.ηh, grid.nx)  #g/f ∂η/∂x
 
 plot_u = plot(grid.x/1e3, [vars.u u_geostrophic],    # divide with 1e3 to convert m -> km
                  color = [:red :purple],

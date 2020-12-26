@@ -142,7 +142,7 @@ prob.clock
 
 Let's initiate our problem with, e.g., $u(x, 0) = \cos(\pi x)$, integrate up 
 to $t = 2$ and compare our numerical solution with the analytic solution 
-$u(x, t) = \mathrm{e}^{-\alpha t} \cos(\pi x)$.
+$u(x, t) = e^{-\alpha t} \cos(\pi x)$.
 
 ```@example 2
 u0 = @. cos(π * grid.x)
@@ -180,7 +180,7 @@ plot(grid.x, prob.vars.u,
         seriestype = :scatter,
              label = "numerical",         
             xlabel = "x",
-             title = "u(x, t="*string(round(prob.clock.t, digits=2))*")")
+             title = "u(x, t=" * string(round(prob.clock.t, digits=2)) * ")")
 
 plot!(x -> cos(π * x) * exp(-prob.params.α * 2), -1, 1, label = "analytical")
 
