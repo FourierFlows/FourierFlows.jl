@@ -153,7 +153,7 @@ mul!(prob.sol, grid.rfftplan, u0)
 nothing # hide
 ```
 
-Since our time-step is chosen `dt=0.01`, we need to step forward `prob` for ``200`` 
+Since our time-step is chosen `dt = 0.01`, we need to step forward `prob` for ``200`` 
 time-steps to reach ``t = 2``.
 
 ```@example 2
@@ -176,10 +176,10 @@ and finally, let's plot our solution and compare with the analytic solution:
 using Plots
 
 plot(grid.x, prob.vars.u,
-        seriestype = :scatter,
-             label = "numerical",         
-            xlabel = "x",
-             title = "u(x, t=" * string(round(prob.clock.t, digits=2)) * ")")
+     seriestype = :scatter,
+          label = "numerical",         
+         xlabel = "x",
+          title = "u(x, t=" * string(round(prob.clock.t, digits=2)) * ")")
 
 plot!(x -> cos(π * x) * exp(-prob.params.α * 2), -1, 1, label = "analytical")
 
