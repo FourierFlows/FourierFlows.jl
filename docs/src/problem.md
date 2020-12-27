@@ -7,8 +7,8 @@ Plots.scalefontsizes(1.25)
 Plots.default(lw=2)
 ```
 
-Everything needed to solve a PDE in `FourierFlows.jl` is gathered in a `Problem` 
-struct. The `Problem` struct contains various other structs, namely:
+Everything needed to solve a PDE in `FourierFlows.jl` is gathered in a `Problem` struct. T
+he `Problem` struct contains various other structs, namely:
 
 - grid (`grid`),
 - parameters (`params`),
@@ -18,14 +18,14 @@ struct. The `Problem` struct contains various other structs, namely:
 - clock (`clock`), and
 - state vector (`sol`).
 
-Here, we demonstrate we can construct such a `Problem` struct to solve the 1D
+Here, we demonstrate how we can construct such a `Problem` struct to solve the simple 1D 
 equation:
 
 ```math
 \partial_t u(x, t) = - \alpha \, u(x, t) ,
 ```
 
-on domain $x \in [-1, 1]$.
+on domain ``x \in [-1, 1]``.
 
 First, we construct our grid
 
@@ -37,7 +37,7 @@ nx, Lx = 32, 2.0
 grid = OneDGrid(nx, Lx)
 ```
 
-Our problem has a parameter $\alpha$. We create a `Params` struct by:
+Our problem has a parameter ``\alpha``. We create a `Params` struct by:
 
 ```@example 2
 struct Params <: AbstractParams
@@ -45,8 +45,8 @@ struct Params <: AbstractParams
 end
 ```
 
-and then we use the `struct`'s constructor to populate our struct with the 
-parameter value, e.g., $\alpha=0.1$:
+and then we use the `struct`'s constructor to populate our struct with the parameter value, 
+e.g., ``\alpha = 0.1``:
 
 ```@example 2
 α = 0.1
@@ -54,17 +54,16 @@ parameter value, e.g., $\alpha=0.1$:
 params = Params(α)
 ```
 
-The particular equation is so simple that it makes no difference 
-performance-wise whether we time-step it in physical or in wavenumber space. 
-For, PDEs with nonlinear terms time-stepping in wavenumbers spaces is much more
-efficient. Thus, for demonstration purposes, we will time-step the equation in 
-wavenumber space, i.e.,
+The particular equation is so simple that it makes no difference performance-wise whether 
+we time-step it in physical or in wavenumber space. For, PDEs with nonlinear terms 
+time-stepping in wavenumbers spaces is much more efficient. Thus, for demonstration purposes, 
+we will time-step the equation in wavenumber space, i.e.,
 
 ```math
 \partial_t \hat{u}(k, t) = - \alpha \, \hat{u}(k, t) .
 ```
 
-The variables involved are $u$ and its Fourier transform $\hat{u}$. Thus, we 
+The variables involved are ``u`` and its Fourier transform ``\hat{u}``. Thus, we 
 construct the `vars` struct as:
 
 ```@example 2
@@ -140,9 +139,9 @@ The `problem.clock` contains the time-step `dt` and the current `step` and time
 prob.clock
 ```
 
-Let's initiate our problem with, e.g., $u(x, 0) = \cos(\pi x)$, integrate up 
-to $t = 2$ and compare our numerical solution with the analytic solution 
-$u(x, t) = e^{-\alpha t} \cos(\pi x)$.
+Let's initiate our problem with, e.g., ``u(x, 0) = \cos(\pi x)``, integrate up 
+to ``t = 2`` and compare our numerical solution with the analytic solution 
+``u(x, t) = e^{-\alpha t} \cos(\pi x)``.
 
 ```@example 2
 u0 = @. cos(π * grid.x)
@@ -154,8 +153,8 @@ mul!(prob.sol, grid.rfftplan, u0)
 nothing # hide
 ```
 
-Since our time-step is chosen `dt=0.01`, we need to step forward `prob` for $200$ 
-time-steps to reach $t=2$.
+Since our time-step is chosen `dt=0.01`, we need to step forward `prob` for ``200`` 
+time-steps to reach ``t = 2``.
 
 ```@example 2
 stepforward!(prob, 200)
@@ -191,8 +190,8 @@ savefig("assets/plot4.svg"); nothing # hide
 
 ![](assets/plot4.svg)
 
-A good practice is to encompass all functions and type definitions related 
-with a PDE under a module, e.g.,
+A good practice is to encompass all functions and type definitions related with a PDE under 
+a single module, e.g.,
 
 ```julia
 module mypde
@@ -203,5 +202,5 @@ end # end module
 ```
 
 For a more elaborate example we urge you to have a look at the `Diffusion` 
-module found in `src/diffusion.jl` and also to the modules included in the 
+module located at `src/diffusion.jl` and also to the modules included in the 
 child package [GeophysicalFlows.jl](https://github.com/FourierFlows/GeophysicalFlows.jl).
