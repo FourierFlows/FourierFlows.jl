@@ -32,7 +32,7 @@ OneDimensionalGrid
 The grid domain is, by default, constructed symmetrically around ``x = 0``, but this 
 can be altered using the `x0` keyword argument of `OneDGrid` constructor. The grid 
 spacing is ``L_x / n_x``. Note that the last point of the domain is a grid-spacing 
-before ``L_x/2``. This is because periodicity implies that the value of any field 
+before ``L_x / 2``. This is because periodicity implies that the value of any field 
 at the end-points of the domain are equal and, therefore, grid-point values at
 both these end-points are reduntant.
 
@@ -68,7 +68,7 @@ savefig("assets/plot1.svg"); nothing # hide
 Function ``u(x)`` can be expanded in Fourier series:
 
 ```math
-u(x) = \sum_{k} \hat{u}(k)\,e^{i k x},
+u(x) = \sum_{k} \hat{u}(k) \, e^{i k x} ,
 ```
 
 where ``\hat{u}(k)`` is Fourier transform of ``u(x)`` and ``k`` the discrete set of 
@@ -76,17 +76,16 @@ wavenumbers that fit within our finite domain. We can compute ``\hat{u}`` via a
 Fast Fourier Transform (FFT). Since our `u` array is real-valued then we should 
 use the `real-FFT` algorithm. The real-valued FFT transform only saves the Fourier 
 coefficients for ``k \ge 0``; the coefficients for negative wavenumbers can be 
-.
+obtained via ``\hat{u}(-k) = \hat{u}(k)^{*}``.
 
-
-The wavenumbers used in FFT are contained in `grid.k` ordered as:
+The wavenumbers used in FFT are contained in `grid.k` and they are ordered as:
 ```math
-\frac{2\pi}{L_x}\{0, 1, \dots, n_x/2-1, -n_x/2, -n_x/2+1, \dots, -1\},
+\frac{2\pi}{L_x} \{ 0, 1, \dots, n_x/2-1, -n_x/2, -n_x/2+1, \dots, -1 \} ,
 ```
-while the wavenumbers for real FFT are in `grid.kr` as:
+while the wavenumbers for real FFT are in `grid.kr`:
 
 ```math
-\frac{2\pi}{L_x}\{0, 1, \dots, n_x/2-1\}.
+\frac{2\pi}{L_x} \{ 0, 1, \dots, n_x/2-1 \} .
 ```
 
 
