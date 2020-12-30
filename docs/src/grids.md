@@ -5,7 +5,7 @@
 one-dimensional grid and how one can use it to perform Fourier transforms and 
 compute spatial derivatives.
 
-A one-dimensional grid with $n_x = 64$ grid points and length $L_x = 2\pi$ is 
+A one-dimensional grid with ``n_x = 64`` grid points and length ``L_x = 2 \pi`` is 
 constructed by
 
 ```@meta
@@ -29,14 +29,14 @@ OneDimensionalGrid
   └─────────── domain: x ∈ [-3.141592653589793, 3.0434178831651124]
 ```
 
-The grid domain is, by default, constructed symmetrically around $x=0$, but this 
+The grid domain is, by default, constructed symmetrically around ``x = 0``, but this 
 can be altered using the `x0` keyword argument of `OneDGrid` constructor. The grid 
-spacing is $L_x/n_x$. Note that the last point of the domain is a grid-spacing 
-before $L_x/2$. This is because periodicity implies that the value of any field 
+spacing is ``L_x / n_x``. Note that the last point of the domain is a grid-spacing 
+before ``L_x / 2``. This is because periodicity implies that the value of any field 
 at the end-points of the domain are equal and, therefore, grid-point values at
 both these end-points are reduntant.
 
-We can define an array `u` that contains the values of a function $u(x)$ on this 
+We can define an array `u` that contains the values of a function ``u(x)`` on this 
 grid as
 
 ```@setup 1
@@ -65,28 +65,27 @@ savefig("assets/plot1.svg"); nothing # hide
 
 ![](assets/plot1.svg)
 
-Function $u(x)$ can be expanded in Fourier series:
+Function ``u(x)`` can be expanded in Fourier series:
 
 ```math
-u(x) = \sum_{k} \hat{u}(k)\,\mathrm{e}^{\mathrm{i} k x},
+u(x) = \sum_{k} \hat{u}(k) \, e^{i k x} ,
 ```
 
-where $\hat{u}(k)$ is Fourier transform of $u(x)$ and $k$ the discrete set of 
-wavenumbers that fit within our finite domain. We can compute $\hat{u}$ via a 
+where ``\hat{u}(k)`` is Fourier transform of ``u(x)`` and ``k`` the discrete set of 
+wavenumbers that fit within our finite domain. We can compute ``\hat{u}`` via a 
 Fast Fourier Transform (FFT). Since our `u` array is real-valued then we should 
 use the `real-FFT` algorithm. The real-valued FFT transform only saves the Fourier 
-coefficients for $k\ge 0$; the coefficients for negative wavenumbers can be 
-obtained via $\hat{u}(-k) = \hat{u}(k)^{*}$.
+coefficients for ``k \ge 0``; the coefficients for negative wavenumbers can be 
+obtained via ``\hat{u}(-k) = \hat{u}(k)^{*}``.
 
-
-The wavenumbers used in FFT are contained in `grid.k` ordered as:
+The wavenumbers used in FFT are contained in `grid.k` and they are ordered as:
 ```math
-\frac{2\pi}{L_x}\{0, 1, \dots, n_x/2-1, -n_x/2, -n_x/2+1, \dots, -1\},
+\frac{2\pi}{L_x} \{ 0, 1, \dots, n_x/2-1, -n_x/2, -n_x/2+1, \dots, -1 \} ,
 ```
-while the wavenumbers for real FFT are in `grid.kr` as:
+while the wavenumbers for real FFT are in `grid.kr`:
 
 ```math
-\frac{2\pi}{L_x}\{0, 1, \dots, n_x/2-1\}.
+\frac{2\pi}{L_x} \{ 0, 1, \dots, n_x/2-1 \} .
 ```
 
 
@@ -100,7 +99,9 @@ grid.fftplan
 grid.rfftplan
 ```
 
-We use the convention that variables names with `h` at the end stand for variable-hat, i.e., $\hat{u}$  is the Fourier transform of $u$ and is stored in array `uh`. Since `u` is of size $n_x$, the real-Fourier transform should be of size $n_{kr} = n_x/2+1$.
+We use the convention that variables names with `h` at the end stand for variable-hat, i.e., 
+``\hat{u}``  is the Fourier transform of ``u`` and is stored in array `uh`. Since `u` is of 
+size ``n_x``, the real-Fourier transform should be of size ``n_{kr} = n_x/2+1``.
 
 ```@example 1
 uh = Complex.(zeros(grid.nkr))
@@ -118,10 +119,10 @@ mul!(uh, grid.rfftplan, u)
 nothing # hide
 ```
 
-The `FFT` algorithm does not output exactly the Fourier coefficients $\hat{u}(k)$ but
-rather due to different normalization, `FFT` outputs something proportional to $\hat{u}(k)$. 
-To obtain $\hat{u}$ we need to divide the `FFT` output by the length of the 
-original array and by $\mathrm{e}^{-\mathrm{i} k x_0}$, where $x_0$ is the first 
+The `FFT` algorithm does not output exactly the Fourier coefficients ``\hat{u}(k)`` but
+rather due to different normalization, `FFT` outputs something proportional to ``\hat{u}(k)``. 
+To obtain ``\hat{u}`` we need to divide the `FFT` output by the length of the 
+original array and by ``e^{-i k x_0}``, where ``x_0`` is the first 
 point of our domain array.
 
 ```@example 1
@@ -150,7 +151,7 @@ nothing # hide
 ```
 
 The grid contains the wavenumbers (both for real-value functions `grid.kr` and 
-for complex-valued functions `grid.k`). We populate array `∂ₓuh` is with $\mathrm{i} k \hat{u}$:
+for complex-valued functions `grid.k`). We populate array `∂ₓuh` is with ``i k \hat{u}``:
 
 ```@example 1
 @. ∂ₓuh = im * grid.kr * uh
