@@ -71,7 +71,7 @@ using
   CUDA,
   DocStringExtensions
 
-import Base: resize!, getindex, setindex!, push!, append!, show
+import Base: resize!, getindex, setindex!, push!, append!, show, summary
 
 using Base: fieldnames
 using FFTW: fftfreq, rfftfreq
@@ -154,16 +154,18 @@ function show(io::IO, vars::AbstractVars)
   return print(io, "Variables\n", showstring)
 end
 
+summary(::Function) = "Function"
+
 function show(io::IO, params::AbstractParams)
   names = propertynames(params)
   showstring = ""
   for name in names[1:end-1]
     field = getproperty(params, name)
-    showstring = string(showstring, "  ├───── parameter: " * string(name) * " -> ", typeof(field) <: Function ? "Function" : summary(field), "\n")
+    showstring = string(showstring, "  ├───── parameter: " * string(name) * " -> ", summary(field), "\n")
   end
   name = names[end]
   field = getproperty(params, name)
-  showstring = string(showstring, "  └───── parameter: " * string(name) * " -> ", typeof(field) <: Function ? "Function" : summary(field), "\n")
+  showstring = string(showstring, "  └───── parameter: " * string(name) * " -> ", summary(field), "\n")
   
   return print(io, "Parameters\n", showstring)
 end
