@@ -96,7 +96,7 @@ end
 nothing #hide
 
 
-# In Fourier space, the 1D linear shallow water dynamics are:
+# In Fourier space, the 1D linear shallow water dynamics read:
 #
 # ```math
 # \begin{aligned}
@@ -105,15 +105,14 @@ nothing #hide
 # \frac{\partial \hat{\eta}}{\partial t} & = \underbrace{ - i k H \hat{u} }_{N_{\eta}} \; \underbrace{- \nu |\bm{k}|^2 }_{L_{\eta}} \hat{\eta}.
 # \end{aligned}
 # ```
-# Although, e.g., terms involving the Coriolis accelaration are, in principle, 
-# linear we include them in the nonlinear term ``N`` because they render 
-# the linear operator ``L`` non-diagonal.
+# Although, e.g., terms involving the Coriolis accelaration are, in principle, linear we include 
+# them in the nonlinear term ``N`` because they render the linear operator ``L`` non-diagonal.
 #
 # With these in mind, we construct function `calcN!` that computes the nonlinear terms.
 #
 """
     calcN!(N, sol, t, clock, vars, params, grid)
-The function that computes the nonlinear terms for our problem.
+Compute the nonlinear terms for 1D linear shallow water dynamics.
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
   @. vars.uh = sol[:, 1]
@@ -137,11 +136,11 @@ nothing #hide
 # Next we construct the `Equation` struct:
 
 """
-    Equation!(prob)
+    Equation(dev, params, grid)
 Construct the equation: the linear part, in this case the hyperviscous dissipation,
-and the nonlinear part, which is computed by `caclN!` function.
+and the nonlinear part, which is computed by `calcN!` function.
 """
-function Equation(dev, params, grid::AbstractGrid)
+function Equation(dev, params, grid)
   T = eltype(grid)
   L = zeros(dev, T, (grid.nkr, 3))
   D = @. - params.ν * grid.kr^(2*params.nν)
