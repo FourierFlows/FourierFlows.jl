@@ -28,7 +28,7 @@
 # the rotation and propagate as inertia-gravity waves. Disturbances with 
 # length scales comparable or larger than ``L_d`` should be approximately 
 # in geostrophic balance, i.e., the Coriolis acceleration
-# ``f\widehat{z}} \times \bm{u}`` should be in approximate 
+# ``f \widehat{\bm{z}} \times \bm{u}`` should be in approximate 
 # balance with the pressure gradient ``-g \bm{\nabla} \eta``.
 
 
@@ -90,12 +90,13 @@ function Vars(::Dev, grid::AbstractGrid) where Dev
   T = eltype(grid)
   @devzeros Dev T grid.nx u v η
   @devzeros Dev Complex{T} grid.nkr uh vh ηh
+  
   return Vars(u, v, η, uh, vh, ηh)
 end
 nothing #hide
 
 
-# In Fourier space, the 1D linear shallow water dynamics are:
+# In Fourier space, the 1D linear shallow water dynamics read:
 #
 # ```math
 # \begin{aligned}
@@ -104,27 +105,30 @@ nothing #hide
 # \frac{\partial \hat{\eta}}{\partial t} & = \underbrace{ - i k H \hat{u} }_{N_{\eta}} \; \underbrace{- \nu |\bm{k}|^2 }_{L_{\eta}} \hat{\eta}.
 # \end{aligned}
 # ```
-# Although, e.g., terms involving the Coriolis accelaration are, in principle, 
-# linear we include them in the nonlinear term ``N`` because they render 
-# the linear operator ``L`` non-diagonal.
+# Although, e.g., terms involving the Coriolis accelaration are, in principle, linear we include 
+# them in the nonlinear term ``N`` because they render the linear operator ``L`` non-diagonal.
 #
 # With these in mind, we construct function `calcN!` that computes the nonlinear terms.
 #
 """
     calcN!(N, sol, t, clock, vars, params, grid)
-The function that computes the nonlinear terms for our problem.
+Compute the nonlinear terms for 1D linear shallow water dynamics.
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
   @. vars.uh = sol[:, 1]
   @. vars.vh = sol[:, 2]
   @. vars.ηh = sol[:, 3]
+  
   rhsu = @.   params.f * vars.vh - im * grid.kr * params.g * vars.ηh    #  + f v - g ∂η/∂x
   rhsv = @. - params.f * vars.uh                                        #  - f u
   rhsη = @. - im * grid.kr * params.H * vars.uh                         #  - H ∂u/∂x
+  
   N[:, 1] .= rhsu
   N[:, 2] .= rhsv
   N[:, 3] .= rhsη
+  
   dealias!(N, grid, grid.kralias)
+  
   return nothing
 end
 nothing #hide
@@ -132,17 +136,19 @@ nothing #hide
 # Next we construct the `Equation` struct:
 
 """
-    Equation!(prob)
+    Equation(dev, params, grid)
 Construct the equation: the linear part, in this case the hyperviscous dissipation,
-and the nonlinear part, which is computed by `caclN!` function.
+and the nonlinear part, which is computed by `calcN!` function.
 """
-function Equation(dev, params, grid::AbstractGrid)
+function Equation(dev, params, grid)
   T = eltype(grid)
   L = zeros(dev, T, (grid.nkr, 3))
   D = @. - params.ν * grid.kr^(2*params.nν)
+  
   L[:, 1] .= D # for u equation
   L[:, 2] .= D # for v equation
   L[:, 3] .= D # for η equation
+  
   return FourierFlows.Equation(L, calcN!, grid)
 end
 nothing #hide
@@ -166,6 +172,7 @@ function updatevars!(prob)
   ldiv!(vars.u, grid.rfftplan, deepcopy(sol[:, 1])) # use deepcopy() because irfft destroys its input
   ldiv!(vars.v, grid.rfftplan, deepcopy(sol[:, 2])) # use deepcopy() because irfft destroys its input
   ldiv!(vars.η, grid.rfftplan, deepcopy(sol[:, 3])) # use deepcopy() because irfft destroys its input
+  
   return nothing
 end
 nothing #hide
@@ -191,6 +198,7 @@ function set_uvη!(prob, u0, v0, η0)
   @. sol[:, 3] = vars.ηh
     
   updatevars!(prob)
+  
   return nothing
 end
 nothing #hide
@@ -374,7 +382,7 @@ nothing # hide
 
 p = plot_output(prob)
 
-anim = @animate for j=0:nsteps
+anim = @animate for j = 0:nsteps
   updatevars!(prob)
     
   p[2][1][:y] = vars.η    # updates the plot for η
@@ -385,7 +393,7 @@ anim = @animate for j=0:nsteps
   stepforward!(prob)
 end
 
-gif(anim, "onedshallowwater.gif", fps=18)
+mp4(anim, "onedshallowwater.mp4", fps=18)
 
 
 # ## Geostrophic balance
