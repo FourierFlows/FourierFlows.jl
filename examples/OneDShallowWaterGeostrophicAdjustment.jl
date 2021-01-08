@@ -83,10 +83,10 @@ nothing #hide
 # A constructor populates empty arrays based on the dimension of the `grid`
 # and then creates `Vars` struct.
 """
-    Vars!(dev, grid)
-Constructs Vars based on the dimensions of arrays of the `grid`.
+    Vars(dev, grid)
+Constructs Vars for 1D shallow water based on the dimensions of arrays of the `grid`.
 """
-function Vars(::Dev, grid::AbstractGrid) where Dev
+function Vars(::Dev, grid) where Dev
   T = eltype(grid)
   @devzeros Dev T grid.nx u v η
   @devzeros Dev Complex{T} grid.nkr uh vh ηh
@@ -119,13 +119,9 @@ function calcN!(N, sol, t, clock, vars, params, grid)
   @. vars.vh = sol[:, 2]
   @. vars.ηh = sol[:, 3]
   
-  rhsu = @.   params.f * vars.vh - im * grid.kr * params.g * vars.ηh    #  + f v - g ∂η/∂x
-  rhsv = @. - params.f * vars.uh                                        #  - f u
-  rhsη = @. - im * grid.kr * params.H * vars.uh                         #  - H ∂u/∂x
-  
-  N[:, 1] .= rhsu
-  N[:, 2] .= rhsv
-  N[:, 3] .= rhsη
+  @. N[:, 1] =   params.f * vars.vh - im * grid.kr * params.g * vars.ηh    #  + f v - g ∂η/∂x
+  @. N[:, 2] = - params.f * vars.uh                                        #  - f u
+  @. N[:, 3] = - im * grid.kr * params.H * vars.uh                         #  - H ∂u/∂x
   
   dealias!(N, grid, grid.kralias)
   
@@ -282,26 +278,31 @@ noise_amplitude = 0.1 # the amplitude of the noise for η(x,t=0) (m)
 η_noise = noise_amplitude * Random.randn(size(grid.x))
 @. η_noise *= mask    # mask the noise
 
-plot_noise = plot(grid.x/1e3, η_noise,    # divide with 1e3 to convert m -> km
+plot_noise = plot(grid.x/1e3, η_noise,      # divide with 1e3 to convert m -> km
                  color = :black,
                 legend = :false,
              linewidth = [3 2],
                  alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3),
+                 xlims = (-Lx/2e3, Lx/2e3), # divide with 1e3 to convert m -> km
                  ylims = (-0.3, 0.3),
                 xlabel = "x [km]",
                 ylabel = "η [m]")
 
-plot_mask = plot(grid.x/1e3, mask,    # divide with 1e3 to convert m -> km
+plot_mask = plot(grid.x/1e3, mask,          # divide with 1e3 to convert m -> km
                  color = :gray,
                 legend = :false,
              linewidth = [3 2],
                  alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3),
+                 xlims = (-Lx/2e3, Lx/2e3), # divide with 1e3 to convert m -> km
                 xlabel = "x [km]",
                 ylabel = "mask")
 
-title = plot(title = "Small-scale noise", grid = false, showaxis = false, bottom_margin = -20Plots.px)
+title = plot(title = "Small-scale noise",
+              grid = false,
+          showaxis = false,
+            xticks = [],
+            yticks = [],
+     bottom_margin = -20Plots.px)
 
 plot(title, plot_noise, plot_mask,
            layout = @layout([A{0.01h}; [B; C]]),
@@ -333,39 +334,44 @@ plot(grid.x/1e3, η0,    # divide with 1e3 to convert m -> km
 # depth-integrated velocities ``u`` and ``v``.
 
 function plot_output(prob)
-  plot_η = plot(grid.x/1e3, vars.η,    # divide with 1e3 to convert m -> km
+  plot_η = plot(grid.x/1e3, vars.η,         # divide with 1e3 to convert m -> km
                  color = :blue,
                 legend = false,
              linewidth = 2,
                  alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3),
+                 xlims = (-Lx/2e3, Lx/2e3), # divide with 1e3 to convert m -> km
                 xlabel = "x [km]",
                 ylabel = "η [m]")
 
-  plot_u = plot(grid.x/1e3, vars.u,    # divide with 1e3 to convert m -> km
+  plot_u = plot(grid.x/1e3, vars.u,         # divide with 1e3 to convert m -> km
                  color = :red,
                 legend = false,
              linewidth = 2,
                  alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3),
+                 xlims = (-Lx/2e3, Lx/2e3), # divide with 1e3 to convert m -> km
                  ylims = (-0.3, 0.3),
                 xlabel = "x [km]",
                 ylabel = "u [m s⁻¹]")
 
-  plot_v = plot(grid.x/1e3, vars.v,    # divide with 1e3 to convert m -> km
+  plot_v = plot(grid.x/1e3, vars.v,         # divide with 1e3 to convert m -> km
                  color = :green,
                 legend = false,
              linewidth = 2,
                  alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3),
+                 xlims = (-Lx/2e3, Lx/2e3), # divide with 1e3 to convert m -> km
                  ylims = (-0.3, 0.3),
                 xlabel = "x [km]",
                 ylabel = "v [m s⁻¹]")
 
-  Ld = @sprintf "%.2f" sqrt(g*H)/f /1e3  # divide with 1e3 to convert m -> km
+  Ld = @sprintf "%.2f" sqrt(g*H)/f /1e3     # divide with 1e3 to convert m -> km
   plottitle = "Deformation radius √(gh) / f = "*string(Ld)*" km"
 
-  title = plot(title = plottitle, grid = false, showaxis = false, bottom_margin = -30Plots.px)
+  title = plot(title = plottitle,
+                grid = false,
+            showaxis = false,
+              xticks = [],
+              yticks = [],
+       bottom_margin = -30Plots.px)
   
   return plot(title, plot_η, plot_u, plot_v, 
            layout = @layout([A{0.01h}; [B; C; D]]),
@@ -401,8 +407,10 @@ mp4(anim, "onedshallowwater.mp4", fps=18)
 # It is instructive to compare the solution for ``v`` with its geostrophically balanced approximation, ``f \widehat{\bm{z}} \times \bm{u}_{\rm geostrophic} = - g \bm{\nabla} \eta``, i.e.,
 #
 # ```math
-# v_{\rm geostrophic} =   \frac{g}{f} \frac{\partial \eta}{\partial x} \ , \\
-# u_{\rm geostrophic} = - \frac{g}{f} \frac{\partial \eta}{\partial y} = 0 \ .
+# \begin{aligned}
+# v_{\rm geostrophic} & =   \frac{g}{f} \frac{\partial \eta}{\partial x} \ , \\
+# u_{\rm geostrophic} & = - \frac{g}{f} \frac{\partial \eta}{\partial y} = 0 \ .
+# \end{aligned}
 # ```
 # The geostrophic solution should capture well the the behavior of the flow in 
 # the center of the domain, after small-scale disturbances propagate away.
@@ -410,27 +418,32 @@ mp4(anim, "onedshallowwater.mp4", fps=18)
 u_geostrophic = zeros(grid.nx)  # -g/f ∂η/∂y = 0
 v_geostrophic = params.g / params.f * irfft(im * grid.kr .* vars.ηh, grid.nx)  #g/f ∂η/∂x
 
-plot_u = plot(grid.x/1e3, [vars.u u_geostrophic],    # divide with 1e3 to convert m -> km
+plot_u = plot(grid.x/1e3, [vars.u u_geostrophic], # divide with 1e3 to convert m -> km
                  color = [:red :purple],
                 labels = ["u" "- g/f ∂η/∂y"],
              linewidth = [3 2],
                  alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3),
+                 xlims = (-Lx/2e3, Lx/2e3),       # divide with 1e3 to convert m -> km
                  ylims = (-0.3, 0.3),
                 xlabel = "x [km]",
                 ylabel = "u [m s⁻¹]")
 
-plot_v = plot(grid.x/1e3, [vars.v v_geostrophic],    # divide with 1e3 to convert m -> km
+plot_v = plot(grid.x/1e3, [vars.v v_geostrophic], # divide with 1e3 to convert m -> km
                  color = [:green :purple],
                 labels = ["v" "g/f ∂η/∂x"],
              linewidth = [3 2],
                  alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3),
+                 xlims = (-Lx/2e3, Lx/2e3),       # divide with 1e3 to convert m -> km
                  ylims = (-0.3, 0.3),
                 xlabel = "x [km]",
                 ylabel = "v [m s⁻¹]")
 
-title = plot(title = "Geostrophic balance", grid = false, showaxis = false, bottom_margin = -20Plots.px)
+title = plot(title = "Geostrophic balance",
+              grid = false,
+          showaxis = false,
+            xticks = [],
+            yticks = [],
+     bottom_margin = -20Plots.px)
 
 plot(title, plot_u, plot_v,
            layout = @layout([A{0.01h}; [B; C]]),
