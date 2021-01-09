@@ -100,9 +100,9 @@ nothing #hide
 #
 # ```math
 # \begin{aligned}
-# \frac{\partial \hat{u}}{\partial t} & = \underbrace{ f \hat{v} - i k g \hat{\eta} }_{N_u} \; \underbrace{- \nu |\bm{k}|^2 }_{L_u} \hat{u}, \\
-# \frac{\partial \hat{v}}{\partial t} & = \underbrace{ - f \hat{u} }_{N_v} \; \underbrace{- \nu |\bm{k}|^2 }_{L_v} \hat{v}, \\
-# \frac{\partial \hat{\eta}}{\partial t} & = \underbrace{ - i k H \hat{u} }_{N_{\eta}} \; \underbrace{- \nu |\bm{k}|^2 }_{L_{\eta}} \hat{\eta}.
+# \frac{\partial \hat{u}}{\partial t} & = \underbrace{ f \hat{v} - i k g \hat{\eta} }_{N_u} \; \underbrace{- \nu k^2 }_{L_u} \hat{u} , \\
+# \frac{\partial \hat{v}}{\partial t} & = \underbrace{ - f \hat{u} }_{N_v} \; \underbrace{- \nu k^2 }_{L_v} \hat{v} , \\
+# \frac{\partial \hat{\eta}}{\partial t} & = \underbrace{ - i k H \hat{u} }_{N_{\eta}} \; \underbrace{- \nu k^2 }_{L_{\eta}} \hat{\eta} .
 # \end{aligned}
 # ```
 # Although, e.g., terms involving the Coriolis accelaration are, in principle, linear we include 
@@ -271,8 +271,8 @@ plot(grid.x/1e3, gaussian_bump,    # divide with 1e3 to convert m -> km
      title = "A gaussian bump with half-width ≈ "*string(gaussian_width/1e3)*" km",
       size = (600, 260))
 
-# Next the noisy perturbation. The `mask` is simply a product of ``\tanh`` functions.
-mask = @. 1/4 * (1 + tanh( -(grid.x-100e3)/10e3 )) * (1 + tanh( (grid.x+100e3)/10e3 ))
+# Next the noisy perturbation. The `mask` is simply a product of hyperbolic tangent functions.
+mask = @. 1/4 * (1 + tanh( -(grid.x - 100e3) / 10e3)) * (1 + tanh( (grid.x + 100e3) / 10e3))
 
 noise_amplitude = 0.1 # the amplitude of the noise for η(x,t=0) (m)
 η_noise = noise_amplitude * Random.randn(size(grid.x))
