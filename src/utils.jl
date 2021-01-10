@@ -212,7 +212,7 @@ function radialspectrum(ah, grid::TwoDGrid; n=nothing, m=nothing, refinement=2)
   n = n == nothing ? refinement * maximum([grid.nk, grid.nl]) : n
   m = m == nothing ? refinement * maximum([grid.nk, grid.nl]) : m
 
-  # Calcualte shifted k and l
+  # Calculate shifted k and l
   lshift = range(-grid.nl/2+1, stop=grid.nl/2, length=grid.nl) * 2π/grid.Ly
 
   if size(ah)[1] == grid.nkr # conjugate symmetric form
