@@ -77,7 +77,7 @@ and, like before, we use the `struct`'s constructor to populate the struct with
 zero arrays,
 
 ```@example 2
-vars = Vars(zeros(Float64, (grid.nx,)), zeros(Complex{Float64}, (grid.nkr,)),)
+vars = Vars(zeros(Float64, (grid.nx,)), zeros(Complex{Float64}, (grid.nkr,)))
 ```
 
 Note that the Fourier transform of a real-valued array `u` is complex-valued. Also
