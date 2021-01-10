@@ -305,21 +305,40 @@ for dev in devices
     @test test_saveproblem_saveoutput(dev)
     @test test_saveproblemTwoDGrid(dev)
     @test test_savediagnostic(dev)
+    
+    file = test_savefields(dev; parameter=2.2)
+    @test file["params"]["parameter"] == 2.2
+    @test_throws KeyError file["params"]["func"] == func
+    @test_throws KeyError file["params"]["plan"] == plan
+    close(file)
   end
 
   @time @testset "show() methods tests" begin
-
     prob = Diffusion.Problem(dev=dev)
-    struct Params <: AbstractParams
-      κ1 :: Float64
-      κ2 :: Float64
+    
+    struct Params1 <: AbstractParams
+        κ1 :: Float64
+        κ2 :: Float64
+      func :: Function
     end
-    params = Params(1.0, 2.0)
     
-    #create a problem with more than 1 parameters so all lines of show() method are tested
-    prob = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params, dev)
+    struct Params2 <: AbstractParams
+        κ1 :: Float64
+      func :: Function
+        κ2 :: Float64
+    end
     
-    @test repr(prob.params) == "Parameters\n  ├───── parameter: κ1 -> Float64\n  └───── parameter: κ2 -> Float64\n"
+    func(x) = sin(x^2)
+    
+    params1 = Params1(1.0, 2.0, func)
+    params2 = Params2(1.0, func, 2.0)
+    
+    prob1 = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params1, dev)
+    prob2 = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params2, dev)
+    prob = prob1 # prob2 is only useful for testing params show() method
+    
+    @test repr(prob1.params) == "Parameters\n  ├───── parameter: κ1 -> Float64\n  ├───── parameter: κ2 -> Float64\n  └───── parameter: func -> Function\n"
+    @test repr(prob2.params) == "Parameters\n  ├───── parameter: κ1 -> Float64\n  ├───── parameter: func -> Function\n  └───── parameter: κ2 -> Float64\n"
     @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element "*string(ArrayType(dev))*"{Float64,1}\n  ├───── variable: cx -> 128-element "*string(ArrayType(dev))*"{Float64,1}\n  ├───── variable: ch -> 65-element "*string(ArrayType(dev))*"{Complex{Float64},1}\n  └───── variable: cxh -> 65-element "*string(ArrayType(dev))*"{Complex{Float64},1}\n"
     @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: Complex{Float64}"
     @test repr(prob.clock) == "Clock\n  ├─── timestep dt: 0.01\n  ├────────── step: 0\n  └──────── time t: 0.0"

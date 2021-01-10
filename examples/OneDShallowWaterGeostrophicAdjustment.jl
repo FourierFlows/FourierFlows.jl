@@ -19,18 +19,17 @@
 # \end{aligned}
 # ```
 #
-# Above, ``g`` is the gravitational acceleration, ``f`` is the  Coriolis parameter,
-# and ``\mathrm{D}`` indicates a hyperviscous linear operator of the
-# form ``(-1)^{n_\nu} \nu \nabla^{2 n_\nu}``, with ``\nu`` the viscosity
-# coefficient and ``n_\nu`` the order of the operator.
+# Above, ``g`` is the gravitational acceleration, ``f`` is the  Coriolis parameter, and 
+# ``\mathrm{D}`` indicates a hyperviscous linear operator of the form ``(-1)^{n_ν} ν \nabla^{2 n_ν}``, 
+# with ``ν`` the viscosity coefficient and ``n_ν`` the order of the operator.
 #
 # Rotation introduces the deformation length scale, ``L_d = \sqrt{g H} / f``. 
 # Disturbances with length scales much smaller than ``L_d`` don't "feel" 
 # the rotation and propagate as inertia-gravity waves. Disturbances with 
 # length scales comparable or larger than ``L_d`` should be approximately 
 # in geostrophic balance, i.e., the Coriolis acceleration
-# ``f\widehat{\boldsymbol{z}} \times \boldsymbol{u}`` should be in approximate 
-# balance with the pressure gradient ``-g \boldsymbol{\nabla} \eta``.
+# ``f \widehat{\bm{z}} \times \bm{u}`` should be in approximate 
+# balance with the pressure gradient ``-g \bm{\nabla} \eta``.
 
 
 using FourierFlows, Plots
@@ -49,7 +48,7 @@ using Random
 # - `Grid` struct containining the physical and wavenumber grid for the problem,
 # - `Params` struct containining all the parameters of the problem,
 # - `Vars` struct containining arrays with the variables used in the problem,
-# - `Equation` struct containining the coefficients of the linear operator ``\mathcal{L}`` and the function that computes the nonlinear terms, usually named `calcN!()`.
+# - `Equation` struct containining the coefficients of the linear operator ``L`` and the function that computes the nonlinear terms, usually named `calcN!()`.
 # 
 # The `Grid` structure is provided by FourierFlows.jl. One simply has to call one of
 # the `OneDGrid()`, `TwoDGrid()`, or `ThreeDGrid()` grid constructors, depending
@@ -84,48 +83,48 @@ nothing #hide
 # A constructor populates empty arrays based on the dimension of the `grid`
 # and then creates `Vars` struct.
 """
-    Vars!(dev, grid)
-Constructs Vars based on the dimensions of arrays of the `grid`.
+    Vars(dev, grid)
+Constructs Vars for 1D shallow water based on the dimensions of arrays of the `grid`.
 """
-function Vars(::Dev, grid::AbstractGrid) where Dev
+function Vars(::Dev, grid) where Dev
   T = eltype(grid)
   @devzeros Dev T grid.nx u v η
   @devzeros Dev Complex{T} grid.nkr uh vh ηh
+  
   return Vars(u, v, η, uh, vh, ηh)
 end
 nothing #hide
 
 
-# In Fourier space, the 1D linear shallow water dynamics are:
+# In Fourier space, the 1D linear shallow water dynamics read:
 #
 # ```math
 # \begin{aligned}
-# \frac{\partial \hat{u}}{\partial t} & = \underbrace{ f \hat{v} - \mathrm{i} k g \hat{\eta} }_{\mathcal{N}_u} \; \underbrace{- \nu |\boldsymbol{k}|^2 }_{\mathcal{L}_u} \hat{u}, \\
-# \frac{\partial \hat{v}}{\partial t} & = \underbrace{ - f \hat{u} }_{\mathcal{N}_v} \; \underbrace{- \nu |\boldsymbol{k}|^2 }_{\mathcal{L}_v} \hat{v}, \\
-# \frac{\partial \hat{\eta}}{\partial t} & = \underbrace{ - \mathrm{i} k H \hat{u} }_{\mathcal{N}_{\eta}} \; \underbrace{- \nu |\boldsymbol{k}|^2 }_{\mathcal{L}_{\eta}} \hat{\eta}.
+# \frac{\partial \hat{u}}{\partial t} & = \underbrace{ f \hat{v} - i k g \hat{\eta} }_{N_u} \; \underbrace{- \nu k^2 }_{L_u} \hat{u} , \\
+# \frac{\partial \hat{v}}{\partial t} & = \underbrace{ - f \hat{u} }_{N_v} \; \underbrace{- \nu k^2 }_{L_v} \hat{v} , \\
+# \frac{\partial \hat{\eta}}{\partial t} & = \underbrace{ - i k H \hat{u} }_{N_{\eta}} \; \underbrace{- \nu k^2 }_{L_{\eta}} \hat{\eta} .
 # \end{aligned}
 # ```
-# Although, e.g., terms involving the Coriolis accelaration are, in principle, 
-# linear we include them in the nonlinear term ``\mathcal{N}`` because they render 
-# the linear operator ``\mathcal{L}`` non-diagonal.
+# Although, e.g., terms involving the Coriolis accelaration are, in principle, linear we include 
+# them in the nonlinear term ``N`` because they render the linear operator ``L`` non-diagonal.
 #
 # With these in mind, we construct function `calcN!` that computes the nonlinear terms.
 #
 """
     calcN!(N, sol, t, clock, vars, params, grid)
-The function that computes the nonlinear terms for our problem.
+Compute the nonlinear terms for 1D linear shallow water dynamics.
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
   @. vars.uh = sol[:, 1]
   @. vars.vh = sol[:, 2]
   @. vars.ηh = sol[:, 3]
-  rhsu = @.   params.f * vars.vh - im * grid.kr * params.g * vars.ηh    #  + f v - g ∂η/∂x
-  rhsv = @. - params.f * vars.uh                                        #  - f u
-  rhsη = @. - im * grid.kr * params.H * vars.uh                         #  - H ∂u/∂x
-  N[:, 1] .= rhsu
-  N[:, 2] .= rhsv
-  N[:, 3] .= rhsη
+  
+  @. N[:, 1] =   params.f * vars.vh - im * grid.kr * params.g * vars.ηh    #  + f v - g ∂η/∂x
+  @. N[:, 2] = - params.f * vars.uh                                        #  - f u
+  @. N[:, 3] = - im * grid.kr * params.H * vars.uh                         #  - H ∂u/∂x
+  
   dealias!(N, grid, grid.kralias)
+  
   return nothing
 end
 nothing #hide
@@ -133,17 +132,19 @@ nothing #hide
 # Next we construct the `Equation` struct:
 
 """
-    Equation!(prob)
+    Equation(dev, params, grid)
 Construct the equation: the linear part, in this case the hyperviscous dissipation,
-and the nonlinear part, which is computed by `caclN!` function.
+and the nonlinear part, which is computed by `calcN!` function.
 """
-function Equation(dev, params, grid::AbstractGrid)
+function Equation(dev, params, grid)
   T = eltype(grid)
   L = zeros(dev, T, (grid.nkr, 3))
   D = @. - params.ν * grid.kr^(2*params.nν)
+  
   L[:, 1] .= D # for u equation
   L[:, 2] .= D # for v equation
   L[:, 3] .= D # for η equation
+  
   return FourierFlows.Equation(L, calcN!, grid)
 end
 nothing #hide
@@ -167,6 +168,7 @@ function updatevars!(prob)
   ldiv!(vars.u, grid.rfftplan, deepcopy(sol[:, 1])) # use deepcopy() because irfft destroys its input
   ldiv!(vars.v, grid.rfftplan, deepcopy(sol[:, 2])) # use deepcopy() because irfft destroys its input
   ldiv!(vars.η, grid.rfftplan, deepcopy(sol[:, 3])) # use deepcopy() because irfft destroys its input
+  
   return nothing
 end
 nothing #hide
@@ -192,6 +194,7 @@ function set_uvη!(prob, u0, v0, η0)
   @. sol[:, 3] = vars.ηh
     
   updatevars!(prob)
+  
   return nothing
 end
 nothing #hide
@@ -268,33 +271,38 @@ plot(grid.x/1e3, gaussian_bump,    # divide with 1e3 to convert m -> km
      title = "A gaussian bump with half-width ≈ "*string(gaussian_width/1e3)*" km",
       size = (600, 260))
 
-# Next the noisy perturbation. The `mask` is simply a product of ``\tanh`` functions.
-mask = @. 1/4 * (1 + tanh( -(grid.x-100e3)/10e3 )) * (1 + tanh( (grid.x+100e3)/10e3 ))
+# Next the noisy perturbation. The `mask` is simply a product of hyperbolic tangent functions.
+mask = @. 1/4 * (1 + tanh( -(grid.x - 100e3) / 10e3)) * (1 + tanh( (grid.x + 100e3) / 10e3))
 
 noise_amplitude = 0.1 # the amplitude of the noise for η(x,t=0) (m)
 η_noise = noise_amplitude * Random.randn(size(grid.x))
 @. η_noise *= mask    # mask the noise
 
-plot_noise = plot(grid.x/1e3, η_noise,    # divide with 1e3 to convert m -> km
+plot_noise = plot(grid.x/1e3, η_noise,      # divide with 1e3 to convert m -> km
                  color = :black,
                 legend = :false,
              linewidth = [3 2],
                  alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3),
+                 xlims = (-Lx/2e3, Lx/2e3), # divide with 1e3 to convert m -> km
                  ylims = (-0.3, 0.3),
                 xlabel = "x [km]",
                 ylabel = "η [m]")
 
-plot_mask = plot(grid.x/1e3, mask,    # divide with 1e3 to convert m -> km
+plot_mask = plot(grid.x/1e3, mask,          # divide with 1e3 to convert m -> km
                  color = :gray,
                 legend = :false,
              linewidth = [3 2],
                  alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3),
+                 xlims = (-Lx/2e3, Lx/2e3), # divide with 1e3 to convert m -> km
                 xlabel = "x [km]",
                 ylabel = "mask")
 
-title = plot(title = "Small-scale noise", grid = false, showaxis = false, bottom_margin = -20Plots.px)
+title = plot(title = "Small-scale noise",
+              grid = false,
+          showaxis = false,
+            xticks = [],
+            yticks = [],
+     bottom_margin = -20Plots.px)
 
 plot(title, plot_noise, plot_mask,
            layout = @layout([A{0.01h}; [B; C]]),
@@ -326,39 +334,44 @@ plot(grid.x/1e3, η0,    # divide with 1e3 to convert m -> km
 # depth-integrated velocities ``u`` and ``v``.
 
 function plot_output(prob)
-  plot_η = plot(grid.x/1e3, vars.η,    # divide with 1e3 to convert m -> km
+  plot_η = plot(grid.x/1e3, vars.η,         # divide with 1e3 to convert m -> km
                  color = :blue,
                 legend = false,
              linewidth = 2,
                  alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3),
+                 xlims = (-Lx/2e3, Lx/2e3), # divide with 1e3 to convert m -> km
                 xlabel = "x [km]",
                 ylabel = "η [m]")
 
-  plot_u = plot(grid.x/1e3, vars.u,    # divide with 1e3 to convert m -> km
+  plot_u = plot(grid.x/1e3, vars.u,         # divide with 1e3 to convert m -> km
                  color = :red,
                 legend = false,
              linewidth = 2,
                  alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3),
+                 xlims = (-Lx/2e3, Lx/2e3), # divide with 1e3 to convert m -> km
                  ylims = (-0.3, 0.3),
                 xlabel = "x [km]",
                 ylabel = "u [m s⁻¹]")
 
-  plot_v = plot(grid.x/1e3, vars.v,    # divide with 1e3 to convert m -> km
+  plot_v = plot(grid.x/1e3, vars.v,         # divide with 1e3 to convert m -> km
                  color = :green,
                 legend = false,
              linewidth = 2,
                  alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3),
+                 xlims = (-Lx/2e3, Lx/2e3), # divide with 1e3 to convert m -> km
                  ylims = (-0.3, 0.3),
                 xlabel = "x [km]",
                 ylabel = "v [m s⁻¹]")
 
-  Ld = @sprintf "%.2f" sqrt(g*H)/f /1e3  # divide with 1e3 to convert m -> km
+  Ld = @sprintf "%.2f" sqrt(g*H)/f /1e3     # divide with 1e3 to convert m -> km
   plottitle = "Deformation radius √(gh) / f = "*string(Ld)*" km"
 
-  title = plot(title = plottitle, grid = false, showaxis = false, bottom_margin = -30Plots.px)
+  title = plot(title = plottitle,
+                grid = false,
+            showaxis = false,
+              xticks = [],
+              yticks = [],
+       bottom_margin = -30Plots.px)
   
   return plot(title, plot_η, plot_u, plot_v, 
            layout = @layout([A{0.01h}; [B; C; D]]),
@@ -375,7 +388,7 @@ nothing # hide
 
 p = plot_output(prob)
 
-anim = @animate for j=0:nsteps
+anim = @animate for j = 0:nsteps
   updatevars!(prob)
     
   p[2][1][:y] = vars.η    # updates the plot for η
@@ -386,44 +399,51 @@ anim = @animate for j=0:nsteps
   stepforward!(prob)
 end
 
-gif(anim, "onedshallowwater.gif", fps=18)
+mp4(anim, "onedshallowwater.mp4", fps=18)
 
 
 # ## Geostrophic balance
 
-# It is instructive to compare the solution for ``v`` with its geostrophically balanced approximation, ``f \widehat{\boldsymbol{z}} \times \boldsymbol{u}_{\rm geostrophic} = - g \boldsymbol{\nabla} \eta``, i.e.,
+# It is instructive to compare the solution for ``v`` with its geostrophically balanced approximation, ``f \widehat{\bm{z}} \times \bm{u}_{\rm geostrophic} = - g \bm{\nabla} \eta``, i.e.,
 #
 # ```math
-# v_{\rm geostrophic} =   \frac{g}{f} \frac{\partial \eta}{\partial x} \ , \\
-# u_{\rm geostrophic} = - \frac{g}{f} \frac{\partial \eta}{\partial y} = 0 \ .
+# \begin{aligned}
+# v_{\rm geostrophic} & =   \frac{g}{f} \frac{\partial \eta}{\partial x} \ , \\
+# u_{\rm geostrophic} & = - \frac{g}{f} \frac{\partial \eta}{\partial y} = 0 \ .
+# \end{aligned}
 # ```
 # The geostrophic solution should capture well the the behavior of the flow in 
 # the center of the domain, after small-scale disturbances propagate away.
 
 u_geostrophic = zeros(grid.nx)  # -g/f ∂η/∂y = 0
-v_geostrophic = params.g/params.f * irfft(im * grid.kr .* vars.ηh, grid.nx)  #g/f ∂η/∂x
+v_geostrophic = params.g / params.f * irfft(im * grid.kr .* vars.ηh, grid.nx)  #g/f ∂η/∂x
 
-plot_u = plot(grid.x/1e3, [vars.u u_geostrophic],    # divide with 1e3 to convert m -> km
+plot_u = plot(grid.x/1e3, [vars.u u_geostrophic], # divide with 1e3 to convert m -> km
                  color = [:red :purple],
                 labels = ["u" "- g/f ∂η/∂y"],
              linewidth = [3 2],
                  alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3),
+                 xlims = (-Lx/2e3, Lx/2e3),       # divide with 1e3 to convert m -> km
                  ylims = (-0.3, 0.3),
                 xlabel = "x [km]",
                 ylabel = "u [m s⁻¹]")
 
-plot_v = plot(grid.x/1e3, [vars.v v_geostrophic],    # divide with 1e3 to convert m -> km
+plot_v = plot(grid.x/1e3, [vars.v v_geostrophic], # divide with 1e3 to convert m -> km
                  color = [:green :purple],
                 labels = ["v" "g/f ∂η/∂x"],
              linewidth = [3 2],
                  alpha = 0.7,
-                 xlims = (-Lx/2e3, Lx/2e3),
+                 xlims = (-Lx/2e3, Lx/2e3),       # divide with 1e3 to convert m -> km
                  ylims = (-0.3, 0.3),
                 xlabel = "x [km]",
                 ylabel = "v [m s⁻¹]")
 
-title = plot(title = "Geostrophic balance", grid = false, showaxis = false, bottom_margin = -20Plots.px)
+title = plot(title = "Geostrophic balance",
+              grid = false,
+          showaxis = false,
+            xticks = [],
+            yticks = [],
+     bottom_margin = -20Plots.px)
 
 plot(title, plot_u, plot_v,
            layout = @layout([A{0.01h}; [B; C]]),

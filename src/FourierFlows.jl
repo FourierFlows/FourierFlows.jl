@@ -71,7 +71,7 @@ using
   CUDA,
   DocStringExtensions
 
-import Base: resize!, getindex, setindex!, push!, append!, show
+import Base: resize!, getindex, setindex!, push!, append!, show, summary
 
 using Base: fieldnames
 using FFTW: fftfreq, rfftfreq
@@ -153,6 +153,8 @@ function show(io::IO, vars::AbstractVars)
   
   return print(io, "Variables\n", showstring)
 end
+
+summary(::Function) = "Function"
 
 function show(io::IO, params::AbstractParams)
   names = propertynames(params)

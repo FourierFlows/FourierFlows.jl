@@ -6,7 +6,7 @@ authors = ["Gregory L. Wagner <wagner.greg@gmail.com>", "Navid C. Constantinou <
 description = "Tools for building fast, hackable, pseudospectral partial differential equation solvers on periodic domains."
 documentation = "https://fourierflows.github.io/FourierFlowsDocumentation/stable/"
 repository = "https://github.com/FourierFlows/FourierFlows.jl"
-version = "0.6.7"
+version = "0.6.9"
 
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
@@ -25,8 +25,8 @@ DocStringExtensions = "^0.8"
 FFTW = "^1"
 Interpolations = "^0.12, ^0.13"
 JLD2 = "^0.1, ^0.2, ^0.3"
-Reexport = "^1"
-julia = "^1.4"
+Reexport = "^0.2, ^1"
+julia = "^1.5"
 
 [extras]
 Coverage = "a2441757-f6aa-5fb2-8edb-039e3f45d037"

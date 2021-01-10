@@ -8,8 +8,8 @@ Upon calling
 using FourierFlows
 ```
 
-FourierFlows will check whether any CUDA enabled device is present. If such a device is 
-found then FourierFlows makes sure that CUDA related packages are loaded and also it will 
+FourierFlows.jl will check whether any CUDA enabled device is present. If such a device is 
+found then FourierFlows.jl makes sure that CUDA related packages are loaded and also it will 
 overload all methods to work with `GPU()` device as their argument (instead of the standard 
 `CPU()` device).
 
@@ -29,8 +29,8 @@ OneDimensionalGrid
   └─────────── domain: x ∈ [-1.0, 0.875]
 ```
 
-gives out a grid whose arrays are `CuArrays`. (If you simply call `grid = OneDGrid(n, L)` it
-defaults to `grid = OneDGrid(CPU(), n, L)`.)
+gives out a grid whose arrays are `CuArrays`. (Calling `OneDGrid(n, L)` defaults to CPU, i.e., 
+`OneDGrid(CPU(), n, L)`.)
 
 When we construct the `Params`, `Vars`, and `Equation` for our problem we need to make sure
 that we create arrays on the appropriate device, i.e., `Arrays` for `CPU` or `CuArrays` for
@@ -40,12 +40,14 @@ the `GPU`. Function `ArrayType` is useful in constructing appropriately chosen a
 ArrayType
 ```
 
-The `FourierFlows.Problem` constructor then takes an optional positional argument `dev::Device` If not provided anything, the default values for `dev=CPU()`.
+The `FourierFlows.Problem` constructor then takes an optional positional argument 
+`dev::Device` If not provided anything, the default values for `dev=CPU()`.
 
 ```julia
 problem = Problem(equation, stepper, dt, grid, vars, params, GPU())
 ```
 
 The `FourierFlows.Diffusion` module is written in a way such that switching from CPU to GPU 
-is only a matter of calling `FourierFlows.Diffusion.Problem()` with `dev=GPU()`. All physics modules in [GeophysicalFlows.jl](https://github.com/FourierFlows/GeophysicalFlows.jl) can 
+is only a matter of calling `FourierFlows.Diffusion.Problem()` with `dev=GPU()`. All physics 
+modules in [GeophysicalFlows.jl](https://github.com/FourierFlows/GeophysicalFlows.jl) can 
 also seamlessly run on a GPU with `dev=GPU()` argument.

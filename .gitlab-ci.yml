@@ -9,20 +9,14 @@ include:
   - 'https://raw.githubusercontent.com/JuliaGPU/gitlab-ci/master/templates/v6.yml'
 
 # the "primary" target, where we require a new GPU to make sure all tests are run
-julia:1.4:
+julia:1.5:
   extends:
-    - .julia:1.4
+    - .julia:1.5
     - .test
   tags:
     - nvidia
   variables:
     CI_THOROUGH: 'true'
-
-julia:1.5:
-  extends:
-    - .julia:1.5
-    - .test
-  allow_failure: true
 
 test:nightly:
   extends:
@@ -33,6 +27,6 @@ test:nightly:
 # other tasks
 coverage:
   extends:
-    - .julia:1.4
+    - .julia:1.5
     - .coverage
     
