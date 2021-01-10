@@ -100,33 +100,40 @@ end
 """
     parsevalsum2(uh, grid)
 
-Returns `∫ u² dxdy = Σ|uh|²` on the `grid`. More specifically, it returns
+Returns `∫ u² dxdy = Σ|uh|²` on the `grid` with `uh` being an array that came from `fft`. 
+More specifically, it returns
 ```math
 \\int u(\\boldsymbol{x})^2 \\, \\mathrm{d}^2 \\boldsymbol{x} = \\sum_{\\boldsymbol{k}} |\\hat{u}_{\\boldsymbol{k}}|^2 L_x L_y
 ```
 where ``\\hat{u}_{\\boldsymbol{k}} =`` `uh / grid.nx`. 
 """
-function parsevalsum2(uh, grid::TwoDGrid)
-  if size(uh, 1) == grid.nkr # uh is in conjugate symmetric form
-    U = sum(abs2, uh[1, :])           # k=0 modes
-    U += 2*sum(abs2, uh[2:end, :])    # sum k>0 modes twice
-  else # count every mode once
-    U = sum(abs2, uh)
-  end
+parsevalsum2(uh, grid::TwoDGrid) = sum(abs2, uh) * grid.Lx * grid.Ly / (grid.nx^2 * grid.ny^2) # normalization for dft
+
+parsevalsum2(uh, grid::OneDGrid) = sum(abs2, uh) * grid.Lx / grid.nx^2 # normalization for dft
+
+"""
+    parsevalsum2r(uh, grid)
+
+Returns `∫ u² dxdy = Σ|uh|²` on the `grid` with `uh` being an array that came from `rfft`.
+More specifically, it returns
+```math
+\\int u(\\boldsymbol{x})^2 \\, \\mathrm{d}^2 \\boldsymbol{x} = \\sum_{\\boldsymbol{k}} |\\hat{u}_{\\boldsymbol{k}}|^2 L_x L_y
+```
+where ``\\hat{u}_{\\boldsymbol{k}} =`` `uh / grid.nx`. 
+"""
+function parsevalsum2r(uh, grid::TwoDGrid)
+  U = sum(abs2, uh[1, :])           # k=0 modes
+  U += 2*sum(abs2, uh[2:end, :])    # sum k>0 modes twice
 
   norm = grid.Lx * grid.Ly / (grid.nx^2 * grid.ny^2) # normalization for dft
 
   return norm * U
 end
 
-function parsevalsum2(uh, grid::OneDGrid)
-  if size(uh, 1) == grid.nkr                 # uh is conjugate symmetric
-    U = sum(abs2, CUDA.@allowscalar uh[1])   # k=0 modes
-    U += @views 2 * sum(abs2, uh[2:end])     # sum k>0 modes twice
-  else # count every mode once
-    U = sum(abs2, uh)
-  end
-  
+function parsevalsum2r(uh, grid::OneDGrid)
+  U = sum(abs2, CUDA.@allowscalar uh[1])   # k=0 modes
+  U += @views 2 * sum(abs2, uh[2:end])     # sum k>0 modes twice
+
   norm = grid.Lx / grid.nx^2 # normalization for dft
   
   return norm * U
@@ -135,17 +142,21 @@ end
 """
     parsevalsum(uh, grid)
 
-Returns `real(Σ uh)` on the `grid`.
+Returns `real(Σ uh)` on the `grid` with `uh` being an array that came from `fft`.
 """
-function parsevalsum(uh, grid::TwoDGrid)
-  if size(uh, 1) == grid.nkr    # uh is conjugate symmetric
-    U = sum(uh[1, :])           # k=0 modes
-    U += 2*sum(uh[2:end, :])    # sum k>0 modes twice
-  else # count every mode once
-    U = sum(uh)
-  end
+parsevalsum(uh, grid::OneDGrid) = sum(uh) * grid.Lx / grid.nx^2 # normalization for dft
+parsevalsum(uh, grid::TwoDGrid) = sum(uh) * grid.Lx * grid.Ly / (grid.nx^2 * grid.ny^2) # normalization for dft
 
-  norm = grid.Lx * grid.Ly / (grid.nx^2 * grid.ny^2) # weird normalization for dft
+"""
+    parsevalsumr(uh, grid)
+
+Returns `real(Σ uh)` on the `grid` with `uh` being an array that came from `rfft`.
+"""
+function parsevalsumr(uh, grid::TwoDGrid)
+  U = sum(uh[1, :])           # k=0 modes
+  U += 2*sum(uh[2:end, :])    # sum k>0 modes twice
+
+  norm = grid.Lx * grid.Ly / (grid.nx^2 * grid.ny^2) # normalization for dft
   
   return norm * real(U)
 end

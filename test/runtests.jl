@@ -10,7 +10,7 @@ using
   FourierFlows,
   FourierFlows.Diffusion
 
-using FourierFlows: parsevalsum2
+using FourierFlows: parsevalsum2r
 
 using LinearAlgebra: mul!, ldiv!, norm
 
@@ -216,8 +216,8 @@ for dev in devices
     # Test on a rectangular grid
     nx, ny = 64, 128   # number of points
     Lx, Ly = 2π, 3π    # Domain width
-    g = TwoDGrid(dev, nx, Lx, ny, Ly)
-    x, y = gridpoints(g)
+    grid = TwoDGrid(dev, nx, Lx, ny, Ly)
+    x, y = gridpoints(grid)
     k0, l0 = 2π/Lx, 2π/Ly
 
     # Real and complex-valued functions
@@ -237,24 +237,24 @@ for dev in devices
     Jsinkl1sinkl2 = @. (k1*l2-k2*l1)*cos(k1*x + l1*y)*cos(k2*x + l2*y)
     Jexpkl1expkl2 = @. (k2*l1-k1*l2)*(cos((k1+k2)*x + (l1+l2)*y)+im*sin((k1+k2)*x + (l1+l2)*y))
 
-    @test test_parsevalsum(f1, g; realvalued=true)   # Real valued f with rfft
-    @test test_parsevalsum(f1, g; realvalued=false)  # Real valued f with fft
-    @test test_parsevalsum(f2, g; realvalued=false)  # Complex valued f with fft
-    @test test_parsevalsum2(f1, g; realvalued=true)  # Real valued f with rfft
-    @test test_parsevalsum2(f1, g; realvalued=false) # Real valued f with fft
-    @test test_parsevalsum2(f2, g; realvalued=false) # Complex valued f with fft
+    @test test_parsevalsum(f1, grid; realvalued=true)   # Real valued f with rfft
+    @test test_parsevalsum(f1, grid; realvalued=false)  # Real valued f with fft
+    @test test_parsevalsum(f2, grid; realvalued=false)  # Complex valued f with fft
+    @test test_parsevalsum2(f1, grid; realvalued=true)  # Real valued f with rfft
+    @test test_parsevalsum2(f1, grid; realvalued=false) # Real valued f with fft
+    @test test_parsevalsum2(f2, grid; realvalued=false) # Complex valued f with fft
 
-    @test test_jacobian(sinkl1, sinkl1, 0*sinkl1, g)      # Test J(a, a) = 0
-    @test test_jacobian(sinkl1, sinkl2, Jsinkl1sinkl2, g) # Test J(sin1, sin2) = Jsin1sin2
-    @test test_jacobian(expkl1, expkl2, Jexpkl1expkl2, g) # Test J(exp1, exp2) = Jexp1exps2
+    @test test_jacobian(sinkl1, sinkl1, 0*sinkl1, grid)      # Test J(a, a) = 0
+    @test test_jacobian(sinkl1, sinkl2, Jsinkl1sinkl2, grid) # Test J(sin1, sin2) = Jsin1sin2
+    @test test_jacobian(expkl1, expkl2, Jexpkl1expkl2, grid) # Test J(exp1, exp2) = Jexp1exps2
 
     @test test_zeros()
     
-    g = OneDGrid(dev, nx, Lx)
+    grid = OneDGrid(dev, nx, Lx)
     σ = 0.5
-    f1 = @. exp(-g.x^2/(2σ^2))
-    @test test_parsevalsum2(f1, g; realvalued=true)  # Real valued f with rfft
-    @test test_parsevalsum2(f1, g; realvalued=false) # Real valued f with fft
+    f1 = @. exp(-grid.x^2/(2σ^2))
+    @test test_parsevalsum2(f1, grid; realvalued=true)  # Real valued f with rfft
+    @test test_parsevalsum2(f1, grid; realvalued=false) # Real valued f with fft
 
     
     # Radial spectrum tests. Note that ahρ = ∫ ah ρ dθ.

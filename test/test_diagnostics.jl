@@ -22,7 +22,7 @@ function test_scalardiagnostics(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2, nsteps
 
   set_c!(prob, c0)
 
-  variance(prob) = parsevalsum2(prob.sol, prob.grid) / Lx
+  variance(prob) = parsevalsum2r(prob.sol, prob.grid) / Lx
   diagnostic = Diagnostic(variance, prob, nsteps=nsteps, freq=freq, ndata=ndata)
 
   stepforward!(prob, diagnostic, nsteps)

@@ -83,10 +83,14 @@ function test_parsevalsum(func, grid; realvalued=true)
   # Compute integral in physical space
   integral = integralsquare(func, grid)
   # Compute integral in wavenumber space using Parseval's theorem
-  if realvalued==true;      funch = rfft(func)
-  elseif realvalued==false; funch = fft(func)
+  if realvalued==true
+    funch = rfft(func)
+    parsevalsum = FourierFlows.parsevalsumr(abs2.(funch), grid)
+  elseif realvalued==false
+    funch = fft(func)
+    parsevalsum = FourierFlows.parsevalsum(abs2.(funch), grid)
   end
-  parsevalsum = FourierFlows.parsevalsum(abs2.(funch), grid)
+  
   isapprox(integral, parsevalsum; rtol=rtol_utils)
 end
 
@@ -94,10 +98,14 @@ function test_parsevalsum2(func, grid; realvalued=true)
   # Compute integral in physical space
   integral = integralsquare(func, grid)
   # Compute integral in wavenumber space using Parseval's theorem
-  if realvalued==true;      funch = rfft(func)
-  elseif realvalued==false; funch = fft(func)
+  if realvalued==true
+    funch = rfft(func)
+    parsevalsum2 = FourierFlows.parsevalsum2r(funch, grid)
+  elseif realvalued==false
+    funch = fft(func)
+    parsevalsum2 = FourierFlows.parsevalsum2(funch, grid)
   end
-  parsevalsum2 = FourierFlows.parsevalsum2(funch, grid)
+  
   isapprox(integral, parsevalsum2; rtol=rtol_utils)
 end
 
