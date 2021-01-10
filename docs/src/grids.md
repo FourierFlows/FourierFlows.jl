@@ -32,7 +32,7 @@ OneDimensionalGrid
 The grid domain is, by default, constructed symmetrically around ``x = 0``, but this 
 can be altered using the `x0` keyword argument of `OneDGrid` constructor. The grid 
 spacing is ``L_x / n_x``. Note that the last point of the domain is a grid-spacing 
-before ``L_x / 2``. This is because periodicity implies that the value of any field 
+before ``L_x / 2``. This is because periodicity implies that the values of any field 
 at the end-points of the domain are equal and, therefore, grid-point values at
 both these end-points are reduntant.
 
@@ -44,7 +44,7 @@ using FourierFlows
 using LinearAlgebra: mul!, ldiv!
 using Plots
 Plots.scalefontsizes(1.25)
-Plots.default(lw=2)
+Plots.default(lw=3)
 nx, Lx = 64, 2π
 grid = OneDGrid(nx, Lx)
 ```
@@ -128,11 +128,15 @@ point of our domain array.
 ```@example 1
 uhat = @. uh / (nx * exp(- im * grid.kr * grid.x[1])) # due to normalization of FFT
 
+using Plots
+
 plot(grid.kr, [real.(uhat), imag.(uhat)],
-          label = ["real\\( û \\)" "imag\\( û \\)"],
+          label = ["real( û )" "imag( û )"],
          xlabel = "k",
           xlims = (-0.5, 10.5),
+          ylims = (-0.55, 0.55),
          xticks = 0:10,
+         yticks = -0.5:0.25:0.5,
          marker = :auto)
 
 savefig("assets/plot2.svg"); nothing # hide
@@ -145,7 +149,7 @@ We can compute its derivative via Fourier transforms. To do that we can use the
 where the values of the derivative in physical and Fourier space will be stored,
 
 ```@example 1
-∂ₓu = similar(u)
+∂ₓu  = similar(u)
 ∂ₓuh = similar(uh)
 nothing # hide
 ```
