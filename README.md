@@ -11,16 +11,11 @@
         <img alt="Build Status for Windows" src="https://img.shields.io/appveyor/ci/navidcy/fourierflows-jl/master?label=Window&logo=appveyor&logoColor=white">
     </a>
     <a href="https://FourierFlows.github.io/FourierFlowsDocumentation/stable">
-        <img alt="stable docs" src="https://img.shields.io/badge/docs-stable-blue.svg">
+        <img alt="stable docs" src="https://img.shields.io/badge/documentation-stable%20release-blue">
     </a>
     <a href="https://FourierFlows.github.io/FourierFlowsDocumentation/dev">
-        <img alt="latest docs" src="https://img.shields.io/badge/docs-dev-blue.svg">
+        <img alt="latest docs" src="https://img.shields.io/badge/documentation-in%20development-orange">
     </a>
-    <!-- removes coveralls since it does not report GPU coverage via gitlab/JuliaGPU
-    <a href="https://coveralls.io/github/FourierFlows/FourierFlows.jl?branch=master">
-        <img src="https://coveralls.io/repos/github/FourierFlows/FourierFlows.jl/badge.svg?branch=master" title="coveralls">
-    </a>
-    -->
     <a href="https://codecov.io/gh/FourierFlows/FourierFlows.jl">
         <img src="https://codecov.io/gh/FourierFlows/FourierFlows.jl/branch/master/graph/badge.svg" title="codecov">
     </a>
