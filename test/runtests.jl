@@ -268,6 +268,7 @@ for dev in devices
         ahρ(ρ) = π*ρ*exp(-ρ^2/2δ^2)                   # aᵣ = π ρ exp(-ρ²/2δ²)
     @test test_radialspectrum(dev, n, ahkl, ahρ)
     @test test_radialspectrum(dev, n, ahkl, ahρ; rfft=true)
+    @test test_ongrid(dev)
   end
 
   @time @testset "Problem instantiation tests" begin
