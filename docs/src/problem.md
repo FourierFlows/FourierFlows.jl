@@ -55,8 +55,8 @@ params = Params(α)
 ```
 
 The particular equation is so simple that it makes no difference performance-wise whether 
-we time-step it in physical or in wavenumber space. For, PDEs with nonlinear terms 
-time-stepping in wavenumbers spaces is much more efficient. Thus, for demonstration purposes, 
+we time-step it in physical or in wavenumber space. For PDEs with nonlinear terms, 
+time-stepping in wavenumbers space is much more efficient. Thus, for demonstration purposes, 
 we will time-step the equation in wavenumber space, i.e.,
 
 ```math
