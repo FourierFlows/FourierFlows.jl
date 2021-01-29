@@ -59,6 +59,8 @@ Note that we chose a function that *is* periodic on our domain. We can visualize
 `u` by
 
 ```@example 1
+using Plots
+
 plot(grid.x, u, label="u", xlabel="x")
 savefig("assets/plot1.svg"); nothing # hide
 ```
@@ -127,8 +129,6 @@ point of our domain array.
 
 ```@example 1
 uhat = @. uh / (nx * exp(- im * grid.kr * grid.x[1])) # due to normalization of FFT
-
-using Plots
 
 plot(grid.kr, [real.(uhat), imag.(uhat)],
           label = ["real( û )" "imag( û )"],
