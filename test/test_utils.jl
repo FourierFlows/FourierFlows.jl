@@ -157,5 +157,5 @@ function test_ongrid(dev::Device)
   X₃, Y₃, Z₃ = gridpoints(g₃)
   f₃(x, y, z) = x^2 - y^3 + sin(z)
   
-  return (FourierFlows.on_grid(f₁, g₁) == f₁.(X₁) && FourierFlows.on_grid(f₂, g₂) == f₂.(X₂, Y₂) && FourierFlows.on_grid(f₃, g₃) == f₃.(X₃, Y₃, Z₃))
+  return (FourierFlows.on_grid(f₁, g₁) == CUDA.@allowscalar f₁.(X₁) && FourierFlows.on_grid(f₂, g₂) == CUDA.@allowscalar f₂.(X₂, Y₂) && FourierFlows.on_grid(f₃, g₃) == CUDA.@allowscalar f₃.(X₃, Y₃, Z₃))
 end
