@@ -6,7 +6,7 @@ authors = ["Gregory L. Wagner <wagner.greg@gmail.com>", "Navid C. Constantinou <
 description = "Tools for building fast, hackable, pseudospectral partial differential equation solvers on periodic domains."
 documentation = "https://fourierflows.github.io/FourierFlowsDocumentation/stable/"
 repository = "https://github.com/FourierFlows/FourierFlows.jl"
-version = "0.6.11"
+version = "0.6.12"
 
 [deps]
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"

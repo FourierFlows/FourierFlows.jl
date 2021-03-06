@@ -145,17 +145,17 @@ function test_ongrid(dev::Device)
   nx, ny, nz = 6, 8, 10
   Lx, Ly, Lz = 2π, 2.0, 3.0
   
-  g₁ = OneDGrid(nx, Lx)
+  g₁ = OneDGrid(dev, nx, Lx)
   X₁ = ArrayType(dev)(g₁.x)
   f₁(x) = x^2
   
-  g₂ = TwoDGrid(nx, Lx, ny, Ly)
+  g₂ = TwoDGrid(dev, nx, Lx, ny, Ly)
   X₂, Y₂ = gridpoints(g₂)
   f₂(x, y) = x^2 - y^3
   
-  g₃ = ThreeDGrid(nx, Lx, ny, Ly, nz, Lz)
+  g₃ = ThreeDGrid(dev, nx, Lx, ny, Ly, nz, Lz)
   X₃, Y₃, Z₃ = gridpoints(g₃)
   f₃(x, y, z) = x^2 - y^3 + sin(z)
   
-  return CUDA.@allowscalar (FourierFlows.on_grid(f₁, g₁) == f₁.(X₁) && FourierFlows.on_grid(f₂, g₂) == f₂.(X₂, Y₂) && FourierFlows.on_grid(f₃, g₃) == f₃.(X₃, Y₃, Z₃))
+  return (CUDA.@allowscalar FourierFlows.on_grid(f₁, g₁) == f₁.(X₁) && CUDA.@allowscalar FourierFlows.on_grid(f₂, g₂) == f₂.(X₂, Y₂) && CUDA.@allowscalar FourierFlows.on_grid(f₃, g₃) == f₃.(X₃, Y₃, Z₃))
 end
