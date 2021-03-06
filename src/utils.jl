@@ -248,7 +248,7 @@ end
 Returns an array, of the ArrayType of the device `grid` lives on, that contains the values of
 function `func` evaluated on the `grid`.
 """
-on_grid(func, grid::OneDGrid) = CUDA.@allowscalar @. func(grid.x)
+on_grid(func, grid::OneDGrid) = func.(grid.x)
 
 function on_grid(func, grid::TwoDGrid)
   x, y = gridpoints(grid)
