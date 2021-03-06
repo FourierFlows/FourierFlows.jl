@@ -248,16 +248,16 @@ end
 Returns an array, of the ArrayType of the device `grid` lives on, that contains the values of
 function `func` evaluated on the `grid`.
 """
-on_grid(func, grid::OneDGrid) = @. func(grid.x)
+on_grid(func, grid::OneDGrid) = CUDA.@allowscalar @. func(grid.x)
 
 function on_grid(func, grid::TwoDGrid)
   x, y = gridpoints(grid)
-  return func.(x, y)
+  return CUDA.@allowscalar func.(x, y)
 end
 
 function on_grid(func, grid::ThreeDGrid)
   x, y, z = gridpoints(grid)
-  return func.(x, y, z)
+  return CUDA.@allowscalar func.(x, y, z)
 end
 
 """
