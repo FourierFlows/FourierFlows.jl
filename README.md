@@ -21,15 +21,16 @@
     </a>
 </p>
 
+
 ## Overview
 
-This software provides tools for partial differential equations on
-periodic domains using Fourier-based pseudospectral methods.
-A central intent of the software's design is also to provide a framework
-for writing new, fast solvers for new physical problems.
-The code is written in [Julia][].
+This software provides tools for partial differential equations on periodic domains using 
+Fourier-based pseudospectral methods. A central intent of the software's design is also to 
+provide a framework for writing new, fast solvers for new physical problems. The code is 
+written in [Julia][].
 
-For more details refer to the [documentation](https://fourierflows.github.io/FourierFlowsDocumentation/dev/).
+For more details refer to the [documentation](https://fourierflows.github.io/FourierFlowsDocumentation/stable/).
+
 
 ## Installation
 
@@ -41,15 +42,39 @@ It is simple:
 
 and no more.
 
+
 ## Usage
 
 See the documentation for tutorials on (i) how [construct grids](https://fourierflows.github.io/FourierFlowsDocumentation/stable/grids/) and use Fourier transform to compute derivatives and (ii) how to [set up a PDE](https://fourierflows.github.io/FourierFlowsDocumentation/stable/problem/), time-step it forward. and visualize the output.
+
+
+## Scalability
+
+For now, FourierFlows.jl is restricted to run on either a single CPU or single GPU. Multi-threading
+can enhance performance for the Fourier transforms. By default, FourierFlows.jl will use the 
+maximum number of threads available on your machine. You can set the number of threads used by
+FourierFlows.jl by setting the environment variable, e.g.,
+
+```
+$ export JULIA_NUM_THREADS=4
+```
+
+For more information on multi-threading users are directed to the [Julia Documentation](https://docs.julialang.org/en/v1/manual/multi-threading/).
+
+If your machine has more than one GPU available, then functionality within CUDA.jl package 
+enables the user to choose the GPU device that FourierFlows.jl should use. The user is referred
+to the [CUDA.jl Documentation](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#Device-Management);
+in particular, [`CUDA.devices`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA.devices) 
+and [`CUDA.CuDevice`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA.CuDevice).
+
 
 ## Example(s)
 
 An example for coding up and solving the linear shallow water equations is [documented](https://fourierflows.github.io/FourierFlowsDocumentation/stable/generated/OneDShallowWaterGeostrophicAdjustment/).
 
-See also the child packages [GeophysicalFlows.jl][] for example usage of `FourierFlows.jl` for problems in Geophysical Fluid Dynamics.
+See also the child packages [GeophysicalFlows.jl][] for example usage of FourierFlows.jl for 
+problems in Geophysical Fluid Dynamics.
+
 
 ## Developers
 
@@ -61,7 +86,7 @@ and [Navid C. Constantinou][] (@navidcy).
 
 The code is citable via [zenodo](https://zenodo.org). Please cite as:
 
-> Navid C. Constantinou & Gregory L. Wagner. (2021). FourierFlows/FourierFlows.jl: FourierFlows v0.6.12 (Version v0.6.12). Zenodo.  [http://doi.org/10.5281/zenodo.1161724](http://doi.org/10.5281/zenodo.1161724)
+> Navid C. Constantinou & Gregory L. Wagner. (2021). FourierFlows/FourierFlows.jl: FourierFlows v0.6.13 (Version v0.6.13). Zenodo.  [http://doi.org/10.5281/zenodo.1161724](http://doi.org/10.5281/zenodo.1161724)
 
 
 [Julia]: https://julialang.org/

@@ -51,3 +51,10 @@ The `FourierFlows.Diffusion` module is written in a way such that switching from
 is only a matter of calling `FourierFlows.Diffusion.Problem()` with `dev=GPU()`. All physics 
 modules in [GeophysicalFlows.jl](https://github.com/FourierFlows/GeophysicalFlows.jl) can 
 also seamlessly run on a GPU with `dev=GPU()` argument.
+
+
+## Selecting GPU device
+
+`FourierFlows.jl` can only utilize a single GPU. If your machine has more than one GPU available, 
+then functionality within `CUDA.jl` package enables the user to choose the GPU device that 
+`FourierFlows.jl` should use. The user is referred to the [`CUDA.jl` Documentation](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#Device-Management); in particular, [`CUDA.devices`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA.devices) and [`CUDA.CuDevice`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA.CuDevice).
