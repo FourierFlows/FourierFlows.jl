@@ -346,11 +346,10 @@ for dev in devices
     else
       if dev == CPU()
         @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element Vector{Float64}\n  ├───── variable: cx -> 128-element Vector{Float64}\n  ├───── variable: ch -> 65-element Vector{ComplexF64}\n  └───── variable: cxh -> 65-element Vector{ComplexF64}\n"
-        @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: ComplexF64"
       else
-        @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element Vector{Float64}\n  ├───── variable: cx -> 128-element " * string(ArrayType(dev)) * "{Float64}\n  ├───── variable: ch -> 65-element " * string(ArrayType(dev)) * "{ComplexF64}\n  └───── variable: cxh -> 65-element " * string(ArrayType(dev)) * "{ComplexF64}\n"
-        @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: ComplexF64"
+        @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element " * string(ArrayType(dev)) * "{Float64}\n  ├───── variable: cx -> 128-element " * string(ArrayType(dev)) * "{Float64}\n  ├───── variable: ch -> 65-element " * string(ArrayType(dev)) * "{ComplexF64}\n  └───── variable: cxh -> 65-element " * string(ArrayType(dev)) * "{ComplexF64}\n"
       end
+      @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: ComplexF64"
     end
     @test repr(prob.clock) == "Clock\n  ├─── timestep dt: 0.01\n  ├────────── step: 0\n  └──────── time t: 0.0"
     @test repr(prob) == "Problem\n  ├─────────── grid: grid (on " * FourierFlows.griddevice(prob.grid) * ")\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"
