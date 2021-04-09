@@ -39,7 +39,7 @@ include("createffttestfunctions.jl")
 
 for dev in devices
   
-  println("testing on " * string(typeof(dev)))
+  @info "testing on " * string(typeof(dev))
   
   @time @testset "Grid tests" begin
     include("test_grid.jl")
@@ -258,16 +258,16 @@ for dev in devices
 
     
     # Radial spectrum tests. Note that ahρ = ∫ ah ρ dθ.
-    n = 128; δ = n/10                 # Parameters
-    ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) # a  = exp(-ρ²/2δ²)
-        ahρ(ρ) = 2π*ρ*exp(-ρ^2/2δ^2)  # aᵣ = 2π ρ exp(-ρ²/2δ²)
-    @test test_radialspectrum(dev, n, ahkl, ahρ)
-    @test test_radialspectrum(dev, n, ahkl, ahρ; rfft=true)
+    n = 128; δ = n/10                                       # Parameters
+    ahkl_isotropic(k, l) = exp(-(k^2 + l^2) / 2δ^2)                     # a  = exp(-ρ²/2δ²)
+    ahρ_isotropic(ρ) = 2π * ρ * exp(-ρ^2 / 2δ^2)                        # aᵣ = 2π ρ exp(-ρ²/2δ²)
+    @test test_radialspectrum(dev, n, ahkl_isotropic, ahρ_isotropic)
+    @test test_radialspectrum(dev, n, ahkl_isotropic, ahρ_isotropic; rfft=true)
 
-    ahkl(k, l) = exp(-(k^2+l^2)/2δ^2) * k^2/(k^2+l^2) # a  = exp(-ρ²/2δ²)*cos(θ)²
-        ahρ(ρ) = π*ρ*exp(-ρ^2/2δ^2)                   # aᵣ = π ρ exp(-ρ²/2δ²)
-    @test test_radialspectrum(dev, n, ahkl, ahρ)
-    @test test_radialspectrum(dev, n, ahkl, ahρ; rfft=true)
+    ahkl_anisotropic(k, l) = exp(-(k^2 + l^2) / 2δ^2) * k^2 / (k^2+l^2) # a  = exp(-ρ²/2δ²) cos²θ
+    ahρ_anisotropic(ρ) = π * ρ * exp(-ρ^2/2δ^2)                         # aᵣ = π ρ exp(-ρ²/2δ²)
+    @test test_radialspectrum(dev, n, ahkl_anisotropic, ahρ_anisotropic)
+    @test test_radialspectrum(dev, n, ahkl_anisotropic, ahρ_anisotropic; rfft=true)
     @test test_ongrid(dev)
   end
 
@@ -340,10 +340,19 @@ for dev in devices
     
     @test repr(prob1.params) == "Parameters\n  ├───── parameter: κ1 -> Float64\n  ├───── parameter: κ2 -> Float64\n  └───── parameter: func -> Function\n"
     @test repr(prob2.params) == "Parameters\n  ├───── parameter: κ1 -> Float64\n  ├───── parameter: func -> Function\n  └───── parameter: κ2 -> Float64\n"
-    @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element "*string(ArrayType(dev))*"{Float64,1}\n  ├───── variable: cx -> 128-element "*string(ArrayType(dev))*"{Float64,1}\n  ├───── variable: ch -> 65-element "*string(ArrayType(dev))*"{Complex{Float64},1}\n  └───── variable: cxh -> 65-element "*string(ArrayType(dev))*"{Complex{Float64},1}\n"
-    @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: Complex{Float64}"
+    if VERSION < v"1.6"
+      @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element " * string(ArrayType(dev)) * "{Float64,1}\n  ├───── variable: cx -> 128-element " * string(ArrayType(dev)) * "{Float64,1}\n  ├───── variable: ch -> 65-element " * string(ArrayType(dev)) * "{Complex{Float64},1}\n  └───── variable: cxh -> 65-element " * string(ArrayType(dev)) * "{Complex{Float64},1}\n"
+      @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: Complex{Float64}"
+    else
+      if dev == CPU()
+        @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element Vector{Float64}\n  ├───── variable: cx -> 128-element Vector{Float64}\n  ├───── variable: ch -> 65-element Vector{ComplexF64}\n  └───── variable: cxh -> 65-element Vector{ComplexF64}\n"
+      else
+        @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element " * string(ArrayType(dev)) * "{Float64, 1}\n  ├───── variable: cx -> 128-element " * string(ArrayType(dev)) * "{Float64, 1}\n  ├───── variable: ch -> 65-element " * string(ArrayType(dev)) * "{ComplexF64, 1}\n  └───── variable: cxh -> 65-element " * string(ArrayType(dev)) * "{ComplexF64, 1}\n"
+      end
+      @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: ComplexF64"
+    end
     @test repr(prob.clock) == "Clock\n  ├─── timestep dt: 0.01\n  ├────────── step: 0\n  └──────── time t: 0.0"
-    @test repr(prob) == "Problem\n  ├─────────── grid: grid (on "*FourierFlows.griddevice(prob.grid)*")\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"
+    @test repr(prob) == "Problem\n  ├─────────── grid: grid (on " * FourierFlows.griddevice(prob.grid) * ")\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"
   end
 
 end # end loop over devices
