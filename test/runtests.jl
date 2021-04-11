@@ -129,7 +129,7 @@ for dev in devices
     # Test 1D grid
     nx = 32             # number of points
     Lx = 2π             # Domain width
-    g1 = OneDGrid(dev, nx, Lx, T=Float32)
+    g1 = OneDGrid(dev, nx, Lx)
     
     @test test_fft_cosmx(g1)
     @test test_rfft_cosmx(g1)
