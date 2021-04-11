@@ -10,7 +10,7 @@ julia>]
 (v1.5) pkg> instantiate
 ```
 
-We recommend installing GeophysicalFlows.jl with the built-in Julia package manager, because 
+We recommend installing FourierFlows.jl with the built-in Julia package manager, because 
 this installs a stable, tagged release. Later on, you can update FourierFlows.jl to the 
 latest tagged release again via the package manager by typing
 
