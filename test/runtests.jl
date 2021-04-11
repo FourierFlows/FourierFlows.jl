@@ -38,7 +38,7 @@ include("createffttestfunctions.jl")
 
 for dev in devices
   
-  const rtol_fft = dev==CPU() ? 1e-12 : 1e-6
+  global const rtol_fft = dev==CPU() ? 1e-12 : 1e-6
   
   @info "testing on " * string(typeof(dev))
   
