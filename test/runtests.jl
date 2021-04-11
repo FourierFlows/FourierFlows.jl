@@ -106,12 +106,20 @@ for dev in devices
     @test testtypedtwodgrid(dev, nx, Lx, ny, Ly; T=T)
     @test testtypedthreedgrid(dev, nx, Lx, ny, Ly, nz, Lz; T=T)
     
-    FT = dev==CPU() ? "Float64" : "Float32"
-    
     # Test show() methods
-    @test repr(g₁) == "OneDimensionalGrid\n  ├─────────── Device: "*FourierFlows.griddevice(g₁)*"\n  ├──────── FloatType: "*FT*"\n  ├────────── size Lx: 6.283185307179586\n  ├──── resolution nx: 6\n  ├── grid spacing dx: 1.0471975511965976\n  └─────────── domain: x ∈ [-3.141592653589793, 2.094395102393195]"
-    @test repr(g₂) == "TwoDimensionalGrid\n  ├───────────────── Device: "*FourierFlows.griddevice(g₂)*"\n  ├────────────── FloatType: "*FT*"\n  ├────────── size (Lx, Ly): (6.283185307179586, 12.566370614359172)\n  ├──── resolution (nx, ny): (6, 8)\n  ├── grid spacing (dx, dy): (1.0471975511965976, 1.5707963267948966)\n  └───────────────── domain: x ∈ [-3.141592653589793, 2.094395102393195]\n                             y ∈ [-6.283185307179586, 4.71238898038469]"
-    @test repr(g₃) == "ThreeDimensionalGrid\n  ├───────────────────── Device: "*FourierFlows.griddevice(g₃)*"\n  ├────────────────── FloatType: "*FT*"\n  ├────────── size (Lx, Ly, Lz): (6.283185307179586, 12.566370614359172, 12.566370614359172)\n  ├──── resolution (nx, ny, nz): (6, 8, 10)\n  ├── grid spacing (dx, dy, dz): (1.0471975511965976, 1.5707963267948966, 0.3)\n  └────────────────────  domain: x ∈ [-3.141592653589793, 2.094395102393195]\n                                 y ∈ [-6.283185307179586, 4.71238898038469]\n                                 z ∈ [-1.5, 1.2]"
+    if dev==CPU()
+      FT = "Float64"
+
+      @test repr(g₁) == "OneDimensionalGrid\n  ├─────────── Device: "*FourierFlows.griddevice(g₁)*"\n  ├──────── FloatType: "*FT*"\n  ├────────── size Lx: 6.283185307179586\n  ├──── resolution nx: 6\n  ├── grid spacing dx: 1.0471975511965976\n  └─────────── domain: x ∈ [-3.141592653589793, 2.094395102393195]"
+      @test repr(g₂) == "TwoDimensionalGrid\n  ├───────────────── Device: "*FourierFlows.griddevice(g₂)*"\n  ├────────────── FloatType: "*FT*"\n  ├────────── size (Lx, Ly): (6.283185307179586, 12.566370614359172)\n  ├──── resolution (nx, ny): (6, 8)\n  ├── grid spacing (dx, dy): (1.0471975511965976, 1.5707963267948966)\n  └───────────────── domain: x ∈ [-3.141592653589793, 2.094395102393195]\n                             y ∈ [-6.283185307179586, 4.71238898038469]"
+      @test repr(g₃) == "ThreeDimensionalGrid\n  ├───────────────────── Device: "*FourierFlows.griddevice(g₃)*"\n  ├────────────────── FloatType: "*FT*"\n  ├────────── size (Lx, Ly, Lz): (6.283185307179586, 12.566370614359172, 12.566370614359172)\n  ├──── resolution (nx, ny, nz): (6, 8, 10)\n  ├── grid spacing (dx, dy, dz): (1.0471975511965976, 1.5707963267948966, 0.3)\n  └────────────────────  domain: x ∈ [-3.141592653589793, 2.094395102393195]\n                                 y ∈ [-6.283185307179586, 4.71238898038469]\n                                 z ∈ [-1.5, 1.2]"    FT = dev==CPU() ? "Float64" : "Float32"
+    else
+      FT = "Float32"
+      
+      @test repr(g₁) == "OneDimensionalGrid\n  ├─────────── Device: "*FourierFlows.griddevice(g₁)*"\n  ├──────── FloatType: "*FT*"\n  ├────────── size Lx: 6.2831855\n  ├──── resolution nx: 6\n  ├── grid spacing dx: 1.0471976\n  └─────────── domain: x ∈ [-3.1415927, 2.0943952]"
+      @test repr(g₂) == "TwoDimensionalGrid\n  ├───────────────── Device: "*FourierFlows.griddevice(g₂)*"\n  ├────────────── FloatType: "*FT*"\n  ├────────── size (Lx, Ly): (6.2831855f0, 12.566371f0)\n  ├──── resolution (nx, ny): (6, 8)\n  ├── grid spacing (dx, dy): (1.0471976f0, 1.5707964f0)\n  └───────────────── domain: x ∈ [-3.1415927, 2.0943952]\n                             y ∈ [-6.2831855, 4.712389]"
+      @test repr(g₃) == "ThreeDimensionalGrid\n  ├───────────────────── Device: "*FourierFlows.griddevice(g₃)*"\n  ├────────────────── FloatType: "*FT*"\n  ├────────── size (Lx, Ly, Lz): (6.2831855f0, 12.566371f0, 12.566371f0)\n  ├──── resolution (nx, ny, nz): (6, 8, 10)\n  ├── grid spacing (dx, dy, dz): (1.0471976f0, 1.5707964f0, 0.3f0)\n  └────────────────────  domain: x ∈ [-3.1415927, 2.0943952]\n                                 y ∈ [-6.2831855, 4.712389]\n                                 z ∈ [-1.5, 1.2]"
+    end
   end
 
   @time @testset "FFT tests" begin
