@@ -18,7 +18,6 @@ using LinearAlgebra: mul!, ldiv!, norm
 devices = (CPU(),)
 @has_cuda devices = (CPU(), GPU())
 
-const rtol_fft = 1e-12
 const rtol_output = 1e-12
 const rtol_utils = 1e-13
 const rtol_timesteppers = 1e-12
@@ -38,6 +37,8 @@ const steppers = [
 include("createffttestfunctions.jl")
 
 for dev in devices
+  
+  const rtol_fft = dev==CPU() ? 1e-12 : 1e-6
   
   @info "testing on " * string(typeof(dev))
   
@@ -128,7 +129,7 @@ for dev in devices
     # Test 1D grid
     nx = 32             # number of points
     Lx = 2π             # Domain width
-    g1 = OneDGrid(dev, nx, Lx)
+    g1 = OneDGrid(dev, nx, Lx, T=Float32)
     
     @test test_fft_cosmx(g1)
     @test test_rfft_cosmx(g1)
@@ -137,7 +138,7 @@ for dev in devices
     # Test 2D rectangular grid
     nx, ny = 32, 64     # number of points
     Lx, Ly = 2π, 3π     # Domain width
-    g2 = TwoDGrid(dev, nx, Lx, ny, Ly)
+    g2 = TwoDGrid(dev, nx, Lx, ny, Ly, T=Float32)
 
     @test test_fft_cosmxcosny(g2)
     @test test_rfft_cosmxcosny(g2)
