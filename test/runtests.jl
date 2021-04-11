@@ -138,7 +138,7 @@ for dev in devices
     # Test 2D rectangular grid
     nx, ny = 32, 64     # number of points
     Lx, Ly = 2π, 3π     # Domain width
-    g2 = TwoDGrid(dev, nx, Lx, ny, Ly, T=Float32)
+    g2 = TwoDGrid(dev, nx, Lx, ny, Ly)
 
     @test test_fft_cosmxcosny(g2)
     @test test_rfft_cosmxcosny(g2)
