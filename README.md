@@ -37,13 +37,15 @@ For more details refer to the [documentation](https://fourierflows.github.io/Fou
 
 ## Installation
 
-It is simple:
+To install, simply do
 
 ```julia
 ] add FourierFlows
 ```
 
-and no more.
+The most recent version of FourierFlows.jl requires Julia v1.5 or later.
+
+The latest version that is compatible with Julia v1.0.5 (the current long-term-release) is FourierFlows.jl v0.4.5.
 
 
 ## Usage
