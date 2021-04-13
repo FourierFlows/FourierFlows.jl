@@ -55,6 +55,7 @@ pages = [
     "Examples" => [ 
         "generated/OneDShallowWaterGeostrophicAdjustment.md",
         ],
+    "Contributor's guide" => "contributing.md",
     "Library" => [ 
         "Contents" => "library/outline.md",
         "Public" => "library/public.md",

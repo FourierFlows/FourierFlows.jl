@@ -16,6 +16,9 @@
     <a href="https://codecov.io/gh/FourierFlows/FourierFlows.jl">
         <img src="https://codecov.io/gh/FourierFlows/FourierFlows.jl/branch/master/graph/badge.svg" title="codecov">
     </a>
+    <a href="https://github.com/SciML/ColPrac">
+      <img alt="ColPrac: Contributor's Guide on Collaborative Practices for Community Packages" src="https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet">
+    </a>
     <a href="https://doi.org/10.5281/zenodo.1161724">
         <img alt="doi" src="https://zenodo.org/badge/DOI/10.5281/zenodo.1161724.svg" alt="DOI">
     </a>
