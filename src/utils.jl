@@ -248,17 +248,11 @@ end
 Returns an array, of the ArrayType of the device `grid` lives on, that contains the values of
 function `func` evaluated on the `grid`.
 """
-on_grid(func, grid::OneDGrid) = CUDA.@allowscalar func.(grid.x)
+on_grid(func, grid::OneDGrid{T, A}) where {T, A} = CUDA.@allowscalar A([func(grid.x[i]) for i=1:grid.nx])
 
-function on_grid(func, grid::TwoDGrid)
-  x, y = gridpoints(grid)
-  return CUDA.@allowscalar func.(x, y)
-end
-
-function on_grid(func, grid::ThreeDGrid)
-  x, y, z = gridpoints(grid)
-  return CUDA.@allowscalar func.(x, y, z)
-end
+on_grid(func, grid::TwoDGrid{T, A}) where {T, A} = CUDA.@allowscalar A([func(grid.x[i], grid.y[j]) for i=1:grid.nx, j=1:grid.ny])
+ 
+on_grid(func, grid::ThreeDGrid{T, A}) where {T, A} = CUDA.@allowscalar A([func(grid.x[i], grid.y[j], grid.z[k]) for i=1:grid.nx, j=1:grid.ny, k=1:grid.nz])
 
 """
     ArrayType(::Device)
