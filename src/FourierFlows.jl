@@ -69,7 +69,10 @@ using
   Statistics,
   Interpolations,
   CUDA,
+  Reexport,
   DocStringExtensions
+
+@reexport using FFTW: fft, ifft, rfft, irfft
 
 import Base: resize!, getindex, setindex!, push!, append!, show, summary
 
