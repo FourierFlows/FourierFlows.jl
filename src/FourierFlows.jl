@@ -68,12 +68,11 @@ using
   JLD2,
   Statistics,
   Interpolations,
-  CUDA,
   Reexport,
   DocStringExtensions
 
 @reexport using FFTW: fft, ifft, rfft, irfft
-@reexport using CUDA: @allowscalar, @disallowscalar, allowscalar
+@reexport using CUDA
 
 import Base: resize!, getindex, setindex!, push!, append!, show, summary
 
