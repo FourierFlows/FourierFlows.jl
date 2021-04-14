@@ -32,11 +32,8 @@
 # balance with the pressure gradient ``-g \bm{\nabla} \eta``.
 
 
-using FourierFlows, Plots
-using FFTW: rfft, irfft
+using FourierFlows, Plots, Printf, Random
 using LinearAlgebra: mul!, ldiv!
-using Printf
-using Random
 
 # ## Coding up the equations
 # ### A demonstration of FourierFlows.jl framework
