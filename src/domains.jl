@@ -282,6 +282,7 @@ Returns the collocation points of the `grid` in 2D or 3D arrays `X, Y` (and `Z`)
 function gridpoints(grid::TwoDGrid{T, A}) where {T, A}
   X = [ grid.x[i₁] for i₁=1:grid.nx, i₂=1:grid.ny ]
   Y = [ grid.y[i₂] for i₁=1:grid.nx, i₂=1:grid.ny ] 
+  
   return A(X), A(Y)
 end
 
@@ -289,6 +290,7 @@ function gridpoints(grid::ThreeDGrid{T, A}) where {T, A}
   X = [ grid.x[i₁] for i₁=1:grid.nx, i₂=1:grid.ny, i₃=1:grid.nz ]
   Y = [ grid.y[i₂] for i₁=1:grid.nx, i₂=1:grid.ny, i₃=1:grid.nz ]
   Z = [ grid.z[i₃] for i₁=1:grid.nx, i₂=1:grid.ny, i₃=1:grid.nz ]
+  
   return A(X), A(Y), A(Z)
 end
 
@@ -326,28 +328,33 @@ end
 
 function dealias!(a, g::OneDGrid, kalias)
   @views @. a[kalias, :] = 0
+  
   return nothing
 end
 
 function dealias!(a, g::TwoDGrid)
   kalias = size(a, 1) == g.nkr ? g.kralias : g.kalias
   dealias!(a, g, kalias)
+  
   return nothing
 end
 
 function dealias!(a, g::TwoDGrid, kalias)
   @views @. a[kalias, g.lalias, :] = 0
+  
   return nothing
 end
 
 function dealias!(a, g::ThreeDGrid)
   kalias = size(a, 1) == g.nkr ? g.kralias : g.kalias
   dealias!(a, g, kalias)
+  
   return nothing
 end
 
 function dealias!(a, g::ThreeDGrid, kalias)
   @views @. a[kalias, g.lalias, g.malias, :] = 0
+  
   return nothing
 end
 
@@ -365,23 +372,27 @@ function makefilter(K::Array; order=4, innerK=0.65, outerK=1)
   decay = 15*log(10) / (outerK-innerK)^order # decay rate for filtering function
   filt = @. exp( -decay*(K-innerK)^order )
   filt[real.(K) .< innerK] .= 1
+  
   return TK(filt)
 end
 
 function makefilter(g::OneDGrid; realvars=true, kwargs...)
   K = realvars ? g.kr*g.dx/π : @.(abs(g.k*g.dx/π))
+  
   return makefilter(K; kwargs...)
 end
 
 function makefilter(g::TwoDGrid; realvars=true, kwargs...)
   K = realvars ?
       @.(sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2)) : @.(sqrt((g.k*g.dx/π)^2 + (g.l*g.dy/π)^2))
+  
   return makefilter(K; kwargs...)
 end
 
 function makefilter(g::ThreeDGrid; realvars=true, kwargs...)
   K = realvars ?
       @.(sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2 + (g.m*g.dz/π)^2)) : @.(sqrt((g.k*g.dx/π)^2 + (g.l*g.dy/π)^2 + (g.m*g.dz/π)^2))
+  
   return makefilter(K; kwargs...)
 end
 
