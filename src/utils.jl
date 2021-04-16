@@ -160,12 +160,14 @@ function jacobianh(a, b, grid::TwoDGrid)
     bh = rfft(b)
     bx = irfft(im * grid.kr .* bh, grid.nx)
     by = irfft(im * grid.l  .* bh, grid.nx)
+    
     return im * grid.kr .* rfft(a .* by) .- im * grid.l .* rfft(a .* bx)
   else
     # J(a, b) = ∂(a * ∂b/∂y)/∂x - ∂(a * ∂b/∂x)/∂y
     bh = fft(b)
     bx = ifft(im * grid.k .* bh)
     by = ifft(im * grid.l .* bh)
+    
     return im * grid.k .* fft(a .* by) .- im * grid.l .* fft(a .* bx)
   end
 end

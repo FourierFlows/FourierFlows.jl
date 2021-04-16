@@ -31,7 +31,7 @@ function Problem(;
       vars = Vars(dev, grid)
   equation = Equation(dev, κ, grid)
 
-  FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
+  return FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
 end
 
 struct Params{T} <: AbstractParams
@@ -49,12 +49,12 @@ Returns the equation for a constant diffusivity problem on `grid` with diffusivi
 function Equation(dev::Device, κ::T, grid) where T<:Number
   L = zeros(dev, T, grid.nkr)
   @. L = - κ * grid.kr^2
-  FourierFlows.Equation(L, calcN!, grid)
+  
+  return FourierFlows.Equation(L, calcN!, grid)
 end
 
-function Equation(dev::Device, κ::T, grid::AbstractGrid{Tg}) where {T<:AbstractArray, Tg}
+Equation(dev::Device, κ::T, grid::AbstractGrid{Tg}) where {T<:AbstractArray, Tg} = 
   FourierFlows.Equation(0, calcN!, grid; dims=(grid.nkr,), T=cxtype(Tg))
-end
 
 struct Vars{Aphys, Atrans} <: AbstractVars
     c :: Aphys
@@ -81,6 +81,7 @@ Calculate the nonlinear term for the 1D heat equation.
 """
 function calcN!(N, sol, t, clock, vars, params::Params{T}, grid) where T<:Number
   @. N = 0
+  
   return nothing
 end
 
@@ -90,6 +91,7 @@ function calcN!(N, sol, t, clock, vars, params::Params{T}, grid) where T<:Abstra
   @. vars.cx *= params.κ
   mul!(vars.cxh, grid.rfftplan, vars.cx)
   @. N = im * grid.kr * vars.cxh
+  
   return nothing
 end
 
@@ -101,6 +103,7 @@ Update the variables in `vars` on the `grid` with the solution in `sol`.
 function updatevars!(vars, grid, sol)
   ldiv!(vars.c, grid.rfftplan, deepcopy(sol))
   @. vars.ch = sol
+  
   return nothing
 end
 
@@ -116,6 +119,8 @@ function set_c!(prob, c)
   prob.vars.c .= T(c) # this makes sure that c is converted to the ArrayType used in prob.vars.c (e.g., convert to CuArray if user gives c as Arrray)
   mul!(prob.sol, prob.grid.rfftplan, prob.vars.c)
   updatevars!(prob)
+  
+  return nothing
 end
 
 end # module

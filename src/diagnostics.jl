@@ -49,10 +49,12 @@ Update `diag`.
 """
 function update!(d, i)
   i <= length(d.steps) || extend!(d)
+  
    d.data[i] = d() #d.calc(prob)
       d.t[i] = d.prob.clock.t
   d.steps[i] = d.prob.clock.step
          d.i = i
+         
   return nothing
 end
 
@@ -63,6 +65,7 @@ Increment the Diagnostic diag, or an array of Diagnostics diags.
 """
 function increment!(d)
   d.prob.clock.step % d.freq == 0 && update!(d, d.i+1)
+  
   return nothing
 end
 
@@ -70,6 +73,7 @@ function increment!(diags::AbstractVector)
   for d in diags
     increment!(d)
   end
+  
   return nothing
 end
 
@@ -84,4 +88,3 @@ getindex(d::Diagnostic, idx...) = getindex(d.data, idx...)
 # e() returns energy at the current time.
 # sensible?
 (d::Diagnostic)() = d.calc(d.prob)
-

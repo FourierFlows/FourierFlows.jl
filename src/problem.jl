@@ -23,7 +23,8 @@ term, the function `calcN!` that computes the nonlinear term and the problem's
 """
 function Equation(L, calcN!, grid::AbstractGrid{G}; dims=supersize(L), T=nothing) where G
   T = T == nothing ? T = cxtype(G) : T
-  Equation(L, calcN!, grid, dims, T)
+  
+  return Equation(L, calcN!, grid, dims, T)
 end
 
 """
