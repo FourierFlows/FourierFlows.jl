@@ -8,7 +8,7 @@ using
 using
   FourierFlows,
   FourierFlows.Diffusion
-  
+
 using FourierFlows: parsevalsum2
 
 using LinearAlgebra: mul!, ldiv!, norm
