@@ -8,9 +8,6 @@ $(EXPORTS)
 module FourierFlows
 
 export
-  # Helper variables and macros for determining if machine is CUDA-enabled.
-  @has_cuda,
-
   Device,
   CPU,
   GPU,
@@ -114,16 +111,10 @@ include("timesteppers.jl")
 # Physics
 include("diffusion.jl")
 
-"""
-    @has_cuda expr
-A macro to compile and execute `expr` only if CUDA is installed and available.
-"""
-macro has_cuda(expr)
-  return has_cuda() ? :($(esc(expr))) : :(nothing)
-end
-
 # CUDA functionality
-@has_cuda include("CuFourierFlows.jl")
+if CUDA.has_cuda()
+  include("CuFourierFlows.jl")
+end
 
 function __init__()
   threads = Threads.nthreads()
@@ -132,7 +123,7 @@ function __init__()
     FFTW.set_num_threads(threads)
   end
 
-  @has_cuda begin
+  if CUDA.has_cuda()
     @debug "CUDA-enabled GPU(s) detected:"
     for (gpu, dev) in enumerate(CUDA.devices())
       @debug "$dev: $(CUDA.name(dev))"

@@ -3,20 +3,16 @@ using
   LinearAlgebra,
   Printf,
   JLD2,
-  CUDA,
   Test
 
 using
   FourierFlows,
   FourierFlows.Diffusion
 
-using FourierFlows: parsevalsum2
-
 using LinearAlgebra: mul!, ldiv!, norm
 
 # the devices on which tests will run
-devices = (CPU(),)
-@has_cuda devices = (CPU(), GPU())
+devices = CUDA.has_cuda() ? (CPU(),) : (CPU(), GPU())
 
 const rtol_fft = 1e-12
 const rtol_output = 1e-12
