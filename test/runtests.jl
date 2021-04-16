@@ -12,7 +12,7 @@ using
 using LinearAlgebra: mul!, ldiv!, norm
 
 # the devices on which tests will run
-devices = CUDA.has_cuda() ? (CPU(),) : (CPU(), GPU())
+devices = CUDA.has_cuda() ? (CPU(), GPU()) : (CPU(),)
 
 const rtol_fft = 1e-12
 const rtol_output = 1e-12
