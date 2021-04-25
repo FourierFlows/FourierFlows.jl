@@ -37,10 +37,12 @@ For more details refer to the [documentation](https://fourierflows.github.io/Fou
 
 ## Installation
 
-To install, simply do
+To install, use Julia's  built-in package manager (accessed by pressing `]` in the Julia REPL command prompt) to add the package and also to instantiate/build all the required dependencies
 
 ```julia
-] add FourierFlows
+julia>]
+(v1.5) pkg> add FourierFlows
+(v1.5) pkg> instantiate
 ```
 
 The most recent version of FourierFlows.jl requires Julia v1.5 or later.
@@ -81,17 +83,42 @@ See also the child packages [GeophysicalFlows.jl][] for example usage of Fourier
 problems in Geophysical Fluid Dynamics.
 
 
+## Getting help
+
+Interested in using FourierFlows.jl or trying to figure out how to use it? Please feel free 
+to ask us questions and get in touch! The [documentation](https://fourierflows.github.io/FourierFlowsDocumentation/stable) 
+is always the best place to start. Check out the [examples](https://github.com/FourierFlows/FourierFlows.jl/tree/master/examples) and [open an issue](https://github.com/FourierFlows/FourierFlows.jl/issues/new) 
+or [start a discussion](https://github.com/FourierFlows/FourierFlows.jl/discussions/new) 
+if you have any questions, comments, suggestions, etc.
+
+
 ## Developers
 
 FourierFlows is currently being developed by [Gregory L. Wagner][] (@glwagner)
 and [Navid C. Constantinou][] (@navidcy).
 
 
-## Cite
+## Citing
 
 The code is citable via [zenodo](https://zenodo.org). Please cite as:
 
 > Navid C. Constantinou & Gregory L. Wagner. (2021). FourierFlows/FourierFlows.jl: FourierFlows v0.6.17 (Version v0.6.17). Zenodo.  [http://doi.org/10.5281/zenodo.1161724](http://doi.org/10.5281/zenodo.1161724)
+
+
+
+## Contributing
+
+We are excited to get more people involved in contributing to the development of FourierFlows.jl! 
+We welcome any contribution, no matter how big or small! It's always great to have new people 
+look at the code with fresh eyes: you will see errors that other developers have missed.
+
+Let us know by [open an issue](https://github.com/FourierFlows/FourierFlows.jl/issues/new) 
+or [start a discussion](https://github.com/FourierFlows/FourierFlows.jl/discussions/new) 
+if you'd like to work on a new feature or implement a new module, if you're new to open-source 
+and want to find a cool little project or issue to work on that fits your interests! We're more 
+than happy to help along the way.
+
+For more information, check out our [contributor's guide](https://github.com/FourierFlows/FourierFlows.jl/blob/master/CONTRIBUTING.md).
 
 
 [Julia]: https://julialang.org/
