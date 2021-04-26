@@ -37,12 +37,12 @@ For more details refer to the [documentation](https://fourierflows.github.io/Fou
 
 ## Installation
 
-To install, use Julia's  built-in package manager (accessed by pressing `]` in the Julia REPL command prompt) to add the package and also to instantiate/build all the required dependencies
+To install, use Julia's built-in package manager to add the package and also to instantiate/build all the required dependencies
 
 ```julia
-julia>]
-(v1.5) pkg> add FourierFlows
-(v1.5) pkg> instantiate
+julia> using Pkg
+julia> Pkg.add("FourierFlows")
+julia> Pkg.instantiate()
 ```
 
 The most recent version of FourierFlows.jl requires Julia v1.5 or later.
