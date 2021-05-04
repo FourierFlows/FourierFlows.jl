@@ -3,7 +3,6 @@ using
   LinearAlgebra,
   Printf,
   JLD2,
-  CUDA,
   Test
 
 using
@@ -15,8 +14,7 @@ using FourierFlows: parsevalsum2
 using LinearAlgebra: mul!, ldiv!, norm
 
 # the devices on which tests will run
-devices = (CPU(),)
-@has_cuda devices = (CPU(), GPU())
+devices = CUDA.has_cuda() ? (CPU(), GPU()) : (CPU(),)
 
 const rtol_fft = 1e-12
 const rtol_output = 1e-12

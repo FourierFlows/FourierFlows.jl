@@ -139,7 +139,7 @@ function create_testfuncs(g::ThreeDGrid{Tg,<:Array}) where Tg
 end
 
 
-@has_cuda begin
+if CUDA.has_cuda()
   function create_testfuncs(g::OneDGrid{Tg, <:CuArray}) where Tg
     cpugrid = OneDGrid(g.nx, g.Lx)
     out = create_testfuncs(cpugrid)
