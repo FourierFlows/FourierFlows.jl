@@ -113,6 +113,7 @@ include("diffusion.jl")
 
 # CUDA functionality
 if CUDA.has_cuda()
+  @info "GPU functionality for FourierFlows is loaded"
   include("CuFourierFlows.jl")
 end
 
