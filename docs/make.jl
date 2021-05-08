@@ -4,7 +4,7 @@ using
   Plots,  # so that Literate.jl does not capture precompilation output
   FourierFlows
   
-# Gotta set this environment variable when using the GR run-time on Travis CI.
+# Gotta set this environment variable when using the GR run-time on CI machines.
 # This happens as examples will use Plots.jl to make plots and movies.
 # See: https://github.com/jheinen/GR.jl/issues/278
 ENV["GKSwstype"] = "100"
@@ -34,7 +34,7 @@ end
 ##### Build and deploy docs
 #####
 
-# Set up a timer to print a space ' ' every 240 seconds. This is to avoid Travis CI
+# Set up a timer to print a space ' ' every 240 seconds. This is to avoid CI
 # timing out when building demanding Literate.jl examples.
 Timer(t -> println(" "), 0, interval=240)
 
