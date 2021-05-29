@@ -6,19 +6,22 @@ testnz(g, nz) = isapprox(g.nz, nz)
 function testdx(dev, g::Union{OneDGrid{T}, TwoDGrid{T}, ThreeDGrid{T}}) where T
   dxgrid = @. g.x[2:end] - g.x[1:end-1]
   dxones = ArrayType(dev)(g.dx*ones(T, size(dxgrid)))
-  isapprox(dxgrid, dxones)
+  
+  return isapprox(dxgrid, dxones)
 end
 
 function testdy(dev, g::Union{TwoDGrid{T}, ThreeDGrid{T}}) where T
   dygrid = @. g.y[2:end] - g.y[1:end-1]
   dyones = ArrayType(dev)(g.dy*ones(T, size(dygrid)))
-  isapprox(dygrid, dyones)
+  
+  return isapprox(dygrid, dyones)
 end
 
 function testdz(dev, g::ThreeDGrid{T}) where T
   dzgrid = @. g.z[2:end] - g.z[1:end-1]
   dzones = ArrayType(dev)(g.dz*ones(T, size(dzgrid)))
-  isapprox(dzgrid, dzones)
+  
+  return isapprox(dzgrid, dzones)
 end
 
 testx(g) = isapprox(g.x[end]-g.x[1], g.Lx-g.dx)
@@ -35,7 +38,8 @@ function testwavenumberalignment(k, nx)
   mid = Int(nx/2)
   positives = k[2:mid]
   negatives = flippednegatives(k, mid)
-  isapprox(reshape(positives, mid-1), reshape(negatives, mid-1))
+  
+  return isapprox(reshape(positives, mid-1), reshape(negatives, mid-1))
 end
 
 testk(g) = testwavenumberalignment(g.k, g.nx)
@@ -49,7 +53,8 @@ function testgridpoints(dev::Device, g::TwoDGrid{T}) where T
   dYgrid = @. Y[:, 2:end] - Y[:, 1:end-1]
   dXones = ArrayType(dev)(g.dx*ones(T, size(dXgrid)))
   dYones = ArrayType(dev)(g.dy*ones(T, size(dYgrid)))
-  isapprox(dXgrid, dXones) && isapprox(dYgrid, dYones)
+  
+  return isapprox(dXgrid, dXones) && isapprox(dYgrid, dYones)
 end
 
 function testgridpoints(dev::Device, g::ThreeDGrid{T}) where T
@@ -60,63 +65,70 @@ function testgridpoints(dev::Device, g::ThreeDGrid{T}) where T
   dXones = ArrayType(dev)(g.dx*ones(T, size(dXgrid)))
   dYones = ArrayType(dev)(g.dy*ones(T, size(dYgrid)))
   dZones = ArrayType(dev)(g.dz*ones(T, size(dZgrid)))
-  isapprox(dXgrid, dXones) && isapprox(dYgrid, dYones) && isapprox(dZgrid, dZones)
+  
+  return isapprox(dXgrid, dXones) && isapprox(dYgrid, dYones) && isapprox(dZgrid, dZones)
 end
 
-function testdealias(g::OneDGrid)
-  T = typeof(g.Lx)
-  fh = ones(Complex{T}, size(g.kr))
-  dealias!(fh, g)
-  kmax = round(maximum(g.kr)*2/3)
-  CUDA.@allowscalar isapprox(sum(abs.(fh[g.kr .>= kmax])), 0)
+function testdealias(grid::OneDGrid)
+  fh = ones(Complex{eltype(grid)}, size(grid.kr))
+  dealias!(fh, grid)
+  kmax = round(maximum(grid.kr)*2/3)
+  
+  return CUDA.@allowscalar isapprox(sum(abs.(fh[grid.kr .>= kmax])), 0)
 end
 
-function testdealias(g::TwoDGrid)
-  T = typeof(g.Lx)
-  fh = ones(Complex{T}, size(g.Krsq))
-  dealias!(fh, g)
-  kmax = round(maximum(g.kr)*2/3)
-  lmax = floor(maximum(g.l)*2/3)
+function testdealias(grid::TwoDGrid)
+  fh = ones(Complex{eltype(grid)}, size(grid.Krsq))
+  dealias!(fh, grid)
+  kmax = round(maximum(grid.kr)*2/3)
+  lmax = floor(maximum(grid.l)*2/3)
 
-  temp = 0.0
-  for j = 1:g.nl, i = 1:g.nkr
-    if (CUDA.@allowscalar g.kr[i] >= kmax) & (CUDA.@allowscalar g.l[j] >= lmax || CUDA.@allowscalar g.l[j] < -lmax)
+  temp = 0
+  for j = 1:grid.nl, i = 1:grid.nkr
+    if ((CUDA.@allowscalar grid.kr[i] >= kmax) || 
+        (CUDA.@allowscalar grid.l[j] >= lmax || CUDA.@allowscalar grid.l[j] < -lmax))
       temp += abs.(fh[i, j]) #temp = sum of |fh| for aliased wavenumbers
     end
   end
-  isapprox(temp, 0)
+  
+  return isapprox(temp, 0)
 end
 
-function testdealias(g::ThreeDGrid)
-  T = typeof(g.Lx)
-  fh = ones(Complex{T}, size(g.Krsq))
-  dealias!(fh, g)
-  kmax = round(maximum(g.kr)*2/3)
-  lmax = floor(maximum(g.l)*2/3)
-  mmax = floor(maximum(g.m)*2/3)
+function testdealias(grid::ThreeDGrid)
+  fh = ones(Complex{eltype(grid)}, size(grid.Krsq))
+  dealias!(fh, grid)
+  kmax = round(maximum(grid.kr)*2/3)
+  lmax = floor(maximum(grid.l)*2/3)
+  mmax = floor(maximum(grid.m)*2/3)
 
-  temp = 0.0
-  for k = 1:g.nm, j = 1:g.nl, i = 1:g.nkr
-    if (CUDA.@allowscalar g.kr[i] >= kmax ) & (CUDA.@allowscalar g.l[j] >= lmax || CUDA.@allowscalar g.l[j] < -lmax) & (CUDA.@allowscalar g.m[k] >= mmax || CUDA.@allowscalar g.m[k] < -mmax)
+  temp = 0
+  for k = 1:grid.nm, j = 1:grid.nl, i = 1:grid.nkr
+    if ((CUDA.@allowscalar grid.kr[i] >= kmax ) || 
+        (CUDA.@allowscalar grid.l[j] >= lmax || CUDA.@allowscalar grid.l[j] < -lmax) ||
+        (CUDA.@allowscalar grid.m[k] >= mmax || CUDA.@allowscalar grid.m[k] < -mmax))
       temp += abs.(fh[i, j, k]) #temp = sum of |fh| for aliased wavenumbers
     end
   end
-  isapprox(temp, 0)
+  
+  return isapprox(temp, 0)
 end
 
 function testtypedonedgrid(dev::Device, nx, Lx; T=Float64)
-  gr = OneDGrid(nx, Lx, T=T)
-  typeof(gr.dx)==T && typeof(gr.x[1])==T && typeof(gr.Lx)==T && eltype(gr) == T
+  grid = OneDGrid(nx, Lx, T=T)
+  
+  return typeof(grid.dx)==T && typeof(grid.x[1])==T && typeof(grid.Lx)==T && eltype(grid) == T
 end
 
 function testtypedtwodgrid(dev::Device, nx, Lx, ny=Lx, Ly=Lx; T=Float64)
-  gr = TwoDGrid(nx, Lx, ny, Ly, T=T)
-  typeof(gr.dx)==T && typeof(gr.dy)==T && typeof(gr.x[1])==T && typeof(gr.y[1])==T && typeof(gr.Lx)==T && typeof(gr.Ly)==T && eltype(gr) == T
+  grid = TwoDGrid(nx, Lx, ny, Ly, T=T)
+  
+  return typeof(grid.dx)==T && typeof(grid.dy)==T && typeof(grid.x[1])==T && typeof(grid.y[1])==T && typeof(grid.Lx)==T && typeof(grid.Ly)==T && eltype(grid) == T
 end
 
 function testtypedthreedgrid(dev::Device, nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; T=Float64)
-  gr = ThreeDGrid(nx, Lx, ny, Ly, nz, Lz, T=T)
-  typeof(gr.dx)==T && typeof(gr.dy)==T && typeof(gr.dz)==T && typeof(gr.x[1])==T && typeof(gr.y[1])==T && typeof(gr.z[1])==T && typeof(gr.Lx)==T && typeof(gr.Ly)==T && typeof(gr.Lz)==T && eltype(gr) == T
+  grid = ThreeDGrid(nx, Lx, ny, Ly, nz, Lz, T=T)
+  
+  return typeof(grid.dx)==T && typeof(grid.dy)==T && typeof(grid.dz)==T && typeof(grid.x[1])==T && typeof(grid.y[1])==T && typeof(grid.z[1])==T && typeof(grid.Lx)==T && typeof(grid.Ly)==T && typeof(grid.Lz)==T && eltype(grid) == T
 end
 
 function testmakefilter(dev::Device, g::AbstractGrid)
@@ -125,7 +137,8 @@ function testmakefilter(dev::Device, g::AbstractGrid)
   G = typeof(g)
   nofilter = G<:OneDGrid ? filter[@. g.kr*g.dx/π < 0.65] : ( G<:TwoDGrid ? filter[@. sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2) < 0.65] : filter[@. sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2 + (g.m*g.dz/π)^2) < 0.65] )
   fullfilter = G<:OneDGrid ? filter[@. g.kr*g.dx/π > 0.999] : ( G<:TwoDGrid ? filter[@. sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2) > 0.999] : filter[@. sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2 + (g.m*g.dz/π)^2) > 0.999] )
-  nofilter== zeros(dev, T, size(nofilter)) .+ 1 && isapprox(fullfilter, zeros(dev, T, size(fullfilter)), atol=1e-12)
+  
+  return nofilter== zeros(dev, T, size(nofilter)) .+ 1 && isapprox(fullfilter, zeros(dev, T, size(fullfilter)), atol=1e-12)
 end
 
 function test_plan_flows_fftrfft(::CPU; T=Float64)
@@ -137,7 +150,8 @@ function test_plan_flows_fftrfft(::CPU; T=Float64)
   typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4,))))) <: FFTW.rFFTWPlan{T,-1,false,1} &&
   typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6))))) <: FFTW.rFFTWPlan{T,-1,false,2} &&
   typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) <: FFTW.rFFTWPlan{T,-1,false,3} &&
-  FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2])
+  
+  return FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2])
 end
 
 function test_plan_flows_fftrfft(::GPU; T=Float64)
@@ -149,5 +163,6 @@ function test_plan_flows_fftrfft(::GPU; T=Float64)
   typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4,))))) == CUDA.CUFFT.rCuFFTPlan{T,-1,false,1} &&
   typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6))))) == CUDA.CUFFT.rCuFFTPlan{T,-1,false,2} &&
   typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) == CUDA.CUFFT.rCuFFTPlan{T,-1,false,3} &&
-  FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2])
+  
+  return FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2])
 end
