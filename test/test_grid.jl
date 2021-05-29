@@ -63,41 +63,41 @@ function testgridpoints(dev::Device, g::ThreeDGrid{T}) where T
   isapprox(dXgrid, dXones) && isapprox(dYgrid, dYones) && isapprox(dZgrid, dZones)
 end
 
-function testdealias(g::OneDGrid)
-  T = typeof(g.Lx)
-  fh = ones(Complex{T}, size(g.kr))
-  dealias!(fh, g)
-  kmax = round(maximum(g.kr)*2/3)
-  CUDA.@allowscalar isapprox(sum(abs.(fh[g.kr .>= kmax])), 0)
+function testdealias(grid::OneDGrid)
+  fh = ones(Complex{eltype(grid)}, size(grid.kr))
+  dealias!(fh, grid)
+  kmax = round(maximum(grid.kr)*2/3)
+  CUDA.@allowscalar isapprox(sum(abs.(fh[grid.kr .>= kmax])), 0)
 end
 
-function testdealias(g::TwoDGrid)
-  T = typeof(g.Lx)
-  fh = ones(Complex{T}, size(g.Krsq))
-  dealias!(fh, g)
-  kmax = round(maximum(g.kr)*2/3)
-  lmax = floor(maximum(g.l)*2/3)
+function testdealias(grid::TwoDGrid)
+  fh = ones(Complex{eltype(grid)}, size(grid.Krsq))
+  dealias!(fh, grid)
+  kmax = round(maximum(grid.kr)*2/3)
+  lmax = floor(maximum(grid.l)*2/3)
 
-  temp = 0.0
-  for j = 1:g.nl, i = 1:g.nkr
-    if (CUDA.@allowscalar g.kr[i] >= kmax) & (CUDA.@allowscalar g.l[j] >= lmax || CUDA.@allowscalar g.l[j] < -lmax)
+  temp = 0
+  for j = 1:grid.nl, i = 1:grid.nkr
+    if ((CUDA.@allowscalar grid.kr[i] >= kmax) || 
+        (CUDA.@allowscalar grid.l[j] >= lmax || CUDA.@allowscalar grid.l[j] < -lmax))
       temp += abs.(fh[i, j]) #temp = sum of |fh| for aliased wavenumbers
     end
   end
   isapprox(temp, 0)
 end
 
-function testdealias(g::ThreeDGrid)
-  T = typeof(g.Lx)
-  fh = ones(Complex{T}, size(g.Krsq))
-  dealias!(fh, g)
-  kmax = round(maximum(g.kr)*2/3)
-  lmax = floor(maximum(g.l)*2/3)
-  mmax = floor(maximum(g.m)*2/3)
+function testdealias(grid::ThreeDGrid)
+  fh = ones(Complex{eltype(grid)}, size(grid.Krsq))
+  dealias!(fh, grid)
+  kmax = round(maximum(grid.kr)*2/3)
+  lmax = floor(maximum(grid.l)*2/3)
+  mmax = floor(maximum(grid.m)*2/3)
 
-  temp = 0.0
-  for k = 1:g.nm, j = 1:g.nl, i = 1:g.nkr
-    if (CUDA.@allowscalar g.kr[i] >= kmax ) & (CUDA.@allowscalar g.l[j] >= lmax || CUDA.@allowscalar g.l[j] < -lmax) & (CUDA.@allowscalar g.m[k] >= mmax || CUDA.@allowscalar g.m[k] < -mmax)
+  temp = 0
+  for k = 1:grid.nm, j = 1:grid.nl, i = 1:grid.nkr
+    if ((CUDA.@allowscalar grid.kr[i] >= kmax ) || 
+        (CUDA.@allowscalar grid.l[j] >= lmax || CUDA.@allowscalar grid.l[j] < -lmax) ||
+        (CUDA.@allowscalar grid.m[k] >= mmax || CUDA.@allowscalar grid.m[k] < -mmax))
       temp += abs.(fh[i, j, k]) #temp = sum of |fh| for aliased wavenumbers
     end
   end

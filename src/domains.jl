@@ -316,44 +316,47 @@ function getaliasedwavenumbers(nk, nkr, aliasfraction)
 end
 
 """
-    dealias!(a, g, kalias)
+    dealias!(a, grid, kalias)
 
-Dealias array `a` on the grid `g` with aliased x-wavenumbers `kalias`.
+Dealias array `a` on the `grid` with aliased x-wavenumbers `kalias`.
 """
-function dealias!(a, g::OneDGrid)
-  kalias = size(a, 1) == g.nkr ? g.kralias : g.kalias
-  dealias!(a, g, kalias)
+function dealias!(a, grid::OneDGrid)
+  kalias = size(a, 1) == grid.nkr ? grid.kralias : grid.kalias
+  dealias!(a, grid, kalias)
   return nothing
 end
 
-function dealias!(a, g::OneDGrid, kalias)
+function dealias!(a, grid::OneDGrid, kalias)
   @views @. a[kalias, :] = 0
   
   return nothing
 end
 
-function dealias!(a, g::TwoDGrid)
-  kalias = size(a, 1) == g.nkr ? g.kralias : g.kalias
-  dealias!(a, g, kalias)
+function dealias!(a, grid::TwoDGrid)
+  kalias = size(a, 1) == grid.nkr ? grid.kralias : grid.kalias
+  dealias!(a, grid, kalias)
   
   return nothing
 end
 
-function dealias!(a, g::TwoDGrid, kalias)
-  @views @. a[kalias, g.lalias, :] = 0
+function dealias!(a, grid::TwoDGrid, kalias)
+  @views @. a[kalias, :, :] = 0
+  @views @. a[:, grid.lalias, :] = 0
   
   return nothing
 end
 
-function dealias!(a, g::ThreeDGrid)
-  kalias = size(a, 1) == g.nkr ? g.kralias : g.kalias
-  dealias!(a, g, kalias)
+function dealias!(a, grid::ThreeDGrid)
+  kalias = size(a, 1) == grid.nkr ? grid.kralias : grid.kalias
+  dealias!(a, grid, kalias)
   
   return nothing
 end
 
-function dealias!(a, g::ThreeDGrid, kalias)
-  @views @. a[kalias, g.lalias, g.malias, :] = 0
+function dealias!(a, grid::ThreeDGrid, kalias)
+  @views @. a[kalias, :, :, :] = 0
+  @views @. a[:, grid.lalias, :, :] = 0
+  @views @. a[:, :, grid.malias, :] = 0
   
   return nothing
 end
