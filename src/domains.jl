@@ -7,29 +7,42 @@ A placeholder grid object for `0D` problems (in other words, systems of ODEs).
 struct ZeroDGrid{T, A} <: AbstractGrid{T, A} end
 
 """
-A one-dimensional `grid` object.
+    struct OneDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
+
+A one-dimensional `grid`.
+
+$(TYPEDFIELDS)
 """
 struct OneDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
+    "number of points in x"
                 nx :: Int
+    "number of wavenumbers in x"
                 nk :: Int
+    "number of positive wavenumbers in x (real Fourier transforms)"
                nkr :: Int
-
+    "grid spacing in x"
                 dx :: T
+    "domain extent in x"
                 Lx :: T
-
-                 x :: Tx
-         
+    "range with x-grid-points"
+                 x :: Tx     
+    "array with x-wavenumbers"
                  k :: Tk
+    "array with positive x-wavenumbers (real Fourier transforms)"
                 kr :: Tk
+    "array with inverse squared k-wavenumbers, 1/k²"
             invksq :: Tk
+    "array with inverse squared kr-wavenumbers, 1/kr²"
            invkrsq :: Tk
-
+    "the FFT plan for complex-valued fields"
            fftplan :: Tfft
+    "the FFT plan for real-valued fields"
           rfftplan :: Trfft
-
-  # Aliased fraction and range objects that access the aliased part of the wavenumber range
+    "the fraction of wavenumbers that are aliased (e.g., 1/3 for quadradic nonlinearities)"
   aliased_fraction :: T
+    "range of the indices of aliased x-wavenumbers"
             kalias :: UnitRange{Int}
+    "range of the indices of aliased positive x-wavenumbers (real Fourier transforms)"
            kralias :: UnitRange{Int}
 end
 
@@ -79,37 +92,62 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
                                       aliased_fraction, kalias, kralias)
 end
 
-"A two-dimensional `grid` object."
+
+"""
+    struct TwoDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
+
+A two-dimensional `grid`.
+
+$(TYPEDFIELDS)
+"""
 struct TwoDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
-                nx :: Int
-                ny :: Int
-                nk :: Int
-                nl :: Int
+    "number of points in x"
+               nx :: Int
+    "number of points in y"
+               ny :: Int
+    "number of wavenumbers in x"
+               nk :: Int
+    "number of wavenumbers in y"
+               nl :: Int
+    "number of positive wavenumers in x (real Fourier transforms)"
                nkr :: Int
-
+    "grid spacing in x"
                 dx :: T
+    "grid spacing in y"
                 dy :: T
+    "domain extent in x"
                 Lx :: T
+    "domain extent in y"
                 Ly :: T
-
+    "range with x-grid-points"
                  x :: Tx
+    "range with y-grid-points"
                  y :: Tx
-         
+    "array with x-wavenumbers"
                  k :: Tk
+    "array with y-wavenumbers"
                  l :: Tk
+    "array with positive x-wavenumbers (real Fourier transforms)"
                 kr :: Tk
+    "array with squared total wavenumbers, k²+l²"
                Ksq :: Tk
+    "array with inverse squared total wavenumbers, 1/(k²+l²)"
             invKsq :: Tk
-              Krsq :: Tk
-           invKrsq :: Tk
-
+    "array with squared total wavenumbers for real Fourier transforms, kr²+l²"
+              Ksqr :: Tk
+    "array with inverse squared total wavenumbers for real Fourier transforms, 1/(kr²+l²)"
+           invKsqr :: Tk
+    "the FFT plan for complex-valued fields"
            fftplan :: Tfft
+    "the FFT plan for real-valued fields"
           rfftplan :: Trfft
-
-  # Aliased fraction and range objects that access the aliased part of the wavenumber range
+    "the fraction of wavenumbers that are aliased (e.g., 1/3 for quadradic nonlinearities)"
   aliased_fraction :: T
+    "range of the indices of aliased x-wavenumbers"
             kalias :: UnitRange{Int}
+    "range of the indices of aliased positive x-wavenumbers (real Fourier transforms)"
            kralias :: UnitRange{Int}
+    "range of the indices of aliased y-wavenumbers"
             lalias :: UnitRange{Int}
 end
 
@@ -168,44 +206,75 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
                                           aliased_fraction, kalias, kralias, lalias)
 end
 
-"A three-dimensional `grid` object."
+"""
+    struct ThreeDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
+
+A three-dimensional `grid`.
+
+$(TYPEDFIELDS)
+"""
 struct ThreeDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
-                nx :: Int
-                ny :: Int
-                nz :: Int
-                nk :: Int
-                nl :: Int
-                nm :: Int
+    "number of points in x"
+               nx :: Int
+    "number of points in y"
+               ny :: Int
+    "number of points in z"
+               nz :: Int
+    "number of wavenumbers in x"
+               nk :: Int
+    "number of wavenumbers in y"
+               nl :: Int
+    "number of wavenumbers in z"
+               nm :: Int
+    "number of positive wavenumers in x (real Fourier transforms)"
                nkr :: Int
-
+    "grid spacing in x"
                 dx :: T
+    "grid spacing in y"
                 dy :: T
+    "grid spacing in z"
                 dz :: T
+    "domain extent in x"
                 Lx :: T
+    "domain extent in y"
                 Ly :: T
+    "domain extent in z"
                 Lz :: T
-
+    "range with x-grid-points"
                  x :: Tx
+    "range with y-grid-points"
                  y :: Tx
+    "range with z-grid-points"
                  z :: Tx
-         
+    "array with x-wavenumbers"
                  k :: Tk
+    "array with y-wavenumbers"
                  l :: Tk
+    "array with z-wavenumbers"
                  m :: Tk
+    "array with positive x-wavenumbers (real Fourier transforms)"
                 kr :: Tk
+    "array with squared total wavenumbers, k²+l²+m²"
                Ksq :: Tk
+    "array with inverse squared total wavenumbers, 1/(k²+l²+m²)"
             invKsq :: Tk
-              Krsq :: Tk
-           invKrsq :: Tk
-
+    "array with squared total wavenumbers for real Fourier transforms, kr²+l²+m²"
+              Ksqr :: Tk
+    "array with inverse squared total wavenumbers for real Fourier transforms, 1/(kr²+l²+m²)"
+           invKsqr :: Tk
+    "the FFT plan for complex-valued fields"
            fftplan :: Tfft
+    "the FFT plan for real-valued fields"
           rfftplan :: Trfft
-
-  # Aliased fraction and range objects that access the aliased part of the wavenumber range
+    "the fraction of wavenumbers that are aliased (e.g., 1/3 for quadradic nonlinearities)"
   aliased_fraction :: T
+    "range of the indices of aliased x-wavenumbers"
             kalias :: UnitRange{Int}
+    "range of the indices of aliased positive x-wavenumbers (real Fourier transforms)"
            kralias :: UnitRange{Int}
+    "range of the indices of aliased y-wavenumbers"
             lalias :: UnitRange{Int}
+    "range of the indices of aliased y-wavenumbers"
             malias :: UnitRange{Int}
 end
 
