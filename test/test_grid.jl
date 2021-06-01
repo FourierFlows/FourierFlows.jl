@@ -191,5 +191,10 @@ function test_aliased_fraction(dev, aliased_fraction)
   upper_end(n) = ceil(Int, (1 + aliased_fraction)/2 * n)
   upper_end_r(n) = Int(n/2)+1
   
-  return (g₁.aliased_fraction == aliased_fraction && g₂.aliased_fraction == aliased_fraction && g₃.aliased_fraction == aliased_fraction && g₁.kralias == lower_end(nx):upper_end_r(nx) && g₁.kalias == lower_end(nx):upper_end(nx) && g₂.kralias == lower_end(nx):upper_end_r(nx) && g₂.kalias == lower_end(nx):upper_end(nx) && g₂.lalias == lower_end(ny):upper_end(ny) && g₃.kralias == lower_end(nx):upper_end_r(nx) && g₃.kalias == lower_end(nx):upper_end(nx) && g₃.lalias == lower_end(ny):upper_end(ny) && g₃.malias == lower_end(nz):upper_end(nz))
+  return (g₁.aliased_fraction == aliased_fraction && g₂.aliased_fraction == aliased_fraction && 
+  g₃.aliased_fraction == aliased_fraction && g₁.kralias == lower_end(nx):upper_end_r(nx) && 
+  g₁.kalias == lower_end(nx):upper_end(nx) && g₂.kralias == lower_end(nx):upper_end_r(nx) && 
+  g₂.kalias == lower_end(nx):upper_end(nx) && g₂.lalias == lower_end(ny):upper_end(ny) && 
+  g₃.kralias == lower_end(nx):upper_end_r(nx) && g₃.kalias == lower_end(nx):upper_end(nx) && 
+  g₃.lalias == lower_end(ny):upper_end(ny) && g₃.malias == lower_end(nz):upper_end(nz))
 end
