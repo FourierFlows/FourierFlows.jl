@@ -134,9 +134,9 @@ struct TwoDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
     "array with inverse squared total wavenumbers, 1/(k²+l²)"
             invKsq :: Tk
     "array with squared total wavenumbers for real Fourier transforms, kr²+l²"
-              Ksqr :: Tk
+              Krsq :: Tk
     "array with inverse squared total wavenumbers for real Fourier transforms, 1/(kr²+l²)"
-           invKsqr :: Tk
+           invKrsq :: Tk
     "the FFT plan for complex-valued fields"
            fftplan :: Tfft
     "the FFT plan for real-valued fields"
@@ -259,9 +259,9 @@ struct ThreeDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
     "array with inverse squared total wavenumbers, 1/(k²+l²+m²)"
             invKsq :: Tk
     "array with squared total wavenumbers for real Fourier transforms, kr²+l²+m²"
-              Ksqr :: Tk
+              Krsq :: Tk
     "array with inverse squared total wavenumbers for real Fourier transforms, 1/(kr²+l²+m²)"
-           invKsqr :: Tk
+           invKrsq :: Tk
     "the FFT plan for complex-valued fields"
            fftplan :: Tfft
     "the FFT plan for real-valued fields"
