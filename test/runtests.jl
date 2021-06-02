@@ -105,7 +105,7 @@ for dev in devices
     @test testtypedthreedgrid(dev, nx, Lx, ny, Ly, nz, Lz; T=T)
     
     # Test aliased fraction
-    for aliased_fraction ∈ [1/3, 1/2, 1/4]
+    for aliased_fraction ∈ [0, 1/3, 1/2, 1/4]
       @test test_aliased_fraction(dev, aliased_fraction)
     end
     
