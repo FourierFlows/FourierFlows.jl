@@ -271,13 +271,13 @@ struct ThreeDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias} <: AbstractGrid
     "the fraction of wavenumbers that are aliased (e.g., 1/3 for quadradic nonlinearities)"
   aliased_fraction :: T
     "range of the indices of aliased x-wavenumbers"
-            kalias :: UnitRange{Int}
+            kalias :: Talias
     "range of the indices of aliased positive x-wavenumbers (real Fourier transforms)"
-           kralias :: UnitRange{Int}
+           kralias :: Talias
     "range of the indices of aliased y-wavenumbers"
-            lalias :: UnitRange{Int}
+            lalias :: Talias
     "range of the indices of aliased y-wavenumbers"
-            malias :: UnitRange{Int}
+            malias :: Talias
 end
 
 """
