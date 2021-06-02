@@ -124,6 +124,16 @@ function testdealias(grid::ThreeDGrid)
   return isapprox(sum(abs.(fh)), 0)
 end
 
+function testnodealias(grid::OneDGrid)
+  fh = ones(Complex{eltype(grid)}, size(grid.kr))
+  return dealias!(fh, grid) == nothing
+end
+
+function testnodealias(grid::Union{TwoDGrid, ThreeDGrid})
+  fh = ones(Complex{eltype(grid)}, size(grid.Krsq))
+  return dealias!(fh, grid) == nothing
+end
+
 function testtypedonedgrid(dev::Device, nx, Lx; T=Float64)
   grid = OneDGrid(nx, Lx, T=T)
   
