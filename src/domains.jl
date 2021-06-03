@@ -401,41 +401,43 @@ Dealias array `a` on the `grid` with aliased x-wavenumbers `kalias`.
 """
 dealias!(fh, grid::AbstractGrid{T, A, Nothing}) where {T, A} = nothing
 
-function dealias!(a, grid::OneDGrid{T, Tk, Tx, Tfft, Trfft, <:UnitRange}) where {T, Tk, Tx, Tfft, Trfft}
+dealias!(fh, grid) = _dealias!(fh, grid)
+
+function _dealias!(a, grid::OneDGrid)
   kalias = size(a, 1) == grid.nkr ? grid.kralias : grid.kalias
-  dealias!(a, grid, kalias)
+  _dealias!(a, grid, kalias)
   
   return nothing
 end
 
-function dealias!(a, grid::OneDGrid{T, Tk, Tx, Tfft, Trfft, <:UnitRange}, kalias) where {T, Tk, Tx, Tfft, Trfft}
+function _dealias!(a, grid::OneDGrid, kalias)
   @views @. a[kalias, :] = 0
   
   return nothing
 end
 
-function dealias!(a, grid::TwoDGrid{T, Tk, Tx, Tfft, Trfft, <:UnitRange}) where {T, Tk, Tx, Tfft, Trfft}
+function _dealias!(a, grid::TwoDGrid)
   kalias = size(a, 1) == grid.nkr ? grid.kralias : grid.kalias
-  dealias!(a, grid, kalias)
+  _dealias!(a, grid, kalias)
   
   return nothing
 end
 
-function dealias!(a, grid::TwoDGrid{T, Tk, Tx, Tfft, Trfft, <:UnitRange}, kalias) where {T, Tk, Tx, Tfft, Trfft}
+function _dealias!(a, grid::TwoDGrid, kalias)
   @views @. a[kalias, :, :] = 0
   @views @. a[:, grid.lalias, :] = 0
   
   return nothing
 end
 
-function dealias!(a, grid::ThreeDGrid{T, Tk, Tx, Tfft, Trfft, <:UnitRange}) where {T, Tk, Tx, Tfft, Trfft}
+function _dealias!(a, grid::ThreeDGrid)
   kalias = size(a, 1) == grid.nkr ? grid.kralias : grid.kalias
-  dealias!(a, grid, kalias)
+  _dealias!(a, grid, kalias)
   
   return nothing
 end
 
-function dealias!(a, grid::ThreeDGrid{T, Tk, Tx, Tfft, Trfft, <:UnitRange}, kalias) where {T, Tk, Tx, Tfft, Trfft}
+function _dealias!(a, grid::ThreeDGrid, kalias)
   @views @. a[kalias, :, :, :] = 0
   @views @. a[:, grid.lalias, :, :] = 0
   @views @. a[:, :, grid.malias, :] = 0
