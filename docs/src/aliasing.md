@@ -50,7 +50,7 @@ which is the sum of ``\frac1{2} \cos(2x) + \frac1{2} \cos(4x)``!
 
 There are two ways to avoid aliasing errors we either *(i)* need to discard some of the wavenumber 
 components in Fourier space before we tranform to physical space, or *(ii)* pad our Fourier 
-represresentation with more wavenubmers that will have zero power. In FourierFlows.jl the former
+represresentation with more wavenumbers that will have zero power. In FourierFlows.jl the former
 is implemented
 
 !!! info "De-aliasing scheme"
