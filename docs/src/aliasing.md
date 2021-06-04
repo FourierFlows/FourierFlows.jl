@@ -59,9 +59,10 @@ is implemented
 
 How many wavenumber components we need to discard depends on the order of the nonlinearity. For
 quadradic nonlinearities, one would intuitively say that we need to discard the top-1/2 of the 
-wavenumber components. However, Orszag (1972) pointed out that discarding only the top-1/3 of 
-wavenumber components is enough. Actally, with Orszag's so-called 2/3-rule, aliasing still occurs, 
-but only into wavenumbers that will be zero-ed out next time we dealias.
+wavenumber components. However, Orszag (1972) pointed out that simply only discarding the 
+top-1/3 of wavenumber components is enough. Actally, with Orszag's so-called 2/3-rule for dealiasing, 
+still some aliasing errors occur, but only into wavenumbers that will be zero-ed out next time 
+we dealias.
 
 When constructing a `grid` we can specify the `aliased_fraction` parameter. By default, this is 
 set to ``1/3``, appropriate for quadratic nonlinearities. Then `dealias!(fh, grid)` will zero-out 
