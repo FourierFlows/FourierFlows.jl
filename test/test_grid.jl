@@ -72,45 +72,66 @@ end
 function testdealias(grid::OneDGrid)
   fh = ones(Complex{eltype(grid)}, size(grid.kr))
   dealias!(fh, grid)
+  
   kmax = round(maximum(grid.kr)*2/3)
   
-  return CUDA.@allowscalar isapprox(sum(abs.(fh[grid.kr .>= kmax])), 0)
+  for i₁ = 1:grid.nkr
+    if CUDA.@allowscalar grid.kr[i₁] < kmax
+      fh[i₁] = 0
+    end
+  end
+
+  return isapprox(sum(abs.(fh)), 0)
 end
 
 function testdealias(grid::TwoDGrid)
   fh = ones(Complex{eltype(grid)}, size(grid.Krsq))
   dealias!(fh, grid)
+  
   kmax = round(maximum(grid.kr)*2/3)
-  lmax = floor(maximum(grid.l)*2/3)
+  lmax = round(maximum(abs.(grid.l))*2/3)
 
-  temp = 0
-  for j = 1:grid.nl, i = 1:grid.nkr
-    if ((CUDA.@allowscalar grid.kr[i] >= kmax) || 
-        (CUDA.@allowscalar grid.l[j] >= lmax || CUDA.@allowscalar grid.l[j] < -lmax))
-      temp += abs.(fh[i, j]) #temp = sum of |fh| for aliased wavenumbers
+  for i₂ = 1:grid.nl, i₁ = 1:grid.nkr
+    if (
+        (CUDA.@allowscalar grid.kr[i₁] < kmax ) &&
+        (CUDA.@allowscalar grid.l[i₂] < lmax && CUDA.@allowscalar grid.l[i₂] ≥ -lmax)
+        )
+      fh[i₁, i₂] = 0
     end
   end
   
-  return isapprox(temp, 0)
+  return isapprox(sum(abs.(fh)), 0)
 end
 
 function testdealias(grid::ThreeDGrid)
   fh = ones(Complex{eltype(grid)}, size(grid.Krsq))
   dealias!(fh, grid)
+  
   kmax = round(maximum(grid.kr)*2/3)
-  lmax = floor(maximum(grid.l)*2/3)
-  mmax = floor(maximum(grid.m)*2/3)
+  lmax = round(maximum(abs.(grid.l))*2/3)
+  mmax = round(maximum(abs.(grid.m))*2/3)
 
-  temp = 0
-  for k = 1:grid.nm, j = 1:grid.nl, i = 1:grid.nkr
-    if ((CUDA.@allowscalar grid.kr[i] >= kmax ) || 
-        (CUDA.@allowscalar grid.l[j] >= lmax || CUDA.@allowscalar grid.l[j] < -lmax) ||
-        (CUDA.@allowscalar grid.m[k] >= mmax || CUDA.@allowscalar grid.m[k] < -mmax))
-      temp += abs.(fh[i, j, k]) #temp = sum of |fh| for aliased wavenumbers
+  for i₃ = 1:grid.nm, i₂ = 1:grid.nl, i₁ = 1:grid.nkr
+    if (
+        (CUDA.@allowscalar grid.kr[i₁] < kmax ) &&
+        (CUDA.@allowscalar grid.l[i₂] < lmax && CUDA.@allowscalar grid.l[i₂] ≥ -lmax) &&
+        (CUDA.@allowscalar grid.m[i₃] < mmax && CUDA.@allowscalar grid.m[i₃] ≥ -mmax)
+        )
+      fh[i₁, i₂, i₃] = 0
     end
   end
   
-  return isapprox(temp, 0)
+  return isapprox(sum(abs.(fh)), 0)
+end
+
+function testnodealias(grid::OneDGrid)
+  fh = ones(Complex{eltype(grid)}, size(grid.kr))
+  return dealias!(fh, grid) == nothing
+end
+
+function testnodealias(grid::Union{TwoDGrid, ThreeDGrid})
+  fh = ones(Complex{eltype(grid)}, size(grid.Krsq))
+  return dealias!(fh, grid) == nothing
 end
 
 function testtypedonedgrid(dev::Device, nx, Lx; T=Float64)
@@ -165,4 +186,28 @@ function test_plan_flows_fftrfft(::GPU; T=Float64)
   typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) == CUDA.CUFFT.rCuFFTPlan{T,-1,false,3} &&
   
   return FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2])
+end
+
+function test_aliased_fraction(dev, aliased_fraction)
+  nx, Lx = 16, 2π
+  ny, Ly = 32, 2π
+  nz, Lz = 34, 2π
+  
+  g₁ = OneDGrid(nx, Lx; aliased_fraction = aliased_fraction)
+  g₂ = TwoDGrid(nx, Lx, ny, Ly; aliased_fraction = aliased_fraction)
+  g₃ = ThreeDGrid(nx, Lx, ny, Ly, nz, Lz; aliased_fraction = aliased_fraction)
+
+  lower_end(n) = floor(Int, (1 - aliased_fraction)/2 * n) + 1
+  upper_end(n) = ceil(Int, (1 + aliased_fraction)/2 * n)
+  upper_end_r(n) = Int(n/2)+1
+  
+  kralias = aliased_fraction==0 ? nothing : lower_end(nx):upper_end_r(nx)
+  kalias = aliased_fraction==0 ? nothing : lower_end(nx):upper_end(nx)
+  lalias = aliased_fraction==0 ? nothing : lower_end(ny):upper_end(ny)
+  malias = aliased_fraction==0 ? nothing : lower_end(nz):upper_end(nz)
+    
+  return (g₁.aliased_fraction == aliased_fraction && g₂.aliased_fraction == aliased_fraction && 
+  g₃.aliased_fraction == aliased_fraction && g₁.kralias == kralias && g₁.kalias == kalias && 
+  g₂.kralias == kralias && g₂.kalias == kalias && g₂.lalias == lalias && g₃.kralias == kralias &&
+  g₃.kalias == kalias && g₃.lalias == lalias && g₃.malias == malias)
 end

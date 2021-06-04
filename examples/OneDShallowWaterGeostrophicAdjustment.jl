@@ -120,7 +120,7 @@ function calcN!(N, sol, t, clock, vars, params, grid)
   @. N[:, 2] = - params.f * vars.uh                                        #  - f u
   @. N[:, 3] = - im * grid.kr * params.H * vars.uh                         #  - H ∂u/∂x
   
-  dealias!(N, grid, grid.kralias)
+  dealias!(N, grid)
   
   return nothing
 end

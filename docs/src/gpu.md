@@ -26,7 +26,9 @@ OneDimensionalGrid
   ├────────── size Lx: 2.0
   ├──── resolution nx: 16
   ├── grid spacing dx: 0.125
-  └─────────── domain: x ∈ [-1.0, 0.875]
+  ├─────────── domain: x ∈ [-1.0, 0.875]
+  └─ aliased fraction: 0.3333333333333333
+
 ```
 
 gives out a grid whose arrays are `CuArrays`. (Calling `OneDGrid(n, L)` defaults to CPU, i.e., 

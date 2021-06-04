@@ -26,8 +26,9 @@ OneDimensionalGrid
   ├────────── size Lx: 6.283185307179586
   ├──── resolution nx: 64
   ├── grid spacing dx: 0.09817477042468103
-  └─────────── domain: x ∈ [-3.141592653589793, 3.0434178831651124]
-```
+  ├─────────── domain: x ∈ [-3.141592653589793, 3.0434178831651124]
+  └─ aliased fraction: 0.3333333333333333
+ ```
 
 The grid domain is, by default, constructed symmetrically around ``x = 0``, but this 
 can be altered using the `x0` keyword argument of `OneDGrid` constructor. The grid 

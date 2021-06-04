@@ -77,7 +77,7 @@ using Base: fieldnames
 using FFTW: fftfreq, rfftfreq
 
 "Abstract supertype for grids."
-abstract type AbstractGrid{T, A} end
+abstract type AbstractGrid{T, A, Alias} end
 
 "Abstract supertype for timesteppers."
 abstract type AbstractTimeStepper{T} end

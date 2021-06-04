@@ -4,46 +4,60 @@ plan_flows_rfft(a::Array, args...; kwargs...) = plan_rfft(a, args...; kwargs...)
 """
 A placeholder grid object for `0D` problems (in other words, systems of ODEs).
 """
-struct ZeroDGrid{T, A} <: AbstractGrid{T, A} end
+struct ZeroDGrid{T, A, Alias} <: AbstractGrid{T, A, Alias} end
 
 """
-A one-dimensional `grid` object.
+    struct OneDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T, Tk, Talias}
+
+A one-dimensional `grid`.
+
+$(TYPEDFIELDS)
 """
-struct OneDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
-        nx :: Int
-        nk :: Int
-       nkr :: Int
-
-        dx :: T
-        Lx :: T
-
-         x :: Tx
-         
-         k :: Tk
-        kr :: Tk
-    invksq :: Tk
-   invkrsq :: Tk
-
-   fftplan :: Tfft
-  rfftplan :: Trfft
-
-  # Range objects that access the aliased part of the wavenumber range
-    kalias :: UnitRange{Int}
-   kralias :: UnitRange{Int}
+struct OneDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T, Tk, Talias}
+    "number of points in x"
+                nx :: Int
+    "number of wavenumbers in x"
+                nk :: Int
+    "number of positive wavenumbers in x (real Fourier transforms)"
+               nkr :: Int
+    "grid spacing in x"
+                dx :: T
+    "domain extent in x"
+                Lx :: T
+    "range with x-grid-points"
+                 x :: Tx     
+    "array with x-wavenumbers"
+                 k :: Tk
+    "array with positive x-wavenumbers (real Fourier transforms)"
+                kr :: Tk
+    "array with inverse squared k-wavenumbers, 1/k²"
+            invksq :: Tk
+    "array with inverse squared kr-wavenumbers, 1/kr²"
+           invkrsq :: Tk
+    "the FFT plan for complex-valued fields"
+           fftplan :: Tfft
+    "the FFT plan for real-valued fields"
+          rfftplan :: Trfft
+    "the fraction of wavenumbers that are aliased (e.g., 1/3 for quadradic nonlinearities)"
+  aliased_fraction :: T
+    "range of the indices of aliased x-wavenumbers"
+            kalias :: Talias
+    "range of the indices of aliased positive x-wavenumbers (real Fourier transforms)"
+           kralias :: Talias
 end
 
 """
     OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, 
-                      T=Float64, dealias=1/3, ArrayType=Array)
+                      T=Float64, aliased_fraction=1/3, ArrayType=Array)
 
 Constructs a OneDGrid object with size `Lx`, resolution `nx`, and leftmost position `x0`. 
 FFT plans are generated for `nthreads` CPUs using FFTW flag `effort`. The float type is `T` 
-and the array types is `ArrayType`. The `dealias` keyword determines the highest  wavenubers 
-that are being zero-ed out by `dealias()` function; 1/3 is the nominal value for quadratic 
-nonlinearities. 
+and the array types is `ArrayType`. The `aliased_fraction` keyword determines the highest 
+wavenubers that are being zero-ed out by `dealias!` function; 1/3 is the nominal value for 
+quadratic nonlinearities. 
 """
 function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, 
-                  T=Float64, dealias=1/3, ArrayType=Array)
+                  T=Float64, aliased_fraction=1/3, ArrayType=Array)
 
   dx = Lx/nx
     
@@ -66,62 +80,90 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
    fftplan = plan_flows_fft(ArrayType{Complex{T}, 1}(undef, nx), flags=effort)
   rfftplan = plan_flows_rfft(ArrayType{T, 1}(undef, nx), flags=effort)
 
-  kalias, kralias = getaliasedwavenumbers(nk, nkr, dealias)
+  kalias, kralias = getaliasedwavenumbers(nk, nkr, aliased_fraction)
 
   Tx = typeof(x)
   Tk = typeof(k)
   Tfft = typeof(fftplan)
   Trfft = typeof(rfftplan)
-
-  return OneDGrid{T, Tk, Tx, Tfft, Trfft}(nx, nk, nkr, dx, Lx, x, k, kr, 
-                                      invksq, invkrsq, fftplan, rfftplan, kalias, kralias)
+  Talias = typeof(kalias)
+   
+  return OneDGrid{T, Tk, Tx, Tfft, Trfft, Talias}(nx, nk, nkr, dx, Lx, x, k, kr, 
+                                      invksq, invkrsq, fftplan, rfftplan,
+                                      aliased_fraction, kalias, kralias)
 end
 
-"A two-dimensional `grid` object."
-struct TwoDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
-        nx :: Int
-        ny :: Int
-        nk :: Int
-        nl :: Int
-       nkr :: Int
 
-        dx :: T
-        dy :: T
-        Lx :: T
-        Ly :: T
+"""
+    struct TwoDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T, Tk, Talias}
 
-         x :: Tx
-         y :: Tx
-         
-         k :: Tk
-         l :: Tk
-        kr :: Tk
-       Ksq :: Tk
-    invKsq :: Tk
-      Krsq :: Tk
-   invKrsq :: Tk
+A two-dimensional `grid`.
 
-   fftplan :: Tfft
-  rfftplan :: Trfft
-
-  # Range objects that access the aliased part of the wavenumber range
-    kalias :: UnitRange{Int}
-   kralias :: UnitRange{Int}
-    lalias :: UnitRange{Int}
+$(TYPEDFIELDS)
+"""
+struct TwoDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T, Tk, Talias}
+    "number of points in x"
+               nx :: Int
+    "number of points in y"
+               ny :: Int
+    "number of wavenumbers in x"
+               nk :: Int
+    "number of wavenumbers in y"
+               nl :: Int
+    "number of positive wavenumers in x (real Fourier transforms)"
+               nkr :: Int
+    "grid spacing in x"
+                dx :: T
+    "grid spacing in y"
+                dy :: T
+    "domain extent in x"
+                Lx :: T
+    "domain extent in y"
+                Ly :: T
+    "range with x-grid-points"
+                 x :: Tx
+    "range with y-grid-points"
+                 y :: Tx
+    "array with x-wavenumbers"
+                 k :: Tk
+    "array with y-wavenumbers"
+                 l :: Tk
+    "array with positive x-wavenumbers (real Fourier transforms)"
+                kr :: Tk
+    "array with squared total wavenumbers, k²+l²"
+               Ksq :: Tk
+    "array with inverse squared total wavenumbers, 1/(k²+l²)"
+            invKsq :: Tk
+    "array with squared total wavenumbers for real Fourier transforms, kr²+l²"
+              Krsq :: Tk
+    "array with inverse squared total wavenumbers for real Fourier transforms, 1/(kr²+l²)"
+           invKrsq :: Tk
+    "the FFT plan for complex-valued fields"
+           fftplan :: Tfft
+    "the FFT plan for real-valued fields"
+          rfftplan :: Trfft
+    "the fraction of wavenumbers that are aliased (e.g., 1/3 for quadradic nonlinearities)"
+  aliased_fraction :: T
+    "range of the indices of aliased x-wavenumbers"
+            kalias :: Talias
+    "range of the indices of aliased positive x-wavenumbers (real Fourier transforms)"
+           kralias :: Talias
+    "range of the indices of aliased y-wavenumbers"
+            lalias :: Talias
 end
 
 """
     TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, 
-                      effort=FFTW.MEASURE, T=Float64, dealias=1/3, ArrayType=Array)
+                      effort=FFTW.MEASURE, T=Float64, aliased_fraction=1/3, ArrayType=Array)
 
 Constructs a TwoDGrid object with size `Lx`, `Ly`, resolution `nx`, `ny`, and leftmost
-positions `x0`, `y0`. FFT plans are generated for `nthreads` CPUs using
-FFTW flag `effort`. The float type is `T` and the array types is `ArrayType`. 
-The `dealias` keyword determines the highest wavenubers that are being zero-ed
-out by `dealias()` function; 1/3 is the nominal value for quadratic nonlinearities. 
+positions `x0`, `y0`. FFT plans are generated for `nthreads` CPUs using FFTW flag `effort`. 
+The float type is `T` and the array types is `ArrayType`. The `aliased_fraction` keyword 
+determines the highest wavenubers that are being zero-ed out by `dealias!` function; 1/3 is 
+the nominal value for quadratic nonlinearities. 
 """
 function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, 
-                  effort=FFTW.MEASURE, T=Float64, dealias=1/3, ArrayType=Array)
+                  effort=FFTW.MEASURE, T=Float64, aliased_fraction=1/3, ArrayType=Array)
 
   dx = Lx/nx
   dy = Ly/ny
@@ -152,71 +194,104 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx; x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THR
   fftplan = plan_flows_fft(ArrayType{Complex{T}, 2}(undef, nx, ny), flags=effort)
   rfftplan = plan_flows_rfft(ArrayType{T, 2}(undef, nx, ny), flags=effort)
 
-  # Index endpoints for aliasfrac i, j wavenumbers
-  kalias, kralias = getaliasedwavenumbers(nk, nkr, dealias)
-  lalias, _ = getaliasedwavenumbers(nl, nl, dealias)
+  kalias, kralias = getaliasedwavenumbers(nk, nkr, aliased_fraction)
+  lalias, _ = getaliasedwavenumbers(nl, nl, aliased_fraction)
   
   Tx = typeof(x)
   Tk = typeof(k)
   Tfft = typeof(fftplan)
   Trfft = typeof(rfftplan)
+  Talias = typeof(kalias)
 
-  return TwoDGrid{T, Tk, Tx, Tfft, Trfft}(nx, ny, nk, nl, nkr, dx, dy, Lx, Ly, x, y, k, l, kr, Ksq, invKsq, Krsq, invKrsq,
-                                      fftplan, rfftplan, kalias, kralias, lalias)
+  return TwoDGrid{T, Tk, Tx, Tfft, Trfft, Talias}(nx, ny, nk, nl, nkr, dx, dy, Lx, Ly, x, y, k, l, kr, 
+                                          Ksq, invKsq, Krsq, invKrsq, fftplan, rfftplan,
+                                          aliased_fraction, kalias, kralias, lalias)
 end
 
-"A three-dimensional `grid` object."
-struct ThreeDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft} <: AbstractGrid{T, Tk}
-        nx :: Int
-        ny :: Int
-        nz :: Int
-        nk :: Int
-        nl :: Int
-        nm :: Int
-       nkr :: Int
+"""
+    struct ThreeDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T, Tk, Talias}
 
-        dx :: T
-        dy :: T
-        dz :: T
-        Lx :: T
-        Ly :: T
-        Lz :: T
+A three-dimensional `grid`.
 
-         x :: Tx
-         y :: Tx
-         z :: Tx
-         
-         k :: Tk
-         l :: Tk
-         m :: Tk
-        kr :: Tk
-       Ksq :: Tk
-    invKsq :: Tk
-      Krsq :: Tk
-   invKrsq :: Tk
-
-   fftplan :: Tfft
-  rfftplan :: Trfft
-
-  # Range objects that access the aliased part of the wavenumber range
-    kalias :: UnitRange{Int}
-   kralias :: UnitRange{Int}
-    lalias :: UnitRange{Int}
-    malias :: UnitRange{Int}
+$(TYPEDFIELDS)
+"""
+struct ThreeDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T, Tk, Talias}
+    "number of points in x"
+               nx :: Int
+    "number of points in y"
+               ny :: Int
+    "number of points in z"
+               nz :: Int
+    "number of wavenumbers in x"
+               nk :: Int
+    "number of wavenumbers in y"
+               nl :: Int
+    "number of wavenumbers in z"
+               nm :: Int
+    "number of positive wavenumers in x (real Fourier transforms)"
+               nkr :: Int
+    "grid spacing in x"
+                dx :: T
+    "grid spacing in y"
+                dy :: T
+    "grid spacing in z"
+                dz :: T
+    "domain extent in x"
+                Lx :: T
+    "domain extent in y"
+                Ly :: T
+    "domain extent in z"
+                Lz :: T
+    "range with x-grid-points"
+                 x :: Tx
+    "range with y-grid-points"
+                 y :: Tx
+    "range with z-grid-points"
+                 z :: Tx
+    "array with x-wavenumbers"
+                 k :: Tk
+    "array with y-wavenumbers"
+                 l :: Tk
+    "array with z-wavenumbers"
+                 m :: Tk
+    "array with positive x-wavenumbers (real Fourier transforms)"
+                kr :: Tk
+    "array with squared total wavenumbers, k²+l²+m²"
+               Ksq :: Tk
+    "array with inverse squared total wavenumbers, 1/(k²+l²+m²)"
+            invKsq :: Tk
+    "array with squared total wavenumbers for real Fourier transforms, kr²+l²+m²"
+              Krsq :: Tk
+    "array with inverse squared total wavenumbers for real Fourier transforms, 1/(kr²+l²+m²)"
+           invKrsq :: Tk
+    "the FFT plan for complex-valued fields"
+           fftplan :: Tfft
+    "the FFT plan for real-valued fields"
+          rfftplan :: Trfft
+    "the fraction of wavenumbers that are aliased (e.g., 1/3 for quadradic nonlinearities)"
+  aliased_fraction :: T
+    "range of the indices of aliased x-wavenumbers"
+            kalias :: Talias
+    "range of the indices of aliased positive x-wavenumbers (real Fourier transforms)"
+           kralias :: Talias
+    "range of the indices of aliased y-wavenumbers"
+            lalias :: Talias
+    "range of the indices of aliased y-wavenumbers"
+            malias :: Talias
 end
 
 """
     ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-Lz/2, 
-    nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64, dealias=1/3, ArrayType=Array)
+    nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64, aliased_fraction=1/3, ArrayType=Array)
 
- Constructs a TwoDGrid object with size `Lx`, `Ly`, `Lz`, resolution `nx`, `ny`,
- `nz` and leftmost positions `x0`, `y0`, `z0`. FFT plans are generated for `nthreads` 
- CPUs using FFTW flag `effort`. The float type is `T` and the array types is `ArrayType`. 
- The `dealias` keyword determines the highest wavenubers that are being zero-ed
- out by `dealias()` function; 1/3 is the nominal value for quadratic nonlinearities. 
+ Constructs a TwoDGrid object with size `Lx`, `Ly`, `Lz`, resolution `nx`, `ny`, `nz` and 
+ leftmost positions `x0`, `y0`, `z0`. FFT plans are generated for `nthreads` CPUs using FFTW 
+ flag `effort`. The float type is `T` and the array types is `ArrayType`. The `aliased_fraction` 
+ keyword determines the highest wavenubers that are being zero-ed out by `dealias!` function; 
+ 1/3 is the nominal value for quadratic nonlinearities. 
 """
 function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-Lz/2,
-                  nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64, dealias=1/3, ArrayType=Array)
+                  nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64, aliased_fraction=1/3, ArrayType=Array)
 
   dx = Lx/nx
   dy = Ly/ny
@@ -251,18 +326,20 @@ function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-
   fftplan = plan_flows_fft(ArrayType{Complex{T}, 3}(undef, nx, ny, nz), flags=effort)
   rfftplan = plan_flows_rfft(ArrayType{T, 3}(undef, nx, ny, nz), flags=effort)
 
-  # Index endpoints for aliasfrac i, j wavenumbers
-  kalias, kralias = getaliasedwavenumbers(nk, nkr, dealias)
-  lalias, malias = getaliasedwavenumbers(nl, nm, dealias)
+  kalias, kralias = getaliasedwavenumbers(nk, nkr, aliased_fraction)
+  lalias, _ = getaliasedwavenumbers(nl, Int(nl/2+1), aliased_fraction)
+  malias, _ = getaliasedwavenumbers(nm, Int(nm/2+1), aliased_fraction)
   
   Tx = typeof(x)
   Tk = typeof(k)
   Tfft = typeof(fftplan)
   Trfft = typeof(rfftplan)
+  Talias = typeof(kalias)
 
-  return ThreeDGrid{T, Tk, Tx, Tfft, Trfft}(nx, ny, nz, nk, nl, nm, nkr, dx, dy, dz, Lx, Ly, Lz,
-                                        x, y, z, k, l, m, kr, Ksq, invKsq, Krsq, invKrsq, fftplan, rfftplan, 
-                                        kalias, kralias, lalias, malias)
+  return ThreeDGrid{T, Tk, Tx, Tfft, Trfft, Talias}(nx, ny, nz, nk, nl, nm, nkr,
+                                        dx, dy, dz, Lx, Ly, Lz, x, y, z, k, l, m, kr,
+                                        Ksq, invKsq, Krsq, invKrsq, fftplan, rfftplan, 
+                                        aliased_fraction, kalias, kralias, lalias, malias)
 end
 
 Base.eltype(grid::OneDGrid) = eltype(grid.x)
@@ -295,22 +372,24 @@ function gridpoints(grid::ThreeDGrid{T, A}) where {T, A}
 end
 
 """
-    getaliasedwavenumbers(nk, nkr, aliasfraction)
+    getaliasedwavenumbers(nk, nkr, aliased_fraction)
 
-Returns the top `aliasfraction` highest wavenumbers.
+Returns the top `aliased_fraction` highest wavenumbers, both for and real FFTs, `kalias` and 
+`kralias` respectively. For example, `aliased_fraction=1/3` should return the indices of the 
+top-most 1/6-th (in absolute value) for both positive and negative wavenumbers (i.g., 1/3 total) 
+that should be set to zero after performing an FFT. 
 """
-function getaliasedwavenumbers(nk, nkr, aliasfraction)
-  # Index endpoints for aliased i, j wavenumbers
-  # 1/3 aliasfraction => upper 1/6 of +/- wavenumbers (1/3 total) are set to 0 after performing fft.
-  # 1/2 aliasfraction => upper 1/4 of +/- wavenumbers (1/2 total) are set to 0 after performing fft.
-  L = (1 - aliasfraction)/2 # (1 - 1/3) / 2 + 1 = 1/3.
-  R = (1 + aliasfraction)/2 # (1 + 1/3) / 2 - 1 = 2/3.
+function getaliasedwavenumbers(nk, nkr, aliased_fraction)
+  L = (1 - aliased_fraction)/2 # e.g., (1 - 1/3) / 2 + 1 = 1/3.
+  R = (1 + aliased_fraction)/2 # e.g., (1 + 1/3) / 2 - 1 = 2/3.
+  
   iL = floor(Int, L * nk) + 1
   iR =  ceil(Int, R * nk)
 
-  aliasfraction < 1 || error("`aliasfraction` must be less than 1") # aliasfraction=1 is not sensible.
-   kalias = (aliasfraction > 0) ? (iL:iR) : Int(nx/2 + 1)
-  kralias = (aliasfraction > 0) ? (iL:nkr) : nkr
+  aliased_fraction < 1 || error("`aliased_fraction` must be less than 1")
+ 
+   kalias = (aliased_fraction > 0) ? (iL:iR) : nothing
+  kralias = (aliased_fraction > 0) ? (iL:nkr) : nothing
 
   return kalias, kralias
 end
@@ -320,40 +399,49 @@ end
 
 Dealias array `a` on the `grid` with aliased x-wavenumbers `kalias`.
 """
-function dealias!(a, grid::OneDGrid)
+dealias!(fh, grid::AbstractGrid{T, A, Nothing}) where {T, A} = nothing
+
+function dealias!(fh, grid)
+   _dealias!(fh, grid)
+   
+   return nothing
+end
+
+function _dealias!(a, grid::OneDGrid)
   kalias = size(a, 1) == grid.nkr ? grid.kralias : grid.kalias
-  dealias!(a, grid, kalias)
+  _dealias!(a, grid, kalias)
+  
   return nothing
 end
 
-function dealias!(a, grid::OneDGrid, kalias)
+function _dealias!(a, grid::OneDGrid, kalias)
   @views @. a[kalias, :] = 0
   
   return nothing
 end
 
-function dealias!(a, grid::TwoDGrid)
+function _dealias!(a, grid::TwoDGrid)
   kalias = size(a, 1) == grid.nkr ? grid.kralias : grid.kalias
-  dealias!(a, grid, kalias)
+  _dealias!(a, grid, kalias)
   
   return nothing
 end
 
-function dealias!(a, grid::TwoDGrid, kalias)
+function _dealias!(a, grid::TwoDGrid, kalias)
   @views @. a[kalias, :, :] = 0
   @views @. a[:, grid.lalias, :] = 0
   
   return nothing
 end
 
-function dealias!(a, grid::ThreeDGrid)
+function _dealias!(a, grid::ThreeDGrid)
   kalias = size(a, 1) == grid.nkr ? grid.kralias : grid.kalias
-  dealias!(a, grid, kalias)
+  _dealias!(a, grid, kalias)
   
   return nothing
 end
 
-function dealias!(a, grid::ThreeDGrid, kalias)
+function _dealias!(a, grid::ThreeDGrid, kalias)
   @views @. a[kalias, :, :, :] = 0
   @views @. a[:, grid.lalias, :, :] = 0
   @views @. a[:, :, grid.malias, :] = 0
@@ -416,7 +504,8 @@ show(io::IO, g::OneDGrid{T}) where T =
                "  ├────────── size Lx: ", g.Lx, '\n',
                "  ├──── resolution nx: ", g.nx, '\n',
                "  ├── grid spacing dx: ", g.dx, '\n',
-               "  └─────────── domain: x ∈ [$(g.x[1]), $(g.x[end])]")
+               "  ├─────────── domain: x ∈ [$(g.x[1]), $(g.x[end])]", '\n',
+               "  └─ aliased fraction: ", g.aliased_fraction)
 
 show(io::IO, g::TwoDGrid{T}) where T =
      print(io, "TwoDimensionalGrid\n",
@@ -425,8 +514,9 @@ show(io::IO, g::TwoDGrid{T}) where T =
                "  ├────────── size (Lx, Ly): ", (g.Lx, g.Ly), '\n',
                "  ├──── resolution (nx, ny): ", (g.nx, g.ny), '\n',
                "  ├── grid spacing (dx, dy): ", (g.dx, g.dy), '\n',
-               "  └───────────────── domain: x ∈ [$(g.x[1]), $(g.x[end])]", '\n',
-               "                             y ∈ [$(g.y[1]), $(g.y[end])]")
+               "  ├───────────────── domain: x ∈ [$(g.x[1]), $(g.x[end])]", '\n',
+               "  |                          y ∈ [$(g.y[1]), $(g.y[end])]", '\n',
+               "  └─ aliased fraction: ", g.aliased_fraction)
 
 show(io::IO, g::ThreeDGrid{T}) where T =
      print(io, "ThreeDimensionalGrid\n",
@@ -435,6 +525,7 @@ show(io::IO, g::ThreeDGrid{T}) where T =
                "  ├────────── size (Lx, Ly, Lz): ", (g.Lx, g.Ly, g.Ly), '\n',
                "  ├──── resolution (nx, ny, nz): ", (g.nx, g.ny, g.nz), '\n',
                "  ├── grid spacing (dx, dy, dz): ", (g.dx, g.dy, g.dz), '\n',
-               "  └────────────────────  domain: x ∈ [$(g.x[1]), $(g.x[end])]", '\n',
-               "                                 y ∈ [$(g.y[1]), $(g.y[end])]", '\n',
-               "                                 z ∈ [$(g.z[1]), $(g.z[end])]")
+               "  ├────────────────────  domain: x ∈ [$(g.x[1]), $(g.x[end])]", '\n',
+               "  |                              y ∈ [$(g.y[1]), $(g.y[end])]", '\n',
+               "  |                              z ∈ [$(g.z[1]), $(g.z[end])]", '\n',
+               "  └─ aliased fraction: ", g.aliased_fraction)
