@@ -402,7 +402,6 @@ Dealias array `a` on the `grid` with aliased x-wavenumbers `kalias`.
 dealias!(fh, grid::AbstractGrid{T, A, Nothing}) where {T, A} = nothing
 
 function dealias!(fh, grid)
-   print("i'm tryint to do this")
    _dealias!(fh, grid)
    
    return nothing
