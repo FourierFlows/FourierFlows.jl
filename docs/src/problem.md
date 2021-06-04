@@ -185,10 +185,10 @@ plot!(x -> cos(π * x) * exp(-prob.params.α * 2), -1, 1, label = "analytical")
 
 plot!(x -> cos(π * x), -1, 1, linestyle=:dash, color=:gray, label = "initial condition")
 
-savefig("assets/plot4.svg"); nothing # hide
+savefig("assets/plot5.svg"); nothing # hide
 ```
 
-![](assets/plot4.svg)
+![](assets/plot5.svg)
 
 A good practice is to encompass all functions and type definitions related with a PDE under 
 a single module, e.g.,

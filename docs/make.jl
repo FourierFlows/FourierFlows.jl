@@ -50,6 +50,7 @@ pages = [
     "Installation Instructions" => "installation_instructions.md",
     "Code Basics" => "basics.md",
     "Grids" => "grids.md",
+    "Aliasing" => "aliasing.md",
     "Problem" => "problem.md",
     "GPU" => "gpu.md",
     "Examples" => [ 
