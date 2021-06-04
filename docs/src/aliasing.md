@@ -9,19 +9,19 @@ Plots.default(lw=3)
 ```
 
 In pseudospectral methods, when computing nonlinear terms then aliasing errors come into play. 
-These aliasing errors originate from the discrete nature of the grid and, specifically, with 
-the restriction that a grid discretized with ``n_x`` points can only resolve a total of ``n_x`` 
+These aliasing errors originate from the discrete nature of the grid and, specifically, the 
+restriction that a grid discretized with ``n_x`` points can only resolve up to ``n_x`` 
 wavenumbers in Fourier space. 
 
-On a grid with a total of ``n_x`` wavenumbers, both harmonics ``e^{2\pi i k x / L_x}`` and 
+Consider a grid with a total of ``n_x`` points. Both harmonics ``e^{2\pi i k x / L_x}`` and 
 ``e^{2\pi i (k+n_x) x / L_x}``, with ``k`` an integer, are indistinguishable when evaluated
-on the discrete grid-points of this grid. When we compute nonlinear terms in physical space, 
-we may end up with terms that project on higher wavenumbers, beyond those that our grid can 
-represent. In that case, those wavenumbers will be erroneously projected onto some lower 
-wavenumber mode that fits our domain.
+on the discrete grid-points of this grid. When we compute nonlinear terms in physical space
+(products of various fields), we may end up with terms that project on harmonics with wavenumber
+beyond the maximum wavenumber that can be resolved by our grid. In that case, those wavenumbers 
+will be erroneously projected onto some lower wavenumber modes that fit our domain.
 
 Take, for example, functions ``\cos(4x)`` and ``\cos(6x)`` and let's see how they are represented 
-on a grid ``x \in [-π, π)`` with ``n_x = 10``.
+on a grid ``x \in [-π, π)`` with ``n_x = 10`` grid points.
 
 ```@example 1
 nx, Lx = 10, 2π
@@ -42,12 +42,12 @@ savefig("assets/plot4.svg"); nothing # hide
 
 ![](assets/plot4.svg)
 
-The take home message is that on this grid we cannot distinguish harmonics of wavenumbers 4 
-and 6 and attempting to represent harmonics with wavenumber 6 on this grid will lead to aliasing 
-errors. For example, say that we are solving an equation on this grid and at some point we compute 
-the product ``\cos(2x) \cos(4x)``. The result is ``\frac1{2} \cos(2x) + \frac1{2} \cos(6x)``, 
-but on this grid ``\cos(6x)`` is indistinguishable from ``\cos(4x)`` and, therefore, we get an 
-answer which is the sum of ``\frac1{2} \cos(2x) + \frac1{2} \cos(4x)``!
+The take home message is that on this particular grid we cannot distinguish harmonics with 
+wavenumbers 4 and 6. An attempt to represent harmonics with wavenumber 6 on this grid leads to 
+aliasing errors. For example, say that we are solving an equation and at some point we compute 
+the product ``\cos(2x) \cos(4x)``. The result should be ``\frac1{2} \cos(2x) + \frac1{2} \cos(6x)``, 
+but on this grid ``\cos(6x)`` is indistinguishable from ``\cos(4x)`` and, therefore, what we
+compute will be indistinguishable from ``\frac1{2} \cos(2x) + \frac1{2} \cos(4x)``!
 
 To avoid aliasing errors we either *(i)* discard some of the wavenumber components in Fourier 
 space from our fields before we tranform to physical space, or *(ii)* pad our fields with Fourier 
