@@ -58,7 +58,7 @@ beyond what our grid can resolve anyway. In FourierFlows.jl, the former dealiasi
 implemented.
 
 !!! info "De-aliasing scheme"
-    FourierFlows.jl curently implement dealiasing by zeroing out the top-`aliased_fraction` 
+    FourierFlows.jl curently implements dealiasing by zeroing out the top-`aliased_fraction` 
     wavenumber components on a `grid`.
 
 The number of wavenumber components that we need to zero-out to be sure the no aliasing errors 
