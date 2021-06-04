@@ -58,26 +58,26 @@ beyond what our grid can resolve anyway. In FourierFlows.jl, the former dealiasi
 implemented.
 
 !!! info "De-aliasing scheme"
-    FourierFlows.jl curently implement dealiasing by zeroing out the top-`aliased_fraction` 
+    FourierFlows.jl curently implements dealiasing by zeroing out the highest-`aliased_fraction` 
     wavenumber components on a `grid`.
 
 The number of wavenumber components that we need to zero-out to be sure the no aliasing errors 
 infiltrate our solution depends on the order of the nonlinearities. For example, for quadratic 
-nonlinearities, one expects that we need to discard the top-1/2 of the wavenumber components. 
+nonlinearities, one expects that we need to discard the highest-1/2 of the wavenumber components. 
 This way, when computing the product of two fields we won't have anything that projects onto
 harmonics with wavenumbers beyond those that our grid is able to resolve and, therefore, no 
 aliasing errors.
 
 The above-mentioned 1/2-rule for dealiasing for quadratic nonlinearities is, however, not the 
 most efficient. Orszag (1972) pointed out that for quadratic nonlirearities, simply only discarding 
-the top-1/3 of wavenumber components is enough to save us from aliasing errors. To be fair, 
+the highest-1/3 of wavenumber components is enough to save us from aliasing errors. To be fair, 
 with Orszag's so-called 2/3-rule for dealiasing, still some aliasing errors occur, but those 
 errors only occur to the higher-1/3 wavenumber components that will be zero-ed out next time 
 we dealias our solution anyway.
 
 When constructing a `grid` we can specify the `aliased_fraction` parameter. By default, this is 
 set to ``1/3``, appropriate for quadratic nonlinearities. Then `dealias!(fh, grid)` will zero-out 
-the top-`aliased_fraction` wavenumber components of `fh`. 
+the highest-`aliased_fraction` wavenumber components of `fh`. 
 
 If we construct a grid with `aliased_fraction=0`, e.g.,
 

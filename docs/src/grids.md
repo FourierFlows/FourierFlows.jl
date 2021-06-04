@@ -28,14 +28,13 @@ OneDimensionalGrid
   ├── grid spacing dx: 0.09817477042468103
   ├─────────── domain: x ∈ [-3.141592653589793, 3.0434178831651124]
   └─ aliased fraction: 0.3333333333333333
- ```
+```
 
-The grid domain is, by default, constructed symmetrically around ``x = 0``, but this 
-can be altered using the `x0` keyword argument of `OneDGrid` constructor. The grid 
-spacing is ``L_x / n_x``. Note that the last point of the domain is a grid-spacing 
-before ``L_x / 2``. This is because periodicity implies that the values of any field 
-at the end-points of the domain are equal and, therefore, grid-point values at
-both these end-points are reduntant.
+The grid domain is, by default, constructed symmetrically around ``x = 0``, but this can be 
+altered using the `x0` keyword argument of the `OneDGrid` constructor. The grid spacing 
+is ``L_x / n_x``. Note that the last point of the domain is a grid-spacing before ``L_x / 2``. 
+This is because periodicity implies that the values of any field at the end-points of the 
+domain are equal and, therefore, grid-point values at both these end-points are reduntant.
 
 We can define an array `u` that contains the values of a function ``u(x)`` on this 
 grid as
