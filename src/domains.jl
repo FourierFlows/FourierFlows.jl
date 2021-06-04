@@ -87,7 +87,7 @@ function OneDGrid(nx, Lx; x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASUR
   Tfft = typeof(fftplan)
   Trfft = typeof(rfftplan)
   Talias = typeof(kalias)
-
+   
   return OneDGrid{T, Tk, Tx, Tfft, Trfft, Talias}(nx, nk, nkr, dx, Lx, x, k, kr, 
                                       invksq, invkrsq, fftplan, rfftplan,
                                       aliased_fraction, kalias, kralias)
@@ -401,7 +401,12 @@ Dealias array `a` on the `grid` with aliased x-wavenumbers `kalias`.
 """
 dealias!(fh, grid::AbstractGrid{T, A, Nothing}) where {T, A} = nothing
 
-dealias!(fh, grid) = _dealias!(fh, grid)
+function dealias!(fh, grid)
+   print("i'm tryint to do this")
+   _dealias!(fh, grid)
+   
+   return nothing
+end
 
 function _dealias!(a, grid::OneDGrid)
   kalias = size(a, 1) == grid.nkr ? grid.kralias : grid.kalias
