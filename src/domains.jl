@@ -395,56 +395,56 @@ function getaliasedwavenumbers(nk, nkr, aliased_fraction)
 end
 
 """
-    dealias!(a, grid, kalias)
+    dealias!(fh, grid)
 
-Dealias array `a` on the `grid` with aliased x-wavenumbers `kalias`.
+Dealias array `fh` on the `grid` based on the `grids`'s `aliased_factor`.
 """
-dealias!(fh, grid::AbstractGrid{T, A, Nothing}) where {T, A} = nothing
-
 function dealias!(fh, grid)
    _dealias!(fh, grid)
    
    return nothing
 end
 
-function _dealias!(a, grid::OneDGrid)
-  kalias = size(a, 1) == grid.nkr ? grid.kralias : grid.kalias
-  _dealias!(a, grid, kalias)
+dealias!(fh, grid::AbstractGrid{T, A, Nothing}) where {T, A} = nothing
+
+function _dealias!(fh, grid::OneDGrid)
+  kalias = size(fh, 1) == grid.nkr ? grid.kralias : grid.kalias
+  _dealias!(fh, grid, kalias)
   
   return nothing
 end
 
-function _dealias!(a, grid::OneDGrid, kalias)
-  @views @. a[kalias, :] = 0
+function _dealias!(fh, grid::OneDGrid, kalias)
+  @views @. fh[kalias, :] = 0
   
   return nothing
 end
 
-function _dealias!(a, grid::TwoDGrid)
-  kalias = size(a, 1) == grid.nkr ? grid.kralias : grid.kalias
-  _dealias!(a, grid, kalias)
+function _dealias!(fh, grid::TwoDGrid)
+  kalias = size(fh, 1) == grid.nkr ? grid.kralias : grid.kalias
+  _dealias!(fh, grid, kalias)
   
   return nothing
 end
 
-function _dealias!(a, grid::TwoDGrid, kalias)
-  @views @. a[kalias, :, :] = 0
-  @views @. a[:, grid.lalias, :] = 0
+function _dealias!(fh, grid::TwoDGrid, kalias)
+  @views @. fh[kalias, :, :] = 0
+  @views @. fh[:, grid.lalias, :] = 0
   
   return nothing
 end
 
-function _dealias!(a, grid::ThreeDGrid)
-  kalias = size(a, 1) == grid.nkr ? grid.kralias : grid.kalias
-  _dealias!(a, grid, kalias)
+function _dealias!(fh, grid::ThreeDGrid)
+  kalias = size(fh, 1) == grid.nkr ? grid.kralias : grid.kalias
+  _dealias!(fh, grid, kalias)
   
   return nothing
 end
 
-function _dealias!(a, grid::ThreeDGrid, kalias)
-  @views @. a[kalias, :, :, :] = 0
-  @views @. a[:, grid.lalias, :, :] = 0
-  @views @. a[:, :, grid.malias, :] = 0
+function _dealias!(fh, grid::ThreeDGrid, kalias)
+  @views @. fh[kalias, :, :, :] = 0
+  @views @. fh[:, grid.lalias, :, :] = 0
+  @views @. fh[:, :, grid.malias, :] = 0
   
   return nothing
 end
@@ -460,11 +460,11 @@ at which the filter is smaller than Float64 machine precision.
 function makefilter(K::Array; order=4, innerK=0.65, outerK=1)
   TK = typeof(K)
   K = Array(K)
-  decay = 15*log(10) / (outerK-innerK)^order # decay rate for filtering function
-  filt = @. exp( -decay*(K-innerK)^order )
-  filt[real.(K) .< innerK] .= 1
+  decay = 15*log(10) / (outerK - innerK)^order # decay rate for filtering function
+  filter = @. exp(-decay*(K - innerK)^order)
+  filter[K .< innerK] .= 1
   
-  return TK(filt)
+  return TK(filter)
 end
 
 function makefilter(g::OneDGrid; realvars=true, kwargs...)
