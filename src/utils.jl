@@ -100,11 +100,13 @@ end
 """
     parsevalsum2(uh, grid)
 
-Returns `∫ u² dxdy = Σ|uh|²` on the `grid`. More specifically, it returns
+Returns `Σ|uh|²` on the `grid`, which is equal to the domain integral of `u`. More specifically, 
+it returns
 ```math
-\\int u(\\boldsymbol{x})^2 \\, \\mathrm{d}^2 \\boldsymbol{x} = \\sum_{\\boldsymbol{k}} |\\hat{u}_{\\boldsymbol{k}}|^2 L_x L_y
+\\sum_{𝐤} |\\hat{u}_{𝐤}|² L_x L_y = \\int u(𝐱)² \\, 𝖽x 𝖽y
 ```
-where ``\\hat{u}_{\\boldsymbol{k}} =`` `uh / grid.nx`. 
+where ``û_{𝐤} =`` `uh` ``/(`` `grid.nx` ``e^{- i 𝐤 ⋅ 𝐱₀})``, with ``𝐱₀`` the vector with components
+the left-most position in each direction.
 """
 function parsevalsum2(uh, grid::TwoDGrid)
   if size(uh, 1) == grid.nkr # uh is in conjugate symmetric form
@@ -188,15 +190,17 @@ end
 """
     radialspectrum(ah, grid; n=nothing, m=nothing, refinement=2)
 
-Returns `aρ = ∫ ah(ρ, θ) ρ dρ dθ`, the radial spectrum of `ah` known on the
-Cartesian wavenumber grid `(k, l)`.
+Returns the radial spectrum of `ah` on Cartesian wavenumber grid ``(k, l)``. To compute the 
+radial spectrum, `ah` is first interpolated onto a radial wavenumber grid ``(ρ, θ)`` , and
+then we integrate over angles ``θ`` to get `aρ`.
 
-`aρ` is found by intepolating `ah` onto a polar wavenumber grid (ρ, θ), and
-then integrating over `θ` to find `aρ`. The default resolution (n, m) for the
-polar wave number grid is `n=refinement * maximum(nk, nl),
-m = refinement * maximum(nk, nl)`, where `refinement = 2` by default. If
-`ah` is in conjugate symmetric form only the upper half plane in `θ` is
-represented on the polar grid.
+```math
+`aρ`` = \\int `ah`(ρ, θ) ρ 𝖽ρ 𝖽θ
+```
+
+The default resolution `(n, m)` for the polar wave number grid is `n = refinement * maximum(nk, nl), 
+m = refinement * maximum(nk, nl)`, where `refinement = 2` by default. If `ah` is in conjugate 
+symmetric form only the upper half plane in ``θ`` is represented on the polar grid.
 """
 function radialspectrum(ah, grid::TwoDGrid; n=nothing, m=nothing, refinement=2)
 
@@ -231,8 +235,8 @@ function radialspectrum(ah, grid::TwoDGrid; n=nothing, m=nothing, refinement=2)
     ahρθ[i₁, i₂] = itp(ρ[i₁] * cos(θ[i₂]), ρ[i₁] * sin(θ[i₂]))
   end
 
-  # ahρ = ρ ∫ ah(ρ,θ) dθ  =>  Ah = ∫ ahρ dρ = ∫∫ ah dk dl
-  dθ = θ[2]-θ[1]
+  # ahρ = ρ ∫ ah(ρ, θ) dθ  =>  Ah = ∫ ahρ dρ = ∫∫ ah dk dl
+  dθ = θ[2] - θ[1]
   if size(ah)[1] == grid.nkr
     ahρ = 2ρ .* sum(ahρθ, dims=2) * dθ # multiply by 2 for conjugate symmetry
   else
