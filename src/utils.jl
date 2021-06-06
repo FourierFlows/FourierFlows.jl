@@ -139,7 +139,7 @@ end
 
 Returns `real(Σ uh)` on the `grid`, i.e.
 ```math
-ℜ [ \\sum_{𝐤} û_{𝐤} L_x L_y ] \,,
+ℜ [ \\sum_{𝐤} û_{𝐤} L_x L_y ] \\,,
 ```
 where ``û_{𝐤} =`` `uh` ``/(`` `grid.nx` ``e^{- i 𝐤 ⋅ 𝐱₀})``, with ``𝐱₀`` the vector with components
 the left-most position in each direction.
