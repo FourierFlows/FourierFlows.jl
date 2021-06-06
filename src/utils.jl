@@ -100,10 +100,10 @@ end
 """
     parsevalsum2(uh, grid)
 
-Returns `Σ|uh|²` on the `grid`, which is equal to the domain integral of `u`. More specifically, 
+Returns `Σ |uh|²` on the `grid`, which is equal to the domain integral of `u`. More specifically, 
 it returns
 ```math
-\\sum_{𝐤} |\\hat{u}_{𝐤}|² L_x L_y = \\int u(𝐱)² \\, 𝖽x 𝖽y
+\\sum_{𝐤} |û_{𝐤}|² L_x L_y = \\int u(𝐱)² \\, 𝖽x 𝖽y \\,,
 ```
 where ``û_{𝐤} =`` `uh` ``/(`` `grid.nx` ``e^{- i 𝐤 ⋅ 𝐱₀})``, with ``𝐱₀`` the vector with components
 the left-most position in each direction.
@@ -137,7 +137,12 @@ end
 """
     parsevalsum(uh, grid)
 
-Returns `real(Σ uh)` on the `grid`.
+Returns `real(Σ uh)` on the `grid`, i.e.
+```math
+ℜ [ \\sum_{𝐤} û_{𝐤} L_x L_y ] \,,
+```
+where ``û_{𝐤} =`` `uh` ``/(`` `grid.nx` ``e^{- i 𝐤 ⋅ 𝐱₀})``, with ``𝐱₀`` the vector with components
+the left-most position in each direction.
 """
 function parsevalsum(uh, grid::TwoDGrid)
   if size(uh, 1) == grid.nkr    # uh is conjugate symmetric
@@ -147,8 +152,7 @@ function parsevalsum(uh, grid::TwoDGrid)
     U = sum(uh)
   end
 
-  norm = grid.Lx * grid.Ly / (grid.nx^2 * grid.ny^2) # weird normalization for dft
-  
+  norm = grid.Lx * grid.Ly / (grid.nx^2 * grid.ny^2) # normalization for dft
   return norm * real(U)
 end
 
@@ -198,9 +202,9 @@ then we integrate over angles ``θ`` to get `aρ`.
 `aρ`` = \\int `ah`(ρ, θ) ρ 𝖽ρ 𝖽θ
 ```
 
-The default resolution `(n, m)` for the polar wave number grid is `n = refinement * maximum(nk, nl), 
+The resolution `(n, m)` for the polar wavenumber grid is `n = refinement * maximum(nk, nl), 
 m = refinement * maximum(nk, nl)`, where `refinement = 2` by default. If `ah` is in conjugate 
-symmetric form only the upper half plane in ``θ`` is represented on the polar grid.
+symmetric form then only the upper-half plane in ``θ`` is represented on the polar grid.
 """
 function radialspectrum(ah, grid::TwoDGrid; n=nothing, m=nothing, refinement=2)
 
