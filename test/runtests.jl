@@ -329,7 +329,7 @@ for dev in devices
   end
 
   @time @testset "show() methods tests" begin
-    prob = Diffusion.Problem(dev=dev)
+    prob = Diffusion.Problem(dev)
     
     struct Params1 <: AbstractParams
         κ1 :: Float64

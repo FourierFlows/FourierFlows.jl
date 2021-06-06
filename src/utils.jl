@@ -192,64 +192,67 @@ function jacobian(a, b, grid::TwoDGrid)
 end
 
 """
-    radialspectrum(ah, grid; n=nothing, m=nothing, refinement=2)
+    radialspectrum(fh, grid; n=nothing, m=nothing, refinement=2)
 
-Returns the radial spectrum of `ah` on Cartesian wavenumber grid ``(k, l)``. To compute the 
-radial spectrum, `ah` is first interpolated onto a radial wavenumber grid ``(ρ, θ)`` , and
-then we integrate over angles ``θ`` to get `aρ`.
+Returns the radial spectrum of `fh`. `fh` lives on Cartesian wavenumber grid ``(k, l)``. To 
+compute the radial spectrum, we first interpolate ``f̂(k, l)`` onto a radial wavenumber grid 
+``(ρ, θ)``, where ``ρ² = k²+l²`` and ``θ = \\arctan(l/k)``. Note here that 
+``f̂ =`` `fh` ``/(`` `grid.nx` ``e^{- i 𝐤 ⋅ 𝐱₀})``,  with ``𝐱₀`` the vector with components the 
+left-most position in each direction. After interpolation, we integrate ``f̂``over angles ``θ`` 
+to get `fρ`,
 
 ```math
-`aρ`` = \\int `ah`(ρ, θ) ρ 𝖽ρ 𝖽θ
+  f̂_ρ = \\int f̂(ρ, θ) ρ 𝖽ρ 𝖽θ \\, .
 ```
 
 The resolution `(n, m)` for the polar wavenumber grid is `n = refinement * maximum(nk, nl), 
-m = refinement * maximum(nk, nl)`, where `refinement = 2` by default. If `ah` is in conjugate 
+m = refinement * maximum(nk, nl)`, where `refinement = 2` by default. If `fh` is in conjugate 
 symmetric form then only the upper-half plane in ``θ`` is represented on the polar grid.
 """
-function radialspectrum(ah, grid::TwoDGrid; n=nothing, m=nothing, refinement=2)
+function radialspectrum(fh, grid::TwoDGrid; n=nothing, m=nothing, refinement=2)
 
   n = n == nothing ? refinement * maximum([grid.nk, grid.nl]) : n
   m = m == nothing ? refinement * maximum([grid.nk, grid.nl]) : m
 
-  # Calcualte shifted k and l
+  # Calculate the shifted k and l
   lshift = range(-grid.nl/2+1, stop=grid.nl/2, length=grid.nl) * 2π/grid.Ly
 
-  if size(ah)[1] == grid.nkr # conjugate symmetric form
+  if size(fh)[1] == grid.nkr # conjugate symmetric form
     m = Int(m/2)                         # => half resolution in θ
     θ = range(-π/2, stop=π/2, length=m)  # θ-grid from k=0 to max(kr)
-    ahshift = fftshift(ah, 2)            # shifted ah
+    fhshift = fftshift(fh, 2)            # shifted fh
     kshift = range(0, stop=grid.nkr-1, length=grid.nkr) * 2π/grid.Lx
   else # ordinary form
     θ = range(0, stop=2π, length=m)      # θ grid
-    ahshift = fftshift(ah, [1, 2])       # shifted ah
+    fhshift = fftshift(fh, [1, 2])       # shifted fh
     kshift = range(-grid.nk/2+1, stop=grid.nk/2, length=grid.nk) * 2π/grid.Lx
   end
 
-  # Interpolator for ah
-  itp = scale(interpolate(ahshift, BSpline(Linear())), kshift, lshift)
+  # Interpolator for fh
+  itp = scale(interpolate(fhshift, BSpline(Linear())), kshift, lshift)
 
   # Get radial wavenumber vector
   ρmax = minimum([(grid.nk/2-1) * 2π/grid.Lx, (grid.nl/2-1) * 2π/grid.Ly])
   ρ = range(0, stop=ρmax, length=n)
 
-  # Interpolate ah onto fine grid in (ρ,θ).
-  ahρθ = zeros(eltype(ahshift), (n, m))
+  # Interpolate fh onto fine grid in (ρ, θ).
+  fhρθ = zeros(eltype(fhshift), (n, m))
 
   for i₁=2:n, i₂=1:m # ignore zeroth mode; i₁≥2
-    ahρθ[i₁, i₂] = itp(ρ[i₁] * cos(θ[i₂]), ρ[i₁] * sin(θ[i₂]))
+    fhρθ[i₁, i₂] = itp(ρ[i₁] * cos(θ[i₂]), ρ[i₁] * sin(θ[i₂]))
   end
 
-  # ahρ = ρ ∫ ah(ρ, θ) dθ  =>  Ah = ∫ ahρ dρ = ∫∫ ah dk dl
+  # fhρ = ρ ∫ fh(ρ, θ) dθ  =>  Fh = ∫ fhρ dρ = ∫∫ fh dk dl
   dθ = θ[2] - θ[1]
-  if size(ah)[1] == grid.nkr
-    ahρ = 2ρ .* sum(ahρθ, dims=2) * dθ # multiply by 2 for conjugate symmetry
+  if size(fh)[1] == grid.nkr
+    fhρ = 2ρ .* sum(fhρθ, dims=2) * dθ # multiply by 2 for conjugate symmetry
   else
-    ahρ =  ρ .* sum(ahρθ, dims=2) * dθ
+    fhρ =  ρ .* sum(fhρθ, dims=2) * dθ
   end
 
-  CUDA.@allowscalar ahρ[1] = ah[1, 1] # zeroth mode
+  CUDA.@allowscalar fhρ[1] = fh[1, 1] # zeroth mode
 
-  return ρ, ahρ
+  return ρ, fhρ
 end
 
 """

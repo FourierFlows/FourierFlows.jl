@@ -1,25 +1,31 @@
 """
-    Equation{T, TL, G<:AbstractFloat}
+    struct Equation{T, TL, G<:AbstractFloat}
     
 A struct that includes the equation to be solved `∂u/∂t = L*u + N(u)`. Array `L` 
 includes the coefficients of the linear term `L*u` and `calcN!` is a function 
 which computes the nonlinear term `N(u)`. The struct also includes the problem's
 `grid` and the float type of the state vector (and consequently of `N(u)`).
+
+$(TYPEDFIELDS)
 """
 struct Equation{T, TL, G<:AbstractFloat}
+    "array with coefficient for the linear part of the equation"
        L :: TL
+    "function that computes the nonlinear part of the equation"
   calcN! :: Function
+    "the grid"
     grid :: AbstractGrid{G}
+    "the dimensions of `L`"
     dims :: Tuple
+    "the float type for the state vector"
        T :: T # eltype or tuple of eltypes of sol and N
 end
 
 """
     Equation(L, calcN!, grid; dims=supersize(L), T=nothing)
     
-An equation constructor given the array `L` of the coefficients of the linear
-term, the function `calcN!` that computes the nonlinear term and the problem's 
-`grid`.
+The equation constructor from the array `L` of the coefficients of the linear term, the function 
+`calcN!` that computes the nonlinear term and the `grid` for the problem.
 """
 function Equation(L, calcN!, grid::AbstractGrid{G}; dims=supersize(L), T=nothing) where G
   T = T == nothing ? T = cxtype(G) : T
@@ -39,11 +45,11 @@ mutable struct Clock{T<:AbstractFloat}
 end
 
 """
-    Problem{T, A<:AbstractArray, Tg<:AbstractFloat, TL}
+    struct Problem{T, A<:AbstractArray, Tg<:AbstractFloat, TL}
     
-A struct including everything a FourierFlows problem requires: the state vector
-`sol`, the `clock`, the equation `eqn`, the `grid`, all problem variables in 
-`vars`, problem parameters in `params`, and the `timestepper`.
+A struct including everything a FourierFlows problem requires: the state vector `sol`, the 
+`clock`, the equation `eqn`, the `grid`, all problem variables in `vars`, problem parameters 
+in `params`, and the `timestepper`.
 """
 struct Problem{T, A<:AbstractArray, Tg<:AbstractFloat, TL}
           sol :: A
@@ -70,8 +76,8 @@ A placeholder struct for variables.
 struct EmptyVars <: AbstractVars end
 
 """
-    Problem(eqn::Equation, stepper, dt, grid::AbstractGrid,
-            vars=EmptyVars, params=EmptyParams, dev::Device=CPU(); stepperkwargs...)
+    Problem(eqn::Equation, stepper, dt, grid::AbstractGrid{T}, 
+            vars=EmptyVars, params=EmptyParams, dev::Device=CPU(); stepperkwargs...) where T
 
 Construct a `Problem` for equation `eqn` using the time`stepper` with timestep 
 `dt`, on `grid` and `dev`ice. Optionally provide variables in `vars` and

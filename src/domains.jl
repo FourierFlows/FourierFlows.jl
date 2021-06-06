@@ -376,7 +376,7 @@ end
 
 Returns the top `aliased_fraction` highest wavenumbers, both for and real FFTs, `kalias` and 
 `kralias` respectively. For example, `aliased_fraction=1/3` should return the indices of the 
-top-most 1/6-th (in absolute value) for both positive and negative wavenumbers (i.g., 1/3 total) 
+top-most 1/6-th (in absolute value) for both positive and negative wavenumbers (i.e., 1/3 total) 
 that should be set to zero after performing an FFT. 
 """
 function getaliasedwavenumbers(nk, nkr, aliased_fraction)
@@ -452,9 +452,9 @@ end
 """
     makefilter(K; order=4, innerK=0.65, outerK=1)
 
-Returns a filter acting on the non-dimensional wavenumber K that decays exponentially
-for K>innerK, thus removing high-wavenumber content from a spectrum it is multiplied
-with. The decay rate is determined by order and outerK determines the outer wavenumber
+Returns a filter acting on the non-dimensional wavenumber `K` that decays exponentially
+for `K`>`innerK`, thus removing high-wavenumber content from a spectrum it is multiplied
+with. The decay rate is determined by order and `outerK` determines the outer wavenumber
 at which the filter is smaller than Float64 machine precision.
 """
 function makefilter(K::Array; order=4, innerK=0.65, outerK=1)
