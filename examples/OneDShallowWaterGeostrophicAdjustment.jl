@@ -41,7 +41,7 @@ using LinearAlgebra: mul!, ldiv!
 # What follows is a step-by-step tutorial demonstrating how you can create your own
 # solver for an equation of your liking.
 
-# The basic building blocks for a `FourierFlows.Problem()` are:
+# The basic building blocks for a `FourierFlows.Problem` are:
 # - `Grid` struct containining the physical and wavenumber grid for the problem,
 # - `Params` struct containining all the parameters of the problem,
 # - `Vars` struct containining arrays with the variables used in the problem,
