@@ -376,7 +376,7 @@ end
 
 Returns the top `aliased_fraction` highest wavenumbers, both for and real FFTs, `kalias` and 
 `kralias` respectively. For example, `aliased_fraction=1/3` should return the indices of the 
-top-most 1/6-th (in absolute value) for both positive and negative wavenumbers (i.g., 1/3 total) 
+top-most 1/6-th (in absolute value) for both positive and negative wavenumbers (i.e., 1/3 total) 
 that should be set to zero after performing an FFT. 
 """
 function getaliasedwavenumbers(nk, nkr, aliased_fraction)
@@ -395,56 +395,56 @@ function getaliasedwavenumbers(nk, nkr, aliased_fraction)
 end
 
 """
-    dealias!(a, grid, kalias)
+    dealias!(fh, grid)
 
-Dealias array `a` on the `grid` with aliased x-wavenumbers `kalias`.
+Dealias array `fh` on the `grid` based on the `grids`'s `aliased_factor`.
 """
-dealias!(fh, grid::AbstractGrid{T, A, Nothing}) where {T, A} = nothing
-
 function dealias!(fh, grid)
    _dealias!(fh, grid)
    
    return nothing
 end
 
-function _dealias!(a, grid::OneDGrid)
-  kalias = size(a, 1) == grid.nkr ? grid.kralias : grid.kalias
-  _dealias!(a, grid, kalias)
+dealias!(fh, grid::AbstractGrid{T, A, Nothing}) where {T, A} = nothing
+
+function _dealias!(fh, grid::OneDGrid)
+  kalias = size(fh, 1) == grid.nkr ? grid.kralias : grid.kalias
+  _dealias!(fh, grid, kalias)
   
   return nothing
 end
 
-function _dealias!(a, grid::OneDGrid, kalias)
-  @views @. a[kalias, :] = 0
+function _dealias!(fh, grid::OneDGrid, kalias)
+  @views @. fh[kalias, :] = 0
   
   return nothing
 end
 
-function _dealias!(a, grid::TwoDGrid)
-  kalias = size(a, 1) == grid.nkr ? grid.kralias : grid.kalias
-  _dealias!(a, grid, kalias)
+function _dealias!(fh, grid::TwoDGrid)
+  kalias = size(fh, 1) == grid.nkr ? grid.kralias : grid.kalias
+  _dealias!(fh, grid, kalias)
   
   return nothing
 end
 
-function _dealias!(a, grid::TwoDGrid, kalias)
-  @views @. a[kalias, :, :] = 0
-  @views @. a[:, grid.lalias, :] = 0
+function _dealias!(fh, grid::TwoDGrid, kalias)
+  @views @. fh[kalias, :, :] = 0
+  @views @. fh[:, grid.lalias, :] = 0
   
   return nothing
 end
 
-function _dealias!(a, grid::ThreeDGrid)
-  kalias = size(a, 1) == grid.nkr ? grid.kralias : grid.kalias
-  _dealias!(a, grid, kalias)
+function _dealias!(fh, grid::ThreeDGrid)
+  kalias = size(fh, 1) == grid.nkr ? grid.kralias : grid.kalias
+  _dealias!(fh, grid, kalias)
   
   return nothing
 end
 
-function _dealias!(a, grid::ThreeDGrid, kalias)
-  @views @. a[kalias, :, :, :] = 0
-  @views @. a[:, grid.lalias, :, :] = 0
-  @views @. a[:, :, grid.malias, :] = 0
+function _dealias!(fh, grid::ThreeDGrid, kalias)
+  @views @. fh[kalias, :, :, :] = 0
+  @views @. fh[:, grid.lalias, :, :] = 0
+  @views @. fh[:, :, grid.malias, :] = 0
   
   return nothing
 end
@@ -452,19 +452,19 @@ end
 """
     makefilter(K; order=4, innerK=0.65, outerK=1)
 
-Returns a filter acting on the non-dimensional wavenumber K that decays exponentially
-for K>innerK, thus removing high-wavenumber content from a spectrum it is multiplied
-with. The decay rate is determined by order and outerK determines the outer wavenumber
+Returns a filter acting on the non-dimensional wavenumber `K` that decays exponentially
+for `K`>`innerK`, thus removing high-wavenumber content from a spectrum it is multiplied
+with. The decay rate is determined by order and `outerK` determines the outer wavenumber
 at which the filter is smaller than Float64 machine precision.
 """
 function makefilter(K::Array; order=4, innerK=0.65, outerK=1)
   TK = typeof(K)
   K = Array(K)
-  decay = 15*log(10) / (outerK-innerK)^order # decay rate for filtering function
-  filt = @. exp( -decay*(K-innerK)^order )
-  filt[real.(K) .< innerK] .= 1
+  decay = 15*log(10) / (outerK - innerK)^order # decay rate for filtering function
+  filter = @. exp(-decay*(K - innerK)^order)
+  filter[K .< innerK] .= 1
   
-  return TK(filt)
+  return TK(filter)
 end
 
 function makefilter(g::OneDGrid; realvars=true, kwargs...)

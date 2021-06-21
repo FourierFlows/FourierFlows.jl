@@ -1,7 +1,7 @@
 gausian_solution(x, t; c₀=0.01, σ=0.2, κ=1e-2) = c₀ * σ / sqrt(σ^2 + 2κ*t) * exp(-x^2 / (2(σ^2 + 2κ*t)))
 
 function construct_diffusion_problem(stepper, κ, dt; nx=128, Lx=2π, dev=CPU())
-  prob = Problem(nx=nx, Lx=Lx, κ=κ, dt=dt, stepper=stepper, dev=dev)
+  prob = Problem(dev; nx=nx, Lx=Lx, κ=κ, dt=dt, stepper=stepper)
   return prob
 end
 

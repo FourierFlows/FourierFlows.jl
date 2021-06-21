@@ -1,5 +1,5 @@
 function test_diagnosticsteps(dev::Device=CPU(); nsteps=100, freq=1, ndata=ceil(Int, (nsteps+1)/freq))
-  prob = Problem(nx=6, Lx=2π, dev=dev)
+  prob = Problem(dev; nx=6, Lx=2π)
   getone(prob) = 1
   diagnostic = Diagnostic(getone, prob, nsteps=nsteps, freq=freq, ndata=ndata)
   stepforward!(prob, diagnostic, nsteps)
@@ -11,7 +11,7 @@ end
 function test_scalardiagnostics(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2, nsteps=100, freq=1, ndata=ceil(Int, (nsteps+1)/freq))
   k₀ = 2π / Lx
   dt = 1e-2 / (κ * k₀^2) # time-scale for diffusive decay dynamics are resolved
-  prob = Problem(nx=nx, Lx=Lx, κ=κ, dt=dt, stepper="RK4", dev=dev)
+  prob = Problem(dev; nx=nx, Lx=Lx, κ=κ, dt=dt, stepper="RK4")
   c0 = @. sin(k₀ * prob.grid.x)
 
   ct(t) = exp(-κ * k₀^2 * t)
@@ -34,7 +34,7 @@ end
 function test_basicdiagnostics(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2)
   k₀ = 2π / Lx
   dt = 1e-2 / (κ * k₀^2) # time-scale for diffusive decay dynamics are resolved
-  prob = Problem(nx=nx, Lx=Lx, κ=κ, dt=dt, stepper="RK4", dev=dev)
+  prob = Problem(dev; nx=nx, Lx=Lx, κ=κ, dt=dt, stepper="RK4")
   c0 = @. cos(k₀ * prob.grid.x)
   set_c!(prob, c0)
 
@@ -49,7 +49,7 @@ end
 function test_extenddiagnostic(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2)
   k₀ = 2π / Lx
   dt = 1e-2 / (κ * k₀^2) # time-scale for diffusive decay dynamics are resolved
-  prob = Problem(nx=nx, Lx=Lx, κ=κ, dt=dt, stepper="RK4", dev=dev)
+  prob = Problem(dev; nx=nx, Lx=Lx, κ=κ, dt=dt, stepper="RK4")
   c0 = @. sin(k₀ * prob.grid.x)
   set_c!(prob, c0)
 
@@ -71,7 +71,7 @@ end
 function test_incrementdiagnostic(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2)
   k₀ = 2π / Lx
   dt = 1e-2 / (κ * k₀^2) # time-scale for diffusive decay dynamics are resolved
-  prob = Problem(nx=nx, Lx=Lx, κ=κ, dt=dt, stepper="ETDRK4", dev=dev)
+  prob = Problem(dev; nx=nx, Lx=Lx, κ=κ, dt=dt, stepper="ETDRK4")
   c0 = @. sin(k₀ * prob.grid.x)
   set_c!(prob, c0)
   
@@ -91,7 +91,7 @@ end
 function test_getindex(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2)
   k₀ = 2π / Lx
   dt = 1e-2 / (κ * k₀^2) # time-scale for diffusive decay dynamics are resolved
-  prob = Problem(nx=nx, Lx=Lx, κ=κ, dt=dt, stepper="ETDRK4", dev=dev)
+  prob = Problem(dev; nx=nx, Lx=Lx, κ=κ, dt=dt, stepper="ETDRK4")
   c0 = @. sin(k₀ * prob.grid.x)
   set_c!(prob, c0)
   

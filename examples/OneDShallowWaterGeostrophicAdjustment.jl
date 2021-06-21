@@ -13,9 +13,9 @@
 #
 # ```math
 # \begin{aligned}
-# \frac{\partial u}{\partial t} - f v & = - g \frac{\partial \eta}{\partial x} - \mathrm{D} u, \\
-# \frac{\partial v}{\partial t} + f u & = - \mathrm{D} v, \\
-# \frac{\partial \eta}{\partial t} + H \frac{\partial u}{\partial x} & = - \mathrm{D} \eta.
+# \partial_t u - f v & = - g \partial_x \eta - \mathrm{D} u, \\
+# \partial_t v + f u & = - \mathrm{D} v, \\
+# \partial_t \eta + H \partial_x u & = - \mathrm{D} \eta.
 # \end{aligned}
 # ```
 #
@@ -23,13 +23,11 @@
 # ``\mathrm{D}`` indicates a hyperviscous linear operator of the form ``(-1)^{n_ν} ν \nabla^{2 n_ν}``, 
 # with ``ν`` the viscosity coefficient and ``n_ν`` the order of the operator.
 #
-# Rotation introduces the deformation length scale, ``L_d = \sqrt{g H} / f``. 
-# Disturbances with length scales much smaller than ``L_d`` don't "feel" 
-# the rotation and propagate as inertia-gravity waves. Disturbances with 
-# length scales comparable or larger than ``L_d`` should be approximately 
-# in geostrophic balance, i.e., the Coriolis acceleration
-# ``f \widehat{\bm{z}} \times \bm{u}`` should be in approximate 
-# balance with the pressure gradient ``-g \bm{\nabla} \eta``.
+# Rotation introduces the deformation length scale, ``L_d = \sqrt{g H} / f``. Disturbances with 
+# length scales much smaller than ``L_d`` don't "feel" the rotation and propagate as inertia-gravity
+# waves. Disturbances with length scales comparable or larger than ``L_d`` should be approximately
+# in geostrophic balance, i.e., the Coriolis acceleration ``f \widehat{\bm{z}} \times \bm{u}`` 
+# should be in approximate balance with the pressure gradient ``-g \bm{\nabla} \eta``.
 
 
 using FourierFlows, Plots, Printf, Random
@@ -38,21 +36,21 @@ using LinearAlgebra: mul!, ldiv!
 # ## Coding up the equations
 # ### A demonstration of FourierFlows.jl framework
 #
-# What follows is a step-by-step tutorial demonstrating how you can create your own
-# solver for an equation of your liking.
+# What follows is a step-by-step tutorial demonstrating how you can create your own solver 
+# for an equation of your liking.
 
-# The basic building blocks for a `FourierFlows.Problem()` are:
+# The basic building blocks for a `FourierFlows.Problem` are:
 # - `Grid` struct containining the physical and wavenumber grid for the problem,
 # - `Params` struct containining all the parameters of the problem,
 # - `Vars` struct containining arrays with the variables used in the problem,
 # - `Equation` struct containining the coefficients of the linear operator ``L`` and the function that computes the nonlinear terms, usually named `calcN!()`.
 # 
-# The `Grid` structure is provided by FourierFlows.jl. One simply has to call one of
-# the `OneDGrid()`, `TwoDGrid()`, or `ThreeDGrid()` grid constructors, depending
-# on the dimensionality of the problem. All other structs mentioned above are problem-specific
-# and need to be constructed for every set of equations we want to solve.
+# The `Grid` structure is provided by FourierFlows.jl. We simply have to call one of either 
+# `OneDGrid()`, `TwoDGrid()`, or `ThreeDGrid()` constructors, depending on the dimensionality 
+# of the problem. All other structs mentioned above are problem-specific and need to be constructed 
+# for every set of equations we want to solve.
 
-# First lets construct the `Params` struct that contains all parameters of the problem 
+# First let's construct the `Params` struct that contains all parameters of the problem.
 
 struct Params{T} <: AbstractParams
    ν :: T         # Hyperviscosity coefficient

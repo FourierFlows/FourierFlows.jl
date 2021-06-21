@@ -20,7 +20,7 @@ function test_uniquepath()
 end
 
 function test_outputconstructor(dev::Device=CPU())
-  prob = Problem(nx=32, Lx=2π, κ=1e-2, dt=1e-7, stepper="ForwardEuler", dev=dev)
+  prob = Problem(dev; nx=32, Lx=2π, κ=1e-2, dt=1e-7, stepper="ForwardEuler")
   filename = joinpath(".", "testoutput.jld2")
   get_sol(prob) = prob.sol
   get_c(prob) = prob.vars.c
@@ -32,7 +32,7 @@ function test_outputconstructor(dev::Device=CPU())
 end
 
 function test_getindex(dev::Device=CPU())
-  prob = Problem(nx=32, Lx=2π, κ=1e-2, dt=1e-7, stepper="ForwardEuler", dev=dev)
+  prob = Problem(dev; nx=32, Lx=2π, κ=1e-2, dt=1e-7, stepper="ForwardEuler")
   filename = joinpath(".", "testoutput.jld2")
   
   ctest = devzeros(dev, Float64, (prob.grid.nx, ))
@@ -47,7 +47,7 @@ end
 
 function test_saveproblem_saveoutput(dev::Device=CPU())
   nx = 32
-  prob = Problem(nx=nx, Lx=2π, κ=1e-2*ones(nx), dt=1e-7, stepper="ForwardEuler", dev=dev)
+  prob = Problem(dev; nx=nx, Lx=2π, κ=1e-2*ones(nx), dt=1e-7, stepper="ForwardEuler")
   filename = joinpath(".", "testoutput.jld2")
   if isfile(filename); rm(filename); end
   
@@ -79,12 +79,12 @@ function test_saveproblemTwoDGrid(dev::Device=CPU())
    params = FourierFlows.Diffusion.Params(dev, κ)
      vars = FourierFlows.Diffusion.Vars(dev, grid)
      
-      # manually construct an Equation for a 2D grid
-      L = zeros(dev, Float64, (grid.nkr, grid.nl))
-      @. L = - κ * grid.kr^2
-      eqn = FourierFlows.Equation(L, FourierFlows.Diffusion.calcN!, grid)
+  # manually construct an Equation for a 2D grid
+     L = zeros(dev, Float64, (grid.nkr, grid.nl))
+  @. L = - κ * grid.kr^2
+  equation = FourierFlows.Equation(L, FourierFlows.Diffusion.calcN!, grid)
 
-     prob = FourierFlows.Problem(eqn, stepper, dt, grid, vars, params, dev)
+  prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
   
   filename = joinpath(".", "testoutput.jld2")
   if isfile(filename); GC.gc(); rm(filename); end
@@ -103,7 +103,7 @@ function test_savediagnostic(dev::Device=CPU())
   filename = joinpath(".", "testoutput.jld2")
   if isfile(filename); GC.gc(); rm(filename); end
 
-  prob = Problem(nx=6, Lx=2π, dev=dev)
+  prob = Problem(dev; nx=6, Lx=2π)
   getone(prob) = 1
   nsteps=100
   freq=1

@@ -1,10 +1,10 @@
 function instantiate_problem(dev, stepper)
-    problem = Problem(nx=4, dev=dev, stepper=stepper)
+    problem = Problem(dev; nx=4, stepper=stepper)
     return typeof(problem) <: FourierFlows.Problem
 end
 
 function instantiate_problem_with_filter_kwargs(dev, stepper)
-    dummy_problem = Problem(nx=16, dev=dev, stepper=stepper)
+    dummy_problem = Problem(dev; nx=16, stepper=stepper)
 
     real_problem = FourierFlows.Problem(dummy_problem.eqn,
                                         stepper,

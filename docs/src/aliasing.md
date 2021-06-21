@@ -79,6 +79,10 @@ When constructing a `grid` we can specify the `aliased_fraction` parameter. By d
 set to ``1/3``, appropriate for quadratic nonlinearities. Then `dealias!(fh, grid)` will zero-out 
 the highest-`aliased_fraction` wavenumber components of `fh`. 
 
+```@docs
+FourierFlows.dealias!
+```
+
 If we construct a grid with `aliased_fraction=0`, e.g.,
 
 ```@example 1
