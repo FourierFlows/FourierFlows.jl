@@ -23,7 +23,6 @@ examples = [
 for example in examples
   example_filepath = joinpath(EXAMPLES_DIR, example)
   withenv("GITHUB_REPOSITORY" => "FourierFlows/FourierFlowsDocumentation") do
-    example_filepath = joinpath(EXAMPLES_DIR, example)
     Literate.markdown(example_filepath, OUTPUT_DIR; flavor = Literate.DocumenterFlavor())
     Literate.notebook(example_filepath, OUTPUT_DIR)
     Literate.script(example_filepath, OUTPUT_DIR)
