@@ -34,7 +34,7 @@ The grid domain is, by default, constructed symmetrically around ``x = 0``, but 
 altered using the `x0` keyword argument of the `OneDGrid` constructor. The grid spacing 
 is ``L_x / n_x``. Note that the last point of the domain is a grid-spacing before ``L_x / 2``. 
 This is because periodicity implies that the values of any field at the end-points of the 
-domain are equal and, therefore, grid-point values at both these end-points are reduntant.
+domain are equal and, therefore, grid-point values at both these end-points are redundant.
 
 We can define an array `u` that contains the values of a function ``u(x)`` on this 
 grid as
@@ -43,7 +43,6 @@ grid as
 using FourierFlows
 using LinearAlgebra: mul!, ldiv!
 using Plots
-using LaTeXStrings
 Plots.scalefontsizes(1.25)
 Plots.default(lw=3)
 nx, Lx = 64, 2π
@@ -60,9 +59,9 @@ Note that we chose a function that *is* periodic on our domain. We can visualize
 `u` by
 
 ```@example 1
-using Plots, LaTeXStrings
+using Plots
 
-plot(grid.x, u, label=L"u", xlabel=L"x")
+plot(grid.x, u, label="u", xlabel="x")
 savefig("assets/plot1.svg"); nothing # hide
 ```
 
@@ -132,8 +131,8 @@ point of our domain array.
 uhat = @. uh / (nx * exp(- im * grid.kr * grid.x[1])) # due to normalization of FFT
 
 plot(grid.kr, [real.(uhat), imag.(uhat)],
-          label = [L"\mathrm{Re}\left(\hat{u}\right)" L"\mathrm{Im}\left(\hat{u}\right)"],
-         xlabel = L"k",
+          label = ["real( û )" "imag( û )"],
+         xlabel = "k",
           xlims = (-0.5, 10.5),
           ylims = (-0.55, 0.55),
          xticks = 0:10,
@@ -172,7 +171,7 @@ using LinearAlgebra: ldiv!
 
 ldiv!(∂ₓu, grid.rfftplan, ∂ₓuh)
 
-plot(grid.x, [u ∂ₓu], label=[L"u" L"\partial u/ \partial x"], xlabel=L"x")
+plot(grid.x, [u ∂ₓu], label=["u" "∂u/∂x"], xlabel="x")
 
 savefig("assets/plot3.svg"); nothing # hide
 ```

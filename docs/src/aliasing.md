@@ -1,6 +1,5 @@
 # Aliasing
 
-
 ```@setup 1
 using FourierFlows
 using Plots
@@ -24,6 +23,8 @@ Take, for example, functions ``\cos(4x)`` and ``\cos(6x)`` and let's see how the
 on a grid ``x \in [-π, π)`` with ``n_x = 10`` grid points.
 
 ```@example 1
+using FourierFlows, Plots
+
 nx, Lx = 10, 2π
 grid = OneDGrid(nx, Lx)
 
@@ -50,7 +51,7 @@ but on this grid ``\cos(6x)`` is indistinguishable from ``\cos(4x)`` and, theref
 compute will be indistinguishable from ``\frac1{2} \cos(2x) + \frac1{2} \cos(4x)``!
 
 To avoid aliasing errors we either *(i)* discard some of the wavenumber components in Fourier 
-space from our fields before we tranform to physical space, or *(ii)* pad our fields with Fourier 
+space from our fields before we transform to physical space, or *(ii)* pad our fields with Fourier 
 components with zero power that correspond to higher wavenumbers than those resolved by the grid 
 before transforming to physical space. This way, the aliasing errors, which will involve the 
 higher wavenumbers, will be either *(i)* zero-ed out or *(ii)* only come about for wavenumbers 
@@ -58,7 +59,7 @@ beyond what our grid can resolve anyway. In FourierFlows.jl, the former dealiasi
 implemented.
 
 !!! info "De-aliasing scheme"
-    FourierFlows.jl curently implements dealiasing by zeroing out the highest-`aliased_fraction` 
+    FourierFlows.jl currently implements dealiasing by zeroing out the highest-`aliased_fraction` 
     wavenumber components on a `grid`.
 
 The number of wavenumber components that we need to zero-out to be sure the no aliasing errors 
