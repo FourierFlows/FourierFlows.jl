@@ -77,7 +77,7 @@ and [`CUDA.CuDevice`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA
 
 ## Example(s)
 
-An example for coding up and solving the linear shallow water equations is [documented](https://fourierflows.github.io/FourierFlowsDocumentation/stable/generated/OneDShallowWaterGeostrophicAdjustment/).
+An example for coding up and solving the linear shallow water equations is [documented](https://fourierflows.github.io/FourierFlowsDocumentation/stable/literated/OneDShallowWaterGeostrophicAdjustment/).
 
 See also the child packages [GeophysicalFlows.jl][] for example usage of FourierFlows.jl for 
 problems in Geophysical Fluid Dynamics.

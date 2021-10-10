@@ -1,7 +1,7 @@
 # # Linear rotating shallow water dynamics
 #
-#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/generated/OneDShallowWaterGeostrophicAdjustment.ipynb). 
-#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/generated/OneDShallowWaterGeostrophicAdjustment.ipynb).
+#md # This example can be run online via [![](https://mybinder.org/badge_logo.svg)](@__BINDER_ROOT_URL__/literated/OneDShallowWaterGeostrophicAdjustment.ipynb). 
+#md # Also, it can be viewed as a Jupyter notebook via [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](@__NBVIEWER_ROOT_URL__/literated/OneDShallowWaterGeostrophicAdjustment.ipynb).
 # 
 #
 # This example solves the linear 1D rotating shallow water equations

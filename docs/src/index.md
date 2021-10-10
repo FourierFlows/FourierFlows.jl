@@ -10,7 +10,7 @@ At the moment we have a lot of modules for solving PDEs related geophysical sett
 ## Examples
 
 An example demonstrating how to code up and solve the linear shallow water equations is found
-in the [Examples](generated/OneDShallowWaterGeostrophicAdjustment/) section of the documentation.
+in the [Examples](literated/OneDShallowWaterGeostrophicAdjustment/) section of the documentation.
 
 For more examples of `FourierFlows.jl` in action, see the child packages
 [`GeophysicalFlows.jl`](https://github.com/FourierFlows/GeophysicalFlows.jl) or [`PassiveTracerFlows.jl`](https://github.com/FourierFlows/PassiveTracerFlows.jl).

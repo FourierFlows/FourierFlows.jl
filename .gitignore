@@ -10,7 +10,7 @@
 
 docs/build/
 docs/site/
-docs/src/generated
+docs/src/literated
 coverage/
 
 **/Manifest.toml

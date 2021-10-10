@@ -43,6 +43,7 @@ grid as
 using FourierFlows
 using LinearAlgebra: mul!, ldiv!
 using Plots
+using LaTeXStrings
 Plots.scalefontsizes(1.25)
 Plots.default(lw=3)
 nx, Lx = 64, 2π
@@ -59,9 +60,9 @@ Note that we chose a function that *is* periodic on our domain. We can visualize
 `u` by
 
 ```@example 1
-using Plots
+using Plots, LaTeXStrings
 
-plot(grid.x, u, label="u", xlabel="x")
+plot(grid.x, u, label=L"u", xlabel=L"x")
 savefig("assets/plot1.svg"); nothing # hide
 ```
 
@@ -131,8 +132,8 @@ point of our domain array.
 uhat = @. uh / (nx * exp(- im * grid.kr * grid.x[1])) # due to normalization of FFT
 
 plot(grid.kr, [real.(uhat), imag.(uhat)],
-          label = ["real( û )" "imag( û )"],
-         xlabel = "k",
+          label = [L"\mathrm{Re}\left(\hat{u}\right)" L"\mathrm{Im}\left(\hat{u}\right)"],
+         xlabel = L"k",
           xlims = (-0.5, 10.5),
           ylims = (-0.55, 0.55),
          xticks = 0:10,
@@ -171,7 +172,7 @@ using LinearAlgebra: ldiv!
 
 ldiv!(∂ₓu, grid.rfftplan, ∂ₓuh)
 
-plot(grid.x, [u ∂ₓu], label=["u" "∂u/∂x"], xlabel="x")
+plot(grid.x, [u ∂ₓu], label=[L"u" L"\partial u/ \partial x"], xlabel=L"x")
 
 savefig("assets/plot3.svg"); nothing # hide
 ```
