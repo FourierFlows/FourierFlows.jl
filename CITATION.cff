@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Constantinou"
+  given-names: "Navid C."
+  orcid: "https://orcid.org/0000-0002-8149-4094"
+- family-names: "Wagner"
+  given-names: "Gregory LeClaire"
+  orcid: "https://orcid.org/0000-0001-5317-2445"
+title: "FourierFlows.jl"
+version: 0.7.1
+doi: 10.5281/zenodo.4898736
+date-released: 2021-06-04
+url: "https://github.com/FourierFlows/FourierFlows.jl"
