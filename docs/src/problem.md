@@ -129,7 +129,7 @@ Currently, the implemented time-steppers are `ForwardEuler`, `AB3` (Adams-Basmfo
 Also, there exist the `Filtered` versions of all the above, in which a high-wavenumber filter
 is applied after every time-step.
 
-By default, the `Problem` contructor takes `sol` a complex valued array same 
+By default, the `Problem` constructor takes `sol` a complex valued array same 
 size as `L` filed with zeros.
 
 The `problem.clock` contains the time-step `dt` and the current `step` and time 

@@ -14,7 +14,7 @@ ENV["GKSwstype"] = "100"
 #####
 
 const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
-const OUTPUT_DIR   = joinpath(@__DIR__, "src/generated")
+const OUTPUT_DIR   = joinpath(@__DIR__, "src/literated")
 
 examples = [
     "OneDShallowWaterGeostrophicAdjustment.jl",
@@ -53,7 +53,7 @@ pages = [
     "Problem" => "problem.md",
     "GPU" => "gpu.md",
     "Examples" => [ 
-        "generated/OneDShallowWaterGeostrophicAdjustment.md",
+        "literated/OneDShallowWaterGeostrophicAdjustment.md",
         ],
     "Contributor's guide" => "contributing.md",
     "Library" => [ 

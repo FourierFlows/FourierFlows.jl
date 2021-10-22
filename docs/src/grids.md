@@ -34,7 +34,7 @@ The grid domain is, by default, constructed symmetrically around ``x = 0``, but 
 altered using the `x0` keyword argument of the `OneDGrid` constructor. The grid spacing 
 is ``L_x / n_x``. Note that the last point of the domain is a grid-spacing before ``L_x / 2``. 
 This is because periodicity implies that the values of any field at the end-points of the 
-domain are equal and, therefore, grid-point values at both these end-points are reduntant.
+domain are equal and, therefore, grid-point values at both these end-points are redundant.
 
 We can define an array `u` that contains the values of a function ``u(x)`` on this 
 grid as
