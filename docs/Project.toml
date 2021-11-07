@@ -7,4 +7,4 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [compat]
 Literate = "≥2.9.0"
-Plots = "≥1.10.1"
+Plots = "1.10.1 - 1.21.3"
