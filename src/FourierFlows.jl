@@ -69,7 +69,7 @@ using
   DocStringExtensions
 
 @reexport using FFTW: fft, ifft, rfft, irfft
-@reexport CUDA
+@reexport using CUDA
 
 import Base: resize!, getindex, setindex!, push!, append!, show, summary
 
