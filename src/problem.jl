@@ -1,10 +1,10 @@
 """
     struct Equation{T, TL, G<:AbstractFloat}
     
-A struct that includes the equation to be solved `∂u/∂t = L*u + N(u)`. Array `L` 
-includes the coefficients of the linear term `L*u` and `calcN!` is a function 
-which computes the nonlinear term `N(u)`. The struct also includes the problem's
-`grid` and the float type of the state vector (and consequently of `N(u)`).
+The equation to be solved `∂u/∂t = L*u + N(u)`. Array `L` includes the coefficients
+of the linear term `L*u` and `calcN!` is a function which computes the nonlinear
+term `N(u)`. The struct also includes the problem's `grid` and the float type of the
+state vector (and consequently of `N(u)`).
 
 $(TYPEDFIELDS)
 """
@@ -34,30 +34,42 @@ function Equation(L, calcN!, grid::AbstractGrid{G}; dims=supersize(L), T=nothing
 end
 
 """
-    Clock{T<:AbstractFloat}
+    mutable struct Clock{T<:AbstractFloat}
     
-A struct containing the time-step `dt`, the time `t` and the `step`-number of the simulation.
+Represents the clock of a problem.
+
+$(TYPEDFIELDS)
 """
 mutable struct Clock{T<:AbstractFloat}
+    "the time-step"
     dt :: T
+    "the time"
      t :: T
+    "the step number"
   step :: Int
 end
 
 """
     struct Problem{T, A<:AbstractArray, Tg<:AbstractFloat, TL}
     
-A struct including everything a FourierFlows problem requires: the state vector `sol`, the 
-`clock`, the equation `eqn`, the `grid`, all problem variables in `vars`, problem parameters 
-in `params`, and the `timestepper`.
+A problem that represents a partial differential equation.
+
+$(TYPEDFIELDS)
 """
 struct Problem{T, A<:AbstractArray, Tg<:AbstractFloat, TL}
+    "the state vector"
           sol :: A
+    "the problem's"
         clock :: Clock{Tg}
+    "the equation"
           eqn :: Equation{T, TL, Tg}
+    "the grid"
          grid :: AbstractGrid{Tg}
+    "the variables"
          vars :: AbstractVars
+    "the parameters"
        params :: AbstractParams
+    "the timestepper"
   timestepper :: AbstractTimeStepper{A}
 end
 
@@ -80,13 +92,12 @@ struct EmptyVars <: AbstractVars end
             vars=EmptyVars, params=EmptyParams, dev::Device=CPU(); stepperkwargs...) where T
 
 Construct a `Problem` for equation `eqn` using the time`stepper` with timestep 
-`dt`, on `grid` and `dev`ice. Optionally provide variables in `vars` and
-parameters with `params`. The `stepperkwargs` are passed to the time-stepper
-constructor.
+`dt`, on `grid` and on `dev`ice. Optionally, use the keyword arguments to provide 
+variables with `vars` and parameters with `params`. The `stepperkwargs` are passed
+to the time-stepper constructor.
 """
 function Problem(eqn::Equation, stepper, dt, grid::AbstractGrid{T}, 
                  vars=EmptyVars, params=EmptyParams, dev::Device=CPU(); stepperkwargs...) where T
-                 
   clock = Clock{T}(dt, 0, 0)
 
   timestepper = TimeStepper(stepper, eqn, dt, dev; stepperkwargs...)

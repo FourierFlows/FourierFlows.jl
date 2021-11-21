@@ -1,26 +1,40 @@
 """
-    Output(prob, filename, fieldtuples...)
+    struct Output
 
-Define output for `prob` with fields and functions that calculate
-the output in the list of tuples `fieldtuples = (fldname, func)...`.
+The composite type for output.
+
+$(TYPEDFIELDS)
 """
 struct Output
-    prob :: Problem
-    path :: String
-  fields :: Dict{Symbol,Function}
+    "the relevant problem for the output"
+          prob :: Problem
+    "the path for the output file"
+         path :: String
+    "the fields to be saved; the relevant problem for this diagnostic"
+  fieldtuples :: Dict{Symbol,Function}
   
-  function Output(prob, path, fields::Dict{Symbol,Function})
+  @doc """
+      Output(prob, filename, fieldtuples...)
+
+  Define output for `prob` with fields and functions that calculate
+  the output in the list of tuples `fieldtuples = (fldname, func)...`.
+  """
+  function Output(prob, path, fieldtuples::Dict{Symbol,Function})
     truepath = uniquepath(withoutjld2(path) * ".jld2") # ensure path ends in ".jld2"
-    new(prob, truepath, fields)
+    return new(prob, truepath, fieldtuples)
   end
 end
+
+Output(prob, path, fields...) = Output(prob, path, Dict{Symbol,Function}([fields...]))
+Output(prob, path, field::Tuple{Symbol,T}) where T = Output(prob, path, Dict{Symbol,Function}([field]))
 
 withoutjld2(path) = (length(path)>4 && path[end-4:end] == ".jld2") ? path[1:end-5] : path
 
 """
     uniquepath(path)
 
-Returns `path` with a number appended if `isfile(path)`, incremented until `path` does not exist.
+Return `path` with a number appended if `isfile(path)`. The number is incremented until `path` 
+does not exist.
 """
 function uniquepath(path)
   n = 1
@@ -36,9 +50,6 @@ function uniquepath(path)
   
   return path
 end
-    
-Output(prob, path, fields...) = Output(prob, path, Dict{Symbol,Function}([fields...]))
-Output(prob, path, field::Tuple{Symbol,T}) where T = Output(prob, path, Dict{Symbol,Function}([field]))
 
 getindex(out::Output, key) = out.fields[key](out.prob)
 
@@ -62,15 +73,15 @@ end
 """
     savefield(file, location, data)
 
-Saves a particular field.
+Saves a particular field's `data` to `file`.
 """
 savefield(file, location, data) = file[location] = data
 savefield(file, location, data::AbstractArray) = file[location] = Array(data)
 
 """
-    savefields(file, field)
+    savefields(file, grid)
 
-Saves some parameters of `prob.field`.
+Saves some parameters of problem's `grid` to `file`.
 """
 function savefields(file::JLD2.JLDFile{JLD2.MmapIO}, grid::TwoDGrid)
   for field in [:nx, :ny, :Lx, :Ly, :x, :y]
@@ -118,10 +129,11 @@ end
 """
     saveproblem(prob, filename)
 
-Save certain aspects of a problem.
+Save certain aspects of a problem `prob` to `filename`.
 """
 function saveproblem(prob, filename)
   file = jldopen(filename, "a+")
+
   for field in [:eqn, :clock, :grid, :params]
     savefields(file, getfield(prob, field))
   end
@@ -133,9 +145,9 @@ end
 saveproblem(out::Output) = saveproblem(out.prob, out.path)
 
 """
-    savediagnostic(diag, diagname)
+    savediagnostic(diag, diagname, filename)
 
-Save diagnostics in `diag` to file, labeled by `diagname`.
+Save diagnostics in `diag` to `filename`, labeled by `diagname`.
 """
 function savediagnostic(diag, diagname, filename)
   jldopen(filename, "a+") do file

@@ -38,10 +38,9 @@ end
 Timer(t -> println(" "), 0, interval=240)
 
 format = Documenter.HTML(
-  collapselevel = 2,
-     prettyurls = get(ENV, "CI", nothing) == "true",
-      canonical = "https://fourierflows.github.io/FourierFlowsDocumentation/dev/",
-     # mathengine = Documenter.MathJax()
+    collapselevel = 2,
+       prettyurls = get(ENV, "CI", nothing) == "true",
+        canonical = "https://fourierflows.github.io/FourierFlowsDocumentation/dev/",
 )
 
 pages = [
@@ -51,6 +50,8 @@ pages = [
     "Grids" => "grids.md",
     "Aliasing" => "aliasing.md",
     "Problem" => "problem.md",
+    "Diagnostics" => "diagnostics.md",
+    "Output" => "output.md",
     "GPU" => "gpu.md",
     "Examples" => [ 
         "literated/OneDShallowWaterGeostrophicAdjustment.md",
@@ -78,8 +79,8 @@ makedocs(
 
 withenv("GITHUB_REPOSITORY" => "FourierFlows/FourierFlowsDocumentation") do
   deploydocs(        repo = "github.com/FourierFlows/FourierFlowsDocumentation.git",
-                 versions = ["stable" => "v^", "v#.#", "dev" => "dev"],
-             push_preview = false,
+                 versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
+             push_preview = true,
                 devbranch = "main"
   )
 end
