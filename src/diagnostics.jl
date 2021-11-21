@@ -1,12 +1,12 @@
 """
-    mutable struct Diagnostic{T,N} <: AbstractDiagnostic
+    mutable struct Diagnostic{T, N} <: AbstractDiagnostic
 
-A diagnostic of `N` elements of type `T`.
+A diagnostic that includes `N` elements of type `T`.
 
 $(TYPEDFIELDS)
 """
-mutable struct Diagnostic{T,N} <: AbstractDiagnostic
-    "function that computes the diagnostic via `calc(prob)`"
+mutable struct Diagnostic{T, N} <: AbstractDiagnostic
+    "function that returns the diagnostic via `calc(prob)`"
    calc :: Function
     "the relevant problem for this diagnostic"
    prob :: Problem
@@ -114,3 +114,14 @@ getindex(d::Diagnostic, idx...) = getindex(d.data, idx...)
 # e() returns energy at the current time.
 # sensible?
 (d::Diagnostic)() = d.calc(d.prob)
+
+show(io::IO, d::Diagnostic{T, N}) where {T, N} =
+     print(io, "Diagnostic\n",
+               "  ├─── calc: ", d.calc, '\n',
+               "  ├─── prob: ", summary(d.prob), '\n', 
+               "  ├─── data: ", summary(d.data), '\n', 
+               "  ├────── t: ", summary(d.t), '\n', 
+               "  ├── steps: ", summary(d.steps), '\n', 
+               "  ├─── freq: ", d.freq, '\n', 
+               "  └────── i: ", d.i)
+           
