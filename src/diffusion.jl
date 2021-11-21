@@ -14,27 +14,27 @@ using
 using LinearAlgebra: mul!, ldiv!
 
 """
-    Problem(dev::Device=CPU();
-                    nx = 128,
-                    Lx = 2π,
-                     κ = 0,
-                    dt = 0.01,
-               stepper = "RK4",           
-      aliased_fraction = 0,
-                     T = Float64)
+    Problem(dev::Device = CPU();
+                     nx = 128,
+                     Lx = 2π,
+                      κ = 0,
+                     dt = 0.01,
+                stepper = "RK4",           
+       aliased_fraction = 0,
+                      T = Float64)
 
 Construct a constant diffusivity problem.
 
 Keyword arguments
 =================
-    - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
-    - `nx`: Number of grid points in ``x``-domain.
-    - `Lx`: Extent of the ``x``-domain.
-    - `κ`: Diffusivity coefficient.
-    - `dt`: Time-step.
-    - `stepper`: The extent of the ``y``-domain.
-    - `aliased_fraction`: the fraction of high-wavenubers that are zero-ed out by `dealias!()`.
-    - `T`: `Float32` or `Float64`; floating point type used for `problem` data.
+  - `dev`: (required) `CPU()` or `GPU()`; computer architecture used to time-step `problem`.
+  - `nx`: Number of grid points in ``x``-domain.
+  - `Lx`: Extent of the ``x``-domain.
+  - `κ`: Diffusivity coefficient.
+  - `dt`: Time-step.
+  - `stepper`: The extent of the ``y``-domain.
+  - `aliased_fraction`: the fraction of high-wavenubers that are zero-ed out by `dealias!()`.
+  - `T`: `Float64` or `Float32`; floating point type used for `problem` data.
 """
 function Problem(dev::Device=CPU();
                          nx = 128,
@@ -71,7 +71,7 @@ Params(dev, κ::AbstractArray) = Params(ArrayType(dev)(κ))
 """
     Equation(dev, κ, grid)
 
-Returns the equation for a constant diffusivity problem on `grid` with diffusivity `κ`.
+Return the equation for a constant diffusivity problem on `grid` with diffusivity `κ`.
 """
 function Equation(dev::Device, κ::T, grid) where T<:Number
   L = zeros(dev, T, grid.nkr)
@@ -104,7 +104,7 @@ end
 """
     Vars(dev, grid)
 
-Returns the variables `vars` for a constant diffusivity problem on `grid`.
+Return the variables `vars` for a constant diffusivity problem on `grid`.
 """
 function Vars(::Dev, grid::AbstractGrid{T}) where {Dev, T}
   @devzeros Dev T grid.nx c cx
@@ -157,9 +157,9 @@ Set the solution `sol` as the transform of `c` and update `vars`.
 """
 function set_c!(prob, c)
   T = typeof(prob.vars.c)
-  prob.vars.c .= T(c) # this makes sure that c is converted to the ArrayType used in prob.vars.c (e.g., convert to CuArray if user gives c as Arrray)
-  
+  prob.vars.c .= T(c) # ensure that c is converted to the ArrayType used in prob.vars.c (e.g., convert to CuArray if user gives c as Array)
   mul!(prob.sol, prob.grid.rfftplan, prob.vars.c)
+
   updatevars!(prob)
   
   return nothing
