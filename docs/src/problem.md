@@ -1,4 +1,4 @@
-# Problem
+# [Problem](@id problem_docs)
 
 ```@setup 2
 using FourierFlows, Plots
@@ -8,9 +8,9 @@ Plots.default(lw=2)
 ```
 
 Everything needed to solve a PDE in `FourierFlows.jl` is gathered in a composite type
-named [`Problem`](@ref). `Problem` contains various other composite types, namely:
+named [`Problem`](@ref FourierFlows.Problem). [`Problem`](@ref FourierFlows.Problem) contains various other composite types, namely:
 
-Here, we demonstrate how we can construct a `Problem` to solve the simple 1D equation:
+Here, we demonstrate how we can construct a [`Problem`](@ref FourierFlows.Problem) to solve the simple 1D equation:
 
 ```math
 \partial_t u(x, t) = - \alpha \, u(x, t) ,
@@ -107,7 +107,7 @@ equation = FourierFlows.Equation(L, calcN!, grid)
 ```
 
 Last, we have to pick a time-stepper and a time-step `dt` and gather everything 
-a FourierFlows `problem`:
+a FourierFlows's [`Problem`](@ref FourierFlows.Problem):
 
 ```@example 2
 stepper, dt = "ForwardEuler", 0.01
@@ -123,7 +123,7 @@ versions of all the above, in which a high-wavenumber filter is applied after ev
 By default, the `Problem` constructor takes `sol` a complex valued array same 
 size as `L` filed with zeros.
 
-The `problem.clock` contains the time-step `dt` and the current `step` and time 
+The [`prob.clock`](@ref FourierFlows.Clock) contains the time-step `dt` and the current `step` and time 
 `t` of the simulation:
 
 ```@example 2
@@ -185,14 +185,14 @@ A good practice is to encompass all functions and type definitions related with 
 a single module, e.g.,
 
 ```julia
-module mypde
+module MyPDE
 
   ...
 
 end # end module
 ```
 
-For a more elaborate example we urge you to have a look at the [`Diffusion`](@ref) 
+For a more elaborate example we urge you to have a look at the [`Diffusion`](@ref FourierFlows.Diffusion) 
 module located at [`src/diffusion.jl`](https://github.com/FourierFlows/FourierFlows.jl/blob/main/src/diffusion.jl)
 and also the modules included in the child package
 [GeophysicalFlows.jl](https://github.com/FourierFlows/GeophysicalFlows.jl).

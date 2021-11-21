@@ -61,6 +61,7 @@ export
   step_until!
 
 using
+  CUDA,
   FFTW,
   JLD2,
   Statistics,
@@ -69,7 +70,6 @@ using
   DocStringExtensions
 
 @reexport using FFTW: fft, ifft, rfft, irfft
-@reexport using CUDA
 
 import Base: resize!, getindex, setindex!, push!, append!, show, summary
 
