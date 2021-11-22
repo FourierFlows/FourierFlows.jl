@@ -3,6 +3,7 @@ using
   LinearAlgebra,
   Printf,
   JLD2,
+  Documenter,
   Test
 
 using
@@ -367,6 +368,10 @@ for dev in devices
     end
     @test repr(prob.clock) == "Clock\n  ├─── timestep dt: 0.01\n  ├────────── step: 0\n  └──────── time t: 0.0"
     @test repr(prob) == "Problem\n  ├─────────── grid: grid (on " * FourierFlows.griddevice(prob.grid) * ")\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"
+  end
+
+  @time @testset "Doctests" begin
+    doctest(FourierFlows)
   end
 
 end # end loop over devices

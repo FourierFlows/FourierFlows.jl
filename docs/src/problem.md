@@ -168,7 +168,7 @@ using Plots
 
 plot(grid.x, prob.vars.u,
      seriestype = :scatter,
-          label = "numerical",         
+          label = "numerical",
          xlabel = "x",
           title = "u(x, t=" * string(round(prob.clock.t, digits=2)) * ")")
 

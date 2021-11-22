@@ -7,11 +7,11 @@ $(TYPEDFIELDS)
 """
 struct Output
     "the relevant problem for the output"
-          prob :: Problem
+      prob :: Problem
     "the path for the output file"
-         path :: String
+      path :: String
     "the fields to be saved; the relevant problem for this diagnostic"
-  fieldtuples :: Dict{Symbol,Function}
+    fields :: Dict{Symbol, Function}
   
   @doc """
       Output(prob, filename, fieldtuples...)
@@ -33,8 +33,8 @@ withoutjld2(path) = (length(path)>4 && path[end-4:end] == ".jld2") ? path[1:end-
 """
     uniquepath(path)
 
-Return `path` with a number appended if `isfile(path)`. The number is incremented until `path` 
-does not exist.
+Return `path` with a number appended if `isfile(path) == true`. The number is incremented
+until `path` does not exist.
 """
 function uniquepath(path)
   n = 1

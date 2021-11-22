@@ -1,7 +1,35 @@
-# Diagnostics
+# [Diagnostics](@id diagnostics_docs)
 
 We can add diagnostics to a FourierFlows's problem using [`Diagnostic`](@ref)
 functionality.
+
+```@meta
+DocTestSetup = quote
+    using FourierFlows
+    using LinearAlgebra: mul!
+    nx, Lx = 32, 2.0
+    grid = OneDGrid(nx, Lx)
+    struct Params <: AbstractParams
+    α :: Float64
+    end
+    params = Params(0.1)
+    struct Vars <: AbstractVars
+        u :: Array{Float64,1}
+    uh :: Array{Complex{Float64}, 1}
+    end
+    vars = Vars(zeros(Float64, (grid.nx,)), zeros(Complex{Float64}, (grid.nkr,)))
+    L = - params.α * ones(grid.nkr)
+    function calcN!(N, sol, t, clock, vars, params, grid)
+    @. N = 0
+    return nothing
+    end
+    equation = FourierFlows.Equation(L, calcN!, grid)
+    stepper, dt = "ForwardEuler", 0.01
+    prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
+    u0 = @. cos(π * grid.x)
+    mul!(prob.sol, grid.rfftplan, u0)
+end
+```
 
 ```@setup 3
 using FourierFlows, Plots
@@ -48,13 +76,15 @@ mul!(prob.sol, grid.rfftplan, u0)
 
 To demonstrate how we add diagnostics to a PDE problem, let's try to add
 one to the simple PDE problem we constructed in the [Problem](@ref problem_docs)
-section. For example, say we'd like to add the "energy" as a diagnostic, e.g.,
+section. For example, say we'd like to add a diagnostic we refer to as the "energy"
+and which we define to be:
 
 ```math
-E = \int u^2 \, \mathrm{d} x ,
+E = \int u^2 \, \mathrm{d} x .
 ```
 
-To do that, we first create a function that returns the diagnostic
+As soon as we have constructed the problem (`prob`) (see [Problem](@ref problem_docs)),
+we then create a function that takes `prob` as its argument returns the diagnostic:
 
 ```@example 3
 using LinearAlgebra: ldiv!
@@ -67,19 +97,23 @@ end
 nothing #hide
 ```
 
-and then create a `Diagnostic`. Let's say we want to save energy every 2 time-steps.
+and then we create a [`Diagnostic`](@ref) using the
+[`Diagnostic`](@ref Diagnostic(calc, prob; freq=1, nsteps=100, ndata=ceil(Int, (nsteps+1)/freq)))
+constructor. Say we want to save energy every 2 time-steps, then:
 
 ```@example 3
 E = Diagnostic(energy, prob, freq=2, nsteps=200)
 ```
 
-Now when we step forward the problem we use
+Now, when we step forward the problem we provide the diagnostic as the second positional 
+argument in [`stepforward!`](@ref stepforward!(prob, diags, nsteps)):
 
 ```@example 3
 stepforward!(prob, E, 200)
 ```
 
-and this way, the diagnostic `E` is computed at the appropriate frequency.
+Doing so, the diagnostic is computed and saved at the appropriate frequency (prescribed
+by `E.freq`).
 
 !!! info "Multiple diagnostics"
     If we want to include multiple diagnostics we can gather all of them in an array, e.g.,
