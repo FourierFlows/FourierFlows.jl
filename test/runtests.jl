@@ -328,7 +328,7 @@ for dev in devices
     @test_throws KeyError file["params"]["plan"] == plan
     close(file)
   end
-
+  
   @time @testset "show() methods tests" begin
     prob = Diffusion.Problem(dev)
     
@@ -352,6 +352,8 @@ for dev in devices
     prob1 = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params1, dev)
     prob2 = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params2, dev)
     prob = prob1 # prob2 is only useful for testing params show() method
+    get_sol(prob) = prob.sol
+    diag = Diagnostic(get_sol, prob)
     
     @test repr(prob1.params) == "Parameters\n  ├───── parameter: κ1 -> Float64\n  ├───── parameter: κ2 -> Float64\n  └───── parameter: func -> Function\n"
     @test repr(prob2.params) == "Parameters\n  ├───── parameter: κ1 -> Float64\n  ├───── parameter: func -> Function\n  └───── parameter: κ2 -> Float64\n"
@@ -368,6 +370,7 @@ for dev in devices
     end
     @test repr(prob.clock) == "Clock\n  ├─── timestep dt: 0.01\n  ├────────── step: 0\n  └──────── time t: 0.0"
     @test repr(prob) == "Problem\n  ├─────────── grid: grid (on " * FourierFlows.griddevice(prob.grid) * ")\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"
+    @test repr(diag) == "Diagnostic\n  ├─── calc: get_sol\n  ├─── prob: FourierFlows.Problem{DataType, Vector{ComplexF64}, Float64, Vector{Int64}}\n  ├─── data: 101-element Vector{Vector{ComplexF64}}\n  ├────── t: 101-element Vector{Float64}\n  ├── steps: 101-element Vector{Int64}\n  ├─── freq: 1\n  └────── i: 1"
   end
 
   @time @testset "Doctests" begin
