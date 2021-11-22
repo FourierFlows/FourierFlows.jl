@@ -8,9 +8,11 @@ Plots.default(lw=2)
 ```
 
 Everything needed to solve a PDE in `FourierFlows.jl` is gathered in a composite type
-named [`Problem`](@ref FourierFlows.Problem). [`Problem`](@ref FourierFlows.Problem) contains various other composite types, namely:
+named [`Problem`](@ref FourierFlows.Problem). [`Problem`](@ref FourierFlows.Problem) contains
+various other composite types (see [`Problem`](@ref FourierFlows.Problem) for details).
 
-Here, we demonstrate how we can construct a [`Problem`](@ref FourierFlows.Problem) to solve the simple 1D equation:
+Here, we demonstrate how we can construct a [`Problem`](@ref FourierFlows.Problem) to solve
+the simple 1D equation:
 
 ```math
 \partial_t u(x, t) = - \alpha \, u(x, t) ,
@@ -123,8 +125,8 @@ versions of all the above, in which a high-wavenumber filter is applied after ev
 By default, the `Problem` constructor takes `sol` a complex valued array same 
 size as `L` filed with zeros.
 
-The [`prob.clock`](@ref FourierFlows.Clock) contains the time-step `dt` and the current `step` and time 
-`t` of the simulation:
+The [`prob.clock`](@ref FourierFlows.Clock) contains the time-step `dt` and the current `step`
+and time `t` of the simulation:
 
 ```@example 2
 prob.clock
