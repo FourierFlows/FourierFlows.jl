@@ -111,7 +111,7 @@ Last, we have to pick a time-stepper and a time-step `dt` and gather everything
 a FourierFlows's [`Problem`](@ref FourierFlows.Problem):
 
 ```@example 2
-stepper, dt = "ForwardEuler", 0.01
+stepper, dt = "ForwardEuler", 0.02
 
 prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 ```
@@ -132,7 +132,7 @@ prob.clock
 ```
 
 Let's initiate our problem with, e.g., ``u(x, 0) = \cos(\pi x)``, integrate up 
-to ``t = 2`` and compare our numerical solution with the analytic solution 
+to ``t = 4`` and compare our numerical solution with the analytic solution 
 ``u(x, t) = e^{-\alpha t} \cos(\pi x)``.
 
 ```@example 2
@@ -145,8 +145,8 @@ mul!(prob.sol, grid.rfftplan, u0)
 nothing # hide
 ```
 
-Since our time-step is chosen `dt = 0.01`, we need to step forward `prob` for ``200`` 
-time-steps to reach ``t = 2``.
+Since our time-step is chosen `dt = 0.02`, we need to step forward `prob` for ``200`` 
+time-steps to reach ``t = 4``.
 
 ```@example 2
 stepforward!(prob, 200)
@@ -165,15 +165,15 @@ nothing # hide
 and finally, let's plot our solution and compare with the analytic solution:
 
 ```@example 2
-using Plots
+using Plots, Printf
 
 plot(grid.x, prob.vars.u,
      seriestype = :scatter,
           label = "numerical",
          xlabel = "x",
-          title = "u(x, t=" * string(round(prob.clock.t, digits=2)) * ")")
+          title = @sprintf("u(x, t=%1.2f)", prob.clock.t))
 
-plot!(x -> cos(π * x) * exp(-prob.params.α * 2), -1, 1, label="analytical")
+plot!(x -> cos(π * x) * exp(-prob.params.α * 4), -1, 1, label="analytical")
 
 plot!(x -> cos(π * x), -1, 1, linestyle=:dash, color=:gray, label="initial condition")
 

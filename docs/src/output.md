@@ -37,7 +37,7 @@ end
 
 equation = FourierFlows.Equation(L, calcN!, grid)
 
-stepper, dt = "ForwardEuler", 0.01
+stepper, dt = "ForwardEuler", 0.02
 
 prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 
@@ -114,7 +114,7 @@ that compute the fields, and write their results on disk.
 saveoutput(out)
 ```
 
-The output fields are saved under group `"snapshots"`, e.g.,
+The output fields are saved under `"snapshots"` group, e.g.,
 
 ```@example 4
 file = jldopen(out.path)
@@ -177,6 +177,8 @@ Lastly, let's load the saved `uh` fields, process them (get `u` by convert to ph
 and animate them.
 
 ```@example 4
+using Printf
+
 nx = file["grid/nx"]
  x = file["grid/x"]
 
@@ -188,9 +190,9 @@ anim = @animate for (i, iteration) in enumerate(iterations)
          marker = :circle,
           label = :none,
          xlabel = "x",
-          ylims = (-1, 1),
-          title = "u(x, t=" * string(round(times[i], digits=2)) * ")")
+          ylims = (-1.05, 1.05),
+          title = @sprintf("u(x, t=%1.2f)", times[i]))
 end
 
-mp4(anim, "animation.mp4", fps = 16) # hide
+mp4(anim, "animation.mp4", fps = 24) # hide
 ```

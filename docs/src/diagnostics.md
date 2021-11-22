@@ -24,7 +24,7 @@ DocTestSetup = quote
     return nothing
     end
     equation = FourierFlows.Equation(L, calcN!, grid)
-    stepper, dt = "ForwardEuler", 0.01
+    stepper, dt = "ForwardEuler", 0.02
     prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
     u0 = @. cos(π * grid.x)
     mul!(prob.sol, grid.rfftplan, u0)
@@ -65,7 +65,7 @@ end
 
 equation = FourierFlows.Equation(L, calcN!, grid)
 
-stepper, dt = "ForwardEuler", 0.01
+stepper, dt = "ForwardEuler", 0.02
 
 prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 
@@ -83,7 +83,7 @@ and which we define to be:
 E = \int u^2 \, \mathrm{d} x .
 ```
 
-As soon as we have constructed the problem (`prob`) (see [Problem](@ref problem_docs)),
+After we have constructed the problem (`prob`) (see [Problem](@ref problem_docs) section),
 we then create a function that takes `prob` as its argument returns the diagnostic:
 
 ```@example 3
