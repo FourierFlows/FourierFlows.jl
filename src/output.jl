@@ -158,3 +158,9 @@ function savediagnostic(diag, diagname, filename)
   
   return nothing
 end
+
+show(io::IO, out::Output) =
+     print(io, "Output\n",
+               "  ├──── prob: ", summary(out.prob), '\n', 
+               "  ├──── path: ", out.path, '\n', 
+               "  └── fields: ", out.fields)

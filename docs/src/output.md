@@ -4,6 +4,42 @@ To save output we use [`Output`](@ref). Let's see how we can use the example dev
 in [Problem](@ref problem_docs) and [Diagnostics](@ref diagnostics_docs) sections to
 demonstrate how we can save some output to disk and then load it.
 
+```@meta
+DocTestSetup = quote
+    using FourierFlows
+    using LinearAlgebra: mul!, ldiv!
+    nx, Lx = 32, 2.0
+    grid = OneDGrid(nx, Lx)
+    struct Params <: AbstractParams
+    α :: Float64
+    end
+    params = Params(0.1)
+    struct Vars <: AbstractVars
+        u :: Array{Float64,1}
+    uh :: Array{Complex{Float64}, 1}
+    end
+    vars = Vars(zeros(Float64, (grid.nx,)), zeros(Complex{Float64}, (grid.nkr,)))
+    L = - params.α * ones(grid.nkr)
+    function calcN!(N, sol, t, clock, vars, params, grid)
+    @. N = 0
+    return nothing
+    end
+    equation = FourierFlows.Equation(L, calcN!, grid)
+    stepper, dt = "ForwardEuler", 0.02
+    prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
+    u0 = @. cos(π * grid.x)
+    mul!(prob.sol, grid.rfftplan, u0)
+    function energy(prob)
+        ldiv!(prob.vars.u, grid.rfftplan, prob.sol)
+        return sum(prob.vars.u.^2) * prob.grid.dx
+    end
+    E = Diagnostic(energy, prob, freq=2, nsteps=200)
+    filepath = "."
+    filename = joinpath(filepath, "simplestpde.jld2")
+    get_uh(prob) = prob.sol
+end
+```
+
 ```@setup 4
 using FourierFlows, Plots
 
@@ -68,10 +104,23 @@ that we want to output and a function what takes `prob` as its argument and
 returns the corresponding value of that field. For this example, let's save
 the energy `E` and the state vector `sol`.
 
-```@example 4
+```jldoctest; output = false
 get_uh(prob) = prob.sol
 
 out = Output(prob, filename, (:uh, get_uh), (:E, energy))
+
+# output
+
+Output
+  ├──── prob: FourierFlows.Problem{DataType, Vector{ComplexF64}, Float64, Vector{Float64}}
+  ├──── path: ./simplestpde.jld2
+  └── fields: Dict{Symbol, Function}(:uh => get_uh, :E => energy)
+```
+
+```@example 4
+get_uh(prob) = prob.sol #hide
+
+out = Output(prob, filename, (:uh, get_uh), (:E, energy)) #hide
 ```
 
 Note that we haven't saved anything to disk yet!
