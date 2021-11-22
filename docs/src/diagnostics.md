@@ -37,7 +37,7 @@ using FourierFlows, Plots
 using LinearAlgebra: mul!
 
 Plots.scalefontsizes(1.25)
-Plots.default(lw=2)
+Plots.default(lw=3)
 
 nx, Lx = 32, 2.0
 grid = OneDGrid(nx, Lx)

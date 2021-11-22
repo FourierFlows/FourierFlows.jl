@@ -3,8 +3,7 @@
 ```@setup 2
 using FourierFlows, Plots
 using LinearAlgebra: mul!, ldiv!
-Plots.scalefontsizes(1.25)
-Plots.default(lw=2)
+Plots.default(lw=3)
 ```
 
 Everything needed to solve a PDE in `FourierFlows.jl` is gathered in a composite type
