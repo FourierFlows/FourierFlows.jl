@@ -6,7 +6,7 @@ functionality.
 ```@meta
 DocTestSetup = quote
     using FourierFlows
-    using LinearAlgebra: mul!
+    using LinearAlgebra: mul!, ldiv!
     nx, Lx = 32, 2.0
     grid = OneDGrid(nx, Lx)
     struct Params <: AbstractParams
@@ -28,6 +28,10 @@ DocTestSetup = quote
     prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
     u0 = @. cos(π * grid.x)
     mul!(prob.sol, grid.rfftplan, u0)
+    function energy(prob)
+        ldiv!(prob.vars.u, grid.rfftplan, prob.sol)
+        return sum(prob.vars.u.^2) * prob.grid.dx
+    end
 end
 ```
 
@@ -36,7 +40,6 @@ using FourierFlows, Plots
 
 using LinearAlgebra: mul!
 
-Plots.scalefontsizes(1.25)
 Plots.default(lw=3)
 
 nx, Lx = 32, 2.0
@@ -101,8 +104,22 @@ and then we create a [`Diagnostic`](@ref) using the
 [`Diagnostic`](@ref Diagnostic(calc, prob; freq=1, nsteps=100, ndata=ceil(Int, (nsteps+1)/freq)))
 constructor. Say we want to save energy every 2 time-steps, then:
 
-```@example 3
+```jldoctest; output = false
 E = Diagnostic(energy, prob, freq=2, nsteps=200)
+
+# output
+
+Diagnostic
+  ├─── calc: energy
+  ├─── prob: FourierFlows.Problem{DataType, Vector{ComplexF64}, Float64, Vector{Float64}}
+  ├─── data: 101-element Vector{Float64}
+  ├────── t: 101-element Vector{Float64}
+  ├── steps: 101-element Vector{Int64}
+  ├─── freq: 2
+  └────── i: 1
+```
+```@example 3
+E = Diagnostic(energy, prob, freq=2, nsteps=200) #hide
 ```
 
 Now, when we step forward the problem we provide the diagnostic as the second positional 
