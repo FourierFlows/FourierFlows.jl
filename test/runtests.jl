@@ -374,8 +374,10 @@ for dev in devices
     @test repr(prob) == "Problem\n  ├─────────── grid: grid (on " * FourierFlows.griddevice(prob.grid) * ")\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"
   end
 
-  @time @testset "Doctests" begin
-    doctest(FourierFlows)
+  if VERSION < v"1.6"
+    @time @testset "Doctests" begin
+      doctest(FourierFlows)
+    end
   end
-
+  
 end # end loop over devices
