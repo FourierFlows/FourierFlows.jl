@@ -2,6 +2,7 @@ using
   Documenter,
   Literate,
   Plots,  # so that Literate.jl does not capture precompilation output
+  Glob,
   FourierFlows
   
 # Gotta set this environment variable when using the GR run-time on CI machines.
@@ -83,4 +84,10 @@ withenv("GITHUB_REPOSITORY" => "FourierFlows/FourierFlowsDocumentation") do
              push_preview = true,
                 devbranch = "main"
   )
+end
+
+
+@info "Cleaning up temporary .jld2 and .nc files created by doctests..."
+for file in vcat(glob("docs/*.jld2"))
+    rm(file)
 end

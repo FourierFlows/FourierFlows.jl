@@ -75,7 +75,9 @@ get_uh(prob) = prob.sol
 out = Output(prob, filename, (:uh, get_uh), (:E, energy))
 ```
 
-Nice --- but we haven't saved anything to disk yet! By calling [`saveproblem`](@ref)
+Note that we haven't saved anything to disk yet!
+
+By calling [`saveproblem`](@ref)
 
 ```@example 4
 saveproblem(out)
