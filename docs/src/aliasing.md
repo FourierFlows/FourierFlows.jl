@@ -3,7 +3,6 @@
 ```@setup 1
 using FourierFlows
 using Plots
-Plots.scalefontsizes(1.25)
 Plots.default(lw=3)
 ```
 

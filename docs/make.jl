@@ -2,6 +2,7 @@ using
   Documenter,
   Literate,
   Plots,  # so that Literate.jl does not capture precompilation output
+  Glob,
   FourierFlows
   
 # Gotta set this environment variable when using the GR run-time on CI machines.
@@ -38,10 +39,9 @@ end
 Timer(t -> println(" "), 0, interval=240)
 
 format = Documenter.HTML(
-  collapselevel = 2,
-     prettyurls = get(ENV, "CI", nothing) == "true",
-      canonical = "https://fourierflows.github.io/FourierFlowsDocumentation/dev/",
-     # mathengine = Documenter.MathJax()
+    collapselevel = 2,
+       prettyurls = get(ENV, "CI", nothing) == "true",
+        canonical = "https://fourierflows.github.io/FourierFlowsDocumentation/dev/",
 )
 
 pages = [
@@ -51,6 +51,8 @@ pages = [
     "Grids" => "grids.md",
     "Aliasing" => "aliasing.md",
     "Problem" => "problem.md",
+    "Diagnostics" => "diagnostics.md",
+    "Output" => "output.md",
     "GPU" => "gpu.md",
     "Examples" => [ 
         "literated/OneDShallowWaterGeostrophicAdjustment.md",
@@ -71,15 +73,21 @@ makedocs(
      format = format,
       pages = pages,
     doctest = true,
-     # strict = true,
+     strict = :doctest,
       clean = true,
   checkdocs = :exports
 )
 
 withenv("GITHUB_REPOSITORY" => "FourierFlows/FourierFlowsDocumentation") do
   deploydocs(        repo = "github.com/FourierFlows/FourierFlowsDocumentation.git",
-                 versions = ["stable" => "v^", "v#.#", "dev" => "dev"],
-             push_preview = false,
+                 versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
+             push_preview = true,
                 devbranch = "main"
   )
+end
+
+
+@info "Cleaning up temporary .jld2 and .nc files created by doctests..."
+for file in vcat(glob("docs/*.jld2"))
+    rm(file)
 end

@@ -3,6 +3,7 @@ using
   LinearAlgebra,
   Printf,
   JLD2,
+  Documenter,
   Test
 
 using
@@ -351,6 +352,8 @@ for dev in devices
     prob1 = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params1, dev)
     prob2 = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params2, dev)
     prob = prob1 # prob2 is only useful for testing params show() method
+    get_sol(prob) = prob.sol
+    diag = Diagnostic(get_sol, prob)
     
     @test repr(prob1.params) == "Parameters\n  ├───── parameter: κ1 -> Float64\n  ├───── parameter: κ2 -> Float64\n  └───── parameter: func -> Function\n"
     @test repr(prob2.params) == "Parameters\n  ├───── parameter: κ1 -> Float64\n  ├───── parameter: func -> Function\n  └───── parameter: κ2 -> Float64\n"
@@ -360,13 +363,19 @@ for dev in devices
     else
       if dev == CPU()
         @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element Vector{Float64}\n  ├───── variable: cx -> 128-element Vector{Float64}\n  ├───── variable: ch -> 65-element Vector{ComplexF64}\n  └───── variable: cxh -> 65-element Vector{ComplexF64}\n"
+        @test repr(diag) == "Diagnostic\n  ├─── calc: get_sol\n  ├─── prob: FourierFlows.Problem{DataType, Vector{ComplexF64}, Float64, Vector{Int64}}\n  ├─── data: 101-element Vector{Vector{ComplexF64}}\n  ├────── t: 101-element Vector{Float64}\n  ├── steps: 101-element Vector{Int64}\n  ├─── freq: 1\n  └────── i: 1"
       else
         @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element " * string(ArrayType(dev)) * "{Float64, 1, CUDA.Mem.DeviceBuffer}\n  ├───── variable: cx -> 128-element " * string(ArrayType(dev)) * "{Float64, 1, CUDA.Mem.DeviceBuffer}\n  ├───── variable: ch -> 65-element " * string(ArrayType(dev)) * "{ComplexF64, 1, CUDA.Mem.DeviceBuffer}\n  └───── variable: cxh -> 65-element " * string(ArrayType(dev)) * "{ComplexF64, 1, CUDA.Mem.DeviceBuffer}\n"
+        @test repr(diag) == "Diagnostic\n  ├─── calc: get_sol\n  ├─── prob: FourierFlows.Problem{DataType, " * string(ArrayType(dev)) * "{ComplexF64, 1, CUDA.Mem.DeviceBuffer}, Float64, " * string(ArrayType(dev)) * "{Int64, 1, CUDA.Mem.DeviceBuffer}}\n  ├─── data: 101-element Vector{" * string(ArrayType(dev)) * "{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}\n  ├────── t: 101-element Vector{Float64}\n  ├── steps: 101-element Vector{Int64}\n  ├─── freq: 1\n  └────── i: 1"
       end
       @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: ComplexF64"
     end
     @test repr(prob.clock) == "Clock\n  ├─── timestep dt: 0.01\n  ├────────── step: 0\n  └──────── time t: 0.0"
     @test repr(prob) == "Problem\n  ├─────────── grid: grid (on " * FourierFlows.griddevice(prob.grid) * ")\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"
+  end
+
+  @time @testset "Doctests" begin
+    doctest(FourierFlows)
   end
 
 end # end loop over devices

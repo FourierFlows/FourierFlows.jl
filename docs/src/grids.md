@@ -43,7 +43,6 @@ grid as
 using FourierFlows
 using LinearAlgebra: mul!, ldiv!
 using Plots
-Plots.scalefontsizes(1.25)
 Plots.default(lw=3)
 nx, Lx = 64, 2π
 grid = OneDGrid(nx, Lx)

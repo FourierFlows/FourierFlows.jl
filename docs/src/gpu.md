@@ -28,7 +28,6 @@ OneDimensionalGrid
   ├── grid spacing dx: 0.125
   ├─────────── domain: x ∈ [-1.0, 0.875]
   └─ aliased fraction: 0.3333333333333333
-
 ```
 
 gives out a grid whose arrays are `CuArrays`. (Calling `OneDGrid(n, L)` defaults to CPU, i.e., 
@@ -43,7 +42,7 @@ ArrayType
 ```
 
 The `FourierFlows.Problem` constructor then takes an optional positional argument 
-`dev::Device` If not provided anything, the default values for `dev=CPU()`.
+`dev::Device`. If not provided anything, the default values for `dev=CPU()`.
 
 ```julia
 problem = Problem(equation, stepper, dt, grid, vars, params, GPU())

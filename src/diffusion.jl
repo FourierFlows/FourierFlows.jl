@@ -1,3 +1,9 @@
+"""
+A test-bed module that solves the 1D diffusion equation.
+
+# Exports
+$(EXPORTS)
+"""
 module Diffusion
 
 export
@@ -6,10 +12,9 @@ export
   set_c!
 
 using
-  Reexport,
   DocStringExtensions
 
-@reexport using FourierFlows
+using FourierFlows
 
 using LinearAlgebra: mul!, ldiv!
 
