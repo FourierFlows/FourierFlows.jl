@@ -52,7 +52,7 @@ The latest version that is compatible with Julia v1.0.5 (the current long-term-r
 
 ## Usage
 
-See the documentation for tutorials on (i) how [construct grids](https://fourierflows.github.io/FourierFlowsDocumentation/stable/grids/) and use Fourier transform to compute derivatives and (ii) how to [set up a PDE](https://fourierflows.github.io/FourierFlowsDocumentation/stable/problem/), time-step it forward. and visualize the output.
+See the documentation for tutorials on (i) how [construct grids](https://fourierflows.github.io/FourierFlowsDocumentation/stable/grids/) and use Fourier transform to compute derivatives and (ii) how to [set up a PDE](https://fourierflows.github.io/FourierFlowsDocumentation/stable/problem/), time-step it forward, and visualize the output, (iii) how to [add diagnostics](https://fourierflows.github.io/FourierFlowsDocumentation/stable/diagnostics/), and (iv) how to [write and read output](https://fourierflows.github.io/FourierFlowsDocumentation/stable/output/) from disk.
 
 
 ## Scalability
