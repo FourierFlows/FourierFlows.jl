@@ -14,7 +14,7 @@
         <img alt="latest docs" src="https://img.shields.io/badge/documentation-in%20development-orange">
     </a>
     <a href="https://codecov.io/gh/FourierFlows/FourierFlows.jl">
-        <img src="https://codecov.io/gh/FourierFlows/FourierFlows.jl/branch/master/graph/badge.svg" title="codecov">
+        <img src="https://codecov.io/gh/FourierFlows/FourierFlows.jl/branch/main/graph/badge.svg?token=BrgeSmKJHD"/>
     </a>
     <a href="https://github.com/SciML/ColPrac">
       <img alt="ColPrac: Contributor's Guide on Collaborative Practices for Community Packages" src="https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet">
