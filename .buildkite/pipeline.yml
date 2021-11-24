@@ -9,6 +9,7 @@ steps:
           version: 1.6
       - JuliaCI/julia-test#v1: ~
       - JuliaCI/julia-coverage#v1:
+          codecov: true
     agents:
       queue: "juliagpu"
       cuda: "*"
