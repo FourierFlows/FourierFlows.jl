@@ -8,6 +8,7 @@ steps:
       - JuliaCI/julia#v1:
           version: 1.6
       - JuliaCI/julia-test#v1: ~
+      - JuliaCI/julia-coverage#v1:
     agents:
       queue: "juliagpu"
       cuda: "*"
