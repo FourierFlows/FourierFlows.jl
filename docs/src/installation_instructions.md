@@ -6,8 +6,8 @@ instantiate/build all the required dependencies
 
 ```julia
 julia>]
-(v1.5) pkg> add FourierFlows
-(v1.5) pkg> instantiate
+(v1.6) pkg> add FourierFlows
+(v1.6) pkg> instantiate
 ```
 
 We recommend installing FourierFlows.jl with the built-in Julia package manager, because 
@@ -15,7 +15,7 @@ this installs a stable, tagged release. Later on, you can update FourierFlows.jl
 latest tagged release again via the package manager by typing
 
 ```julia
-(v1.5) pkg> update FourierFlows
+(v1.6) pkg> update FourierFlows
 ```
 
 Note that some releases might induce breaking changes to certain modules. If after anything 
@@ -23,9 +23,11 @@ happens or your code stops working, please open an [issue](https://github.com/Fo
 or start a [discussion](https://github.com/FourierFlows/FourierFlows.jl/discussions). We're 
 more than happy to help with getting your simulations up and running.
 
-!!! warn "Use Julia 1.5 or newer"
-    The latest FourierFlows.jl requires at least Julia v1.5 to run.
+!!! warn "Use Julia 1.6 or newer"
+    The latest FourierFlows.jl requires at least Julia v1.6 to run.
     Installing FourierFlows with an older version of Julia will install an older version 
     of FourierFlows.jl (the latest version compatible with your version of Julia).
-        
+
+    Last version that works with Julia v1.5 is FourierFlows.jl v0.7.2.
+
     Last version compatible with Julia v1.0.5 (the current long-term-release): FourierFlows.jl v0.4.5

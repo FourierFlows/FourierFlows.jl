@@ -1,6 +1,5 @@
 environment:
   matrix:
-  - julia_version: 1.5
   - julia_version: 1.6
   - julia_version: nightly
 
@@ -16,7 +15,7 @@ matrix:
 
 branches:
   only:
-    - master
+    - main
 
 notifications:
   - provider: Email
@@ -34,9 +33,3 @@ build_script:
 test_script:
   - echo "%JL_TEST_SCRIPT%"
   - C:\julia\bin\julia -e "%JL_TEST_SCRIPT%"
-
-# # Uncomment to support code coverage upload. Should only be enabled for packages
-# # which would have coverage gaps without running on Windows
-# on_success:
-#   - echo "%JL_CODECOV_SCRIPT%"
-#   - C:\julia\bin\julia -e "%JL_CODECOV_SCRIPT%"
