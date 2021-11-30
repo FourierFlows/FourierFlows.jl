@@ -124,4 +124,3 @@ show(io::IO, d::Diagnostic{T, N}) where {T, N} =
                "  ├── steps: ", summary(d.steps), '\n', 
                "  ├─── freq: ", d.freq, '\n', 
                "  └────── i: ", d.i)
-           
