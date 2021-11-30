@@ -104,7 +104,7 @@ that we want to output and a function what takes `prob` as its argument and
 returns the corresponding value of that field. For this example, let's save
 the energy `E` and the state vector `sol`.
 
-```jldoctest; output = false, filter = r"./simplestpde.jld2"
+```jldoctest; output = false, filter = r"path:.*"
 get_uh(prob) = prob.sol
 
 out = Output(prob, filename, (:uh, get_uh), (:E, energy))
@@ -113,7 +113,7 @@ out = Output(prob, filename, (:uh, get_uh), (:E, energy))
 
 Output
   ├──── prob: FourierFlows.Problem{DataType, Vector{ComplexF64}, Float64, Vector{Float64}}
-  ├──── path: ./simplestpde.jld2
+  ├──── path: ./simpasdflestpde.jld2
   └── fields: Dict{Symbol, Function}(:uh => get_uh, :E => energy)
 ```
 
