@@ -113,7 +113,7 @@ out = Output(prob, filename, (:uh, get_uh), (:E, energy))
 
 Output
   ├──── prob: FourierFlows.Problem{DataType, Vector{ComplexF64}, Float64, Vector{Float64}}
-  ├──── path: ./simpasdflestpde.jld2
+  ├──── path: ./simplestpde.jld2
   └── fields: Dict{Symbol, Function}(:uh => get_uh, :E => energy)
 ```
 
