@@ -355,7 +355,7 @@ for dev in devices
     
     get_sol(prob) = prob.sol
     diag = Diagnostic(get_sol, prob)
-    out = Output(prob, "output.jld2", (:sol, get_sol))
+    out = Output(prob, "output.jld2")
     
     @test repr(prob1.params) == "Parameters\n  ├───── parameter: κ1 -> Float64\n  ├───── parameter: κ2 -> Float64\n  └───── parameter: func -> Function\n"
     @test repr(prob2.params) == "Parameters\n  ├───── parameter: κ1 -> Float64\n  ├───── parameter: func -> Function\n  └───── parameter: κ2 -> Float64\n"
@@ -370,7 +370,7 @@ for dev in devices
     @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: ComplexF64"
     @test repr(prob.clock) == "Clock\n  ├─── timestep dt: 0.01\n  ├────────── step: 0\n  └──────── time t: 0.0"
     @test repr(prob) == "Problem\n  ├─────────── grid: grid (on " * FourierFlows.griddevice(prob.grid) * ")\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"
-    @test repr(out) == "Output\n  ├──── prob: FourierFlows.Problem{DataType, Vector{ComplexF64}, Float64, Vector{Int64}}\n  ├──── path: output.jld2\n  └── fields: Dict{Symbol, Function}(:sol => get_sol)"
+    @test repr(out) == "Output\n  ├──── prob: FourierFlows.Problem{DataType, Vector{ComplexF64}, Float64, Vector{Int64}}\n  ├──── path: output.jld2\n  └── fields: Dict{Symbol, Function}()"
   end
 
   if VERSION < v"1.6"
