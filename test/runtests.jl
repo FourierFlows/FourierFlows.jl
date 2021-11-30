@@ -267,7 +267,7 @@ for dev in devices
     
     g = OneDGrid(dev, nx, Lx)
     σ = 0.5
-    f1 = @. exp(-g.x^2/(2σ^2))
+    f1 = @. exp(-g.x^2 / 2σ^2)
     @test test_parsevalsum2(f1, g; realvalued=true)  # Real valued f with rfft
     @test test_parsevalsum2(f1, g; realvalued=false) # Real valued f with fft
 
@@ -371,7 +371,7 @@ for dev in devices
     end
     @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: ComplexF64"
     @test repr(prob.clock) == "Clock\n  ├─── timestep dt: 0.01\n  ├────────── step: 0\n  └──────── time t: 0.0"
-    @test repr(prob) == "Problem\n  ├─────────── grid: grid (on " * FourierFlows.griddevice(prob.grid) * ")\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"    
+    @test repr(prob) == "Problem\n  ├─────────── grid: grid (on " * FourierFlows.griddevice(prob.grid) * ")\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"
   end
 
   @time @testset "Doctests" begin
