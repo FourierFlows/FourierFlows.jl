@@ -24,10 +24,8 @@ or start a [discussion](https://github.com/FourierFlows/FourierFlows.jl/discussi
 more than happy to help with getting your simulations up and running.
 
 !!! warn "Use Julia 1.6 or newer"
-    The latest FourierFlows.jl requires at least Julia v1.6 to run.
+    The latest FourierFlows.jl requires at least Julia v1.6 (the current long-term-release).
     Installing FourierFlows with an older version of Julia will install an older version 
     of FourierFlows.jl (the latest version compatible with your version of Julia).
 
     Last version that works with Julia v1.5 is FourierFlows.jl v0.7.2.
-
-    Last version compatible with Julia v1.0.5 (the current long-term-release): FourierFlows.jl v0.4.5
