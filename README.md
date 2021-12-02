@@ -45,11 +45,9 @@ julia> Pkg.add("FourierFlows")
 julia> Pkg.instantiate()
 ```
 
-The most recent version of FourierFlows.jl requires Julia v1.6 or later.
+The most recent version of FourierFlows.jl requires Julia v1.6 (the current long-term-release) or later.
 
-The latest version that works with Julia v1.5 is FourierFlows.jl v0.7.2.
-
-The latest version that is compatible with Julia v1.0.5 (the current long-term-release) is FourierFlows.jl v0.4.5.
+Last version that works with Julia v1.5 is FourierFlows.jl v0.7.2.
 
 
 ## Usage
