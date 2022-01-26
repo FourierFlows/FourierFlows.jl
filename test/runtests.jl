@@ -1,4 +1,5 @@
 using
+  CUDA,
   FFTW,
   LinearAlgebra,
   Printf,
@@ -15,7 +16,7 @@ using FourierFlows: parsevalsum2
 using LinearAlgebra: mul!, ldiv!, norm
 
 # the devices on which tests will run
-devices = CUDA.has_cuda() ? (CPU(), GPU()) : (CPU(),)
+devices = CUDA.functional() ? (CPU(), GPU()) : (CPU(),)
 
 const rtol_fft = 1e-12
 const rtol_output = 1e-12
