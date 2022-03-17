@@ -26,13 +26,14 @@ using FourierFlows, Plots
 
 nx, Lx = 10, 2π
 grid = OneDGrid(nx, Lx)
+x = grid.x
 
 f1(x) = cos(4x)
 f2(x) = cos(6x)
 
-p = plot(grid.x, f1.(grid.x), lw=0, marker=:circle, c=:red, ms=8, ylims=(-1.6, 1.6), label="cos(4x)")
+p = plot(x, f1.(x), lw=0, marker=:circle, c=:red, ms=8, ylims=(-1.6, 1.6), label="cos(4x)")
 plot!(p, f1, lw=3, alpha=0.2, c=:red, xlims=(-Lx/2, Lx/2), label="")
-plot!(p, grid.x, f2.(grid.x), lw=0, marker=:star5, ms=8.5, color=:blue, alpha=0.8, label="cos(6x)")
+plot!(p, x, f2.(x), lw=0, marker=:star5, ms=8.5, color=:blue, alpha=0.8, label="cos(6x)")
 plot!(p, f2, lw=3, alpha=0.2, c=:blue, xlims=(-Lx/2, Lx/2), label="")
 
 plot(p, xlabel="x", xlims=(-3.3, 3.3))
