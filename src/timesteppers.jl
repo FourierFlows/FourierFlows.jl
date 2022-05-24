@@ -371,7 +371,6 @@ function ETDRK4substeps!(sol, clock, ts, eq, vars, params, grid)
   # Substep 1
   eq.calcN!(ts.N₁, sol, clock.t, clock, vars, params, grid)
   ETDRK4substep12!(ts.sol₁, ts.exp½Ldt, sol, ts.ζ, ts.N₁)
-  @. ts.sol₁ = ts.exp½Ldt * sol + ts.ζ * ts.N₁
 
   # Substep 2
   t2 = clock.t + clock.dt/2
