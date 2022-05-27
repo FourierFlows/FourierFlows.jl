@@ -296,8 +296,10 @@ end
  keyword determines the highest wavenubers that are being zero-ed out by `dealias!` function; 
  1/3 is the nominal value for quadratic nonlinearities. 
 """
-function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-Lz/2,
-                  nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64, aliased_fraction=1/3, ArrayType=Array)
+function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx;
+                    x0=-Lx/2, y0=-Ly/2, z0=-Lz/2,
+                    nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64,
+                    aliased_fraction=1/3, ArrayType=Array)
 
   dx = Lx/nx
   dy = Ly/ny
@@ -343,9 +345,9 @@ function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; x0=-Lx/2, y0=-Ly/2, z0=-
   Talias = typeof(kalias)
 
   return ThreeDGrid{T, Tk, Tx, Tfft, Trfft, Talias}(nx, ny, nz, nk, nl, nm, nkr,
-                                        dx, dy, dz, Lx, Ly, Lz, x, y, z, k, l, m, kr,
-                                        Ksq, invKsq, Krsq, invKrsq, fftplan, rfftplan, 
-                                        aliased_fraction, kalias, kralias, lalias, malias)
+                                                    dx, dy, dz, Lx, Ly, Lz, x, y, z, k, l, m, kr,
+                                                    Ksq, invKsq, Krsq, invKrsq, fftplan, rfftplan, 
+                                                    aliased_fraction, kalias, kralias, lalias, malias)
 end
 
 Base.eltype(grid::OneDGrid) = eltype(grid.x)
@@ -461,7 +463,7 @@ end
 Returns a filter acting on the non-dimensional wavenumber `K` that decays exponentially
 for `K > innerK`, thus removing high-wavenumber content from a spectrum it is multiplied
 with. The decay rate is determined by order and `outerK` determines the outer wavenumber
-at which the filter is smaller than Float64 machine precision.
+at which the filter is smaller than `Float64` machine precision.
 """
 function makefilter(K::Array; order=4, innerK=0.65, outerK=1)
   TK = typeof(K)
