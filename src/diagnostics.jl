@@ -18,7 +18,7 @@ mutable struct Diagnostic{T, N} <: AbstractDiagnostic
   steps :: Vector{Int}
     "integer denoting how often (every how many `problem.step`s) to save the diagnostic"
    freq :: Int
-    "integer denoting how many times the diagnostic.data was updated"
+    "integer denoting how many times the `diagnostic.data` was updated"
       i :: Int
 end
 
