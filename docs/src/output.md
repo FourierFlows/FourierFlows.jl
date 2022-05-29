@@ -41,11 +41,10 @@ end
 ```
 
 ```@setup 4
-using FourierFlows, Plots
-
+using FourierFlows
+using CairoMakie
+set_theme!(Theme(linewidth = 3, fontsize = 20))
 using LinearAlgebra: mul!, ldiv!
-
-Plots.default(lw=3)
 
 nx, Lx = 32, 2.0
 grid = OneDGrid(nx, Lx)
@@ -92,7 +91,6 @@ E = Diagnostic(energy, prob, freq=2, nsteps=200)
 After we have created the problem (`prob`) and the energy diagnostic (`E`), we
 can construct an [`Output`](@ref). We first choose where we'd like to output
 the `.jld2` file(s):
-
 
 ```@example 4
 filepath = "."
@@ -176,8 +174,7 @@ Let's close the `file` again.
 close(file)
 ```
 
-We can now time-step the problem forward and every now and then write the output files
-on disk.
+We can now time-step the problem forward and save the output files on disk every so often.
 
 ```@example 4
 for _ in 1:40
@@ -211,38 +208,36 @@ nothing #hide
 and plot:
 
 ```@example 4
-using Plots
+using CairoMakie
 
-fig = Figure()
-ax = Axis(fig[1, 1], xlabel="t")
+lines(times, energies; axis = (xlabel = "t", ylabel = "energy"))
 
-lines!(ax, times, energies, label = "energy")
-
-save("assets/plot7.svg"); nothing # hide
+current_figure() # hide
 ```
-
-![](assets/plot7.svg)
 
 Lastly, let's load the saved `uh` fields, process them (get `u` by convert to physical space),
 and animate them.
 
 ```@example 4
-using Printf
+using CairoMakie, Printf
 
 nx = file["grid/nx"]
  x = file["grid/x"]
 
-anim = @animate for (i, iteration) in enumerate(iterations)
-    uh = file["snapshots/uh/$iteration"]
-    u = irfft(uh, nx)
+n = Observable(1)
 
-    plot(x, u,
-         marker = :circle,
-          label = :none,
-         xlabel = "x",
-          ylims = (-1.05, 1.05),
-          title = @sprintf("u(x, t=%1.2f)", times[i]))
+u = @lift irfft(file[string("snapshots/uh/", iterations[$n])], nx)
+title = @lift @sprintf("u(x, t=%1.2f)", file[string("snapshots/t/", iterations[$n])])
+
+fig = Figure()
+ax = Axis(fig[1, 1]; xlabel = "x", title)
+scatterlines!(ax, x, u; markersize = 14)
+
+frames = 1:length(iterations)
+
+record(fig, "animation.mp4", frames, framerate=16) do i
+    n[] = i
 end
-
-mp4(anim, "animation.mp4", fps = 24) # hide
 ```
+
+![](animation.mp4)

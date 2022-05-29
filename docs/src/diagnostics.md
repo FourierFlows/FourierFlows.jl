@@ -36,8 +36,9 @@ end
 ```
 
 ```@setup 3
-using FourierFlows, CairoMakie
-set_theme!(Theme(linewidth=3))
+using FourierFlows
+using CairoMakie
+set_theme!(Theme(linewidth = 3, fontsize = 20))
 
 using LinearAlgebra: mul!
 
@@ -147,9 +148,7 @@ plot the energy time-series, e.g.,
 ```@example 3
 using CairoMakie
 
-lines(E.t, E.data, axis = (xlabel="time", ylabel="energy"))
+lines(E.t, E.data, axis = (xlabel = "time", ylabel = "energy"))
 
-save("assets/plot6.svg"); nothing # hide
+current_figure() # hide
 ```
-
-![](assets/plot6.svg)
