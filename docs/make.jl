@@ -1,14 +1,9 @@
 using
   Documenter,
   Literate,
-  Plots,  # so that Literate.jl does not capture precompilation output
+  CairoMakie,  # so that Literate.jl does not capture precompilation output
   Glob,
   FourierFlows
-  
-# Gotta set this environment variable when using the GR run-time on CI machines.
-# This happens as examples will use Plots.jl to make plots and movies.
-# See: https://github.com/jheinen/GR.jl/issues/278
-ENV["GKSwstype"] = "100"
 
 #####
 ##### Generate examples

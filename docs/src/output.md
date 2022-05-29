@@ -213,11 +213,12 @@ and plot:
 ```@example 4
 using Plots
 
-plot(times, energies,
-      label = "energy",
-     xlabel = "t")
+fig = Figure()
+ax = Axis(fig[1, 1], xlabel="t")
 
-savefig("assets/plot7.svg"); nothing # hide
+lines!(ax, times, energies, label = "energy")
+
+save("assets/plot7.svg"); nothing # hide
 ```
 
 ![](assets/plot7.svg)

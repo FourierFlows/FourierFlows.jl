@@ -42,8 +42,8 @@ grid as
 ```@setup 1
 using FourierFlows
 using LinearAlgebra: mul!, ldiv!
-using Plots
-Plots.default(lw=3)
+using CairoMakie
+set_theme!(Theme(linewidth=3))
 nx, Lx = 64, 2π
 grid = OneDGrid(nx, Lx)
 ```
@@ -58,10 +58,12 @@ Note that we chose a function that *is* periodic on our domain. We can visualize
 `u` by
 
 ```@example 1
-using Plots
+using CairoMakie
 
-plot(grid.x, u, label="u", xlabel="x")
-savefig("assets/plot1.svg"); nothing # hide
+lines(grid.x, u, label="u", axis = (xlabel="x"))
+axis_legend()
+
+save("assets/plot1.svg"); nothing # hide
 ```
 
 ![](assets/plot1.svg)
@@ -129,16 +131,13 @@ point of our domain array.
 ```@example 1
 uhat = @. uh / (nx * exp(- im * grid.kr * grid.x[1])) # due to normalization of FFT
 
-plot(grid.kr, [real.(uhat), imag.(uhat)],
-          label = ["real( û )" "imag( û )"],
-         xlabel = "k",
-          xlims = (-0.5, 10.5),
-          ylims = (-0.55, 0.55),
-         xticks = 0:10,
-         yticks = -0.5:0.25:0.5,
-         marker = :auto)
+fig = Figure()
+ax = Axis(fig[1, 1], xlabel="k", limits=((-0.5, 10.5), (-0.55, 0.55)))
 
-savefig("assets/plot2.svg"); nothing # hide
+scatter!(ax, grid.kr, real.(uhat), label="real( û )")
+scatter!(ax, grid.kr, imag.(uhat), label="imag( û )")
+
+save("assets/plot2.svg"); nothing # hide
 ```
 
 ![](assets/plot2.svg)
@@ -163,16 +162,22 @@ nothing # hide
 ```
 
 Then the derivative in physical space, `∂ₓu`, is obtained with an inverse Fourier 
-tranform. The latter is obtained again using the `FFTW` plans but now via `ldiv!`:
+transform. The latter is obtained again using the `FFTW` plans but now via `ldiv!`:
 
 ```@example 1
 using LinearAlgebra: ldiv!
 
 ldiv!(∂ₓu, grid.rfftplan, ∂ₓuh)
 
-plot(grid.x, [u ∂ₓu], label=["u" "∂u/∂x"], xlabel="x")
+fig = Figure()
+ax = Axis(fig[1, 1], xlabel="x")
 
-savefig("assets/plot3.svg"); nothing # hide
+lines!(ax, grid.x, u, label = "u")
+lines!(ax, grid.x, ∂ₓu, label = "∂u/∂x")
+
+axis_legend()
+
+save("assets/plot3.svg"); nothing # hide
 ```
 
 ![](assets/plot3.svg)
