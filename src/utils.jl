@@ -215,7 +215,7 @@ function radialspectrum(fh, grid::TwoDGrid; n=nothing, m=nothing, refinement=2)
   m = m == nothing ? refinement * maximum([grid.nk, grid.nl]) : m
 
   # Calculate the shifted k and l
-  lshift = range(-grid.nl/2+1, stop=grid.nl/2, length=grid.nl) * 2π/grid.Ly
+  lshift = range(-grid.nl/2, stop=grid.nl/2-1, length=grid.nl) * 2π/grid.Ly
 
   if size(fh)[1] == grid.nkr # conjugate symmetric form
     m = Int(m/2)                         # => half resolution in θ
@@ -225,7 +225,7 @@ function radialspectrum(fh, grid::TwoDGrid; n=nothing, m=nothing, refinement=2)
   else # ordinary form
     θ = range(0, stop=2π, length=m)      # θ grid
     fhshift = fftshift(fh, [1, 2])       # shifted fh
-    kshift = range(-grid.nk/2+1, stop=grid.nk/2, length=grid.nk) * 2π/grid.Lx
+    kshift = range(-grid.nk/2, stop=grid.nk/2-1, length=grid.nk) * 2π/grid.Lx
   end
 
   # Interpolator for fh
