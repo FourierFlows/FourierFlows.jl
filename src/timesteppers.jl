@@ -89,7 +89,7 @@ end
 # --
 
 """
-    ForwardEulerTimeStepper{T} <: AbstractTimeStepper{T}
+    struct ForwardEulerTimeStepper{T} <: AbstractTimeStepper{T}
 
 Type for Forward Euler timestepper.
 """
@@ -116,7 +116,7 @@ function stepforward!(sol, clock, ts::ForwardEulerTimeStepper, eq, vars, params,
 end
 
 """
-    FilteredForwardEulerTimeStepper(eq, dev; filterkwargs...)
+    struct FilteredForwardEulerTimeStepper(eq, dev; filterkwargs...)
 
 Type for Forward Euler timestepper with spectral filtering.
 """
@@ -151,7 +151,7 @@ end
 # --
 
 """
-    RK4TimeStepper{T} <: AbstractTimeStepper{T}
+    struct RK4TimeStepper{T} <: AbstractTimeStepper{T}
 
 Type for 4th-order Runge-Kutta time stepper for the equation `eq`.
 """
@@ -175,7 +175,7 @@ function RK4TimeStepper(eq::Equation, dev::Device=CPU())
 end
 
 """
-    FilteredRK4TimeStepper{T,Tf} <: AbstractTimeStepper{T}
+    struct FilteredRK4TimeStepper{T,Tf} <: AbstractTimeStepper{T}
 
 Type for 4th-order Runge-Kutta time stepper with spectral filtering for the equation `eq`.
 """
@@ -271,7 +271,7 @@ end
 # ------
 
 """
-    ETDRK4TimeStepper{T,TL} <: AbstractTimeStepper{T}
+    struct ETDRK4TimeStepper{T,TL} <: AbstractTimeStepper{T}
 
 Type for 4th-order exponential-time-differencing Runge-Kutta time stepper.
 """
@@ -416,7 +416,7 @@ const ab3h2 = 16/12
 const ab3h3 = 5/12
 
 """
-    AB3TimeStepper{T} <: AbstractTimeStepper{T}
+    struct AB3TimeStepper{T} <: AbstractTimeStepper{T}
 
 Type for 3rd order Adams-Bashforth time-stepper.
 """
@@ -439,7 +439,7 @@ end
 
 
 """
-    FilteredAB3TimeStepper{T} <: AbstractTimeStepper{T}
+    struct FilteredAB3TimeStepper{T} <: AbstractTimeStepper{T}
 
 Type for 3rd order Adams-Bashforth time-stepper with spectral filtering.
 """
