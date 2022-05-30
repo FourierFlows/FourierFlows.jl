@@ -342,6 +342,8 @@ end
 
 # ## Visualizing the simulation
 
+# First we load the saved output files.
+
 using JLD2
 
 file = jldopen(out.path)
@@ -350,7 +352,11 @@ iterations = parse.(Int, keys(file["snapshots/t"]))
 nx = file["grid/nx"]
  x = file["grid/x"]
 
-n = Observable(1)
+# Then we animate the output. We use Makie's `Observable` to animate the data. To dive into how
+# `Observable`s work we refer to [Makie.jl's Documentation](https://makie.juliaplots.org/stable/documentation/nodes/index.html).
+
+
+ n = Observable(1)
 
 u = @lift irfft(file[string("snapshots/sol/", iterations[$n])][:, 1], nx)
 v = @lift irfft(file[string("snapshots/sol/", iterations[$n])][:, 2], nx)
