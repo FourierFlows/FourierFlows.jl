@@ -120,7 +120,7 @@ end
 """
     struct FilteredForwardEulerTimeStepper{T,Tf} <: AbstractTimeStepper{T}
 
-Type for Forward Euler timestepper with spectral filtering.
+A Forward Euler timestepper with spectral filtering. See [`ForwardEulerTimeStepper`](@ref).
 """
 struct FilteredForwardEulerTimeStepper{T,Tf} <: AbstractTimeStepper{T}
        N :: T
@@ -157,7 +157,7 @@ end
 
 A 4th-order Runge-Kutta timestepper for time-stepping `∂u/∂t = RHS(u, t)` via:
 ```
-uⁿ⁺¹ = uⁿ + dt/6 * (k₁ + 2 k₂ + 2 k₃ + k₄)
+uⁿ⁺¹ = uⁿ + dt/6 * (k₁ + 2 * k₂ + 2 * k₃ + k₄)
 ```
 where
 ```
@@ -189,7 +189,7 @@ end
 """
     FilteredRK4TimeStepper{T,Tf} <: AbstractTimeStepper{T}
 
-Type for 4th-order Runge-Kutta time stepper with spectral filtering.
+A 4th-order Runge-Kutta timestepper with spectral filtering. See [`RK4TimeStepper`](@ref).
 """
 struct FilteredRK4TimeStepper{T,Tf} <: AbstractTimeStepper{T}
     sol₁ :: T
@@ -285,7 +285,6 @@ end
 """
     ETDRK4TimeStepper{T,TL} <: AbstractTimeStepper{T}
 
-Type for 4th-order exponential-time-differencing Runge-Kutta time stepper.
 A 4th-order exponential-time-differencing Runge-Kutta timestepper for time-stepping
 `∂u/∂t = L * u + N(u)`. The scheme treats the linear term `L` exact while for the
 nonlinear terms `N(u)` it uses a 4th-order Runge-Kutta scheme. That is,
@@ -330,7 +329,8 @@ end
 """
     FilteredETDRK4TimeStepper{T,TL,Tf} <: AbstractTimeStepper{T}
 
-Type for 4th-order exponential-time-differencing Runge-Kutta time stepper with spectral filtering.
+A 4th-order exponential-time-differencing Runge-Kutta timestepper with spectral filtering.
+See [`ETDRK4TimeStepper`](@ref).
 """
 struct FilteredETDRK4TimeStepper{T,TL,Tf} <: AbstractTimeStepper{T}
   # ETDRK4 coefficents:
@@ -448,7 +448,7 @@ uⁿ⁺¹ = uⁿ + dt/12 * (23 * RHS(uⁿ, tⁿ) - 16 * RHS(uⁿ⁻¹, tⁿ⁻¹
 
 Adams-Bashforth is a multistep method, i.e., it not only requires information from the `n`-th time-step
 (`uⁿ`) but also from the previous two timesteps (`uⁿ⁻¹` and `uⁿ⁻²`). For the first two timesteps, it
-fallsback to a forward Euler method:
+falls back to a forward Euler timestepping scheme:
 ```
 uⁿ⁺¹ = uⁿ + dt * RHS(uⁿ, tⁿ)
 ```
@@ -460,9 +460,9 @@ struct AB3TimeStepper{T} <: AbstractTimeStepper{T}
 end
 
 """
-    AB3TimeStepper(equation, dev; filterkwargs...)
+    AB3TimeStepper(equation::Equation, dev::Device=CPU())
 
-Construct a 3rd order Adams-Bashforth time stepper.
+Construct a 3rd order Adams-Bashforth timestepper for `equation` on device `dev`.
 """
 function AB3TimeStepper(equation::Equation, dev::Device=CPU())
   @devzeros typeof(dev) equation.T equation.dims RHS RHS₋₁ RHS₋₂
@@ -474,7 +474,7 @@ end
 """
     FilteredAB3TimeStepper{T} <: AbstractTimeStepper{T}
 
-Type for 3rd order Adams-Bashforth time-stepper with spectral filtering.
+A 3rd order Adams-Bashforth timestepper with spectral filtering. See [`AB3TimeStepper`](@ref).
 """
 struct FilteredAB3TimeStepper{T, Tf} <: AbstractTimeStepper{T}
    RHS   :: T
@@ -484,9 +484,9 @@ struct FilteredAB3TimeStepper{T, Tf} <: AbstractTimeStepper{T}
 end
 
 """
-    FilteredAB3TimeStepper(equation, dev; filterkwargs...)
+    FilteredAB3TimeStepper(equation::Equation, dev::Device=CPU(); filterkwargs...)
 
-Construct a 3rd order Adams-Bashforth time stepper with spectral filtering.
+Construct a 3rd order Adams-Bashforth timestepper with spectral filtering for `equation` on device `dev`.
 """
 function FilteredAB3TimeStepper(equation::Equation, dev::Device=CPU(); filterkwargs...)
   timestepper = AB3TimeStepper(equation, dev)
@@ -558,7 +558,7 @@ end
     getetdcoeffs(dt, L; ncirc=32, rcirc=1)
 
 Calculate ETDRK4 coefficients associated with the (diagonal) linear coefficient
-L by integrating over a small circle in complex space.
+`L` by integrating over a unit circle in the complex space.
 """
 function getetdcoeffs(dt, L; ncirc=32, rcirc=1)
   shape = Tuple(cat(ncirc, ones(Int, ndims(L)), dims=1))
