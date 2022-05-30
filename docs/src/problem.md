@@ -117,13 +117,14 @@ stepper, dt = "ForwardEuler", 0.02
 prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 ```
 
-Currently, the implemented time-steppers are [`ForwardEuler`]](@ref), [`AB3`]](@ref)
-(Adams-Basmforth 3rd order), [`RK4`]](@ref) (Runge-Kutta 4th order), and [`ETDRK4`]](@ref)
-(Exponential Time Differencing Runge-Kutta 4th order). Also, there exist the `Filtered`
-versions of all the above, in which a high-wavenumber filter is applied after every time-step.
+Currently, the implemented time-steppers are [`ForwardEuler`](@ref ForwardEulerTimeStepper),
+[`AB3`](@ref AB3TimeStepper) (Adams-Basmforth 3rd order), [`RK4`](@ref RK4TimeStepper) (Runge-Kutta
+4th order), and [`ETDRK4`](@ref ETDRK4TimeStepper) (Exponential Time Differencing Runge-Kutta
+4th order). Also, there exist the `Filtered` versions of all the above, in which a high-wavenumber
+filter is applied after every time-step.
 
-By default, the `Problem` constructor takes `sol` a complex valued array same 
-size as `L` filed with zeros.
+By default, the `Problem` constructor takes `sol` a complex valued array filled with zeros
+with same size as `L`.
 
 The [`prob.clock`](@ref FourierFlows.Clock) contains the time-step `dt` and the current `step`
 and time `t` of the simulation:
