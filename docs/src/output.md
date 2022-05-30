@@ -218,6 +218,9 @@ current_figure() # hide
 Lastly, let's load the saved `uh` fields, process them (get `u` by convert to physical space),
 and animate them.
 
+We use Makie's `Observable` to animate the data. To dive into how `Observable`s work we refer to
+[Makie.jl's Documentation](https://makie.juliaplots.org/stable/documentation/nodes/index.html).
+
 ```@example 4
 using CairoMakie, Printf
 
