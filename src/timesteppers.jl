@@ -3,9 +3,8 @@
 
 Step forward `prob` one time step.
 """
-function stepforward!(prob::Problem)
+stepforward!(prob::Problem) =
   stepforward!(prob.sol, prob.clock, prob.timestepper, prob.eqn, prob.vars, prob.params, prob.grid)
-end
 
 """
     stepforward!(prob, nsteps::Int)
@@ -13,7 +12,7 @@ end
 Step forward `prob` for `nsteps`.
 """
 function stepforward!(prob::Problem, nsteps::Int)
-  for step = 1:nsteps
+  for _ in 1:nsteps
     stepforward!(prob)
   end
   
@@ -27,7 +26,7 @@ Step forward `prob` for `nsteps`, incrementing `diags` along the way. `diags` ma
 single `Diagnostic` or a `Vector` of `Diagnostic`s.
 """
 function stepforward!(prob::Problem, diags, nsteps::Int)
-  for step = 1:nsteps
+  for _ in 1:nsteps
     stepforward!(prob)
     increment!(diags)
   end
@@ -79,10 +78,10 @@ end
 #   * Filtered AB3
 #
 # Explicit time-steppers are constructed with the signature
-#   ts = ExplicitTimeStepper(eq::Equation)
+#   ts = ExplicitTimeStepper(equation::Equation)
 #
 # Implicit time-steppers are constructed with the signature
-#   ts = ImplicitTimeStepper(eq::Equation, dt)
+#   ts = ImplicitTimeStepper(equation::Equation, dt)
 
 # --
 # Forward Euler
@@ -91,7 +90,10 @@ end
 """
     ForwardEulerTimeStepper{T} <: AbstractTimeStepper{T}
 
-Type for Forward Euler timestepper.
+A Forward Euler timestepper for time-stepping `∂u/∂t = RHS(u, t)` via:
+```
+uⁿ⁺¹ = uⁿ + dt * RHS(uⁿ, tⁿ)
+```
 """
 struct ForwardEulerTimeStepper{T} <: AbstractTimeStepper{T}
   N::T # Explicit linear and nonlinear terms
@@ -99,16 +101,16 @@ struct ForwardEulerTimeStepper{T} <: AbstractTimeStepper{T}
 end
 
 """
-    ForwardEulerTimeStepper(eq::Equation, dev::Device=CPU())
+    ForwardEulerTimeStepper(equation::Equation, dev::Device=CPU())
 
-Construct a Forward Euler timestepper.
+Construct a Forward Euler timestepper for `equation` on device `dev`.
 """
-ForwardEulerTimeStepper(eq::Equation, dev::Device=CPU()) = 
-  ForwardEulerTimeStepper(devzeros(dev, eq.T, eq.dims))
+ForwardEulerTimeStepper(equation::Equation, dev::Device=CPU()) = 
+  ForwardEulerTimeStepper(devzeros(dev, equation.T, equation.dims))
 
-function stepforward!(sol, clock, ts::ForwardEulerTimeStepper, eq, vars, params, grid)
-  eq.calcN!(ts.N, sol, clock.t, clock, vars, params, grid)
-  @. sol += clock.dt * (eq.L * sol + ts.N)
+function stepforward!(sol, clock, ts::ForwardEulerTimeStepper, equation, vars, params, grid)
+  equation.calcN!(ts.N, sol, clock.t, clock, vars, params, grid)
+  @. sol += clock.dt * (equation.L * sol + ts.N)
   clock.t += clock.dt
   clock.step += 1
   
@@ -116,7 +118,7 @@ function stepforward!(sol, clock, ts::ForwardEulerTimeStepper, eq, vars, params,
 end
 
 """
-    FilteredForwardEulerTimeStepper(eq, dev; filterkwargs...)
+    struct FilteredForwardEulerTimeStepper{T,Tf} <: AbstractTimeStepper{T}
 
 Type for Forward Euler timestepper with spectral filtering.
 """
@@ -126,9 +128,9 @@ struct FilteredForwardEulerTimeStepper{T,Tf} <: AbstractTimeStepper{T}
 end
 
 """
-    FilteredForwardEulerTimeStepper(eq, dev; filterkwargs...)
+    FilteredForwardEulerTimeStepper(equation, dev; filterkwargs...)
 
-Construct a forward Euler timestepper with spectral filtering.
+Construct a Forward Euler timestepper with spectral filtering for `equation` on device `dev`.
 """
 function FilteredForwardEulerTimeStepper(equation::Equation, dev::Device=CPU(); filterkwargs...)
   filter = makefilter(equation; filterkwargs...)
@@ -136,9 +138,9 @@ function FilteredForwardEulerTimeStepper(equation::Equation, dev::Device=CPU(); 
   return FilteredForwardEulerTimeStepper(devzeros(dev, equation.T, equation.dims), filter)
 end
 
-function stepforward!(sol, clock, ts::FilteredForwardEulerTimeStepper, eq, vars, params, grid)
-  eq.calcN!(ts.N, sol, clock.t, clock, vars, params, grid)
-  @. sol = ts.filter * (sol + clock.dt * (ts.N + eq.L * sol))
+function stepforward!(sol, clock, ts::FilteredForwardEulerTimeStepper, equation, vars, params, grid)
+  equation.calcN!(ts.N, sol, clock.t, clock, vars, params, grid)
+  @. sol = ts.filter * (sol + clock.dt * (ts.N + equation.L * sol))
   clock.t += clock.dt
   clock.step += 1
   
@@ -153,7 +155,17 @@ end
 """
     RK4TimeStepper{T} <: AbstractTimeStepper{T}
 
-Type for 4th-order Runge-Kutta time stepper for the equation `eq`.
+A 4th-order Runge-Kutta timestepper for time-stepping `∂u/∂t = RHS(u, t)` via:
+```
+uⁿ⁺¹ = uⁿ + dt/6 * (k₁ + 2 k₂ + 2 k₃ + k₄)
+```
+where
+```
+k₁ = RHS(uⁿ, tⁿ)
+k₂ = RHS(uⁿ + k₁ * dt/2, tⁿ + dt/2)
+k₃ = RHS(uⁿ + k₂ * dt/2, tⁿ + dt/2)
+k₄ = RHS(uⁿ + k₃ * dt, tⁿ + dt)
+```
 """
 struct RK4TimeStepper{T} <: AbstractTimeStepper{T}
   sol₁ :: T
@@ -164,12 +176,12 @@ struct RK4TimeStepper{T} <: AbstractTimeStepper{T}
 end
 
 """
-    RK4TimeStepper(eq::Equation, dev::Device=CPU())
+    RK4TimeStepper(equation::Equation, dev::Device=CPU())
 
-Construct a 4th-order Runge-Kutta time stepper for the equation `eq`.
+Construct a 4th-order Runge-Kutta timestepper for `equation` on device `dev`.
 """
-function RK4TimeStepper(eq::Equation, dev::Device=CPU())
-  @devzeros typeof(dev) eq.T eq.dims N sol₁ RHS₁ RHS₂ RHS₃ RHS₄
+function RK4TimeStepper(equation::Equation, dev::Device=CPU())
+  @devzeros typeof(dev) equation.T equation.dims N sol₁ RHS₁ RHS₂ RHS₃ RHS₄
   
   return RK4TimeStepper(sol₁, RHS₁, RHS₂, RHS₃, RHS₄)
 end
@@ -177,7 +189,7 @@ end
 """
     FilteredRK4TimeStepper{T,Tf} <: AbstractTimeStepper{T}
 
-Type for 4th-order Runge-Kutta time stepper with spectral filtering for the equation `eq`.
+Type for 4th-order Runge-Kutta time stepper with spectral filtering.
 """
 struct FilteredRK4TimeStepper{T,Tf} <: AbstractTimeStepper{T}
     sol₁ :: T
@@ -189,13 +201,13 @@ struct FilteredRK4TimeStepper{T,Tf} <: AbstractTimeStepper{T}
 end
 
 """
-    FilteredRK4TimeStepper(eq::Equation, dev::Device=CPU(); filterkwargs...)
+    FilteredRK4TimeStepper(equation::Equation, dev::Device=CPU(); filterkwargs...)
 
-Construct a 4th-order Runge-Kutta time stepper with spectral filtering for the equation `eq`.
+Construct a 4th-order Runge-Kutta timestepper with spectral filtering for `equation` on device `dev`.
 """
-function FilteredRK4TimeStepper(eq::Equation, dev::Device=CPU(); filterkwargs...)
-  ts = RK4TimeStepper(eq, dev)
-  filter = makefilter(eq; filterkwargs...)
+function FilteredRK4TimeStepper(equation::Equation, dev::Device=CPU(); filterkwargs...)
+  ts = RK4TimeStepper(equation, dev)
+  filter = makefilter(equation; filterkwargs...)
   
   return FilteredRK4TimeStepper(getfield.(Ref(ts), fieldnames(typeof(ts)))..., filter)
 end
@@ -212,25 +224,25 @@ function substepsol!(newsol, sol, RHS, dt)
   return nothing
 end
 
-function RK4substeps!(sol, clock, ts, eq, vars, params, grid, t, dt)
+function RK4substeps!(sol, clock, ts, equation, vars, params, grid, t, dt)
   # Substep 1
-  eq.calcN!(ts.RHS₁, sol, t, clock, vars, params, grid)
-  addlinearterm!(ts.RHS₁, eq.L, sol)
+  equation.calcN!(ts.RHS₁, sol, t, clock, vars, params, grid)
+  addlinearterm!(ts.RHS₁, equation.L, sol)
   
   # Substep 2
   substepsol!(ts.sol₁, sol, ts.RHS₁, dt/2)
-  eq.calcN!(ts.RHS₂, ts.sol₁, t+dt/2, clock, vars, params, grid)
-  addlinearterm!(ts.RHS₂, eq.L, ts.sol₁)
+  equation.calcN!(ts.RHS₂, ts.sol₁, t+dt/2, clock, vars, params, grid)
+  addlinearterm!(ts.RHS₂, equation.L, ts.sol₁)
   
   # Substep 3
   substepsol!(ts.sol₁, sol, ts.RHS₂, dt/2)
-  eq.calcN!(ts.RHS₃, ts.sol₁, t+dt/2, clock, vars, params, grid)
-  addlinearterm!(ts.RHS₃, eq.L, ts.sol₁)
+  equation.calcN!(ts.RHS₃, ts.sol₁, t+dt/2, clock, vars, params, grid)
+  addlinearterm!(ts.RHS₃, equation.L, ts.sol₁)
   
   # Substep 4
   substepsol!(ts.sol₁, sol, ts.RHS₃, dt)
-  eq.calcN!(ts.RHS₄, ts.sol₁, t+dt, clock, vars, params, grid)
-  addlinearterm!(ts.RHS₄, eq.L, ts.sol₁)
+  equation.calcN!(ts.RHS₄, ts.sol₁, t+dt, clock, vars, params, grid)
+  addlinearterm!(ts.RHS₄, equation.L, ts.sol₁)
   
   return nothing
 end
@@ -247,8 +259,8 @@ function RK4update!(sol, RHS₁, RHS₂, RHS₃, RHS₄, filter, dt)
   return nothing
 end
 
-function stepforward!(sol, clock, ts::RK4TimeStepper, eq, vars, params, grid)
-  RK4substeps!(sol, clock, ts, eq, vars, params, grid, clock.t, clock.dt)
+function stepforward!(sol, clock, ts::RK4TimeStepper, equation, vars, params, grid)
+  RK4substeps!(sol, clock, ts, equation, vars, params, grid, clock.t, clock.dt)
   RK4update!(sol, ts.RHS₁, ts.RHS₂, ts.RHS₃, ts.RHS₄, clock.dt)
   clock.t += clock.dt
   clock.step += 1
@@ -256,8 +268,8 @@ function stepforward!(sol, clock, ts::RK4TimeStepper, eq, vars, params, grid)
   return nothing
 end
 
-function stepforward!(sol, clock, ts::FilteredRK4TimeStepper, eq, vars, params, grid)
-  RK4substeps!(sol, clock, ts, eq, vars, params, grid, clock.t, clock.dt)
+function stepforward!(sol, clock, ts::FilteredRK4TimeStepper, equation, vars, params, grid)
+  RK4substeps!(sol, clock, ts, equation, vars, params, grid, clock.t, clock.dt)
   RK4update!(sol, ts.RHS₁, ts.RHS₂, ts.RHS₃, ts.RHS₄, ts.filter, clock.dt)
   clock.t += clock.dt
   clock.step += 1
@@ -274,6 +286,15 @@ end
     ETDRK4TimeStepper{T,TL} <: AbstractTimeStepper{T}
 
 Type for 4th-order exponential-time-differencing Runge-Kutta time stepper.
+A 4th-order exponential-time-differencing Runge-Kutta timestepper for time-stepping
+`∂u/∂t = L * u + N(u)`. The scheme treats the linear term `L` exact while for the
+nonlinear terms `N(u)` it uses a 4th-order Runge-Kutta scheme. That is,
+```
+uⁿ⁺¹ = exp(L * dt) * uⁿ + RK4(N(uⁿ))
+```
+For more info refer to 
+
+> Kassam, A. K., & Trefethen, L. N. (2005). Fourth-order time-stepping for stiff PDEs. _SIAM Journal on Scientific Computing_, **26(4)**, 1214-1233.
 """
 struct ETDRK4TimeStepper{T,TL} <: AbstractTimeStepper{T}
   # ETDRK4 coefficents
@@ -292,15 +313,16 @@ struct ETDRK4TimeStepper{T,TL} <: AbstractTimeStepper{T}
 end
 
 """
-    ETDRK4TimeStepper(eq::Equation, dt, dev::Device=CPU())
+    ETDRK4TimeStepper(equation::Equation, dt, dev::Device=CPU())
 
-Construct a 4th-order exponential-time-differencing Runge-Kutta time stepper.
+Construct a 4th-order exponential-time-differencing Runge-Kutta timestepper with timestep `dt`
+for `equation` on device `dev`.
 """
-function ETDRK4TimeStepper(eq::Equation, dt, dev::Device=CPU())
-  dt = fltype(eq.T)(dt) # ensure dt is correct type.
-  expLdt, exp½Ldt = getexpLs(dt, eq)
-  ζ, α, β, Γ = getetdcoeffs(dt, eq.L)
-  @devzeros typeof(dev) eq.T eq.dims sol₁ sol₂ N₁ N₂ N₃ N₄
+function ETDRK4TimeStepper(equation::Equation, dt, dev::Device=CPU())
+  dt = fltype(equation.T)(dt) # ensure dt is correct type.
+  expLdt, exp½Ldt = getexpLs(dt, equation)
+  ζ, α, β, Γ = getetdcoeffs(dt, equation.L)
+  @devzeros typeof(dev) equation.T equation.dims sol₁ sol₂ N₁ N₂ N₃ N₄
   
   return ETDRK4TimeStepper(ζ, α, β, Γ, expLdt, exp½Ldt, sol₁, sol₂, N₁, N₂, N₃, N₄)
 end
@@ -330,7 +352,8 @@ end
 """
     FilteredETDRK4TimeStepper(equation, dt; filterkwargs...)
 
-Construct a 4th-order exponential-time-differencing Runge-Kutta time stepper with spectral filtering.
+Construct a 4th-order exponential-time-differencing Runge-Kutta timestepper with timestep `dt` and with
+spectral filtering for `equation` on device `dev`.
 """
 function FilteredETDRK4TimeStepper(equation::Equation, dt, dev::Device=CPU(); filterkwargs...)
   timestepper = ETDRK4TimeStepper(equation, dt, dev)
@@ -367,29 +390,29 @@ function ETDRK4substep3!(sol₂, exp½Ldt, sol₁, ζ, N₁, N₃)
   return nothing
 end
 
-function ETDRK4substeps!(sol, clock, ts, eq, vars, params, grid)
+function ETDRK4substeps!(sol, clock, ts, equation, vars, params, grid)
   # Substep 1
-  eq.calcN!(ts.N₁, sol, clock.t, clock, vars, params, grid)
+  equation.calcN!(ts.N₁, sol, clock.t, clock, vars, params, grid)
   ETDRK4substep12!(ts.sol₁, ts.exp½Ldt, sol, ts.ζ, ts.N₁)
 
   # Substep 2
   t2 = clock.t + clock.dt/2
-  eq.calcN!(ts.N₂, ts.sol₁, t2, clock, vars, params, grid)
+  equation.calcN!(ts.N₂, ts.sol₁, t2, clock, vars, params, grid)
   ETDRK4substep12!(ts.sol₂, ts.exp½Ldt, sol, ts.ζ, ts.N₂)
 
   # Substep 3
-  eq.calcN!(ts.N₃, ts.sol₂, t2, clock, vars, params, grid)
+  equation.calcN!(ts.N₃, ts.sol₂, t2, clock, vars, params, grid)
   ETDRK4substep3!(ts.sol₂, ts.exp½Ldt, ts.sol₁, ts.ζ, ts.N₁, ts.N₃)
 
   # Substep 4
   t3 = clock.t + clock.dt
-  eq.calcN!(ts.N₄, ts.sol₂, t3, clock, vars, params, grid)
+  equation.calcN!(ts.N₄, ts.sol₂, t3, clock, vars, params, grid)
 
   return nothing
 end
 
-function stepforward!(sol, clock, ts::ETDRK4TimeStepper, eq, vars, params, grid)
-  ETDRK4substeps!(sol, clock, ts, eq, vars, params, grid)
+function stepforward!(sol, clock, ts::ETDRK4TimeStepper, equation, vars, params, grid)
+  ETDRK4substeps!(sol, clock, ts, equation, vars, params, grid)
   ETDRK4update!(sol, ts.expLdt, ts.α, ts.β, ts.Γ, ts.N₁, ts.N₂, ts.N₃, ts.N₄)
   clock.t += clock.dt
   clock.step += 1
@@ -397,8 +420,8 @@ function stepforward!(sol, clock, ts::ETDRK4TimeStepper, eq, vars, params, grid)
   return nothing
 end
 
-function stepforward!(sol, clock, ts::FilteredETDRK4TimeStepper, eq, vars, params, grid)
-  ETDRK4substeps!(sol, clock, ts, eq, vars, params, grid)
+function stepforward!(sol, clock, ts::FilteredETDRK4TimeStepper, equation, vars, params, grid)
+  ETDRK4substeps!(sol, clock, ts, equation, vars, params, grid)
   ETDRK4update!(sol, ts, ts.filter) # update
   clock.t += clock.dt
   clock.step += 1
@@ -418,7 +441,17 @@ const ab3h3 = 5/12
 """
     AB3TimeStepper{T} <: AbstractTimeStepper{T}
 
-Type for 3rd order Adams-Bashforth time-stepper.
+A 3rd-order Adams-Bashforth timestepper for time-stepping `∂u/∂t = RHS(u, t)` via:
+```
+uⁿ⁺¹ = uⁿ + dt/12 * (23 * RHS(uⁿ, tⁿ) - 16 * RHS(uⁿ⁻¹, tⁿ⁻¹) + 5 * RHS(uⁿ⁻², tⁿ⁻²))
+```
+
+Adams-Bashforth is a multistep method, i.e., it not only requires information from the `n`-th time-step
+(`uⁿ`) but also from the previous two timesteps (`uⁿ⁻¹` and `uⁿ⁻²`). For the first two timesteps, it
+fallsback to a forward Euler method:
+```
+uⁿ⁺¹ = uⁿ + dt * RHS(uⁿ, tⁿ)
+```
 """
 struct AB3TimeStepper{T} <: AbstractTimeStepper{T}
   RHS::T
@@ -427,7 +460,7 @@ struct AB3TimeStepper{T} <: AbstractTimeStepper{T}
 end
 
 """
-    FilteredAB3TimeStepper(equation, dev; filterkwargs...)
+    AB3TimeStepper(equation, dev; filterkwargs...)
 
 Construct a 3rd order Adams-Bashforth time stepper.
 """
@@ -482,9 +515,9 @@ function AB3update!(sol, ts::FilteredAB3TimeStepper, clock)
   return nothing
 end
 
-function stepforward!(sol, clock, ts::AB3TimeStepper, eq, vars, params, grid)
-  eq.calcN!(ts.RHS, sol, clock.t, clock, vars, params, grid)
-  addlinearterm!(ts.RHS, eq.L, sol)
+function stepforward!(sol, clock, ts::AB3TimeStepper, equation, vars, params, grid)
+  equation.calcN!(ts.RHS, sol, clock.t, clock, vars, params, grid)
+  addlinearterm!(ts.RHS, equation.L, sol)
   
   AB3update!(sol, ts, clock)
   clock.t += clock.dt
@@ -496,9 +529,9 @@ function stepforward!(sol, clock, ts::AB3TimeStepper, eq, vars, params, grid)
   return nothing
 end
 
-function stepforward!(sol, clock, ts::FilteredAB3TimeStepper, eq, vars, params, grid)
-  eq.calcN!(ts.RHS, sol, clock.t, clock, vars, params, grid)
-  addlinearterm!(ts.RHS, eq.L, sol)
+function stepforward!(sol, clock, ts::FilteredAB3TimeStepper, equation, vars, params, grid)
+  equation.calcN!(ts.RHS, sol, clock.t, clock, vars, params, grid)
+  addlinearterm!(ts.RHS, equation.L, sol)
   
   AB3update!(sol, ts, clock)
   clock.t += clock.dt
