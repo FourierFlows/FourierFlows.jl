@@ -2,8 +2,8 @@
 
 ```@setup 1
 using FourierFlows
-using Plots
-Plots.default(lw=3)
+using CairoMakie
+set_theme!(Theme(linewidth = 3, fontsize = 20))
 ```
 
 In pseudospectral methods, when computing nonlinear terms then aliasing errors come into play. 
@@ -22,26 +22,33 @@ Take, for example, functions ``\cos(4x)`` and ``\cos(6x)`` and let's see how the
 on a grid ``x \in [-π, π)`` with ``n_x = 10`` grid points.
 
 ```@example 1
-using FourierFlows, Plots
+using FourierFlows, CairoMakie
 
 nx, Lx = 10, 2π
 grid = OneDGrid(nx, Lx)
-x = grid.x
 
 f1(x) = cos(4x)
 f2(x) = cos(6x)
 
-p = plot(x, f1.(x), lw=0, marker=:circle, c=:red, ms=8, ylims=(-1.6, 1.6), label="cos(4x)")
-plot!(p, f1, lw=3, alpha=0.2, c=:red, xlims=(-Lx/2, Lx/2), label="")
-plot!(p, x, f2.(x), lw=0, marker=:star5, ms=8.5, color=:blue, alpha=0.8, label="cos(6x)")
-plot!(p, f2, lw=3, alpha=0.2, c=:blue, xlims=(-Lx/2, Lx/2), label="")
+x = grid.x
 
-plot(p, xlabel="x", xlims=(-3.3, 3.3))
+fig = Figure()
+ax = Axis(fig[1, 1], xlabel = "x", limits = ((-Lx/2, Lx/2), (-1.6, 1.6)))
 
-savefig("assets/plot4.svg"); nothing # hide
+lines!(ax, range(-Lx/2, Lx/2, length=200), f1;
+       color = (:steelblue, 0.3), label = "cos(4x)")
+lines!(ax, range(-Lx/2, Lx/2, length=200), f2;
+       color = (:salmon, 0.3), label = "cos(6x)")
+
+scatter!(ax, x, f1.(x);
+         markersize = 12, color = (:steelblue, 0.9), label = "cos(4x)")
+scatter!(ax, x, f2.(x);
+         markersize = 24, marker = :star5, color = (:salmon, 0.9), label = "cos(6x)")
+
+axislegend(merge = true)
+
+current_figure() # hide
 ```
-
-![](assets/plot4.svg)
 
 The take home message is that on this particular grid we cannot distinguish harmonics with 
 wavenumbers 4 and 6. An attempt to represent harmonics with wavenumber 6 on this grid leads to 

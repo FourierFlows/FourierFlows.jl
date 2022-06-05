@@ -15,11 +15,14 @@ end
 ```
 
 ```jldoctest
-julia> using FourierFlows
+using FourierFlows
 
-julia> nx, Lx = 64, 2π;
+nx, Lx = 64, 2π
 
-julia> grid = OneDGrid(nx, Lx)
+grid = OneDGrid(nx, Lx)
+
+# output
+
 OneDimensionalGrid
   ├─────────── Device: CPU
   ├──────── FloatType: Float64
@@ -42,8 +45,8 @@ grid as
 ```@setup 1
 using FourierFlows
 using LinearAlgebra: mul!, ldiv!
-using Plots
-Plots.default(lw=3)
+using CairoMakie
+set_theme!(Theme(linewidth = 3, fontsize = 20))
 nx, Lx = 64, 2π
 grid = OneDGrid(nx, Lx)
 ```
@@ -58,13 +61,13 @@ Note that we chose a function that *is* periodic on our domain. We can visualize
 `u` by
 
 ```@example 1
-using Plots
+using CairoMakie
 
-plot(grid.x, u, label="u", xlabel="x")
-savefig("assets/plot1.svg"); nothing # hide
+lines(grid.x, u, label="u", axis = (xlabel="x",))
+axislegend()
+
+current_figure() # hide
 ```
-
-![](assets/plot1.svg)
 
 Function ``u(x)`` can be expanded in Fourier series:
 
@@ -121,35 +124,39 @@ nothing # hide
 ```
 
 The `FFT` algorithm does not output exactly the Fourier coefficients ``\hat{u}(k)`` but
-rather due to different normalization, `FFT` outputs something proportional to ``\hat{u}(k)``. 
-To obtain ``\hat{u}`` we need to divide the `FFT` output by the length of the 
-original array and by ``e^{-i k x_0}``, where ``x_0`` is the first 
-point of our domain array.
+rather, due to different normalization, `FFT` outputs something proportional to ``\hat{u}(k)``. 
+To obtain ``\hat{u}`` we need to divide the `FFT` output by the length of the original
+array and by ``e^{-i k x_0}``, where ``x_0`` is the first point of our domain array.
 
 ```@example 1
 uhat = @. uh / (nx * exp(- im * grid.kr * grid.x[1])) # due to normalization of FFT
 
-plot(grid.kr, [real.(uhat), imag.(uhat)],
-          label = ["real( û )" "imag( û )"],
-         xlabel = "k",
-          xlims = (-0.5, 10.5),
-          ylims = (-0.55, 0.55),
-         xticks = 0:10,
-         yticks = -0.5:0.25:0.5,
-         marker = :auto)
+fig = Figure()
+ax = Axis(fig[1, 1];
+          xlabel = "k",
+          limits = ((-0.5, 10.5), (-0.55, 0.55)),
+          xticks = 0:10,
+          yticks = -0.5:0.25:0.5)
 
-savefig("assets/plot2.svg"); nothing # hide
+scatterlines!(ax, grid.kr, real.(uhat);
+              markersize = 16, label = "real(û)")
+
+scatterlines!(ax, grid.kr, imag.(uhat);
+              markersize = 22, marker = :diamond, label = "imag(û)")
+
+axislegend()
+
+current_figure() # hide
 ```
 
-![](assets/plot2.svg)
-
-We can compute its derivative via Fourier transforms. To do that we can use the
+We can compute the derivative of ``u(x)`` via Fourier transforms. To do that we use the
 `FFTW` plans that are constructed with the grid. First we allocate some empty arrays
-where the values of the derivative in physical and Fourier space will be stored,
+where the values of the derivative will be stored, both in physical and in Fourier space:
 
 ```@example 1
 ∂ₓu  = similar(u)
 ∂ₓuh = similar(uh)
+
 nothing # hide
 ```
 
@@ -163,16 +170,20 @@ nothing # hide
 ```
 
 Then the derivative in physical space, `∂ₓu`, is obtained with an inverse Fourier 
-tranform. The latter is obtained again using the `FFTW` plans but now via `ldiv!`:
+transform. The latter is obtained again using the `FFTW` plans but now via `ldiv!`:
 
 ```@example 1
 using LinearAlgebra: ldiv!
 
 ldiv!(∂ₓu, grid.rfftplan, ∂ₓuh)
 
-plot(grid.x, [u ∂ₓu], label=["u" "∂u/∂x"], xlabel="x")
+fig = Figure()
+ax = Axis(fig[1, 1], xlabel = "x")
 
-savefig("assets/plot3.svg"); nothing # hide
+lines!(ax, grid.x, u, label = "u")
+lines!(ax, grid.x, ∂ₓu, label = "∂u/∂x")
+
+axislegend()
+
+current_figure() # hide
 ```
-
-![](assets/plot3.svg)

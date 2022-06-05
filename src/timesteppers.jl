@@ -88,7 +88,7 @@ end
 # --
 
 """
-    ForwardEulerTimeStepper{T} <: AbstractTimeStepper{T}
+    struct ForwardEulerTimeStepper{T} <: AbstractTimeStepper{T}
 
 A Forward Euler timestepper for time-stepping `∂u/∂t = RHS(u, t)` via:
 ```
@@ -153,7 +153,7 @@ end
 # --
 
 """
-    RK4TimeStepper{T} <: AbstractTimeStepper{T}
+    struct RK4TimeStepper{T} <: AbstractTimeStepper{T}
 
 A 4th-order Runge-Kutta timestepper for time-stepping `∂u/∂t = RHS(u, t)` via:
 ```
@@ -187,7 +187,7 @@ function RK4TimeStepper(equation::Equation, dev::Device=CPU())
 end
 
 """
-    FilteredRK4TimeStepper{T,Tf} <: AbstractTimeStepper{T}
+    struct FilteredRK4TimeStepper{T,Tf} <: AbstractTimeStepper{T}
 
 A 4th-order Runge-Kutta timestepper with spectral filtering. See [`RK4TimeStepper`](@ref).
 """
@@ -283,7 +283,7 @@ end
 # ------
 
 """
-    ETDRK4TimeStepper{T,TL} <: AbstractTimeStepper{T}
+    struct ETDRK4TimeStepper{T,TL} <: AbstractTimeStepper{T}
 
 A 4th-order exponential-time-differencing Runge-Kutta timestepper for time-stepping
 `∂u/∂t = L * u + N(u)`. The scheme treats the linear term `L` exact while for the
@@ -439,7 +439,7 @@ const ab3h2 = 16/12
 const ab3h3 = 5/12
 
 """
-    AB3TimeStepper{T} <: AbstractTimeStepper{T}
+    struct AB3TimeStepper{T} <: AbstractTimeStepper{T}
 
 A 3rd-order Adams-Bashforth timestepper for time-stepping `∂u/∂t = RHS(u, t)` via:
 ```
@@ -472,7 +472,7 @@ end
 
 
 """
-    FilteredAB3TimeStepper{T} <: AbstractTimeStepper{T}
+    struct FilteredAB3TimeStepper{T} <: AbstractTimeStepper{T}
 
 A 3rd order Adams-Bashforth timestepper with spectral filtering. See [`AB3TimeStepper`](@ref).
 """

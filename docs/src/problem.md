@@ -1,9 +1,10 @@
 # [Problem](@id problem_docs)
 
 ```@setup 2
-using FourierFlows, Plots
+using FourierFlows
 using LinearAlgebra: mul!, ldiv!
-Plots.default(lw=3)
+using CairoMakie
+set_theme!(Theme(linewidth = 3, fontsize = 20))
 ```
 
 Everything needed to solve a PDE in `FourierFlows.jl` is gathered in a composite type
@@ -60,7 +61,7 @@ construct the `vars` as:
 
 ```@example 2
 struct Vars <: AbstractVars
-    u :: Array{Float64,1}
+    u :: Array{Float64, 1}
    uh :: Array{Complex{Float64}, 1}
 end
 ```
@@ -116,13 +117,14 @@ stepper, dt = "ForwardEuler", 0.02
 prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 ```
 
-Currently, the implemented time-steppers are [`ForwardEuler`]](@ref), [`AB3`]](@ref)
-(Adams-Basmforth 3rd order), [`RK4`]](@ref) (Runge-Kutta 4th order), and [`ETDRK4`]](@ref)
-(Exponential Time Differencing Runge-Kutta 4th order). Also, there exist the `Filtered`
-versions of all the above, in which a high-wavenumber filter is applied after every time-step.
+Currently, the implemented time-steppers are [`ForwardEuler`](@ref ForwardEulerTimeStepper),
+[`AB3`](@ref AB3TimeStepper) (Adams-Basmforth 3rd order), [`RK4`](@ref RK4TimeStepper) (Runge-Kutta
+4th order), and [`ETDRK4`](@ref ETDRK4TimeStepper) (Exponential Time Differencing Runge-Kutta
+4th order). Also, there exist the `Filtered` versions of all the above, in which a high-wavenumber
+filter is applied after every time-step.
 
-By default, the `Problem` constructor takes `sol` a complex valued array same 
-size as `L` filed with zeros.
+By default, the `Problem` constructor takes `sol` a complex valued array filled with zeros
+with same size as `L`.
 
 The [`prob.clock`](@ref FourierFlows.Clock) contains the time-step `dt` and the current `step`
 and time `t` of the simulation:
@@ -165,22 +167,21 @@ nothing # hide
 and finally, let's plot our solution and compare with the analytic solution:
 
 ```@example 2
-using Plots, Printf
+using CairoMakie, Printf
 
-plot(grid.x, prob.vars.u,
-     seriestype = :scatter,
-          label = "numerical",
-         xlabel = "x",
-          title = @sprintf("u(x, t=%1.2f)", prob.clock.t))
+fig = Figure()
+ax = Axis(fig[1, 1], xlabel = "x", title = @sprintf("u(x, t=%1.2f)", prob.clock.t))
 
-plot!(x -> cos(π * x) * exp(-prob.params.α * 4), -1, 1, label="analytical")
+x = range(-Lx/2, Lx/2, length=200)
+lines!(ax, x, @. cos(π * x) * exp(-prob.params.α * 4); label = "analytical")
+lines!(ax, x, @. cos(π * x); linestyle = :dash, color = :gray, label = "initial condition")
 
-plot!(x -> cos(π * x), -1, 1, linestyle=:dash, color=:gray, label="initial condition")
+scatter!(ax, grid.x, prob.vars.u; markersize = 14, color = :salmon, label = "numerical")
 
-savefig("assets/plot5.svg"); nothing # hide
+axislegend()
+
+current_figure() # hide
 ```
-
-![](assets/plot5.svg)
 
 A good practice is to encompass all functions and type definitions related with a PDE under 
 a single module, e.g.,

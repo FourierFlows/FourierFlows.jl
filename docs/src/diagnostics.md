@@ -36,11 +36,11 @@ end
 ```
 
 ```@setup 3
-using FourierFlows, Plots
+using FourierFlows
+using CairoMakie
+set_theme!(Theme(linewidth = 3, fontsize = 20))
 
 using LinearAlgebra: mul!
-
-Plots.default(lw=3)
 
 nx, Lx = 32, 2.0
 grid = OneDGrid(nx, Lx)
@@ -94,6 +94,7 @@ using LinearAlgebra: ldiv!
 
 function energy(prob)
     ldiv!(prob.vars.u, grid.rfftplan, prob.sol)
+
     return sum(prob.vars.u.^2) * prob.grid.dx
 end
 
@@ -145,13 +146,9 @@ The times that the diagnostic was saved are gathered in `E.t`. Thus, we can easi
 plot the energy time-series, e.g., 
 
 ```@example 3
-using Plots
+using CairoMakie
 
-plot(E.t, E.data,
-      label = "energy",
-     xlabel = "t")
+lines(E.t, E.data, axis = (xlabel = "time", ylabel = "energy"))
 
-savefig("assets/plot6.svg"); nothing # hide
+current_figure() # hide
 ```
-
-![](assets/plot6.svg)

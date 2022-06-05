@@ -1,8 +1,8 @@
 """
     struct Equation{T, TL, G<:AbstractFloat}
     
-The equation to be solved `∂u/∂t = L*u + N(u)`. Array `L` includes the coefficients
-of the linear term `L*u` and `calcN!` is a function which computes the nonlinear
+The equation to be solved `∂u/∂t = L * u + N(u)`. Array `L` includes the coefficients
+of the linear term `L * u` and `calcN!` is a function which computes the nonlinear
 term `N(u)`. The struct also includes the problem's `grid` and the float type of the
 state vector (and consequently of `N(u)`).
 
@@ -74,14 +74,14 @@ struct Problem{T, A<:AbstractArray, Tg<:AbstractFloat, TL}
 end
 
 """
-    EmptyParams <: AbstractParams
+    struct EmptyParams <: AbstractParams
 
 A placeholder struct for parameters.
 """
 struct EmptyParams <: AbstractParams end
 
 """
-    EmptyVars <: AbstractVars
+    struct EmptyVars <: AbstractVars
 
 A placeholder struct for variables.
 """
