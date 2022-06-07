@@ -67,23 +67,25 @@ pages = [
 ]
 
 makedocs(
-    sitename = "FourierFlows.jl",
-      authors = "Gregory L. Wagner and Navid C. Constantinou",
-      modules = [FourierFlows],
-      format = format,
-        pages = pages,
-      doctest = true,
-      strict = :doctest,
-        clean = true,
-    checkdocs = :exports
+   sitename = "FourierFlows.jl",
+    authors = "Gregory L. Wagner and Navid C. Constantinou",
+    modules = [FourierFlows],
+     format = format,
+      pages = pages,
+    doctest = true,
+     strict = :doctest,
+      clean = true,
+  checkdocs = :exports
 )
 
-deploydocs(
+withenv("GITHUB_REPOSITORY" => "FourierFlows/FourierFlowsDocumentation") do
+  deploydocs(
             repo = "github.com/FourierFlows/FourierFlowsDocumentation.git",
         versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
     push_preview = false,
-      devbranch = "main"
-)
+       devbranch = "main"
+  )
+end
 
 
 @info "Cleaning up temporary .jld2 and .nc files created by doctests..."
