@@ -28,6 +28,7 @@ function test_scalardiagnostics(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2, nsteps
   stepforward!(prob, diagnostic, nsteps)
 
   da = @. 0.5*ct(diagnostic[:t])^2
+
   return isapprox(diagnostic[:data], da)
 end
 
@@ -65,7 +66,8 @@ function test_extenddiagnostic(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2)
   nsteps_initially2 = length(soldiagnostic2.t)
   FourierFlows.extend!(soldiagnostic2)
   
-  return length(soldiagnostic1.t) == nsteps_initially1 + nsteps_extend1 && length(soldiagnostic2.t) == 2*nsteps_initially2
+  return length(soldiagnostic1.t) == nsteps_initially1 + nsteps_extend1 &&
+         length(soldiagnostic2.t) == 2 * nsteps_initially2
 end
 
 function test_incrementdiagnostic(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2)
@@ -110,5 +112,6 @@ function test_getindex(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2)
     FourierFlows.increment!(diagnostics)
   end
   
-  return getindex(diagnostic1, 2:5) == 2.0*ones(4) && getindex(diagnostic2, 2:5) == 2.0im*ones(4)
+  return getindex(diagnostic1, 2:5) == 2.0*ones(4) &&
+         getindex(diagnostic2, 2:5) == 2.0im*ones(4)
 end

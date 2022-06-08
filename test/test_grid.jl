@@ -131,6 +131,7 @@ end
 
 function testnodealias(grid::Union{TwoDGrid, ThreeDGrid})
   fh = ones(Complex{eltype(grid)}, size(grid.Krsq))
+
   return dealias!(fh, grid) == nothing
 end
 
@@ -206,8 +207,10 @@ function test_aliased_fraction(dev, aliased_fraction)
   lalias = aliased_fraction==0 ? nothing : lower_end(ny):upper_end(ny)
   malias = aliased_fraction==0 ? nothing : lower_end(nz):upper_end(nz)
     
-  return (g₁.aliased_fraction == aliased_fraction && g₂.aliased_fraction == aliased_fraction && 
-  g₃.aliased_fraction == aliased_fraction && g₁.kralias == kralias && g₁.kalias == kalias && 
-  g₂.kralias == kralias && g₂.kalias == kalias && g₂.lalias == lalias && g₃.kralias == kralias &&
-  g₃.kalias == kalias && g₃.lalias == lalias && g₃.malias == malias)
+  return g₁.aliased_fraction == aliased_fraction &&
+         g₂.aliased_fraction == aliased_fraction &&
+         g₃.aliased_fraction == aliased_fraction &&
+         g₁.kralias == kralias && g₁.kalias == kalias &&
+         g₂.kralias == kralias && g₂.kalias == kalias && g₂.lalias == lalias &&
+         g₃.kralias == kralias && g₃.kalias == kalias && g₃.lalias == lalias && g₃.malias == malias
 end
