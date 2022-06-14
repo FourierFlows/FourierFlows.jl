@@ -56,6 +56,7 @@ for dev in devices
     @test testx(g₁)
     @test testk(g₁)
     @test testkr(g₁)
+    @test testgridpoints(dev, g₁)
     @test testdealias(g₁)
     @test testmakefilter(dev, g₁)
 
