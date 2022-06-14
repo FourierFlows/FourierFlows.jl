@@ -47,6 +47,14 @@ testl(g::Union{TwoDGrid, ThreeDGrid}) = testwavenumberalignment(g.l, g.ny)
 testm(g::ThreeDGrid) = testwavenumberalignment(g.m, g.nz)
 testkr(g) = CUDA.@allowscalar isapprox(cat(g.k[1:g.nkr-1], abs(g.k[g.nkr]), dims=1), g.kr)
 
+function testgridpoints(dev::Device, g::OneDGrid{T}) where T
+  X = gridpoints(g)
+  dXgrid = @. X[2:end, :] - X[1:end-1, :]
+  dXones = ArrayType(dev)(g.dx*ones(T, size(dXgrid)))
+
+return isapprox(dXgrid, dXones)
+end
+
 function testgridpoints(dev::Device, g::TwoDGrid{T}) where T
   X, Y = gridpoints(g)
   dXgrid = @. X[2:end, :] - X[1:end-1, :]
