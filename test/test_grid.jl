@@ -52,7 +52,7 @@ function testgridpoints(dev::Device, g::OneDGrid{T}) where T
   dXgrid = @. X[2:end, :] - X[1:end-1, :]
   dXones = ArrayType(dev)(g.dx*ones(T, size(dXgrid)))
 
-return isapprox(dXgrid, dXones)
+  return isapprox(dXgrid, dXones)
 end
 
 function testgridpoints(dev::Device, g::TwoDGrid{T}) where T
