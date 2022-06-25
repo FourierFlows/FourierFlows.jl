@@ -359,11 +359,18 @@ TwoDGrid(dev::CPU, args...; kwargs...) = TwoDGrid(args...; ArrayType=Array, kwar
 ThreeDGrid(dev::CPU, args...; kwargs...) = ThreeDGrid(args...; ArrayType=Array, kwargs...)
 
 """
+    gridpoints(grid::OneDDGrid)
     gridpoints(grid::TwoDGrid)
     gridpoints(grid::ThreeDGrid)
 
-Returns the collocation points of the `grid` in 2D or 3D arrays `X, Y` (and `Z`).
+Returns the collocation points of the `grid` in 1D (`X`),  2D (`X, Y`) or 3D arrays (`X, Y, Z`).
 """
+function gridpoints(grid::OneDGrid{T, A}) where {T, A}
+  X = [ grid.x[i] for i=1:grid.nx ]
+
+  return A(X)
+end
+
 function gridpoints(grid::TwoDGrid{T, A}) where {T, A}
   X = [ grid.x[i₁] for i₁=1:grid.nx, i₂=1:grid.ny ]
   Y = [ grid.y[i₂] for i₁=1:grid.nx, i₂=1:grid.ny ] 

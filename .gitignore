@@ -22,3 +22,5 @@ coverage/
 # MacOS stuff
 *.DS_Store
 
+# vs code
+*.vscode
