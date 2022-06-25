@@ -59,7 +59,7 @@ function test_extenddiagnostic(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2)
   
   nsteps_initially₁ = length(soldiagnostic₁.t)
   nsteps_extend₁ = 12
-  FourierFlows.extend!(soldiagnostic₁, nsteps_extend1)
+  FourierFlows.extend!(soldiagnostic₁, nsteps_extend₁)
   
   nsteps_initially₂ = length(soldiagnostic₂.t)
   FourierFlows.extend!(soldiagnostic₂)
