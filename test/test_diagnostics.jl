@@ -85,7 +85,7 @@ function test_incrementdiagnostic(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2)
   
   FourierFlows.increment!(diagnostics)
   
-  return diagnostic₁.data[2]==2.0 && diagnostic₂.data[2]==2.0im
+  return diagnostic₁.data[2] == 2.0 && diagnostic₂.data[2] == 2.0im
 end
 
 function test_getindex(dev::Device=CPU(); nx=6, Lx=2π, κ=1e-2)

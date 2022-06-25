@@ -114,7 +114,7 @@ function test_savediagnostic(dev::Device=CPU())
   nsteps = 100
   freq = 1
   ndata = ceil(Int, (nsteps+1)/freq)
-  d = Diagnostic(getone, prob, nsteps, freq, ndata)
+  d = Diagnostic(getone, prob; nsteps, freq, ndata)
   stepforward!(prob, d, nsteps)
   expectedsteps = cat([0], freq:freq:nsteps, dims=1)
   
