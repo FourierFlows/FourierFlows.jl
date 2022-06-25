@@ -148,7 +148,7 @@ function test_ongrid(dev::Device)
   Lx, Ly, Lz = 2π, 2.0, 3.0
   
   g₁ = OneDGrid(dev, nx, Lx)
-  X₁ = ArrayType(dev)(g₁.x)
+  X₁ = gridpoints(g₁)
   f₁(x) = x^2
   
   g₂ = TwoDGrid(dev, nx, Lx, ny, Ly)

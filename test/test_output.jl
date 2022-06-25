@@ -8,16 +8,16 @@ end
 
 function test_uniquepath()
   path  = "foo.jld2"
-  path1 = "foo_1.jld2"
-  path2 = "foo_2.jld2"
-  for filename in (path, path1, path2)
+  path₁ = "foo_1.jld2"
+  path₂ = "foo_2.jld2"
+  for filename in (path, path₁, path₂)
     if isfile(filename); rm(filename); end
   end
   touch(path)
-  test1 = FourierFlows.uniquepath(path) == path1
-  touch(path1)
-  test2 = FourierFlows.uniquepath(path) == path2
-  return test1 && test2
+  test₁ = FourierFlows.uniquepath(path) == path₁
+  touch(path₁)
+  test₂ = FourierFlows.uniquepath(path) == path₂
+  return test₁ && test₂
 end
 
 function test_outputconstructor(dev::Device=CPU())
@@ -48,7 +48,7 @@ end
 
 function test_saveproblem_saveoutput(dev::Device=CPU())
   nx = 32
-  prob = Problem(dev; nx=nx, Lx=2π, κ=1e-2*ones(nx), dt=1e-7, stepper="ForwardEuler")
+  prob = Problem(dev; nx, Lx=2π, κ=1e-2*ones(nx), dt=1e-7, stepper="ForwardEuler")
   filename = joinpath(".", "testoutput.jld2")
   if isfile(filename); rm(filename); end
   
@@ -111,10 +111,10 @@ function test_savediagnostic(dev::Device=CPU())
 
   prob = Problem(dev; nx=6, Lx=2π)
   getone(prob) = 1
-  nsteps=100
-  freq=1
-  ndata=ceil(Int, (nsteps+1)/freq)
-  d = Diagnostic(getone, prob, nsteps=nsteps, freq=freq, ndata=ndata)
+  nsteps = 100
+  freq = 1
+  ndata = ceil(Int, (nsteps+1)/freq)
+  d = Diagnostic(getone, prob, nsteps, freq, ndata)
   stepforward!(prob, d, nsteps)
   expectedsteps = cat([0], freq:freq:nsteps, dims=1)
   
@@ -125,7 +125,7 @@ function test_savediagnostic(dev::Device=CPU())
   
   file = jldopen(filename)
   
-  return isfile(filename) && file["diags"]["mydiagnostic"]["steps"]==expectedsteps
+  return isfile(filename) && file["diags"]["mydiagnostic"]["steps"] == expectedsteps
 end
 
 struct TestbedParams{T, Trfft} <: AbstractParams
