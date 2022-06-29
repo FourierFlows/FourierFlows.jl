@@ -135,7 +135,7 @@ function create_testfuncs(g::ThreeDGrid{Tg,<:Array}) where Tg
     end
     f₂hr_analytical = -im*f₂hr_analytical;
 
-    f₁, f₂, f₁h, f₂h, f₁hr, f₂hr, f₁hr_mul, f₂hr_mul, f₁h_analytical, f₁hr_analytical, f₂h_analytical, f₂hr_analytical
+    return f₁, f₂, f₁h, f₂h, f₁hr, f₂hr, f₁hr_mul, f₂hr_mul, f₁h_analytical, f₁hr_analytical, f₂h_analytical, f₂hr_analytical
 end
 
 
@@ -143,18 +143,21 @@ if CUDA.has_cuda()
   function create_testfuncs(g::OneDGrid{Tg, <:CuArray}) where Tg
     cpugrid = OneDGrid(g.nx, g.Lx)
     out = create_testfuncs(cpugrid)
+    
     return map(x->CuArray(x), out)
   end
 
   function create_testfuncs(g::TwoDGrid{Tg, <:CuArray}) where Tg
     cpugrid = TwoDGrid(g.nx, g.Lx, g.ny, g.Ly)
     out = create_testfuncs(cpugrid)
+    
     return map(x->CuArray(x), out)
   end
 
   function create_testfuncs(g::ThreeDGrid{Tg, <:CuArray}) where Tg
     cpugrid = ThreeDGrid(g.nx, g.Lx, g.ny, g.Ly, g.nz, g.Lz)
     out = create_testfuncs(cpugrid)
+
     return map(x->CuArray(x), out)
   end
 end

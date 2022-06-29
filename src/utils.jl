@@ -211,8 +211,8 @@ symmetric form then only the upper-half plane in ``θ`` is represented on the po
 """
 function radialspectrum(fh, grid::TwoDGrid; n=nothing, m=nothing, refinement=2)
 
-  n = n == nothing ? refinement * maximum([grid.nk, grid.nl]) : n
-  m = m == nothing ? refinement * maximum([grid.nk, grid.nl]) : m
+  n = n === nothing ? refinement * maximum([grid.nk, grid.nl]) : n
+  m = m === nothing ? refinement * maximum([grid.nk, grid.nl]) : m
 
   # Calculate the shifted k and l
   lshift = range(-grid.nl/2, stop=grid.nl/2-1, length=grid.nl) * 2π/grid.Ly

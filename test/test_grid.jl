@@ -134,12 +134,14 @@ end
 
 function testnodealias(grid::OneDGrid)
   fh = ones(Complex{eltype(grid)}, size(grid.kr))
-  return dealias!(fh, grid) == nothing
+  
+  return dealias!(fh, grid) === nothing
 end
 
 function testnodealias(grid::Union{TwoDGrid, ThreeDGrid})
   fh = ones(Complex{eltype(grid)}, size(grid.Krsq))
-  return dealias!(fh, grid) == nothing
+
+  return dealias!(fh, grid) === nothing
 end
 
 function testtypedonedgrid(dev::Device, nx, Lx; T=Float64)
@@ -172,28 +174,28 @@ end
 
 function test_plan_flows_fftrfft(::CPU; T=Float64)
   A = ArrayType(CPU())
-  return (typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4,))))) <: FFTW.cFFTWPlan{Complex{T},-1,false,1} &&
-  typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6))))) <: FFTW.cFFTWPlan{Complex{T},-1,false,2} &&
-  typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))))) <: FFTW.cFFTWPlan{Complex{T},-1,false,3} &&
-  FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))), [1, 2]).region == [1, 2] &&
-  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4,))))) <: FFTW.rFFTWPlan{T,-1,false,1} &&
-  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6))))) <: FFTW.rFFTWPlan{T,-1,false,2} &&
-  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) <: FFTW.rFFTWPlan{T,-1,false,3} &&
-  
-  return FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2])
+
+  return typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4,))))) <: FFTW.cFFTWPlan{Complex{T},-1,false,1} &&
+         typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6))))) <: FFTW.cFFTWPlan{Complex{T},-1,false,2} &&
+         typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))))) <: FFTW.cFFTWPlan{Complex{T},-1,false,3} &&
+         FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))), [1, 2]).region == [1, 2] &&
+         typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4,))))) <: FFTW.rFFTWPlan{T,-1,false,1} &&
+         typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6))))) <: FFTW.rFFTWPlan{T,-1,false,2} &&
+         typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) <: FFTW.rFFTWPlan{T,-1,false,3} &&
+         FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2]
 end
 
 function test_plan_flows_fftrfft(::GPU; T=Float64)
   A = ArrayType(GPU())
-  return (typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4,))))) == CUDA.CUFFT.cCuFFTPlan{Complex{T},-1,false,1} &&
-  typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6))))) == CUDA.CUFFT.cCuFFTPlan{Complex{T},-1,false,2} &&
-  typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))))) == CUDA.CUFFT.cCuFFTPlan{Complex{T},-1,false,3} &&
-  FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))), [1, 2]).region == [1, 2] &&
-  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4,))))) == CUDA.CUFFT.rCuFFTPlan{T,-1,false,1} &&
-  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6))))) == CUDA.CUFFT.rCuFFTPlan{T,-1,false,2} &&
-  typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) == CUDA.CUFFT.rCuFFTPlan{T,-1,false,3} &&
-  
-  return FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2])
+
+  return typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4,))))) == CUDA.CUFFT.cCuFFTPlan{Complex{T},-1,false,1} &&
+         typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6))))) == CUDA.CUFFT.cCuFFTPlan{Complex{T},-1,false,2} &&
+         typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))))) == CUDA.CUFFT.cCuFFTPlan{Complex{T},-1,false,3} &&
+         FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))), [1, 2]).region == [1, 2] &&
+         typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4,))))) == CUDA.CUFFT.rCuFFTPlan{T,-1,false,1} &&
+         typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6))))) == CUDA.CUFFT.rCuFFTPlan{T,-1,false,2} &&
+         typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) == CUDA.CUFFT.rCuFFTPlan{T,-1,false,3} &&
+         FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2]
 end
 
 function test_aliased_fraction(dev, aliased_fraction)
@@ -214,8 +216,10 @@ function test_aliased_fraction(dev, aliased_fraction)
   lalias = aliased_fraction==0 ? nothing : lower_end(ny):upper_end(ny)
   malias = aliased_fraction==0 ? nothing : lower_end(nz):upper_end(nz)
     
-  return (g₁.aliased_fraction == aliased_fraction && g₂.aliased_fraction == aliased_fraction && 
-  g₃.aliased_fraction == aliased_fraction && g₁.kralias == kralias && g₁.kalias == kalias && 
-  g₂.kralias == kralias && g₂.kalias == kalias && g₂.lalias == lalias && g₃.kralias == kralias &&
-  g₃.kalias == kalias && g₃.lalias == lalias && g₃.malias == malias)
+  return g₁.aliased_fraction == aliased_fraction &&
+         g₂.aliased_fraction == aliased_fraction &&
+         g₃.aliased_fraction == aliased_fraction &&
+         g₁.kralias == kralias && g₁.kalias == kalias &&
+         g₂.kralias == kralias && g₂.kalias == kalias && g₂.lalias == lalias &&
+         g₃.kralias == kralias && g₃.kalias == kalias && g₃.lalias == lalias && g₃.malias == malias
 end
