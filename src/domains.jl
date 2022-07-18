@@ -537,7 +537,7 @@ show(io::IO, g::ThreeDGrid{T}) where T =
      print(io, "ThreeDimensionalGrid\n",
                "  ├───────────────────── Device: ", griddevice(g), '\n',
                "  ├────────────────── FloatType: $T", '\n', 
-               "  ├────────── size (Lx, Ly, Lz): ", (g.Lx, g.Ly, g.Ly), '\n',
+               "  ├────────── size (Lx, Ly, Lz): ", (g.Lx, g.Ly, g.Lz), '\n',
                "  ├──── resolution (nx, ny, nz): ", (g.nx, g.ny, g.nz), '\n',
                "  ├── grid spacing (dx, dy, dz): ", (g.dx, g.dy, g.dz), '\n',
                "  ├────────────────────  domain: x ∈ [$(g.x[1]), $(g.x[end])]", '\n',
