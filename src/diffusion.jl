@@ -50,7 +50,7 @@ function Problem(dev::Device=CPU();
            aliased_fraction = 0,
                           T = Float64)
 
-      grid = OneDGrid(dev, nx, Lx; aliased_fraction=aliased_fraction, T=T)
+      grid = OneDGrid(dev; nx, Lx, aliased_fraction=aliased_fraction, T)
     params = Params(dev, κ)
       vars = Vars(dev, grid)
   equation = Equation(dev, κ, grid)

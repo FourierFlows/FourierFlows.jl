@@ -8,7 +8,7 @@ DocTestSetup = quote
     using FourierFlows
     using LinearAlgebra: mul!, ldiv!
     nx, Lx = 32, 2.0
-    grid = OneDGrid(nx, Lx)
+    grid = OneDGrid(; nx, Lx)
     struct Params <: AbstractParams
     α :: Float64
     end
@@ -43,7 +43,7 @@ set_theme!(Theme(linewidth = 3, fontsize = 20))
 using LinearAlgebra: mul!
 
 nx, Lx = 32, 2.0
-grid = OneDGrid(nx, Lx)
+grid = OneDGrid(; nx, Lx)
 
 struct Params <: AbstractParams
   α :: Float64

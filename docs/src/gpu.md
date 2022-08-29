@@ -18,7 +18,7 @@ It's easy to construct a grid that lives on the GPU. Calling:
 ```julia
 dev = GPU()
 n, L = 16, 2.0
-grid = OneDGrid(dev, n, L)
+grid = OneDGrid(dev; n, L)
 
 OneDimensionalGrid
   ├─────────── Device: GPU
@@ -30,8 +30,8 @@ OneDimensionalGrid
   └─ aliased fraction: 0.3333333333333333
 ```
 
-gives out a grid whose arrays are `CuArrays`. (Calling `OneDGrid(n, L)` defaults to CPU, i.e., 
-`OneDGrid(CPU(), n, L)`.)
+gives out a grid whose arrays are `CuArrays`. (Calling `OneDGrid(; n, L)` defaults to CPU, i.e., 
+`OneDGrid(CPU(); n, L)`.)
 
 When we construct the `Params`, `Vars`, and `Equation` for our problem we need to make sure
 that we create arrays on the appropriate device, i.e., `Arrays` for `CPU` or `CuArrays` for

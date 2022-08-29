@@ -2,18 +2,15 @@ plan_flows_fft(a::Array, args...; kwargs...) = plan_fft(a, args...; kwargs...)
 plan_flows_rfft(a::Array, args...; kwargs...) = plan_rfft(a, args...; kwargs...)
 
 """
-A placeholder grid object for `0D` problems (in other words, systems of ODEs).
-"""
-struct ZeroDGrid{T, A, Alias} <: AbstractGrid{T, A, Alias} end
-
-"""
-    struct OneDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T, Tk, Talias}
+    OneDGrid{T<:AbstractFloat, A, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T, A, Talias, D}
 
 A one-dimensional `grid`.
 
 $(TYPEDFIELDS)
 """
-struct OneDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T, Tk, Talias}
+struct OneDGrid{T<:AbstractFloat, A, R, Tfft, Trfft, Talias, D} <: AbstractGrid{T, A, Talias, D}
+    "device on which the grid lives on"
+            device :: D
     "number of points in ``x``"
                 nx :: Int
     "number of wavenumbers in ``x``"
@@ -25,15 +22,15 @@ struct OneDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T
     "domain extent in ``x``"
                 Lx :: T
     "range with ``x``-grid-points"
-                 x :: Tx     
+                 x :: R
     "array with ``x``-wavenumbers"
-                 k :: Tk
+                 k :: A
     "array with positive ``x``-wavenumbers (real Fourier transforms)"
-                kr :: Tk
+                kr :: A
     "array with inverse squared ``k``-wavenumbers, ``1 / k²``"
-            invksq :: Tk
+            invksq :: A
     "array with inverse squared ``kᵣ``-wavenumbers, ``1 / kᵣ²``"
-           invkrsq :: Tk
+           invkrsq :: A
     "the FFT plan for complex-valued fields"
            fftplan :: Tfft
     "the FFT plan for real-valued fields"
@@ -47,22 +44,24 @@ struct OneDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T
 end
 
 """
-    OneDGrid(nx, Lx;
-             x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, 
-             T=Float64, aliased_fraction=1/3, ArrayType=Array)
+    OneDGrid(dev::Device = CPU();
+             nx, Lx,
+             x0 = -Lx/2, nthreads = Sys.CPU_THREADS, effort = FFTW.MEASURE, 
+             T = Float64, aliased_fraction = 1/3)
 
-Constructs a `OneDGrid` object with size `Lx`, resolution `nx`, and leftmost position `x0`. 
-FFT plans are generated for `nthreads` CPUs using FFTW flag `effort`. The float type is `T` 
-and the array types is `ArrayType`. The `aliased_fraction` keyword determines the highest 
-wavenubers that are being zero-ed out by `dealias!` function; 1/3 is the nominal value for 
-quadratic nonlinearities. 
+
+Construct a `OneDGrid` on `dev`ice; by default on `CPU()`. Grid size is `Lx`, resolution is `nx`, 
+and leftmost position is `x0`. FFT plans are generated for `nthreads` CPUs using FFTW flag `effort`.
+The float type is `T`. The `aliased_fraction` keyword determines the highest wavenubers that are
+being zero-ed out by `dealias!` function; 1/3 is the nominal value for quadratic nonlinearities. 
 """
-function OneDGrid(nx, Lx;
-                  x0=-Lx/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, 
-                  T=Float64, aliased_fraction=1/3, ArrayType=Array)
+function OneDGrid(dev::Device = CPU();
+                  nx, Lx,
+                  x0 = -Lx/2, nthreads = Sys.CPU_THREADS, effort = FFTW.MEASURE, 
+                  T = Float64, aliased_fraction = 1/3)
 
   dx = Lx/nx
-    
+
    nk = nx
   nkr = Int(nx/2 + 1)
 
@@ -70,8 +69,8 @@ function OneDGrid(nx, Lx;
   x = range(T(x0), step=T(dx), length=nx)
 
   # Wavenubmer grid
-   k = ArrayType{T}( fftfreq(nx, 2π/Lx*nx))
-  kr = ArrayType{T}(rfftfreq(nx, 2π/Lx*nx))
+   k = ArrayType(dev){T}( fftfreq(nx, 2π/Lx*nx))
+  kr = ArrayType(dev){T}(rfftfreq(nx, 2π/Lx*nx))
 
    invksq = @. 1 / k^2
   invkrsq = @. 1 / kr^2
@@ -79,31 +78,34 @@ function OneDGrid(nx, Lx;
   CUDA.@allowscalar invkrsq[1] = 0
 
   FFTW.set_num_threads(nthreads)
-   fftplan = plan_flows_fft(ArrayType{Complex{T}, 1}(undef, nx), flags=effort)
-  rfftplan = plan_flows_rfft(ArrayType{T, 1}(undef, nx), flags=effort)
+   fftplan = plan_flows_fft(ArrayType(dev){Complex{T}, 1}(undef, nx), flags=effort)
+  rfftplan = plan_flows_rfft(ArrayType(dev){T, 1}(undef, nx), flags=effort)
 
   kalias, kralias = getaliasedwavenumbers(nk, nkr, aliased_fraction)
 
-  Tx = typeof(x)
-  Tk = typeof(k)
+  R = typeof(x)
+  A = typeof(k)
   Tfft = typeof(fftplan)
   Trfft = typeof(rfftplan)
   Talias = typeof(kalias)
+  D = typeof(dev)
    
-  return OneDGrid{T, Tk, Tx, Tfft, Trfft, Talias}(nx, nk, nkr, dx, Lx, x, k, kr, 
-                                                  invksq, invkrsq, fftplan, rfftplan,
-                                                  aliased_fraction, kalias, kralias)
+  return OneDGrid{T, A, R, Tfft, Trfft, Talias, D}(dev, nx, nk, nkr, dx, Lx, x, k, kr, 
+                                                   invksq, invkrsq, fftplan, rfftplan,
+                                                   aliased_fraction, kalias, kralias)
 end
 
 
 """
-    struct TwoDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T, Tk, Talias}
+    struct TwoDGrid{T<:AbstractFloat, A, Tx, Tfft, Trfft, Talias, D} <: AbstractGrid{T, Tk, Talias, D}
 
 A two-dimensional `grid`.
 
 $(TYPEDFIELDS)
 """
-struct TwoDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T, Tk, Talias}
+struct TwoDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias, D} <: AbstractGrid{T, Tk, Talias, D}
+    "device on which the grid lives on"
+           device :: D
     "number of points in ``x``"
                nx :: Int
     "number of points in ``y``"
@@ -155,19 +157,19 @@ struct TwoDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T
 end
 
 """
-    TwoDGrid(nx, Lx, ny=nx, Ly=Lx;
+    TwoDGrid(dev::Device=CPU(); nx, Lx, ny=nx, Ly=Lx,
              x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE,
-             T=Float64, aliased_fraction=1/3, ArrayType=Array)
+             T=Float64, aliased_fraction=1/3)
 
-Constructs a `TwoDGrid` object with size `Lx`, `Ly`, resolution `nx`, `ny`, and leftmost
-positions `x0`, `y0`. FFT plans are generated for `nthreads` CPUs using FFTW flag `effort`. 
-The float type is `T` and the array types is `ArrayType`. The `aliased_fraction` keyword 
-determines the highest wavenubers that are being zero-ed out by `dealias!` function; 1/3 is 
-the nominal value for quadratic nonlinearities. 
+Construct a `TwoDGrid` on `dev`ice; by default on `CPU()`. Grid size is `Lx`, `Ly`, resolution
+is `nx`, `ny`, and leftmost positions are `x0`, `y0`. FFT plans are generated for `nthreads` CPUs using
+FFTW flag `effort`. The float type is `T`. The `aliased_fraction` keyword determines the highest
+wavenubers that are being zero-ed out by `dealias!` function; 1/3 is the nominal value for quadratic
+nonlinearities. 
 """
-function TwoDGrid(nx, Lx, ny=nx, Ly=Lx;
+function TwoDGrid(dev::Device=CPU(); nx, Lx, ny=nx, Ly=Lx,
                   x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE,
-                  T=Float64, aliased_fraction=1/3, ArrayType=Array)
+                  T=Float64, aliased_fraction=1/3)
 
   dx = Lx/nx
   dy = Ly/ny
@@ -181,9 +183,9 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx;
   y = range(T(y0), step=T(dy), length=ny)
 
   # Wavenubmer grid
-   k = ArrayType{T}(reshape( fftfreq(nx, 2π/Lx*nx), (nk, 1)))
-   l = ArrayType{T}(reshape( fftfreq(ny, 2π/Ly*ny), (1, nl)))
-  kr = ArrayType{T}(reshape(rfftfreq(nx, 2π/Lx*nx), (nkr, 1)))
+   k = ArrayType(dev){T}(reshape( fftfreq(nx, 2π/Lx*nx), (nk, 1)))
+   l = ArrayType(dev){T}(reshape( fftfreq(ny, 2π/Ly*ny), (1, nl)))
+  kr = ArrayType(dev){T}(reshape(rfftfreq(nx, 2π/Lx*nx), (nkr, 1)))
 
      Ksq = @. k^2 + l^2
   invKsq = @. 1 / Ksq
@@ -195,21 +197,22 @@ function TwoDGrid(nx, Lx, ny=nx, Ly=Lx;
 
   # FFT plans
   FFTW.set_num_threads(nthreads)
-  fftplan = plan_flows_fft(ArrayType{Complex{T}, 2}(undef, nx, ny), flags=effort)
-  rfftplan = plan_flows_rfft(ArrayType{T, 2}(undef, nx, ny), flags=effort)
+  fftplan = plan_flows_fft(ArrayType(dev){Complex{T}, 2}(undef, nx, ny), flags=effort)
+  rfftplan = plan_flows_rfft(ArrayType(dev){T, 2}(undef, nx, ny), flags=effort)
 
   kalias, kralias = getaliasedwavenumbers(nk, nkr, aliased_fraction)
   lalias, _ = getaliasedwavenumbers(nl, nl, aliased_fraction)
   
-  Tx = typeof(x)
-  Tk = typeof(k)
+  R = typeof(x)
+  A = typeof(k)
   Tfft = typeof(fftplan)
   Trfft = typeof(rfftplan)
   Talias = typeof(kalias)
+  D = typeof(dev)
 
-  return TwoDGrid{T, Tk, Tx, Tfft, Trfft, Talias}(nx, ny, nk, nl, nkr, dx, dy, Lx, Ly, x, y, k, l, kr, 
-                                                  Ksq, invKsq, Krsq, invKrsq, fftplan, rfftplan,
-                                                  aliased_fraction, kalias, kralias, lalias)
+  return TwoDGrid{T, A, R, Tfft, Trfft, Talias, D}(dev, nx, ny, nk, nl, nkr, dx, dy, Lx, Ly, x, y, k, l, kr, 
+                                                   Ksq, invKsq, Krsq, invKrsq, fftplan, rfftplan,
+                                                   aliased_fraction, kalias, kralias, lalias)
 end
 
 """
@@ -219,7 +222,9 @@ A three-dimensional `grid`.
 
 $(TYPEDFIELDS)
 """
-struct ThreeDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T, Tk, Talias}
+struct ThreeDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias, D} <: AbstractGrid{T, Tk, Talias, D}
+    "device on which the grid lives on"
+           device :: D
     "number of points in ``x``"
                nx :: Int
     "number of points in ``y``"
@@ -285,21 +290,21 @@ struct ThreeDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias} <: AbstractGrid
 end
 
 """
-    ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx;
+    ThreeDGrid(dev::Device=CPU(); nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx,
                x0=-Lx/2, y0=-Ly/2, z0=-Lz/2,
                nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64,
-               aliased_fraction=1/3, ArrayType=Array)
+               aliased_fraction=1/3)
 
- Constructs a `ThreeDGrid` object with size `Lx`, `Ly`, `Lz`, resolution `nx`, `ny`, `nz` and 
- leftmost positions `x0`, `y0`, `z0`. FFT plans are generated for `nthreads` CPUs using FFTW 
- flag `effort`. The float type is `T` and the array types is `ArrayType`. The `aliased_fraction` 
- keyword determines the highest wavenubers that are being zero-ed out by `dealias!` function; 
- 1/3 is the nominal value for quadratic nonlinearities. 
+Construct a `ThreeDGrid` on `dev`ice; by default on `CPU()`. Grid size is `Lx`, `Ly`, `Lz`, resolution
+is `nx`, `ny`, `nz` and leftmost positions are `x0`, `y0`, `z0`. FFT plans are generated for `nthreads`
+CPUs using FFTW flag `effort`. The float type is `T`. The `aliased_fraction` keyword determines the
+highest wavenubers that are being zero-ed out by `dealias!` function; 1/3 is the nominal value for
+quadratic nonlinearities. 
 """
-function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx;
+function ThreeDGrid(dev::Device=CPU(); nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx,
                     x0=-Lx/2, y0=-Ly/2, z0=-Lz/2,
                     nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64,
-                    aliased_fraction=1/3, ArrayType=Array)
+                    aliased_fraction=1/3)
 
   dx = Lx/nx
   dy = Ly/ny
@@ -316,10 +321,10 @@ function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx;
   z = range(T(z0), step=T(dz), length=nz)
 
   # Wavenubmer grid
-   k = ArrayType{T}(reshape( fftfreq(nx, 2π/Lx*nx), (nk, 1, 1)))
-   l = ArrayType{T}(reshape( fftfreq(ny, 2π/Ly*ny), (1, nl, 1)))
-   m = ArrayType{T}(reshape( fftfreq(nz, 2π/Lz*nz), (1, 1, nm)))
-  kr = ArrayType{T}(reshape(rfftfreq(nx, 2π/Lx*nx), (nkr, 1, 1)))
+   k = ArrayType(dev){T}(reshape( fftfreq(nx, 2π/Lx*nx), (nk, 1, 1)))
+   l = ArrayType(dev){T}(reshape( fftfreq(ny, 2π/Ly*ny), (1, nl, 1)))
+   m = ArrayType(dev){T}(reshape( fftfreq(nz, 2π/Lz*nz), (1, 1, nm)))
+  kr = ArrayType(dev){T}(reshape(rfftfreq(nx, 2π/Lx*nx), (nkr, 1, 1)))
 
      Ksq = @. k^2 + l^2 + m^2
   invKsq = @. 1 / Ksq
@@ -331,20 +336,21 @@ function ThreeDGrid(nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx;
 
   # FFT plans
   FFTW.set_num_threads(nthreads)
-  fftplan = plan_flows_fft(ArrayType{Complex{T}, 3}(undef, nx, ny, nz), flags=effort)
-  rfftplan = plan_flows_rfft(ArrayType{T, 3}(undef, nx, ny, nz), flags=effort)
+  fftplan = plan_flows_fft(ArrayType(dev){Complex{T}, 3}(undef, nx, ny, nz), flags=effort)
+  rfftplan = plan_flows_rfft(ArrayType(dev){T, 3}(undef, nx, ny, nz), flags=effort)
 
   kalias, kralias = getaliasedwavenumbers(nk, nkr, aliased_fraction)
   lalias, _ = getaliasedwavenumbers(nl, Int(nl/2+1), aliased_fraction)
   malias, _ = getaliasedwavenumbers(nm, Int(nm/2+1), aliased_fraction)
   
-  Tx = typeof(x)
-  Tk = typeof(k)
+  R = typeof(x)
+  A = typeof(k)
   Tfft = typeof(fftplan)
   Trfft = typeof(rfftplan)
   Talias = typeof(kalias)
+  D = typeof(dev)
 
-  return ThreeDGrid{T, Tk, Tx, Tfft, Trfft, Talias}(nx, ny, nz, nk, nl, nm, nkr,
+  return ThreeDGrid{T, A, R, Tfft, Trfft, Talias, D}(dev, nx, ny, nz, nk, nl, nm, nkr,
                                                     dx, dy, dz, Lx, Ly, Lz, x, y, z, k, l, m, kr,
                                                     Ksq, invKsq, Krsq, invKrsq, fftplan, rfftplan, 
                                                     aliased_fraction, kalias, kralias, lalias, malias)
@@ -353,10 +359,6 @@ end
 Base.eltype(grid::OneDGrid) = eltype(grid.x)
 Base.eltype(grid::TwoDGrid) = eltype(grid.x)
 Base.eltype(grid::ThreeDGrid) = eltype(grid.x)
-
-OneDGrid(dev::CPU, args...; kwargs...) = OneDGrid(args...; ArrayType=Array, kwargs...)
-TwoDGrid(dev::CPU, args...; kwargs...) = TwoDGrid(args...; ArrayType=Array, kwargs...)
-ThreeDGrid(dev::CPU, args...; kwargs...) = ThreeDGrid(args...; ArrayType=Array, kwargs...)
 
 """
     gridpoints(grid::OneDDGrid)

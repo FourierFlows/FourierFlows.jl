@@ -79,7 +79,7 @@ function test_saveproblemTwoDGrid(dev::Device=CPU())
        dt = 1e-7
   stepper = "ForwardEuler"
 
-     grid = TwoDGrid(dev, nx, Lx)
+     grid = TwoDGrid(dev; nx, Lx)
    params = FourierFlows.Diffusion.Params(dev, κ)
      vars = FourierFlows.Diffusion.Vars(dev, grid)
      
@@ -137,7 +137,7 @@ end
 function test_savefields(dev::Device=CPU(); parameter=2.2)  
   func(x) = sin(x^2)
   
-  grid = TwoDGrid(dev, 6, 2π)
+  grid = TwoDGrid(dev; nx=6, Lx=2π)
   plan = grid.rfftplan
   
   params = TestbedParams(parameter, func, plan)

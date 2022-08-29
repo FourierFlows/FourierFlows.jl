@@ -145,19 +145,19 @@ function testnodealias(grid::Union{TwoDGrid, ThreeDGrid})
 end
 
 function testtypedonedgrid(dev::Device, nx, Lx; T=Float64)
-  grid = OneDGrid(nx, Lx, T=T)
+  grid = OneDGrid(; nx, Lx, T)
   
   return typeof(grid.dx)==T && typeof(grid.x[1])==T && typeof(grid.Lx)==T && eltype(grid) == T
 end
 
 function testtypedtwodgrid(dev::Device, nx, Lx, ny=Lx, Ly=Lx; T=Float64)
-  grid = TwoDGrid(nx, Lx, ny, Ly, T=T)
+  grid = TwoDGrid(; nx, Lx, ny, Ly, T)
   
   return typeof(grid.dx)==T && typeof(grid.dy)==T && typeof(grid.x[1])==T && typeof(grid.y[1])==T && typeof(grid.Lx)==T && typeof(grid.Ly)==T && eltype(grid) == T
 end
 
 function testtypedthreedgrid(dev::Device, nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; T=Float64)
-  grid = ThreeDGrid(nx, Lx, ny, Ly, nz, Lz, T=T)
+  grid = ThreeDGrid(; nx, Lx, ny, Ly, nz, Lz, T)
   
   return typeof(grid.dx)==T && typeof(grid.dy)==T && typeof(grid.dz)==T && typeof(grid.x[1])==T && typeof(grid.y[1])==T && typeof(grid.z[1])==T && typeof(grid.Lx)==T && typeof(grid.Ly)==T && typeof(grid.Lz)==T && eltype(grid) == T
 end
@@ -203,9 +203,9 @@ function test_aliased_fraction(dev, aliased_fraction)
   ny, Ly = 32, 2π
   nz, Lz = 34, 2π
   
-  g₁ = OneDGrid(nx, Lx; aliased_fraction = aliased_fraction)
-  g₂ = TwoDGrid(nx, Lx, ny, Ly; aliased_fraction = aliased_fraction)
-  g₃ = ThreeDGrid(nx, Lx, ny, Ly, nz, Lz; aliased_fraction = aliased_fraction)
+  g₁ = OneDGrid(; nx, Lx, aliased_fraction)
+  g₂ = TwoDGrid(; nx, Lx, ny, Ly, aliased_fraction)
+  g₃ = ThreeDGrid(; nx, Lx, ny, Ly, nz, Lz, aliased_fraction)
 
   lower_end(n) = floor(Int, (1 - aliased_fraction)/2 * n) + 1
   upper_end(n) = ceil(Int, (1 + aliased_fraction)/2 * n)

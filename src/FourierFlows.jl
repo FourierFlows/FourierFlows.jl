@@ -77,7 +77,7 @@ using Base: fieldnames
 using FFTW: fftfreq, rfftfreq
 
 "Abstract supertype for grids."
-abstract type AbstractGrid{T, A, Alias} end
+abstract type AbstractGrid{T, A, Talias, D} end
 
 "Abstract supertype for timesteppers."
 abstract type AbstractTimeStepper{T} end
@@ -91,7 +91,7 @@ abstract type AbstractVars end
 "Abstract supertype for diagnostics."
 abstract type AbstractDiagnostic end
 
-"Abstract supertype for device."
+"Abstract supertype for supported devices."
 abstract type Device end
 
 "CPU device."

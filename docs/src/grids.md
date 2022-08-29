@@ -19,7 +19,7 @@ using FourierFlows
 
 nx, Lx = 64, 2π
 
-grid = OneDGrid(nx, Lx)
+grid = OneDGrid(; nx, Lx)
 
 # output
 
