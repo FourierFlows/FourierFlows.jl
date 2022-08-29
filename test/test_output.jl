@@ -112,11 +112,11 @@ function test_savediagnostic(dev::Device=CPU())
   prob = Problem(dev; nx=6, Lx=2π)
   getone(prob) = 1
   nsteps = 100
-  freq = 1
+  freq = 2
   ndata = ceil(Int, (nsteps+1)/freq)
   d = Diagnostic(getone, prob; nsteps, freq, ndata)
   
-  nsteps = 105 #just to check what happens if we time-step a bit longer than the size of the diagnostic
+  nsteps += 5 #to check what happens if we time-step a bit longer than the size of the diagnostic
   stepforward!(prob, d, nsteps)
   expectedsteps = cat([0], freq:freq:nsteps, dims=1)
   
