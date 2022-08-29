@@ -148,7 +148,7 @@ saveproblem(out::Output) = saveproblem(out.prob, out.path)
     savediagnostic(diagnostic, diagname, filename)
 
 Save `diagnostic` to `filename` under name `diagname`. Only the computed diagnostic
-is saved, that is, everything up to diagnostic's iteration `diagnostics.i`.
+is saved, that is, everything up to diagnostic's iteration `diagnostic.i`.
 """
 function savediagnostic(diagnostic, diagname, filename)
   jldopen(filename, "a+") do file
