@@ -108,13 +108,15 @@ end
 function test_savediagnostic(dev::Device=CPU())
   filename = joinpath(".", "testoutput.jld2")
   if isfile(filename); GC.gc(); rm(filename); end
-
+  
   prob = Problem(dev; nx=6, Lx=2π)
   getone(prob) = 1
   nsteps = 100
   freq = 1
   ndata = ceil(Int, (nsteps+1)/freq)
   d = Diagnostic(getone, prob; nsteps, freq, ndata)
+  
+  nsteps = 105 #just to check what happens if we time-step a bit longer than the size of the diagnostic
   stepforward!(prob, d, nsteps)
   expectedsteps = cat([0], freq:freq:nsteps, dims=1)
   
@@ -125,7 +127,9 @@ function test_savediagnostic(dev::Device=CPU())
   
   file = jldopen(filename)
   
-  return isfile(filename) && file["diags"]["mydiagnostic"]["steps"] == expectedsteps
+  return isfile(filename) &&
+         file["diags"]["mydiagnostic"]["steps"] == expectedsteps &&
+         file["diags"]["mydiagnostic"]["data"] == d.data[1:d.i]
 end
 
 struct TestbedParams{T, Trfft} <: AbstractParams
