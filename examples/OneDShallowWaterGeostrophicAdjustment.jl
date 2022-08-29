@@ -227,7 +227,7 @@ nothing # hide
 # give them all as input to the `FourierFlows.Problem()` constructor to get a
 # problem struct, `prob`, that contains all of the above.
 
-    grid = OneDGrid(dev, nx, Lx)
+    grid = OneDGrid(dev; nx, Lx)
   params = Params(ν, nν, g, H, f)
     vars = Vars(dev, grid)
 equation = Equation(dev, params, grid)
