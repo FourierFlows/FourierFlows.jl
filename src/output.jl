@@ -145,15 +145,16 @@ end
 saveproblem(out::Output) = saveproblem(out.prob, out.path)
 
 """
-    savediagnostic(diag, diagname, filename)
+    savediagnostic(diagnostic, diagname, filename)
 
-Save diagnostics in `diag` to `filename`, labeled by `diagname`.
+Save `diagnostic` to `filename` under name `diagname`. Only the computed diagnostic
+is saved, that is, everything up to diagnostic's iteration `diagnostic.i`.
 """
-function savediagnostic(diag, diagname, filename)
+function savediagnostic(diagnostic, diagname, filename)
   jldopen(filename, "a+") do file
-    file["diags/$diagname/steps"] = diag.steps
-    file["diags/$diagname/t"] = diag.t
-    file["diags/$diagname/data"] = diag.data
+    file["diagnostics/$diagname/steps"] = diagnostic.steps[1:diagnostic.i]
+    file["diagnostics/$diagname/t"] = diagnostic.t[1:diagnostic.i]
+    file["diagnostics/$diagname/data"] = diagnostic.data[1:diagnostic.i]
   end
   
   return nothing
