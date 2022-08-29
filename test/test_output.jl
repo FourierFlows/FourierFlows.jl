@@ -128,8 +128,8 @@ function test_savediagnostic(dev::Device=CPU())
   file = jldopen(filename)
   
   return isfile(filename) &&
-         file["diags"]["mydiagnostic"]["steps"] == expectedsteps &&
-         file["diags"]["mydiagnostic"]["data"] == d.data[1:d.i]
+         file["diagnostics"]["mydiagnostic"]["steps"] == expectedsteps &&
+         file["diagnostics"]["mydiagnostic"]["data"] == d.data[1:d.i]
 end
 
 struct TestbedParams{T, Trfft} <: AbstractParams
