@@ -2,7 +2,7 @@ plan_flows_fft(a::Array, args...; kwargs...) = plan_fft(a, args...; kwargs...)
 plan_flows_rfft(a::Array, args...; kwargs...) = plan_rfft(a, args...; kwargs...)
 
 """
-    OneDGrid{T<:AbstractFloat, A, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T, A, Talias, D}
+    struct OneDGrid{T<:AbstractFloat, A, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T, A, Talias, D}
 
 A one-dimensional `grid`.
 
@@ -201,7 +201,7 @@ function TwoDGrid(dev::Device=CPU(); nx, Lx, ny=nx, Ly=Lx,
   rfftplan = plan_flows_rfft(ArrayType(dev){T, 2}(undef, nx, ny), flags=effort)
 
   kalias, kralias = getaliasedwavenumbers(nk, nkr, aliased_fraction)
-  lalias, _ = getaliasedwavenumbers(nl, nl, aliased_fraction)
+  lalias, _       = getaliasedwavenumbers(nl, nl,  aliased_fraction)
   
   R = typeof(x)
   A = typeof(k)
@@ -339,9 +339,9 @@ function ThreeDGrid(dev::Device=CPU(); nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx,
   fftplan = plan_flows_fft(ArrayType(dev){Complex{T}, 3}(undef, nx, ny, nz), flags=effort)
   rfftplan = plan_flows_rfft(ArrayType(dev){T, 3}(undef, nx, ny, nz), flags=effort)
 
-  kalias, kralias = getaliasedwavenumbers(nk, nkr, aliased_fraction)
-  lalias, _ = getaliasedwavenumbers(nl, Int(nl/2+1), aliased_fraction)
-  malias, _ = getaliasedwavenumbers(nm, Int(nm/2+1), aliased_fraction)
+  kalias, kralias = getaliasedwavenumbers(nk, nkr,         aliased_fraction)
+  lalias, _       = getaliasedwavenumbers(nl, Int(nl/2+1), aliased_fraction)
+  malias, _       = getaliasedwavenumbers(nm, Int(nm/2+1), aliased_fraction)
   
   R = typeof(x)
   A = typeof(k)
@@ -365,7 +365,7 @@ Base.eltype(grid::ThreeDGrid) = eltype(grid.x)
     gridpoints(grid::TwoDGrid)
     gridpoints(grid::ThreeDGrid)
 
-Returns the collocation points of the `grid` in 1D (`X`),  2D (`X, Y`) or 3D arrays (`X, Y, Z`).
+Return the collocation points of the `grid` in 1D (`X`),  2D (`X, Y`) or 3D arrays (`X, Y, Z`).
 """
 function gridpoints(grid::OneDGrid{T, A}) where {T, A}
   X = [ grid.x[i] for i=1:grid.nx ]
@@ -391,7 +391,7 @@ end
 """
     getaliasedwavenumbers(nk, nkr, aliased_fraction)
 
-Returns the top `aliased_fraction` highest wavenumbers, both for and real FFTs, `kalias` and 
+Return the top `aliased_fraction` highest wavenumbers, both for and real FFTs, `kalias` and 
 `kralias` respectively. For example, `aliased_fraction=1/3` should return the indices of the 
 top-most 1/6-th (in absolute value) for both positive and negative wavenumbers (i.e., 1/3 total) 
 that should be set to zero after performing an FFT. 
@@ -422,7 +422,7 @@ function dealias!(fh, grid)
    return nothing
 end
 
-dealias!(fh, grid::AbstractGrid{T, A, Nothing}) where {T, A} = nothing
+dealias!(::Any, ::AbstractGrid{T, A, Nothing}) where {T, A} = nothing
 
 function _dealias!(fh, grid::OneDGrid)
   kalias = size(fh, 1) == grid.nkr ? grid.kralias : grid.kalias
@@ -469,7 +469,7 @@ end
 """
     makefilter(K; order=4, innerK=0.65, outerK=1)
 
-Returns a filter acting on the non-dimensional wavenumber `K` that decays exponentially
+Return a filter acting on the non-dimensional wavenumber `K` that decays exponentially
 for `K > innerK`, thus removing high-wavenumber content from a spectrum it is multiplied
 with. The decay rate is determined by order and `outerK` determines the outer wavenumber
 at which the filter is smaller than `Float64` machine precision.
@@ -507,42 +507,35 @@ end
 makefilter(g, T, sz; kwargs...) = ones(T, sz) .* makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
 makefilter(eq; kwargs...) = makefilter(eq.grid, fltype(eq.T), eq.dims; kwargs...)
 
-"""
-    griddevice(grid)
-
-Returns the device on which the `grid` lives on.
-"""
-griddevice(grid::AbstractGrid{T, A}) where {T, A} = A<:Array ? "CPU" : "GPU"
-
 show(io::IO, g::OneDGrid{T}) where T =
      print(io, "OneDimensionalGrid\n",
-               "  ├─────────── Device: ", griddevice(g), '\n',
-               "  ├──────── FloatType: $T", '\n', 
-               "  ├────────── size Lx: ", g.Lx, '\n',
-               "  ├──── resolution nx: ", g.nx, '\n',
-               "  ├── grid spacing dx: ", g.dx, '\n',
-               "  ├─────────── domain: x ∈ [$(g.x[1]), $(g.x[end])]", '\n',
+               "  ├─────────── Device: ", typeof(g.device), "\n",
+               "  ├──────── FloatType: $T", "\n",
+               "  ├────────── size Lx: ", g.Lx, "\n",
+               "  ├──── resolution nx: ", g.nx, "\n",
+               "  ├── grid spacing dx: ", g.dx, "\n",
+               "  ├─────────── domain: x ∈ [$(g.x[1]), $(g.x[end])]", "\n",
                "  └─ aliased fraction: ", g.aliased_fraction)
 
 show(io::IO, g::TwoDGrid{T}) where T =
      print(io, "TwoDimensionalGrid\n",
-               "  ├───────────────── Device: ", griddevice(g), '\n',
-               "  ├────────────── FloatType: $T", '\n', 
-               "  ├────────── size (Lx, Ly): ", (g.Lx, g.Ly), '\n',
-               "  ├──── resolution (nx, ny): ", (g.nx, g.ny), '\n',
-               "  ├── grid spacing (dx, dy): ", (g.dx, g.dy), '\n',
-               "  ├───────────────── domain: x ∈ [$(g.x[1]), $(g.x[end])]", '\n',
-               "  |                          y ∈ [$(g.y[1]), $(g.y[end])]", '\n',
+               "  ├───────────────── Device: ", typeof(g.device), "\n",
+               "  ├────────────── FloatType: $T", "\n",
+               "  ├────────── size (Lx, Ly): ", (g.Lx, g.Ly), "\n",
+               "  ├──── resolution (nx, ny): ", (g.nx, g.ny), "\n",
+               "  ├── grid spacing (dx, dy): ", (g.dx, g.dy), "\n",
+               "  ├───────────────── domain: x ∈ [$(g.x[1]), $(g.x[end])]", "\n",
+               "  |                          y ∈ [$(g.y[1]), $(g.y[end])]", "\n",
                "  └─ aliased fraction: ", g.aliased_fraction)
 
 show(io::IO, g::ThreeDGrid{T}) where T =
      print(io, "ThreeDimensionalGrid\n",
-               "  ├───────────────────── Device: ", griddevice(g), '\n',
-               "  ├────────────────── FloatType: $T", '\n', 
-               "  ├────────── size (Lx, Ly, Lz): ", (g.Lx, g.Ly, g.Lz), '\n',
-               "  ├──── resolution (nx, ny, nz): ", (g.nx, g.ny, g.nz), '\n',
-               "  ├── grid spacing (dx, dy, dz): ", (g.dx, g.dy, g.dz), '\n',
-               "  ├────────────────────  domain: x ∈ [$(g.x[1]), $(g.x[end])]", '\n',
-               "  |                              y ∈ [$(g.y[1]), $(g.y[end])]", '\n',
-               "  |                              z ∈ [$(g.z[1]), $(g.z[end])]", '\n',
+               "  ├───────────────────── Device: ", typeof(g.device), "\n",
+               "  ├────────────────── FloatType: $T", "\n",
+               "  ├────────── size (Lx, Ly, Lz): ", (g.Lx, g.Ly, g.Lz), "\n",
+               "  ├──── resolution (nx, ny, nz): ", (g.nx, g.ny, g.nz), "\n",
+               "  ├── grid spacing (dx, dy, dz): ", (g.dx, g.dy, g.dz), "\n",
+               "  ├────────────────────  domain: x ∈ [$(g.x[1]), $(g.x[end])]", "\n",
+               "  |                              y ∈ [$(g.y[1]), $(g.y[end])]", "\n",
+               "  |                              z ∈ [$(g.z[1]), $(g.z[end])]", "\n",
                "  └─ aliased fraction: ", g.aliased_fraction)

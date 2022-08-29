@@ -117,10 +117,10 @@ getindex(d::Diagnostic, idx...) = getindex(d.data, idx...)
 
 show(io::IO, d::Diagnostic{T, N}) where {T, N} =
      print(io, "Diagnostic\n",
-               "  ├─── calc: ", d.calc, '\n',
-               "  ├─── prob: ", summary(d.prob), '\n', 
-               "  ├─── data: ", summary(d.data), '\n', 
-               "  ├────── t: ", summary(d.t), '\n', 
-               "  ├── steps: ", summary(d.steps), '\n', 
-               "  ├─── freq: ", d.freq, '\n', 
+               "  ├─── calc: ", d.calc, "\n",
+               "  ├─── prob: ", summary(d.prob), "\n",
+               "  ├─── data: ", summary(d.data), "\n",
+               "  ├────── t: ", summary(d.t), "\n",
+               "  ├── steps: ", summary(d.steps), "\n",
+               "  ├─── freq: ", d.freq, "\n",
                "  └────── i: ", d.i)
