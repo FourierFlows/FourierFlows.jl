@@ -126,7 +126,7 @@ show(io::IO, eqn::FourierFlows.Equation) =
 
 show(io::IO, problem::FourierFlows.Problem) =
     print(io, "Problem\n",
-              "  ├─────────── grid: grid (on " * typeof(problem.grid.device) * ")", "\n",
+              "  ├─────────── grid: grid (on " * string(typeof(problem.grid.device)) * ")", "\n",
               "  ├───── parameters: params", "\n",
               "  ├────── variables: vars", "\n",
               "  ├─── state vector: sol", "\n",
