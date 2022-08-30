@@ -275,7 +275,7 @@ end
 function on_grid(func, grid::TwoDGrid{T}) where T
   f = zeros(grid.device, T, (grid.nx, grid.ny))
 
-  x = reshape(grid.x, (grid.nx, 1,))
+  x = reshape(grid.x, (grid.nx, 1))
   y = reshape(grid.y, (1, grid.ny))
   
   @. f = func(x, y)
