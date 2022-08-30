@@ -11,7 +11,7 @@ export
   Device,
   CPU,
   GPU,
-  ArrayType,
+  device_array,
 
   cxtype,
   fltype,
@@ -21,7 +21,6 @@ export
   AbstractParams,
 
   AbstractGrid,
-  ZeroDGrid,
   OneDGrid,
   TwoDGrid,
   ThreeDGrid,

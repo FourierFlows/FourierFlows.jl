@@ -56,9 +56,8 @@ function test_supertuplezeros(; T1=Float64, T2=Complex{Float64}, dims1=(1,), dim
 end
 
 # This test could use some further work.
-function test_radialspectrum(dev::Device, n, ahkl, ahρ; debug=false, atol=0.1, rfft=false)
-  L = 2π
-  grid = TwoDGrid(dev; nx=n, Lx=L)
+function test_radialspectrum(dev::Device, n, ahkl, ahρ; debug=false, atol=0.1, rfft=false)σ
+  grid = TwoDGrid(dev; nx=n, Lx=2π)
   if rfft==true
     ah = @. ahkl(grid.kr, grid.l)
   else   
@@ -136,13 +135,13 @@ function test_supersize()
 end
 
 """
-Test arraytype().
+Test device_array().
 """
-test_arraytype(dev::Device) =
-  dev==CPU() ? ArrayType(dev) == Array : ArrayType(dev) == CuArray
+test_device_array(dev::Device) =
+  dev==CPU() ? device_array(dev) == Array : device_array(dev) == CuArray
 
-test_arraytypeTdim(dev::Device, T=Float64, dim=1) = 
-  dev==CPU() ? ArrayType(dev, T, dim) <: Array{T, dim} : ArrayType(dev, T, dim) <: CuArray{T, dim}
+test_device_array_Tdim(dev::Device, T=Float64, dim=1) = 
+  dev==CPU() ? device_array(dev, T, dim) <: Array{T, dim} : device_array(dev, T, dim) <: CuArray{T, dim}
 
 function test_ongrid(dev::Device)
   nx, ny, nz = 6, 8, 10

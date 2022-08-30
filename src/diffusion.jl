@@ -71,7 +71,7 @@ struct Params{T} <: AbstractParams
 end
 
 Params(grid, κ::Number) = Params(κ)
-Params(grid, κ::AbstractArray) = Params(ArrayType(grid.device)(κ))
+Params(grid, κ::AbstractArray) = Params(device_array(grid.device)(κ))
 
 """
     Equation(grid, κ)
@@ -165,7 +165,8 @@ Set the solution `sol` as the transform of `c` and update `vars`.
 """
 function set_c!(prob, c)
   T = typeof(prob.vars.c)
-  prob.vars.c .= T(c) # ensure that c is converted to the ArrayType used in prob.vars.c (e.g., convert to CuArray if user gives c as Array)
+
+  prob.vars.c .= T(c) # ensure that c is converted to the type prob.vars.c (e.g., convert to CuArray if user gives `c` as Array)
   mul!(prob.sol, prob.grid.rfftplan, prob.vars.c)
 
   updatevars!(prob)

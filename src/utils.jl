@@ -268,11 +268,11 @@ on_grid(func, grid::TwoDGrid{T, A}) where {T, A} = CUDA.@allowscalar A([func(gri
 on_grid(func, grid::ThreeDGrid{T, A}) where {T, A} = CUDA.@allowscalar A([func(grid.x[i], grid.y[j], grid.z[k]) for i=1:grid.nx, j=1:grid.ny, k=1:grid.nz])
 
 """
-    ArrayType(::Device)
-    ArrayType(::Device, T, dim)
+    device_array(device::Device)
+    device_array(device::Device, T, dim)
 
-Returns the proper array type according to the Device chosen, i.e., `Array` for CPU and
+Return the proper array type according to the `device` chosen, i.e., `Array` for CPU and
 `CuArray` for GPU.
 """
-ArrayType(::CPU) = Array
-ArrayType(::CPU, T, dim) = Array{T, dim}
+device_array(device::CPU) = Array
+device_array(device::CPU, T, dim) = Array{T, dim}

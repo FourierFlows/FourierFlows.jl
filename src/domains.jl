@@ -69,8 +69,8 @@ function OneDGrid(dev::Device = CPU();
   x = range(T(x0), step=T(dx), length=nx)
 
   # Wavenubmer grid
-   k = ArrayType(dev){T}( fftfreq(nx, 2π/Lx*nx))
-  kr = ArrayType(dev){T}(rfftfreq(nx, 2π/Lx*nx))
+   k = device_array(dev){T}( fftfreq(nx, 2π/Lx*nx))
+  kr = device_array(dev){T}(rfftfreq(nx, 2π/Lx*nx))
 
    invksq = @. 1 / k^2
   invkrsq = @. 1 / kr^2
@@ -78,8 +78,8 @@ function OneDGrid(dev::Device = CPU();
   CUDA.@allowscalar invkrsq[1] = 0
 
   FFTW.set_num_threads(nthreads)
-   fftplan = plan_flows_fft(ArrayType(dev){Complex{T}, 1}(undef, nx), flags=effort)
-  rfftplan = plan_flows_rfft(ArrayType(dev){T, 1}(undef, nx), flags=effort)
+   fftplan = plan_flows_fft(device_array(dev){Complex{T}, 1}(undef, nx), flags=effort)
+  rfftplan = plan_flows_rfft(device_array(dev){T, 1}(undef, nx), flags=effort)
 
   kalias, kralias = getaliasedwavenumbers(nk, nkr, aliased_fraction)
 
@@ -183,9 +183,9 @@ function TwoDGrid(dev::Device=CPU(); nx, Lx, ny=nx, Ly=Lx,
   y = range(T(y0), step=T(dy), length=ny)
 
   # Wavenubmer grid
-   k = ArrayType(dev){T}(reshape( fftfreq(nx, 2π/Lx*nx), (nk, 1)))
-   l = ArrayType(dev){T}(reshape( fftfreq(ny, 2π/Ly*ny), (1, nl)))
-  kr = ArrayType(dev){T}(reshape(rfftfreq(nx, 2π/Lx*nx), (nkr, 1)))
+   k = device_array(dev){T}(reshape( fftfreq(nx, 2π/Lx*nx), (nk, 1)))
+   l = device_array(dev){T}(reshape( fftfreq(ny, 2π/Ly*ny), (1, nl)))
+  kr = device_array(dev){T}(reshape(rfftfreq(nx, 2π/Lx*nx), (nkr, 1)))
 
      Ksq = @. k^2 + l^2
   invKsq = @. 1 / Ksq
@@ -197,8 +197,8 @@ function TwoDGrid(dev::Device=CPU(); nx, Lx, ny=nx, Ly=Lx,
 
   # FFT plans
   FFTW.set_num_threads(nthreads)
-  fftplan = plan_flows_fft(ArrayType(dev){Complex{T}, 2}(undef, nx, ny), flags=effort)
-  rfftplan = plan_flows_rfft(ArrayType(dev){T, 2}(undef, nx, ny), flags=effort)
+  fftplan = plan_flows_fft(device_array(dev){Complex{T}, 2}(undef, nx, ny), flags=effort)
+  rfftplan = plan_flows_rfft(device_array(dev){T, 2}(undef, nx, ny), flags=effort)
 
   kalias, kralias = getaliasedwavenumbers(nk, nkr, aliased_fraction)
   lalias, _       = getaliasedwavenumbers(nl, nl,  aliased_fraction)
@@ -321,10 +321,10 @@ function ThreeDGrid(dev::Device=CPU(); nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx,
   z = range(T(z0), step=T(dz), length=nz)
 
   # Wavenubmer grid
-   k = ArrayType(dev){T}(reshape( fftfreq(nx, 2π/Lx*nx), (nk, 1, 1)))
-   l = ArrayType(dev){T}(reshape( fftfreq(ny, 2π/Ly*ny), (1, nl, 1)))
-   m = ArrayType(dev){T}(reshape( fftfreq(nz, 2π/Lz*nz), (1, 1, nm)))
-  kr = ArrayType(dev){T}(reshape(rfftfreq(nx, 2π/Lx*nx), (nkr, 1, 1)))
+   k = device_array(dev){T}(reshape( fftfreq(nx, 2π/Lx*nx), (nk, 1, 1)))
+   l = device_array(dev){T}(reshape( fftfreq(ny, 2π/Ly*ny), (1, nl, 1)))
+   m = device_array(dev){T}(reshape( fftfreq(nz, 2π/Lz*nz), (1, 1, nm)))
+  kr = device_array(dev){T}(reshape(rfftfreq(nx, 2π/Lx*nx), (nkr, 1, 1)))
 
      Ksq = @. k^2 + l^2 + m^2
   invKsq = @. 1 / Ksq
@@ -336,8 +336,8 @@ function ThreeDGrid(dev::Device=CPU(); nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx,
 
   # FFT plans
   FFTW.set_num_threads(nthreads)
-  fftplan = plan_flows_fft(ArrayType(dev){Complex{T}, 3}(undef, nx, ny, nz), flags=effort)
-  rfftplan = plan_flows_rfft(ArrayType(dev){T, 3}(undef, nx, ny, nz), flags=effort)
+  fftplan = plan_flows_fft(device_array(dev){Complex{T}, 3}(undef, nx, ny, nz), flags=effort)
+  rfftplan = plan_flows_rfft(device_array(dev){T, 3}(undef, nx, ny, nz), flags=effort)
 
   kalias, kralias = getaliasedwavenumbers(nk, nkr,         aliased_fraction)
   lalias, _       = getaliasedwavenumbers(nl, Int(nl/2+1), aliased_fraction)

@@ -48,7 +48,7 @@ using LinearAlgebra: mul!, ldiv!
 using CairoMakie
 set_theme!(Theme(linewidth = 3, fontsize = 20))
 nx, Lx = 64, 2π
-grid = OneDGrid(nx, Lx)
+grid = OneDGrid(; nx, Lx)
 ```
 
 ```@example 1
@@ -161,7 +161,7 @@ nothing # hide
 ```
 
 The grid contains the wavenumbers (both for real-value functions `grid.kr` and 
-for complex-valued functions `grid.k`). We populate array `∂ₓuh` is with ``i k \hat{u}``:
+for complex-valued functions `grid.k`). We populate array `∂ₓuh` is with ``\mathrm{i} k \hat{u}``:
 
 ```@example 1
 @. ∂ₓuh = im * grid.kr * uh

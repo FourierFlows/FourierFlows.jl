@@ -227,7 +227,7 @@ for dev in devices
     @test test_superzeros()
     @test test_supertuplezeros()
     @test test_supersize()
-    @test test_arraytype(dev)
+    @test test_device_array(dev)
     @test test_arraytypeTdim(dev, Float32, 2)
 
     # Test on a rectangular grid
