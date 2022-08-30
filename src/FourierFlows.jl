@@ -111,10 +111,8 @@ include("timesteppers.jl")
 include("diffusion.jl")
 
 # CUDA functionality
-if CUDA.functional()
-  @info "GPU functionality for FourierFlows is loaded"
-  include("CuFourierFlows.jl")
-end
+include("CuFourierFlows.jl")
+
 
 function __init__()
   threads = Threads.nthreads()
