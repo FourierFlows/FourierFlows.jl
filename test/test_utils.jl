@@ -56,7 +56,7 @@ function test_supertuplezeros(; T1=Float64, T2=Complex{Float64}, dims1=(1,), dim
 end
 
 # This test could use some further work.
-function test_radialspectrum(dev::Device, n, ahkl, ahρ; debug=false, atol=0.1, rfft=false)σ
+function test_radialspectrum(dev::Device, n, ahkl, ahρ; debug=false, atol=0.1, rfft=false)
   grid = TwoDGrid(dev; nx=n, Lx=2π)
   if rfft==true
     ah = @. ahkl(grid.kr, grid.l)
