@@ -2,11 +2,7 @@
 plan_flows_fft(a::CuArray, args...; flags=nothing, kwargs...) = plan_fft(a, args...; kwargs...)
 plan_flows_rfft(a::CuArray, args...; flags=nothing, kwargs...) = plan_rfft(a, args...; kwargs...)
 
-function Base.zeros(::GPU, T, dims)
-  a = CuArray{T}(undef, dims...)
-  a .= 0
-  return a
-end
+Base.zeros(::GPU, T, dims) = CUDA.zeros(T, dims)
 
 device_array(::GPU) = CuArray
 device_array(::GPU, T, dim) = CuArray{T, dim}
@@ -18,6 +14,5 @@ getetdcoeffs(dt, L::CuArray; kwargs...) =
 
 makefilter(K::CuArray; kwargs...) = CuArray(makefilter(Array(K); kwargs...))
 
-function makefilter(g::AbstractGrid{Tg, <:CuArray}, T, sz; kwargs...) where Tg
-  CuArray(ones(T, sz)) .* makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
-end
+makefilter(g::AbstractGrid{Tg, <:CuArray}, T, sz; kwargs...) where Tg =
+    CuArray(ones(T, sz)) .* makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
