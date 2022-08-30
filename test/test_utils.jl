@@ -140,7 +140,7 @@ Test device_array().
 test_device_array(dev::Device) =
   dev==CPU() ? device_array(dev) == Array : device_array(dev) == CuArray
 
-test_device_array_Tdim(dev::Device, T=Float64, dim=1) = 
+test_device_arrayTdim(dev::Device, T=Float64, dim=1) = 
   dev==CPU() ? device_array(dev, T, dim) <: Array{T, dim} : device_array(dev, T, dim) <: CuArray{T, dim}
 
 function test_ongrid(dev::Device)
