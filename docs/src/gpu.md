@@ -41,11 +41,10 @@ the `GPU`. Function `ArrayType` is useful in constructing appropriately chosen a
 ArrayType
 ```
 
-The `FourierFlows.Problem` constructor then takes an optional positional argument 
-`dev::Device`. If not provided anything, the default values for `dev=CPU()`.
+The `FourierFlows.Problem` constructor infers the device from the `grid` that is provided.
 
 ```julia
-problem = Problem(equation, stepper, dt, grid, vars, params, GPU())
+problem = Problem(equation, stepper, dt, grid, vars, params)
 ```
 
 The `FourierFlows.Diffusion` module is written in a way such that switching from CPU to GPU 

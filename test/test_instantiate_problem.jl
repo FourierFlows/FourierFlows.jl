@@ -12,7 +12,6 @@ function instantiate_problem_with_filter_kwargs(dev, stepper)
                                         dummy_problem.grid,
                                         dummy_problem.vars,
                                         dummy_problem.params,
-                                        dev,
                                         innerK = 0.0,
                                         outerK = 1/16)
 

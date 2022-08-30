@@ -351,8 +351,8 @@ for dev in devices
     params1 = Params1(1.0, 2.0, func)
     params2 = Params2(1.0, func, 2.0)
     
-    prob1 = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params1, dev)
-    prob2 = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params2, dev)
+    prob1 = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params1)
+    prob2 = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params2)
     prob = prob1 # prob2 is only useful for testing params show() method
     
     get_sol(prob) = prob.sol

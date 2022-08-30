@@ -80,15 +80,15 @@ function test_saveproblemTwoDGrid(dev::Device=CPU())
   stepper = "ForwardEuler"
 
      grid = TwoDGrid(dev; nx, Lx)
-   params = FourierFlows.Diffusion.Params(dev, κ)
-     vars = FourierFlows.Diffusion.Vars(dev, grid)
+   params = FourierFlows.Diffusion.Params(grid, κ)
+     vars = FourierFlows.Diffusion.Vars(grid)
      
   # manually construct an Equation for a 2D grid
-     L = zeros(dev, Float64, (grid.nkr, grid.nl))
+     L = zeros(grid.device, Float64, (grid.nkr, grid.nl))
   @. L = - κ * grid.kr^2
   equation = FourierFlows.Equation(L, FourierFlows.Diffusion.calcN!, grid)
 
-  prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
+  prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
   
   filename = joinpath(".", "testoutput.jld2")
   if isfile(filename); GC.gc(); rm(filename); end

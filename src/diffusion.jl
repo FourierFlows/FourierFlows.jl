@@ -50,12 +50,12 @@ function Problem(dev::Device=CPU();
            aliased_fraction = 0,
                           T = Float64)
 
-      grid = OneDGrid(dev; nx, Lx, aliased_fraction=aliased_fraction, T)
-    params = Params(dev, κ)
-      vars = Vars(dev, grid)
-  equation = Equation(dev, κ, grid)
+      grid = OneDGrid(dev; nx, Lx, aliased_fraction, T)
+    params = Params(grid, κ)
+      vars = Vars(grid)
+  equation = Equation(grid, κ)
 
-  return FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
+  return FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 end
 
 """
@@ -70,22 +70,22 @@ struct Params{T} <: AbstractParams
     κ :: T
 end
 
-Params(dev, κ::Number) = Params(κ)
-Params(dev, κ::AbstractArray) = Params(ArrayType(dev)(κ))
+Params(grid, κ::Number) = Params(κ)
+Params(grid, κ::AbstractArray) = Params(ArrayType(grid.device)(κ))
 
 """
-    Equation(dev, κ, grid)
+    Equation(grid, κ)
 
 Return the equation for a constant diffusivity problem on `grid` with diffusivity `κ`.
 """
-function Equation(dev::Device, κ::T, grid) where T<:Number
-  L = zeros(dev, T, grid.nkr)
+function Equation(grid, κ::T) where T<:Number
+  L = zeros(grid.device, T, grid.nkr)
   @. L = - κ * grid.kr^2
   
   return FourierFlows.Equation(L, calcN!, grid)
 end
 
-Equation(dev::Device, κ::T, grid::AbstractGrid{Tg}) where {T<:AbstractArray, Tg} = 
+Equation(grid::AbstractGrid{Tg}, κ::T) where {T<:AbstractArray, Tg} = 
   FourierFlows.Equation(0, calcN!, grid; dims=(grid.nkr,), T=cxtype(Tg))
 
 """
@@ -107,14 +107,17 @@ struct Vars{Aphys, Atrans} <: AbstractVars
 end
 
 """
-    Vars(dev, grid)
+    Vars(grid)
 
 Return the variables `vars` for a constant diffusivity problem on `grid`.
 """
-function Vars(::Dev, grid::AbstractGrid{T}) where {Dev, T}
+function Vars(grid::AbstractGrid{T}) where T
+  Dev = typeof(grid.device)
+
   @devzeros Dev T grid.nx c cx
   @devzeros Dev Complex{T} grid.nkr ch cxh
-  Vars(c, cx, ch, cxh)
+
+  return Vars(c, cx, ch, cxh)
 end
 
 """
