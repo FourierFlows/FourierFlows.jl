@@ -9,7 +9,7 @@ A one-dimensional `grid`.
 $(TYPEDFIELDS)
 """
 struct OneDGrid{T<:AbstractFloat, A, R, Tfft, Trfft, Talias, D} <: AbstractGrid{T, A, Talias, D}
-    "device on which the grid lives on"
+    "device which the grid lives on"
             device :: D
     "number of points in ``x``"
                 nx :: Int
@@ -104,7 +104,7 @@ A two-dimensional `grid`.
 $(TYPEDFIELDS)
 """
 struct TwoDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias, D} <: AbstractGrid{T, Tk, Talias, D}
-    "device on which the grid lives on"
+    "device which the grid lives on"
            device :: D
     "number of points in ``x``"
                nx :: Int
@@ -223,7 +223,7 @@ A three-dimensional `grid`.
 $(TYPEDFIELDS)
 """
 struct ThreeDGrid{T<:AbstractFloat, Tk, Tx, Tfft, Trfft, Talias, D} <: AbstractGrid{T, Tk, Talias, D}
-    "device on which the grid lives on"
+    "device which the grid lives on"
            device :: D
     "number of points in ``x``"
                nx :: Int

@@ -261,7 +261,7 @@ end
 """
     on_grid(func, grid)
 
-Return an array, of the type compatible with the `device` of that the `grid` lives on,
+Return an array, of the type compatible with the `device` that the `grid` lives on,
 that contains the values of function `func` evaluated on the `grid`.
 """
 function on_grid(func, grid::OneDGrid{T}) where T
