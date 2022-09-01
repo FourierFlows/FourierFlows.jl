@@ -89,15 +89,15 @@ struct EmptyVars <: AbstractVars end
 
 """
     Problem(eqn::Equation, stepper, dt, grid::AbstractGrid{T}, 
-            vars=EmptyVars, params=EmptyParams, dev::Device=CPU(); stepperkwargs...) where T
+            vars=EmptyVars, params=EmptyParams; stepperkwargs...) where T
 
 Construct a `Problem` for equation `eqn` using the time`stepper` with timestep 
-`dt`, on `grid` and on `dev`ice. Optionally, use the keyword arguments to provide 
-variables with `vars` and parameters with `params`. The `stepperkwargs` are passed
-to the time-stepper constructor.
+`dt`, on `grid`. The device is inferred from the `grid`. Optionally, use the
+keyword arguments to provide variables with `vars` and parameters with `params`.
+The `stepperkwargs` are passed on to the time-stepper constructor.
 """
 function Problem(eqn::Equation, stepper, dt, grid::AbstractGrid{T}, 
-                 vars=EmptyVars, params=EmptyParams, dev::Device=CPU(); stepperkwargs...) where T
+                 vars=EmptyVars, params=EmptyParams; stepperkwargs...) where T
   
   dev = grid.device
   
