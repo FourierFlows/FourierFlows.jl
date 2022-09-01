@@ -54,6 +54,7 @@ end
 
 supersize(a) = Tuple([size(ai) for ai in a])
 supersize(a::Array{T}) where T<:Number = size(a)
+supersize(a::CuArray) = size(a)
 
 macro createarrays(T, dims, vars...)
   expr = Expr(:block)
@@ -76,6 +77,7 @@ macro zeros(T, dims, vars...)
 end
 
 Base.zeros(::CPU, T, dims) = zeros(T, dims)
+Base.zeros(::GPU, T, dims) = CUDA.zeros(T, dims)
 
 """
     devzeros(dev, T, dims)
@@ -302,5 +304,7 @@ end
 Return the proper array type according to the `device`, i.e., `Array` for CPU and
 `CuArray` for GPU.
 """
-device_array(device::CPU) = Array
-device_array(device::CPU, T, dim) = Array{T, dim}
+device_array(::CPU) = Array
+device_array(::GPU) = CuArray
+device_array(::CPU, T, dim) = Array{T, dim}
+device_array(::GPU, T, dim) = CuArray{T, dim}

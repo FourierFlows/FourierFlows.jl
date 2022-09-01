@@ -1,5 +1,8 @@
+# Discard `effort` argument for CuArrays
 plan_flows_fft(a::Array, args...; kwargs...) = plan_fft(a, args...; kwargs...)
 plan_flows_rfft(a::Array, args...; kwargs...) = plan_rfft(a, args...; kwargs...)
+plan_flows_fft(a::CuArray, args...; flags=nothing, kwargs...) = plan_fft(a, args...; kwargs...)
+plan_flows_rfft(a::CuArray, args...; flags=nothing, kwargs...) = plan_rfft(a, args...; kwargs...)
 
 """
     struct OneDGrid{T<:AbstractFloat, A, Tx, Tfft, Trfft, Talias} <: AbstractGrid{T, A, Talias, D}
@@ -506,6 +509,12 @@ end
 
 makefilter(g, T, sz; kwargs...) = ones(T, sz) .* makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
 makefilter(eq; kwargs...) = makefilter(eq.grid, fltype(eq.T), eq.dims; kwargs...)
+
+makefilter(K::CuArray; kwargs...) = CuArray(makefilter(Array(K); kwargs...))
+
+makefilter(g::AbstractGrid{Tg, <:CuArray}, T, sz; kwargs...) where Tg =
+    CuArray(ones(T, sz)) .* makefilter(g; realvars=sz[1]==g.nkr, kwargs...)
+
 
 show(io::IO, g::OneDGrid{T}) where T =
      print(io, "OneDimensionalGrid\n",

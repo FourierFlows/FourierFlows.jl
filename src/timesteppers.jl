@@ -571,9 +571,9 @@ function getetdcoeffs(dt, L; ncirc=32, rcirc=1)
   M = ndims(L) + 1
 
   # Four coefficients: ζ, α, β, Γ
-  ζc = @.               ( exp(zc/2)-1 ) / zc
+  ζc = @. ( exp(zc/2)-1 ) / zc
   αc = @. ( -4 - zc + exp(zc) * (4 - 3zc + zc^2) ) / zc^3
-  βc = @.    ( 2  + zc + exp(zc) * (-2 + zc) ) / zc^3
+  βc = @. ( 2  + zc + exp(zc) * (-2 + zc) ) / zc^3
   Γc = @. ( -4 - 3zc - zc^2 + exp(zc) * (4 - zc) ) / zc^3
 
   ζ = dt * dropdims(mean(ζc, dims=M), dims=M)
@@ -590,6 +590,9 @@ function getetdcoeffs(dt, L; ncirc=32, rcirc=1)
 
   return ζ, α, β, Γ
 end
+
+getetdcoeffs(dt, L::CuArray; kwargs...) = 
+    (CuArray(ζ) for ζ in getetdcoeffs(dt, Array(L); kwargs...))
 
 """
     step_until!(prob, stop_time)

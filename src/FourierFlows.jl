@@ -110,9 +110,6 @@ include("timesteppers.jl")
 # Physics
 include("diffusion.jl")
 
-# CUDA functionality
-include("CuFourierFlows.jl")
-
 
 function __init__()
   threads = Threads.nthreads()
