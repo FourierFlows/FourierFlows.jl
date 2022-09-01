@@ -42,7 +42,6 @@ export
   @devzeros,
   @createarrays,
   @superzeros,
-  devzeros,
   superzeros,
   supersize,
 

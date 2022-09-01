@@ -79,13 +79,6 @@ end
 Base.zeros(::CPU, T, dims) = zeros(T, dims)
 Base.zeros(::GPU, T, dims) = CUDA.zeros(T, dims)
 
-"""
-    devzeros(dev, T, dims)
-
-Returns an array like `A` of type `T`, but full of zeros.
-"""
-devzeros(dev, T, dims) = zeros(dev, T, dims)
-
 
 """
     @devzeros dev T dims a b c...

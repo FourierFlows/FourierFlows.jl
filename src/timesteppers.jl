@@ -106,7 +106,7 @@ end
 Construct a Forward Euler timestepper for `equation` on device `dev`.
 """
 ForwardEulerTimeStepper(equation::Equation, dev::Device=CPU()) = 
-  ForwardEulerTimeStepper(devzeros(dev, equation.T, equation.dims))
+  ForwardEulerTimeStepper(zeros(dev, equation.T, equation.dims))
 
 function stepforward!(sol, clock, ts::ForwardEulerTimeStepper, equation, vars, params, grid)
   equation.calcN!(ts.N, sol, clock.t, clock, vars, params, grid)
@@ -135,7 +135,7 @@ Construct a Forward Euler timestepper with spectral filtering for `equation` on 
 function FilteredForwardEulerTimeStepper(equation::Equation, dev::Device=CPU(); filterkwargs...)
   filter = makefilter(equation; filterkwargs...)
   
-  return FilteredForwardEulerTimeStepper(devzeros(dev, equation.T, equation.dims), filter)
+  return FilteredForwardEulerTimeStepper(zeros(dev, equation.T, equation.dims), filter)
 end
 
 function stepforward!(sol, clock, ts::FilteredForwardEulerTimeStepper, equation, vars, params, grid)

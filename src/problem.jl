@@ -98,14 +98,14 @@ The `stepperkwargs` are passed on to the time-stepper constructor.
 """
 function Problem(eqn::Equation, stepper, dt, grid::AbstractGrid{T}, 
                  vars=EmptyVars, params=EmptyParams; stepperkwargs...) where T
-  
+
   dev = grid.device
-  
+
   clock = Clock{T}(dt, 0, 0)
 
   timestepper = TimeStepper(stepper, eqn, dt, dev; stepperkwargs...)
 
-  sol = devzeros(dev, eqn.T, eqn.dims)
+  sol = zeros(dev, eqn.T, eqn.dims)
 
   return Problem(sol, clock, eqn, grid, vars, params, timestepper)
 end
