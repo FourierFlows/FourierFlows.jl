@@ -16,6 +16,7 @@ export
   cxtype,
   fltype,
   innereltype,
+  on_grid,
 
   AbstractVars,
   AbstractParams,

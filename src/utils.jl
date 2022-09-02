@@ -259,33 +259,33 @@ end
 Return an array, of the type compatible with the `device` that the `grid` lives on,
 that contains the values of function `func` evaluated on the `grid`.
 """
-function on_grid(func, grid::OneDGrid{T}) where T
+function on_grid(func, grid::OneDGrid{T}, args...; kwargs...) where T
   f = zeros(grid.device, T, (grid.nx, ))
 
-  @. f = func(grid.x)
+  @. f = func(grid.x, args...; kwargs...)
 
   return f
 end
 
-function on_grid(func, grid::TwoDGrid{T}) where T
+function on_grid(func, grid::TwoDGrid{T}, args...; kwargs...) where T
   f = zeros(grid.device, T, (grid.nx, grid.ny))
 
   x = reshape(grid.x, (grid.nx, 1))
   y = reshape(grid.y, (1, grid.ny))
   
-  @. f = func(x, y)
+  @. f = func(x, y, args...; kwargs...)
 
   return f
 end
 
-function on_grid(func, grid::ThreeDGrid{T}) where T
+function on_grid(func, grid::ThreeDGrid{T}, args...; kwargs...) where T
   f = zeros(grid.device, T, (grid.nx, grid.ny, grid.nz))
 
   x = reshape(grid.x, (grid.nx, 1, 1))
   y = reshape(grid.y, (1, grid.ny, 1))
   z = reshape(grid.z, (1, 1, grid.nz))
   
-  @. f = func(x, y, z)
+  @. f = func(x, y, z, args...; kwargs...)
 
   return f
 end
