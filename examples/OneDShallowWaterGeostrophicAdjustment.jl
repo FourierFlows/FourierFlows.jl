@@ -77,10 +77,12 @@ nothing #hide
 # A constructor populates empty arrays based on the dimension of the `grid`
 # and then creates `Vars` struct.
 """
-    Vars(dev, grid)
+    Vars(grid)
 Constructs Vars for 1D shallow water based on the dimensions of arrays of the `grid`.
 """
-function Vars(::Dev, grid) where Dev
+function Vars(grid)
+  Dev = typeof(grid.device)
+
   T = eltype(grid)
   @devzeros Dev T grid.nx u v η
   @devzeros Dev Complex{T} grid.nkr uh vh ηh
@@ -125,19 +127,21 @@ nothing #hide
 # Next we construct the `Equation` struct:
 
 """
-    Equation(dev, params, grid)
+    Equation(params, grid)
 Construct the equation: the linear part, in this case the hyperviscous dissipation,
 and the nonlinear part, which is computed by `calcN!` function.
 """
-function Equation(dev, params, grid)
+function Equation(params, grid)
   T = eltype(grid)
+  dev = grid.device
+
   L = zeros(dev, T, (grid.nkr, 3))
   D = @. - params.ν * grid.kr^(2*params.nν)
-  
+
   L[:, 1] .= D # for u equation
   L[:, 2] .= D # for v equation
   L[:, 3] .= D # for η equation
-  
+
   return FourierFlows.Equation(L, calcN!, grid)
 end
 nothing #hide
@@ -223,16 +227,17 @@ nothing # hide
 
 
 # ## Construct the `struct`s and you are ready to go!
+
 # Create a `grid` and also `params`, `vars`, and the `equation` structs. Then 
 # give them all as input to the `FourierFlows.Problem()` constructor to get a
 # problem struct, `prob`, that contains all of the above.
 
     grid = OneDGrid(dev; nx, Lx)
   params = Params(ν, nν, g, H, f)
-    vars = Vars(dev, grid)
-equation = Equation(dev, params, grid)
+    vars = Vars(grid)
+equation = Equation(params, grid)
 
-    prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
+    prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 nothing #hide
 
 # ## Setting initial conditions
