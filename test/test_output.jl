@@ -36,7 +36,7 @@ function test_getindex(dev::Device=CPU())
   prob = Problem(dev; nx=32, Lx=2π, κ=1e-2, dt=1e-7, stepper="ForwardEuler")
   filename = joinpath(".", "testoutput.jld2")
   
-  ctest = devzeros(dev, Float64, (prob.grid.nx, ))
+  ctest = zeros(dev, Float64, (prob.grid.nx,))
   CUDA.@allowscalar ctest[3] = π
   @. prob.vars.c = ctest
   
@@ -52,7 +52,7 @@ function test_saveproblem_saveoutput(dev::Device=CPU())
   filename = joinpath(".", "testoutput.jld2")
   if isfile(filename); rm(filename); end
   
-  ctest = devzeros(dev, Float64, (prob.grid.nx, ))
+  ctest = zeros(dev, Float64, (prob.grid.nx,))
   CUDA.@allowscalar ctest[3] = π
   prob.vars.c .= ctest
   
@@ -79,16 +79,16 @@ function test_saveproblemTwoDGrid(dev::Device=CPU())
        dt = 1e-7
   stepper = "ForwardEuler"
 
-     grid = TwoDGrid(dev, nx, Lx)
-   params = FourierFlows.Diffusion.Params(dev, κ)
-     vars = FourierFlows.Diffusion.Vars(dev, grid)
+     grid = TwoDGrid(dev; nx, Lx)
+   params = FourierFlows.Diffusion.Params(grid, κ)
+     vars = FourierFlows.Diffusion.Vars(grid)
      
   # manually construct an Equation for a 2D grid
-     L = zeros(dev, Float64, (grid.nkr, grid.nl))
+     L = zeros(grid.device, Float64, (grid.nkr, grid.nl))
   @. L = - κ * grid.kr^2
   equation = FourierFlows.Equation(L, FourierFlows.Diffusion.calcN!, grid)
 
-  prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params, dev)
+  prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
   
   filename = joinpath(".", "testoutput.jld2")
   if isfile(filename); GC.gc(); rm(filename); end
@@ -141,7 +141,7 @@ end
 function test_savefields(dev::Device=CPU(); parameter=2.2)  
   func(x) = sin(x^2)
   
-  grid = TwoDGrid(dev, 6, 2π)
+  grid = TwoDGrid(dev; nx=6, Lx=2π)
   plan = grid.rfftplan
   
   params = TestbedParams(parameter, func, plan)

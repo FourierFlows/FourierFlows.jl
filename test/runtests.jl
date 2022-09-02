@@ -38,18 +38,18 @@ const steppers = [
 include("createffttestfunctions.jl")
 
 for dev in devices
-  
+
   @info "testing on " * string(typeof(dev))
-  
+
   @time @testset "Grid tests" begin
     include("test_grid.jl")
-    
+
     nx, Lx =  6, 2π
     ny, Ly =  8, 4π
     nz, Lz = 10, 3.0
-    
+
     # Test 1D grid
-    g₁ = OneDGrid(dev, nx, Lx)
+    g₁ = OneDGrid(dev; nx, Lx)
     @test testnx(g₁, nx)
     @test testdx(dev, g₁)
     @test testdk(g₁)
@@ -61,7 +61,7 @@ for dev in devices
     @test testmakefilter(dev, g₁)
 
     # Test 2D rectangular grid
-    g₂ = TwoDGrid(dev, nx, Lx, ny, Ly)
+    g₂ = TwoDGrid(dev; nx, Lx, ny, Ly)
     @test testnx(g₂, nx)
     @test testny(g₂, ny)
     @test testdx(dev, g₂)
@@ -76,9 +76,9 @@ for dev in devices
     @test testgridpoints(dev, g₂)
     @test testdealias(g₂)
     @test testmakefilter(dev, g₂)
-    
+
     # Test 3D parallelogram grid
-    g₃ = ThreeDGrid(dev, nx, Lx, ny, Ly, nz, Lz)
+    g₃ = ThreeDGrid(dev; nx, Lx, ny, Ly, nz, Lz)
     @test testnx(g₃, nx)
     @test testny(g₃, ny)
     @test testnz(g₃, nz)
@@ -99,7 +99,7 @@ for dev in devices
     @test testdealias(g₃)
     @test testmakefilter(dev, g₃)
     @test test_plan_flows_fftrfft(dev)
-    
+
     # Test typed grids
     T = Float32
     @test test_plan_flows_fftrfft(dev, T=T)
@@ -111,18 +111,18 @@ for dev in devices
     for aliased_fraction ∈ [0, 1/3, 1/2, 1/4]
       @test test_aliased_fraction(dev, aliased_fraction)
     end
-    
+
     # Test show() methods
-    @test repr(g₁) == "OneDimensionalGrid\n  ├─────────── Device: "*FourierFlows.griddevice(g₁)*"\n  ├──────── FloatType: Float64\n  ├────────── size Lx: 6.283185307179586\n  ├──── resolution nx: 6\n  ├── grid spacing dx: 1.0471975511965976\n  ├─────────── domain: x ∈ [-3.141592653589793, 2.094395102393195]\n  └─ aliased fraction: 0.3333333333333333"
-        
-    @test repr(g₂) == "TwoDimensionalGrid\n  ├───────────────── Device: "*FourierFlows.griddevice(g₂)*"\n  ├────────────── FloatType: Float64\n  ├────────── size (Lx, Ly): (6.283185307179586, 12.566370614359172)\n  ├──── resolution (nx, ny): (6, 8)\n  ├── grid spacing (dx, dy): (1.0471975511965976, 1.5707963267948966)\n  ├───────────────── domain: x ∈ [-3.141592653589793, 2.094395102393195]\n  |                          y ∈ [-6.283185307179586, 4.71238898038469]\n  └─ aliased fraction: 0.3333333333333333"
-       
-    @test repr(g₃) == "ThreeDimensionalGrid\n  ├───────────────────── Device: "*FourierFlows.griddevice(g₃)*"\n  ├────────────────── FloatType: Float64\n  ├────────── size (Lx, Ly, Lz): (6.283185307179586, 12.566370614359172, 3.0)\n  ├──── resolution (nx, ny, nz): (6, 8, 10)\n  ├── grid spacing (dx, dy, dz): (1.0471975511965976, 1.5707963267948966, 0.3)\n  ├────────────────────  domain: x ∈ [-3.141592653589793, 2.094395102393195]\n  |                              y ∈ [-6.283185307179586, 4.71238898038469]\n  |                              z ∈ [-1.5, 1.2]\n  └─ aliased fraction: 0.3333333333333333"
+    @test repr(g₁) == "OneDimensionalGrid\n  ├─────────── Device: " * string(typeof(g₁.device)) * "\n  ├──────── FloatType: Float64\n  ├────────── size Lx: 6.283185307179586\n  ├──── resolution nx: 6\n  ├── grid spacing dx: 1.0471975511965976\n  ├─────────── domain: x ∈ [-3.141592653589793, 2.094395102393195]\n  └─ aliased fraction: 0.3333333333333333"
+
+    @test repr(g₂) == "TwoDimensionalGrid\n  ├───────────────── Device: " * string(typeof(g₂.device)) * "\n  ├────────────── FloatType: Float64\n  ├────────── size (Lx, Ly): (6.283185307179586, 12.566370614359172)\n  ├──── resolution (nx, ny): (6, 8)\n  ├── grid spacing (dx, dy): (1.0471975511965976, 1.5707963267948966)\n  ├───────────────── domain: x ∈ [-3.141592653589793, 2.094395102393195]\n  |                          y ∈ [-6.283185307179586, 4.71238898038469]\n  └─ aliased fraction: 0.3333333333333333"
+
+    @test repr(g₃) == "ThreeDimensionalGrid\n  ├───────────────────── Device: " * string(typeof(g₃.device)) * "\n  ├────────────────── FloatType: Float64\n  ├────────── size (Lx, Ly, Lz): (6.283185307179586, 12.566370614359172, 3.0)\n  ├──── resolution (nx, ny, nz): (6, 8, 10)\n  ├── grid spacing (dx, dy, dz): (1.0471975511965976, 1.5707963267948966, 0.3)\n  ├────────────────────  domain: x ∈ [-3.141592653589793, 2.094395102393195]\n  |                              y ∈ [-6.283185307179586, 4.71238898038469]\n  |                              z ∈ [-1.5, 1.2]\n  └─ aliased fraction: 0.3333333333333333"
 
     # Test no dealiasing
-    g₁ = OneDGrid(nx, Lx; aliased_fraction = 0)
-    g₂ = TwoDGrid(nx, Lx, ny, Ly; aliased_fraction = 0)
-    g₃ = ThreeDGrid(nx, Lx, ny, Ly, nz, Lz; aliased_fraction = 0)
+    g₁ = OneDGrid(; nx, Lx, aliased_fraction = 0)
+    g₂ = TwoDGrid(; nx, Lx, ny, Ly, aliased_fraction = 0)
+    g₃ = ThreeDGrid(; nx, Lx, ny, Ly, nz, Lz, aliased_fraction = 0)
 
     @test testnodealias(g₁)
     @test testnodealias(g₂)
@@ -135,7 +135,7 @@ for dev in devices
     # Test 1D grid
     nx = 32             # number of points
     Lx = 2π             # Domain width
-    g1 = OneDGrid(dev, nx, Lx)
+    g1 = OneDGrid(dev; nx, Lx)
     
     @test test_fft_cosmx(g1)
     @test test_rfft_cosmx(g1)
@@ -144,7 +144,7 @@ for dev in devices
     # Test 2D rectangular grid
     nx, ny = 32, 64     # number of points
     Lx, Ly = 2π, 3π     # Domain width
-    g2 = TwoDGrid(dev, nx, Lx, ny, Ly)
+    g2 = TwoDGrid(dev; nx, Lx, ny, Ly)
 
     @test test_fft_cosmxcosny(g2)
     @test test_rfft_cosmxcosny(g2)
@@ -156,7 +156,7 @@ for dev in devices
     # Test 3D parallelogram grid
     nx, ny, nz = 32, 30, 16     # number of points
     Lx, Ly, Lz = 2π, 3π, 4.0    # Domain width
-    g3 = ThreeDGrid(dev, nx, Lx, ny, Ly, nz, Lz)
+    g3 = ThreeDGrid(dev; nx, Lx, ny, Ly, nz, Lz)
 
     @test test_fft_cosmxcosny(g3)
     @test test_rfft_cosmxcosny(g3)
@@ -172,7 +172,7 @@ for dev in devices
     # Test 1D grid
     nx = 32             # number of points
     Lx = 2π             # Domain width
-    g1 = OneDGrid(dev, nx, Lx)
+    g1 = OneDGrid(dev; nx, Lx)
 
     @test test_ifft_cosmx(g1)
     @test test_irfft_cosmx(g1)
@@ -181,7 +181,7 @@ for dev in devices
     # Test 2D rectangular grid
     nx, ny = 32, 64     # number of points
     Lx, Ly = 2π, 3π     # Domain width
-    g2 = TwoDGrid(dev, nx, Lx, ny, Ly)
+    g2 = TwoDGrid(dev; nx, Lx, ny, Ly)
 
     @test test_ifft_cosmxcosny(g2)
     @test test_irfft_cosmxcosny(g2)
@@ -193,7 +193,7 @@ for dev in devices
     # Test 3D parallelogram grid
     nx, ny, nz = 32, 30, 16     # number of points
     Lx, Ly, Lz = 2π, 3π, 4.0    # Domain width
-    g3 = ThreeDGrid(dev, nx, Lx, ny, Ly, nz, Lz)
+    g3 = ThreeDGrid(dev; nx, Lx, ny, Ly, nz, Lz)
 
     @test test_ifft_cosmxcosny(g3)
     @test test_irfft_cosmxcosny(g3)
@@ -227,13 +227,13 @@ for dev in devices
     @test test_superzeros()
     @test test_supertuplezeros()
     @test test_supersize()
-    @test test_arraytype(dev)
-    @test test_arraytypeTdim(dev, Float32, 2)
+    @test test_device_array(dev)
+    @test test_device_array_Tdim(dev, Float32, 2)
 
     # Test on a rectangular grid
     nx, ny = 64, 128   # number of points
     Lx, Ly = 2π, 3π    # Domain width
-    g = TwoDGrid(dev, nx, Lx, ny, Ly)
+    g = TwoDGrid(dev; nx, Lx, ny, Ly)
     x, y = gridpoints(g)
     k0, l0 = 2π/Lx, 2π/Ly
 
@@ -267,7 +267,7 @@ for dev in devices
 
     @test test_zeros()
     
-    g = OneDGrid(dev, nx, Lx)
+    g = OneDGrid(dev; nx, Lx)
     σ = 0.5
     f1 = @. exp(-g.x^2 / 2σ^2)
     @test test_parsevalsum2(f1, g; realvalued=true)  # Real valued f with rfft
@@ -351,8 +351,8 @@ for dev in devices
     params1 = Params1(1.0, 2.0, func)
     params2 = Params2(1.0, func, 2.0)
     
-    prob1 = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params1, dev)
-    prob2 = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params2, dev)
+    prob1 = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params1)
+    prob2 = FourierFlows.Problem(prob.eqn, "RK4", prob.clock.dt, prob.grid, prob.vars, params2)
     prob = prob1 # prob2 is only useful for testing params show() method
     
     get_sol(prob) = prob.sol
@@ -374,7 +374,7 @@ for dev in devices
     
     @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: ComplexF64"
     @test repr(prob.clock) == "Clock\n  ├─── timestep dt: 0.01\n  ├────────── step: 0\n  └──────── time t: 0.0"
-    @test repr(prob) == "Problem\n  ├─────────── grid: grid (on " * FourierFlows.griddevice(prob.grid) * ")\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"
+    @test repr(prob) == "Problem\n  ├─────────── grid: grid (on " * string(typeof(prob.grid.device)) * ")\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"
   end
 
   @time @testset "Doctests" begin

@@ -16,9 +16,8 @@ overload all methods to work with `GPU()` device as their argument (instead of t
 It's easy to construct a grid that lives on the GPU. Calling:
 
 ```julia
-dev = GPU()
-n, L = 16, 2.0
-grid = OneDGrid(dev, n, L)
+nx, Lx = 16, 2.0
+grid = OneDGrid(GPU(); nx, Lx)
 
 OneDimensionalGrid
   ├─────────── Device: GPU
@@ -30,22 +29,21 @@ OneDimensionalGrid
   └─ aliased fraction: 0.3333333333333333
 ```
 
-gives out a grid whose arrays are `CuArrays`. (Calling `OneDGrid(n, L)` defaults to CPU, i.e., 
-`OneDGrid(CPU(), n, L)`.)
+returns a grid whose arrays are `CuArrays`. (Calling `OneDGrid(; nx, Lx)` defaults to using
+`CPU()`, i.e., `OneDGrid(CPU(); nx, Lx)`.)
 
 When we construct the `Params`, `Vars`, and `Equation` for our problem we need to make sure
 that we create arrays on the appropriate device, i.e., `Arrays` for `CPU` or `CuArrays` for
-the `GPU`. Function `ArrayType` is useful in constructing appropriately chosen arrays.
+the `GPU`. Function `device_array` is useful in constructing appropriately chosen arrays.
 
 ```@docs
-ArrayType
+device_array
 ```
 
-The `FourierFlows.Problem` constructor then takes an optional positional argument 
-`dev::Device`. If not provided anything, the default values for `dev=CPU()`.
+The `FourierFlows.Problem` constructor infers the device from the `grid` that is provided.
 
 ```julia
-problem = Problem(equation, stepper, dt, grid, vars, params, GPU())
+problem = Problem(equation, stepper, dt, grid, vars, params)
 ```
 
 The `FourierFlows.Diffusion` module is written in a way such that switching from CPU to GPU 

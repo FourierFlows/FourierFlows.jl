@@ -5,12 +5,7 @@ using
   Glob,
   FourierFlows
 
-# Gotta set this environment variable when using the GR run-time on CI machines.
-# This happens as examples will use Plots.jl to make plots and movies.
-# See: https://github.com/jheinen/GR.jl/issues/278
-ENV["GKSwstype"] = "100"
-
- #####
+#####
 ##### Generate examples
 #####
 
@@ -66,29 +61,29 @@ pages = [
         ],
 ]
 
-makedocs(
+makedocs(;
    sitename = "FourierFlows.jl",
-    authors = "Gregory L. Wagner and Navid C. Constantinou",
+    authors = "Gregory L. Wagner and Navid C. Constantinou and contributors",
     modules = [FourierFlows],
-     format = format,
-      pages = pages,
+     format,
+      pages,
     doctest = true,
      strict = :doctest,
       clean = true,
   checkdocs = :exports
 )
 
+@info "Cleaning up temporary .jld2 and .nc files created by doctests..."
+for file in vcat(glob("docs/*.jld2"))
+  rm(file)
+end
+
 withenv("GITHUB_REPOSITORY" => "FourierFlows/FourierFlowsDocumentation") do
   deploydocs(
             repo = "github.com/FourierFlows/FourierFlowsDocumentation.git",
         versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
+       forcepush = true,
     push_preview = false,
        devbranch = "main"
   )
-end
-
-
-@info "Cleaning up temporary .jld2 and .nc files created by doctests..."
-for file in vcat(glob("docs/*.jld2"))
-  rm(file)
 end

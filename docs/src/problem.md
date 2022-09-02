@@ -27,7 +27,7 @@ using FourierFlows
 
 nx, Lx = 32, 2.0
 
-grid = OneDGrid(nx, Lx)
+grid = OneDGrid(; nx, Lx)
 ```
 
 Our problem has a parameter ``\alpha``. Thus, we create a `Params` as:

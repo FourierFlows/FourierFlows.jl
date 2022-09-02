@@ -89,44 +89,47 @@ struct EmptyVars <: AbstractVars end
 
 """
     Problem(eqn::Equation, stepper, dt, grid::AbstractGrid{T}, 
-            vars=EmptyVars, params=EmptyParams, dev::Device=CPU(); stepperkwargs...) where T
+            vars=EmptyVars, params=EmptyParams; stepperkwargs...) where T
 
 Construct a `Problem` for equation `eqn` using the time`stepper` with timestep 
-`dt`, on `grid` and on `dev`ice. Optionally, use the keyword arguments to provide 
-variables with `vars` and parameters with `params`. The `stepperkwargs` are passed
-to the time-stepper constructor.
+`dt`, on `grid`. The device is inferred from the `grid`. Optionally, use the
+keyword arguments to provide variables with `vars` and parameters with `params`.
+The `stepperkwargs` are passed on to the time-stepper constructor.
 """
 function Problem(eqn::Equation, stepper, dt, grid::AbstractGrid{T}, 
-                 vars=EmptyVars, params=EmptyParams, dev::Device=CPU(); stepperkwargs...) where T
+                 vars=EmptyVars, params=EmptyParams; stepperkwargs...) where T
+
+  dev = grid.device
+
   clock = Clock{T}(dt, 0, 0)
 
   timestepper = TimeStepper(stepper, eqn, dt, dev; stepperkwargs...)
 
-  sol = devzeros(dev, eqn.T, eqn.dims)
+  sol = zeros(dev, eqn.T, eqn.dims)
 
   return Problem(sol, clock, eqn, grid, vars, params, timestepper)
 end
 
 show(io::IO, clock::FourierFlows.Clock) =
      print(io, "Clock\n",
-               "  ├─── timestep dt: ", clock.dt, '\n',
-               "  ├────────── step: ", clock.step, '\n',
+               "  ├─── timestep dt: ", clock.dt, "\n",
+               "  ├────────── step: ", clock.step, "\n",
                "  └──────── time t: ", clock.t)
 
 show(io::IO, eqn::FourierFlows.Equation) =
      print(io, "Equation\n",
-               "  ├──────── linear coefficients: L", '\n',
-               "  │                              ├───type: ", eltype(eqn.L), '\n',
-               "  │                              └───size: ", size(eqn.L), '\n', 
-               "  ├───────────── nonlinear term: calcN!()", '\n',
+               "  ├──────── linear coefficients: L", "\n",
+               "  │                              ├───type: ", eltype(eqn.L), "\n",
+               "  │                              └───size: ", size(eqn.L), "\n",
+               "  ├───────────── nonlinear term: calcN!()", "\n",
                "  └─── type of state vector sol: ", eqn.T)
 
 show(io::IO, problem::FourierFlows.Problem) =
     print(io, "Problem\n",
-              "  ├─────────── grid: grid (on " * FourierFlows.griddevice(problem.grid) * ")", '\n',
-              "  ├───── parameters: params", '\n',
-              "  ├────── variables: vars", '\n',
-              "  ├─── state vector: sol", '\n',
-              "  ├─────── equation: eqn", '\n',
-              "  ├────────── clock: clock", '\n',
+              "  ├─────────── grid: grid (on " * string(typeof(problem.grid.device)) * ")", "\n",
+              "  ├───── parameters: params", "\n",
+              "  ├────── variables: vars", "\n",
+              "  ├─── state vector: sol", "\n",
+              "  ├─────── equation: eqn", "\n",
+              "  ├────────── clock: clock", "\n",
               "  └──── timestepper: ", string(nameof(typeof(problem.timestepper))))

@@ -6,7 +6,8 @@ a collection of a collection).
 """
 function innereltype(x)
   T = eltype(x)
-  T <: AbstractArray ? innereltype(T) : return T
+
+  return T <: AbstractArray ? innereltype(T) : return T
 end
 
 """
@@ -32,7 +33,7 @@ fltype(T::Tuple) = fltype(T[1])
 Returns an array like `A`, but full of zeros. If `innereltype(A)` can be promoted to `T`, then
 the innermost elements of the array will have type `T`.
 """
-superzeros(T, A::AbstractArray) = T(0)*A
+superzeros(T, A::AbstractArray) = T(0) * A
 superzeros(A::AbstractArray) = superzeros(innereltype(A), A)
 superzeros(T, dims::Tuple) = eltype(dims) <: Tuple ? [ superzeros(T, d) for d in dims ] : zeros(T, dims)
 superzeros(dims::Tuple) = superzeros(Float64, dims) # default
@@ -50,8 +51,10 @@ macro superzeros(T, ad, vars...)
   
   return expr
 end
+
 supersize(a) = Tuple([size(ai) for ai in a])
 supersize(a::Array{T}) where T<:Number = size(a)
+supersize(a::CuArray) = size(a)
 
 macro createarrays(T, dims, vars...)
   expr = Expr(:block)
@@ -74,13 +77,7 @@ macro zeros(T, dims, vars...)
 end
 
 Base.zeros(::CPU, T, dims) = zeros(T, dims)
-
-"""
-    devzeros(dev, T, dims)
-
-Returns an array like `A` of type `T`, but full of zeros.
-"""
-devzeros(dev, T, dims) = zeros(dev, T, dims)
+Base.zeros(::GPU, T, dims) = CUDA.zeros(T, dims)
 
 
 """
@@ -100,7 +97,7 @@ end
 """
     parsevalsum2(uh, grid)
 
-Returns `Σ |uh|²` on the `grid`, which is equal to the domain integral of `u`. More specifically, 
+Return `Σ |uh|²` on the `grid`, which is equal to the domain integral of `u`. More specifically, 
 it returns
 ```math
 \\sum_{𝐤} |û_{𝐤}|² L_x L_y = \\int u(𝐱)² \\, 𝖽x 𝖽y \\,,
@@ -137,7 +134,7 @@ end
 """
     parsevalsum(uh, grid)
 
-Returns `real(Σ uh)` on the `grid`, i.e.
+Return `real(Σ uh)` on the `grid`, i.e.
 ```math
 ℜ [ \\sum_{𝐤} û_{𝐤} L_x L_y ] \\,,
 ```
@@ -153,13 +150,14 @@ function parsevalsum(uh, grid::TwoDGrid)
   end
 
   norm = grid.Lx * grid.Ly / (grid.nx^2 * grid.ny^2) # normalization for dft
+
   return norm * real(U)
 end
 
 """
     jacobianh(a, b, grid)
 
-Returns the Fourier transform of the Jacobian of `a` and `b` on `grid`.
+Return the Fourier transform of the Jacobian of `a` and `b` on `grid`.
 """
 function jacobianh(a, b, grid::TwoDGrid)
   if eltype(a) <: Real
@@ -181,7 +179,7 @@ end
 """
     jacobian(a, b, grid)
 
-Returns the Jacobian of `a` and `b` on `grid`.
+Return the Jacobian of `a` and `b` on `grid`.
 """
 function jacobian(a, b, grid::TwoDGrid)
   if eltype(a) <: Real
@@ -194,7 +192,7 @@ end
 """
     radialspectrum(fh, grid; n=nothing, m=nothing, refinement=2)
 
-Returns the radial spectrum of `fh`. `fh` lives on Cartesian wavenumber grid ``(k, l)``. To 
+Return the radial spectrum of `fh`. `fh` lives on Cartesian wavenumber grid ``(k, l)``. To 
 compute the radial spectrum, we first interpolate ``f̂(k, l)`` onto a radial wavenumber grid 
 ``(ρ, θ)``, where ``ρ² = k²+l²`` and ``θ = \\arctan(l/k)``. Note here that 
 ``f̂ =`` `fh` ``/(`` `grid.nx` ``e^{- i 𝐤 ⋅ 𝐱₀})``,  with ``𝐱₀`` the vector with components the 
@@ -238,7 +236,7 @@ function radialspectrum(fh, grid::TwoDGrid; n=nothing, m=nothing, refinement=2)
   # Interpolate fh onto fine grid in (ρ, θ).
   fhρθ = zeros(eltype(fhshift), (n, m))
 
-  for i₁=2:n, i₂=1:m # ignore zeroth mode; i₁≥2
+  for i₂=1:m, i₁=2:n # ignore zeroth mode; i₁≥2
     fhρθ[i₁, i₂] = itp(ρ[i₁] * cos(θ[i₂]), ρ[i₁] * sin(θ[i₂]))
   end
 
@@ -258,21 +256,48 @@ end
 """
     on_grid(func, grid)
 
-Returns an array, of the ArrayType of the device `grid` lives on, that contains the values of
-function `func` evaluated on the `grid`.
+Return an array, of the type compatible with the `device` that the `grid` lives on,
+that contains the values of function `func` evaluated on the `grid`.
 """
-on_grid(func, grid::OneDGrid{T, A}) where {T, A} = CUDA.@allowscalar A([func(grid.x[i]) for i=1:grid.nx])
+function on_grid(func, grid::OneDGrid{T}) where T
+  f = zeros(grid.device, T, (grid.nx, ))
 
-on_grid(func, grid::TwoDGrid{T, A}) where {T, A} = CUDA.@allowscalar A([func(grid.x[i], grid.y[j]) for i=1:grid.nx, j=1:grid.ny])
- 
-on_grid(func, grid::ThreeDGrid{T, A}) where {T, A} = CUDA.@allowscalar A([func(grid.x[i], grid.y[j], grid.z[k]) for i=1:grid.nx, j=1:grid.ny, k=1:grid.nz])
+  @. f = func(grid.x)
+
+  return f
+end
+
+function on_grid(func, grid::TwoDGrid{T}) where T
+  f = zeros(grid.device, T, (grid.nx, grid.ny))
+
+  x = reshape(grid.x, (grid.nx, 1))
+  y = reshape(grid.y, (1, grid.ny))
+  
+  @. f = func(x, y)
+
+  return f
+end
+
+function on_grid(func, grid::ThreeDGrid{T}) where T
+  f = zeros(grid.device, T, (grid.nx, grid.ny, grid.nz))
+
+  x = reshape(grid.x, (grid.nx, 1, 1))
+  y = reshape(grid.y, (1, grid.ny, 1))
+  z = reshape(grid.z, (1, 1, grid.nz))
+  
+  @. f = func(x, y, z)
+
+  return f
+end
 
 """
-    ArrayType(::Device)
-    ArrayType(::Device, T, dim)
+    device_array(device::Device)
+    device_array(device::Device, T, dim)
 
-Returns the proper array type according to the Device chosen, i.e., `Array` for CPU and
+Return the proper array type according to the `device`, i.e., `Array` for CPU and
 `CuArray` for GPU.
 """
-ArrayType(::CPU) = Array
-ArrayType(::CPU, T, dim) = Array{T, dim}
+device_array(::CPU) = Array
+device_array(::GPU) = CuArray
+device_array(::CPU, T, dim) = Array{T, dim}
+device_array(::GPU, T, dim) = CuArray{T, dim}

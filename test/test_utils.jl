@@ -57,7 +57,7 @@ end
 
 # This test could use some further work.
 function test_radialspectrum(dev::Device, n, ahkl, ahρ; debug=false, atol=0.1, rfft=false)
-  grid = TwoDGrid(dev, n, 2π)
+  grid = TwoDGrid(dev; nx=n, Lx=2π)
   if rfft==true
     ah = @. ahkl(grid.kr, grid.l)
   else   
@@ -135,27 +135,27 @@ function test_supersize()
 end
 
 """
-Test arraytype().
+Test device_array().
 """
-test_arraytype(dev::Device) =
-  dev==CPU() ? ArrayType(dev)==Array : ArrayType(dev)==CuArray
+test_device_array(dev::Device) =
+  dev==CPU() ? device_array(dev) == Array : device_array(dev) == CuArray
 
-test_arraytypeTdim(dev::Device, T=Float64, dim=1) = 
-  dev==CPU() ? ArrayType(dev, T, dim)<:Array{T, dim} : ArrayType(dev, T, dim)<:CuArray{T, dim}
+test_device_array_Tdim(dev::Device, T=Float64, dim=1) = 
+  dev==CPU() ? device_array(dev, T, dim) <: Array{T, dim} : device_array(dev, T, dim) <: CuArray{T, dim}
 
 function test_ongrid(dev::Device)
   nx, ny, nz = 6, 8, 10
   Lx, Ly, Lz = 2π, 2.0, 3.0
   
-  g₁ = OneDGrid(dev, nx, Lx)
+  g₁ = OneDGrid(dev; nx, Lx)
   X₁ = gridpoints(g₁)
   f₁(x) = x^2
   
-  g₂ = TwoDGrid(dev, nx, Lx, ny, Ly)
+  g₂ = TwoDGrid(dev; nx, Lx, ny, Ly)
   X₂, Y₂ = gridpoints(g₂)
   f₂(x, y) = x^2 - y^3
   
-  g₃ = ThreeDGrid(dev, nx, Lx, ny, Ly, nz, Lz)
+  g₃ = ThreeDGrid(dev; nx, Lx, ny, Ly, nz, Lz)
   X₃, Y₃, Z₃ = gridpoints(g₃)
   f₃(x, y, z) = x^2 - y^3 + sin(z)
   

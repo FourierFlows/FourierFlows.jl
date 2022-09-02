@@ -25,7 +25,7 @@ on a grid ``x \in [-π, π)`` with ``n_x = 10`` grid points.
 using FourierFlows, CairoMakie
 
 nx, Lx = 10, 2π
-grid = OneDGrid(nx, Lx)
+grid = OneDGrid(; nx, Lx)
 
 f1(x) = cos(4x)
 f2(x) = cos(6x)
@@ -94,7 +94,7 @@ FourierFlows.dealias!
 If we construct a grid with `aliased_fraction=0`, e.g.,
 
 ```@example 1
-grid_nodealias = OneDGrid(nx, Lx; aliased_fraction=0)
+grid_nodealias = OneDGrid(; nx, Lx, aliased_fraction=0)
 ```
 
 then `dealias!(fh, grid_nodealias)` will have _no effect_ whatsoever on `fh`.

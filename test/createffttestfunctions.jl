@@ -1,4 +1,4 @@
-function create_testfuncs(g::OneDGrid{Tg,<:Array}) where Tg
+function create_testfuncs(g::OneDGrid{Tg, <:Array}) where Tg
     g.nx > 8 || error("nx must be > 8")
     m = 5
     k₀ = g.k[2] # Fundamental wavenumber
@@ -141,21 +141,21 @@ end
 
 if CUDA.has_cuda()
   function create_testfuncs(g::OneDGrid{Tg, <:CuArray}) where Tg
-    cpugrid = OneDGrid(g.nx, g.Lx)
+    cpugrid = OneDGrid(CPU(); nx=g.nx, Lx=g.Lx)
     out = create_testfuncs(cpugrid)
     
     return map(x->CuArray(x), out)
   end
 
   function create_testfuncs(g::TwoDGrid{Tg, <:CuArray}) where Tg
-    cpugrid = TwoDGrid(g.nx, g.Lx, g.ny, g.Ly)
+    cpugrid = TwoDGrid(CPU(); nx=g.nx, Lx=g.Lx, ny=g.ny, Ly=g.Ly)
     out = create_testfuncs(cpugrid)
     
     return map(x->CuArray(x), out)
   end
 
   function create_testfuncs(g::ThreeDGrid{Tg, <:CuArray}) where Tg
-    cpugrid = ThreeDGrid(g.nx, g.Lx, g.ny, g.Ly, g.nz, g.Lz)
+    cpugrid = ThreeDGrid(CPU(); nx=g.nx, Lx=g.Lx, ny=g.ny, Ly=g.Ly, nz=g.nz, Lz=g.Lz)
     out = create_testfuncs(cpugrid)
 
     return map(x->CuArray(x), out)
