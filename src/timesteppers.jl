@@ -284,9 +284,10 @@ function stepforward!(sol, clock, ts::FilteredRK4TimeStepper, equation, vars, pa
   return nothing
 end
 
-# ------
+# --
 # LSRK(5)4
-# ------
+# --
+
 """
     struct LSRK54TimeStepper{T} <: AbstractTimeStepper{T}
 
@@ -301,8 +302,8 @@ end
 uⁿ⁺¹ = uⁿ
 ```
 
-where `Aᵢ`, `Bᵢ`, and `Cᵢ` are the A, B, C coefficients from LSRK tableau
-table at the ``i``-th stage. For details, please refer to
+where `Aᵢ`, `Bᵢ`, and `Cᵢ` are the ``A``, ``B``, and ``C`` coefficients from
+the LSRK tableau table at the ``i``-th stage. For details, please refer to
 
 > Carpenter, M. H. and Kennedy, C. A. (1994). Fourth-order 2N-storage Runge–Kutta schemes,
   Technical Report NASA TM-109112, NASA Langley Research Center, VA.
@@ -312,7 +313,7 @@ table at the ``i``-th stage. For details, please refer to
     with *less* memory footprint; half compared to [`RK4TimeStepper`](@ref).
     
     If you are bound by performance then use [`RK4TimeStepper`](@ref); if your
-    simulation bottleneck is memory consider using `LSRK54TimeStepper`.
+    simulation is bound by memory then consider using `LSRK54TimeStepper`.
 """
 struct LSRK54TimeStepper{T,V} <: AbstractTimeStepper{T}
    S² :: T
@@ -370,14 +371,15 @@ end
 
 function stepforward!(sol, clock, ts::LSRK54TimeStepper, equation, vars, params, grid)
   LSRK54!(sol, clock, ts, equation, vars, params, grid, clock.t, clock.dt)
-  clock.t    += clock.dt
+  clock.t += clock.dt
   clock.step += 1
+
   return nothing
 end
 
-# ------
+# --
 # ETDRK4
-# ------
+# --
 
 """
     struct ETDRK4TimeStepper{T,TL} <: AbstractTimeStepper{T}
@@ -527,9 +529,9 @@ function stepforward!(sol, clock, ts::FilteredETDRK4TimeStepper, equation, vars,
 end
 
 
-# ---
+# --
 # AB3
-# ---
+# --
 
 const ab3h1 = 23/12
 const ab3h2 = 16/12
