@@ -285,75 +285,69 @@ end
 """
     struct LSRK54TimeStepper{T} <: AbstractTimeStepper{T}
 
-A 5 stage 2 storage 4th-order Runge-Kutta timestepper for time-stepping. `∂u/∂t = F(u, t)` via:
-
-Define S² = 0 at the first stage.
+A 4th-order 5-stages 2-storage Runge-Kutta timestepper for time-stepping
+`∂u/∂t = RHS(u, t)` via:
 ```
+S² = 0
 for i = 1:5
-  S²   = Aᵢ*S² + dt*Fⁱ(t₀+ Cᵢdt, uⁿ);
-  uⁿ⁺¹ = uⁿ + Bᵢ*S²
+  S²   = Aᵢ * S² + dt * RHS(uⁿ, t₀ + Cᵢ * dt)
+  uⁿ⁺¹ = uⁿ + Bᵢ * S²
 end
 ```
-where
-# dt  -> time interal 
-# Aᵢ  -> A coefficients from LSRK tableau table in stage i 
-# Bᵢ  -> B coefficients from LSRK tableau table in stage i 
-# Cᵢ  -> C coefficients from LSRK tableau table in stage i 
-#  i  -> stage i 
 
-for detials, please refer to M.H. Carpenter, C.A. Kennedy, Fourth-order 2N-storage Runge–Kutta schemes, Technical Report NASA TM-109112, NASA Langley Research Center, VA, June 1994
+where `Aᵢ`, `Bᵢ`, and `Cᵢ` are the A, B, C coefficients from LSRK tableau
+table at the ``i``-th stage. For details, please refer to
+
+> Carpenter, M. H. and Kennedy, C. A. (1994). Fourth-order 2N-storage Runge–Kutta schemes,
+  Technical Report NASA TM-109112, NASA Langley Research Center, VA.
 """
-struct LSRK54TimeStepper{T,Vec} <: AbstractTimeStepper{T}
-    S² :: T
-    Fⁱ :: T
-    A  :: Vec
-    B  :: Vec
-    C  :: Vec
+struct LSRK54TimeStepper{T,V} <: AbstractTimeStepper{T}
+   S² :: T
+  RHS :: T
+    A :: V
+    B :: V
+    C :: V
 end
 
 """
     LSRK54TimeStepper(equation::Equation, dev::Device=CPU())
 
-Construct a 4th-order 5 stages low storage Runge-Kutta timestepper for `equation` on device `dev`.
+Construct a 4th-order 5-stages low storage Runge-Kutta timestepper for `equation` on device `dev`.
 """
 function LSRK54TimeStepper(equation::Equation, dev::Device=CPU())
-  @devzeros typeof(dev) equation.T equation.dims S² Fⁱ
+  @devzeros typeof(dev) equation.T equation.dims S² RHS
   
-  T = equation.T;
-  A = T[0.0, -0.417890474499852, -1.19215169464268, -1.69778469247153, -1.51418344425716];
-  B = T[0.149659021999229, 0.379210312999627, 0.822955029386982, 0.699450455949122, 0.153057247968152];
-  C = T[ 0.0, 0.149659021999229, 0.3704009573642045, 0.6222557631344415, 0.95828213067469];
+  T = equation.T
+  A = T[0.0,               -0.417890474499852, -1.19215169464268 , -1.69778469247153 , -1.51418344425716 ]
+  B = T[0.149659021999229,  0.379210312999627,  0.822955029386982,  0.699450455949122,  0.153057247968152]
+  C = T[0.0,                0.149659021999229,  0.3704009573642045, 0.6222557631344415, 0.95828213067469 ]
 
-  return LSRK54TimeStepper(S², Fⁱ, A, B, C);
+  return LSRK54TimeStepper(S², Fⁱ, Tuple(A), Tuple(B), Tuple(C))
 end
 
 function LSRK54!(sol, clock, ts, equation, vars, params, grid, t, dt)
-    
-    # Get the A,B,C ceof. for LSRK54 method
-    T = equation.T;
-    A = ts.A::Array{T,1};
-    B = ts.B::Array{T,1};
-    C = ts.C::Array{T,1};
-    
-    # Init. the S² term
-    @. ts.S² *= 0;
-    
+    T = equation.T
+    A, B, C = ts.A, ts.B, ts.C
+
+    # initialize the S² term
+    @. ts.S² = 0
+
     for i = 1:5
-        equation.calcN!(ts.Fⁱ, sol, t + C[i]*dt , clock, vars, params, grid)
-        addlinearterm!(ts.Fⁱ, equation.L, sol);
-        @. ts.S² = A[i]*ts.S² + dt*ts.Fⁱ;
-        @.   sol =   sol + B[i]*ts.S²;
+      equation.calcN!(ts.RHS, sol, t + C[i] * dt , clock, vars, params, grid)
+      addlinearterm!(ts.RHS, equation.L, sol)
+
+      @. ts.S² = A[i] * ts.S² + dt * ts.RHS
+      @.  sol += B[i] * ts.S²
     end
-    
-    return nothing;
+
+    return nothing
 end
 
-function  stepforward!(sol, clock, ts::LSRK54TimeStepper, equation, vars, params, grid)
-    LSRK54!(sol, clock, ts, equation, vars, params, grid, clock.t, clock.dt)
-    #Finishing the time step
-    clock.t    += clock.dt
-    clock.step += 1;
-    return nothing;
+function stepforward!(sol, clock, ts::LSRK54TimeStepper, equation, vars, params, grid)
+  LSRK54!(sol, clock, ts, equation, vars, params, grid, clock.t, clock.dt)
+  clock.t    += clock.dt
+  clock.step += 1
+  return nothing
 end
 
 # ------
