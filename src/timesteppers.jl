@@ -290,9 +290,10 @@ A 4th-order 5-stages 2-storage Runge-Kutta timestepper for time-stepping
 ```
 S² = 0
 for i = 1:5
-  S²   = Aᵢ * S² + dt * RHS(uⁿ, t₀ + Cᵢ * dt)
-  uⁿ⁺¹ = uⁿ + Bᵢ * S²
+  S² = Aᵢ * S² + dt * RHS(uⁿ, t₀ + Cᵢ * dt)
+  uⁿ = uⁿ + Bᵢ * S²
 end
+uⁿ⁺¹ = uⁿ
 ```
 
 where `Aᵢ`, `Bᵢ`, and `Cᵢ` are the A, B, C coefficients from LSRK tableau
