@@ -73,17 +73,11 @@ end
 #   * Filtered Forward Euler
 #   * RK4
 #   * Filtered RK4
-#   * ETDRK4
 #   * LSRK54
+#   * ETDRK4
 #   * Filtered ETDRK4
 #   * AB3
 #   * Filtered AB3
-#
-# Explicit time-steppers are constructed with the signature
-#   ts = ExplicitTimeStepper(equation::Equation)
-#
-# Implicit time-steppers are constructed with the signature
-#   ts = ImplicitTimeStepper(equation::Equation, dt)
 
 # --
 # Forward Euler
@@ -98,7 +92,7 @@ uⁿ⁺¹ = uⁿ + dt * RHS(uⁿ, tⁿ)
 ```
 """
 struct ForwardEulerTimeStepper{T} <: AbstractTimeStepper{T}
-  N::T # Explicit linear and nonlinear terms
+  N :: T # Explicit linear and nonlinear terms
   ForwardEulerTimeStepper(N::T) where T = new{T}(0N)
 end
 
@@ -113,6 +107,7 @@ ForwardEulerTimeStepper(equation::Equation, dev::Device=CPU()) =
 function stepforward!(sol, clock, ts::ForwardEulerTimeStepper, equation, vars, params, grid)
   equation.calcN!(ts.N, sol, clock.t, clock, vars, params, grid)
   @. sol += clock.dt * (equation.L * sol + ts.N)
+
   clock.t += clock.dt
   clock.step += 1
   
@@ -143,6 +138,7 @@ end
 function stepforward!(sol, clock, ts::FilteredForwardEulerTimeStepper, equation, vars, params, grid)
   equation.calcN!(ts.N, sol, clock.t, clock, vars, params, grid)
   @. sol = ts.filter * (sol + clock.dt * (ts.N + equation.L * sol))
+
   clock.t += clock.dt
   clock.step += 1
   
@@ -188,7 +184,7 @@ end
 Construct a 4th-order Runge-Kutta timestepper for `equation` on device `dev`.
 """
 function RK4TimeStepper(equation::Equation, dev::Device=CPU())
-  @devzeros typeof(dev) equation.T equation.dims N sol₁ RHS₁ RHS₂ RHS₃ RHS₄
+  @devzeros typeof(dev) equation.T equation.dims sol₁ RHS₁ RHS₂ RHS₃ RHS₄
   
   return RK4TimeStepper(sol₁, RHS₁, RHS₂, RHS₃, RHS₄)
 end
@@ -255,13 +251,7 @@ function RK4substeps!(sol, clock, ts, equation, vars, params, grid, t, dt)
 end
 
 function RK4update!(sol, RHS₁, RHS₂, RHS₃, RHS₄, dt)
-  @. sol += dt*(RHS₁ / 6 + RHS₂ / 3  + RHS₃ / 3 + RHS₄ / 6)
-  
-  return nothing
-end
-
-function RK4update!(sol, RHS₁, RHS₂, RHS₃, RHS₄, filter, dt)
-  @. sol = filter * (sol + dt*(RHS₁ / 6 + RHS₂ / 3  + RHS₃ / 3 + RHS₄ / 6))
+  @. sol += dt * (RHS₁ / 6 + RHS₂ / 3  + RHS₃ / 3 + RHS₄ / 6)
   
   return nothing
 end
@@ -269,6 +259,7 @@ end
 function stepforward!(sol, clock, ts::RK4TimeStepper, equation, vars, params, grid)
   RK4substeps!(sol, clock, ts, equation, vars, params, grid, clock.t, clock.dt)
   RK4update!(sol, ts.RHS₁, ts.RHS₂, ts.RHS₃, ts.RHS₄, clock.dt)
+
   clock.t += clock.dt
   clock.step += 1
   
@@ -277,7 +268,9 @@ end
 
 function stepforward!(sol, clock, ts::FilteredRK4TimeStepper, equation, vars, params, grid)
   RK4substeps!(sol, clock, ts, equation, vars, params, grid, clock.t, clock.dt)
-  RK4update!(sol, ts.RHS₁, ts.RHS₂, ts.RHS₃, ts.RHS₄, ts.filter, clock.dt)
+  RK4update!(sol, ts.RHS₁, ts.RHS₂, ts.RHS₃, ts.RHS₄, clock.dt)
+  @. sol *= ts.filter
+
   clock.t += clock.dt
   clock.step += 1
   
@@ -353,26 +346,23 @@ function LSRK54TimeStepper(equation::Equation, dev::Device=CPU())
   return LSRK54TimeStepper(S², RHS, Tuple(A), Tuple(B), Tuple(C))
 end
 
-function LSRK54!(sol, clock, ts, equation, vars, params, grid, t, dt)
-  T = equation.T
-  A, B, C = ts.A, ts.B, ts.C
-
-  # initialize the S² term
+function LSRK54update!(sol, clock, ts, equation, vars, params, grid, t, dt)
   @. ts.S² = 0
 
   for i = 1:5
-    equation.calcN!(ts.RHS, sol, t + C[i] * dt , clock, vars, params, grid)
+    equation.calcN!(ts.RHS, sol, t + ts.C[i] * dt , clock, vars, params, grid)
     addlinearterm!(ts.RHS, equation.L, sol)
 
-    @. ts.S² = A[i] * ts.S² + dt * ts.RHS
-    @.  sol += B[i] * ts.S²
+    @. ts.S² = ts.A[i] * ts.S² + dt * ts.RHS
+    @.  sol += ts.B[i] * ts.S²
   end
 
   return nothing
 end
 
 function stepforward!(sol, clock, ts::LSRK54TimeStepper, equation, vars, params, grid)
-  LSRK54!(sol, clock, ts, equation, vars, params, grid, clock.t, clock.dt)
+  LSRK54update!(sol, clock, ts, equation, vars, params, grid, clock.t, clock.dt)
+
   clock.t += clock.dt
   clock.step += 1
 
@@ -466,15 +456,7 @@ end
 function ETDRK4update!(sol, expLdt, α, β, Γ, N₁, N₂, N₃, N₄)
   @. sol = (expLdt * sol +  α * N₁
                          + 2β * (N₂ + N₃)
-                         +  Γ * N₄ )
-
-  return nothing
-end
-
-function ETDRK4update!(sol, ts, filter)
-  @. sol = filter * (ts.expLdt * sol +     ts.α * ts.N₁
-                                     + 2 * ts.β * (ts.N₂ + ts.N₃)
-                                     +     ts.Γ * ts.N₄ )
+                         +  Γ * N₄)
 
   return nothing
 end
@@ -515,6 +497,7 @@ end
 function stepforward!(sol, clock, ts::ETDRK4TimeStepper, equation, vars, params, grid)
   ETDRK4substeps!(sol, clock, ts, equation, vars, params, grid)
   ETDRK4update!(sol, ts.expLdt, ts.α, ts.β, ts.Γ, ts.N₁, ts.N₂, ts.N₃, ts.N₄)
+
   clock.t += clock.dt
   clock.step += 1
 
@@ -523,7 +506,9 @@ end
 
 function stepforward!(sol, clock, ts::FilteredETDRK4TimeStepper, equation, vars, params, grid)
   ETDRK4substeps!(sol, clock, ts, equation, vars, params, grid)
-  ETDRK4update!(sol, ts, ts.filter) # update
+  ETDRK4update!(sol, ts.expLdt, ts.α, ts.β, ts.Γ, ts.N₁, ts.N₂, ts.N₃, ts.N₄)
+  @. sol *= ts.filter
+
   clock.t += clock.dt
   clock.step += 1
 
@@ -606,21 +591,12 @@ function AB3update!(sol, ts, clock)
   return nothing
 end
 
-function AB3update!(sol, ts::FilteredAB3TimeStepper, clock)
-  if clock.step < 3  # forward Euler steps to initialize AB3
-    @. sol = ts.filter * (sol + clock.dt * ts.RHS)    # Update
-  else   # Otherwise, stepforward with 3rd order Adams Bashforth:
-    @. sol = ts.filter * (sol + clock.dt * (ab3h1 * ts.RHS - ab3h2 * ts.RHS₋₁ + ab3h3 * ts.RHS₋₂))
-  end
-  
-  return nothing
-end
-
 function stepforward!(sol, clock, ts::AB3TimeStepper, equation, vars, params, grid)
   equation.calcN!(ts.RHS, sol, clock.t, clock, vars, params, grid)
   addlinearterm!(ts.RHS, equation.L, sol)
-  
+
   AB3update!(sol, ts, clock)
+
   clock.t += clock.dt
   clock.step += 1
   
@@ -635,6 +611,8 @@ function stepforward!(sol, clock, ts::FilteredAB3TimeStepper, equation, vars, pa
   addlinearterm!(ts.RHS, equation.L, sol)
   
   AB3update!(sol, ts, clock)
+  @. sol *= ts.filter
+
   clock.t += clock.dt
   clock.step += 1
   
