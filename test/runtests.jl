@@ -26,6 +26,7 @@ const rtol_timesteppers = 1e-12
 const steppers = [
   "ForwardEuler",
   "RK4",
+  "LSRK54",
   "ETDRK4",
   "AB3",
   "FilteredForwardEuler",

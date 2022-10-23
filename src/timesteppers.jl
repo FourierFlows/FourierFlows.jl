@@ -40,7 +40,8 @@ const fullyexplicitsteppers= [
   :AB3,
   :FilteredForwardEuler,
   :FilteredRK4,
-  :FilteredAB3
+  :FilteredAB3,
+  :LSRK54
 ]
 
 isexplicit(stepper) = any(Symbol(stepper) .== fullyexplicitsteppers)
@@ -73,6 +74,7 @@ end
 #   * RK4
 #   * Filtered RK4
 #   * ETDRK4
+#   * LSRK54
 #   * Filtered ETDRK4
 #   * AB3
 #   * Filtered AB3
@@ -166,6 +168,11 @@ k₂ = RHS(uⁿ + k₁ * dt/2, tⁿ + dt/2)
 k₃ = RHS(uⁿ + k₂ * dt/2, tⁿ + dt/2)
 k₄ = RHS(uⁿ + k₃ * dt, tⁿ + dt)
 ```
+
+!!! info "Usage"
+    If you are limited by memory then consider switching to [`LSRK54TimeStepper`](@ref).
+    The [`LSRK54TimeStepper`](@ref) timestepper has half the memory footprint compared
+    to the `RK4TimeStepper` with a 25~30% performance trade off.
 """
 struct RK4TimeStepper{T} <: AbstractTimeStepper{T}
   sol₁ :: T
@@ -277,10 +284,104 @@ function stepforward!(sol, clock, ts::FilteredRK4TimeStepper, equation, vars, pa
   return nothing
 end
 
+# --
+# LSRK(5)4
+# --
 
-# ------
+"""
+    struct LSRK54TimeStepper{T} <: AbstractTimeStepper{T}
+
+A 4th-order 5-stages 2-storage Runge-Kutta timestepper for time-stepping
+`∂u/∂t = RHS(u, t)` via:
+```
+S² = 0
+
+for i = 1:5
+  S² = Aᵢ * S² + dt * RHS(uⁿ, t₀ + Cᵢ * dt)
+  uⁿ += Bᵢ * S²
+end
+
+uⁿ⁺¹ = uⁿ
+```
+
+where `Aᵢ`, `Bᵢ`, and `Cᵢ` are the ``A``, ``B``, and ``C`` coefficients from
+the LSRK tableau table at the ``i``-th stage. For details, please refer to
+
+> Carpenter, M. H. and Kennedy, C. A. (1994). Fourth-order 2N-storage Runge–Kutta schemes, Technical Report NASA TM-109112, NASA Langley Research Center, VA.
+
+!!! info "Usage"
+    The `LSRK54TimeStepper` is *slower* than the [`RK4TimeStepper`](@ref) but
+    with *less* memory footprint; half compared to [`RK4TimeStepper`](@ref).
+    
+    If you are bound by performance then use [`RK4TimeStepper`](@ref); if your
+    simulation is bound by memory then consider using `LSRK54TimeStepper`.
+"""
+struct LSRK54TimeStepper{T,V} <: AbstractTimeStepper{T}
+   S² :: T
+  RHS :: T
+    A :: V
+    B :: V
+    C :: V
+end
+
+"""
+    LSRK54TimeStepper(equation::Equation, dev::Device=CPU())
+
+Construct a 4th-order 5-stages low storage Runge-Kutta timestepper for `equation` on device `dev`.
+"""
+function LSRK54TimeStepper(equation::Equation, dev::Device=CPU())
+  @devzeros typeof(dev) equation.T equation.dims S² RHS
+  
+  T = equation.T
+  A = T[0, 
+        -567301805773//1357537059087, 
+        -2404267990393//2016746695238, 
+        -3550918686646//2091501179385, 
+        -1275806237668//842570457699]
+
+  B = T[1432997174477//9575080441755, 
+        5161836677717//13612068292357,
+        1720146321549//2090206949498,
+        3134564353537//4481467310338,
+        2277821191437//14882151754819]
+  C = T[0, 
+        1432997174477//9575080441755,
+        2526269341429//6820363962896,
+        2006345519317//3224310063776,
+        2802321613138//2924317926251]
+
+  return LSRK54TimeStepper(S², RHS, Tuple(A), Tuple(B), Tuple(C))
+end
+
+function LSRK54!(sol, clock, ts, equation, vars, params, grid, t, dt)
+  T = equation.T
+  A, B, C = ts.A, ts.B, ts.C
+
+  # initialize the S² term
+  @. ts.S² = 0
+
+  for i = 1:5
+    equation.calcN!(ts.RHS, sol, t + C[i] * dt , clock, vars, params, grid)
+    addlinearterm!(ts.RHS, equation.L, sol)
+
+    @. ts.S² = A[i] * ts.S² + dt * ts.RHS
+    @.  sol += B[i] * ts.S²
+  end
+
+  return nothing
+end
+
+function stepforward!(sol, clock, ts::LSRK54TimeStepper, equation, vars, params, grid)
+  LSRK54!(sol, clock, ts, equation, vars, params, grid, clock.t, clock.dt)
+  clock.t += clock.dt
+  clock.step += 1
+
+  return nothing
+end
+
+# --
 # ETDRK4
-# ------
+# --
 
 """
     struct ETDRK4TimeStepper{T,TL} <: AbstractTimeStepper{T}
@@ -430,9 +531,9 @@ function stepforward!(sol, clock, ts::FilteredETDRK4TimeStepper, equation, vars,
 end
 
 
-# ---
+# --
 # AB3
-# ---
+# --
 
 const ab3h1 = 23/12
 const ab3h2 = 16/12
