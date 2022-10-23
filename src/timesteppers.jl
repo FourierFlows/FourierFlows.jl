@@ -168,6 +168,11 @@ k₂ = RHS(uⁿ + k₁ * dt/2, tⁿ + dt/2)
 k₃ = RHS(uⁿ + k₂ * dt/2, tⁿ + dt/2)
 k₄ = RHS(uⁿ + k₃ * dt, tⁿ + dt)
 ```
+
+!!! info "Usage"
+    If you are limited by memory then consider switching to [`LSRK54TimeStepper`](@ref).
+    The [`LSRK54TimeStepper`](@ref) timestepper has half the memory footprint compared
+    to the `RK4TimeStepper` with a 25~30% performance trade off.
 """
 struct RK4TimeStepper{T} <: AbstractTimeStepper{T}
   sol₁ :: T
@@ -301,6 +306,13 @@ table at the ``i``-th stage. For details, please refer to
 
 > Carpenter, M. H. and Kennedy, C. A. (1994). Fourth-order 2N-storage Runge–Kutta schemes,
   Technical Report NASA TM-109112, NASA Langley Research Center, VA.
+
+!!! info "Usage"
+    The `LSRK54TimeStepper` is *slower* than the [`RK4TimeStepper`](@ref) but
+    with *less* memory footprint; half compared to [`RK4TimeStepper`](@ref).
+    
+    If you are bound by performance then use [`RK4TimeStepper`](@ref); if your
+    simulation bottleneck is memory consider using `LSRK54TimeStepper`.
 """
 struct LSRK54TimeStepper{T,V} <: AbstractTimeStepper{T}
    S² :: T
