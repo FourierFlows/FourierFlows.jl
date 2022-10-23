@@ -326,21 +326,21 @@ function LSRK54TimeStepper(equation::Equation, dev::Device=CPU())
 end
 
 function LSRK54!(sol, clock, ts, equation, vars, params, grid, t, dt)
-    T = equation.T
-    A, B, C = ts.A, ts.B, ts.C
+  T = equation.T
+  A, B, C = ts.A, ts.B, ts.C
 
-    # initialize the S² term
-    @. ts.S² = 0
+  # initialize the S² term
+  @. ts.S² = 0
 
-    for i = 1:5
-      equation.calcN!(ts.RHS, sol, t + C[i] * dt , clock, vars, params, grid)
-      addlinearterm!(ts.RHS, equation.L, sol)
+  for i = 1:5
+    equation.calcN!(ts.RHS, sol, t + C[i] * dt , clock, vars, params, grid)
+    addlinearterm!(ts.RHS, equation.L, sol)
 
-      @. ts.S² = A[i] * ts.S² + dt * ts.RHS
-      @.  sol += B[i] * ts.S²
-    end
+    @. ts.S² = A[i] * ts.S² + dt * ts.RHS
+    @.  sol += B[i] * ts.S²
+  end
 
-    return nothing
+  return nothing
 end
 
 function stepforward!(sol, clock, ts::LSRK54TimeStepper, equation, vars, params, grid)
