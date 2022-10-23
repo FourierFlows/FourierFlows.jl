@@ -307,8 +307,7 @@ uⁿ⁺¹ = uⁿ
 where `Aᵢ`, `Bᵢ`, and `Cᵢ` are the ``A``, ``B``, and ``C`` coefficients from
 the LSRK tableau table at the ``i``-th stage. For details, please refer to
 
-> Carpenter, M. H. and Kennedy, C. A. (1994). Fourth-order 2N-storage Runge–Kutta schemes,
-  Technical Report NASA TM-109112, NASA Langley Research Center, VA.
+> Carpenter, M. H. and Kennedy, C. A. (1994). Fourth-order 2N-storage Runge–Kutta schemes, Technical Report NASA TM-109112, NASA Langley Research Center, VA.
 
 !!! info "Usage"
     The `LSRK54TimeStepper` is *slower* than the [`RK4TimeStepper`](@ref) but
