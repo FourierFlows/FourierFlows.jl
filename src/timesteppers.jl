@@ -322,7 +322,7 @@ function LSRK54TimeStepper(equation::Equation, dev::Device=CPU())
   B = T[0.149659021999229,  0.379210312999627,  0.822955029386982,  0.699450455949122,  0.153057247968152]
   C = T[0.0,                0.149659021999229,  0.3704009573642045, 0.6222557631344415, 0.95828213067469 ]
 
-  return LSRK54TimeStepper(S², Fⁱ, Tuple(A), Tuple(B), Tuple(C))
+  return LSRK54TimeStepper(S², RHS, Tuple(A), Tuple(B), Tuple(C))
 end
 
 function LSRK54!(sol, clock, ts, equation, vars, params, grid, t, dt)
