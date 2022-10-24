@@ -51,6 +51,7 @@ export
   FilteredForwardEulerTimeStepper,
   RK4TimeStepper,
   FilteredRK4TimeStepper,
+  LSRK54TimeStepper,
   ETDRK4TimeStepper,
   FilteredETDRK4TimeStepper,
   AB3TimeStepper,

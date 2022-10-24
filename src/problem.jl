@@ -111,18 +111,18 @@ function Problem(eqn::Equation, stepper, dt, grid::AbstractGrid{T},
 end
 
 show(io::IO, clock::FourierFlows.Clock) =
-     print(io, "Clock\n",
-               "  ├─── timestep dt: ", clock.dt, "\n",
-               "  ├────────── step: ", clock.step, "\n",
-               "  └──────── time t: ", clock.t)
+    print(io, "Clock\n",
+              "  ├─── timestep dt: ", clock.dt, "\n",
+              "  ├────────── step: ", clock.step, "\n",
+              "  └──────── time t: ", clock.t)
 
 show(io::IO, eqn::FourierFlows.Equation) =
-     print(io, "Equation\n",
-               "  ├──────── linear coefficients: L", "\n",
-               "  │                              ├───type: ", eltype(eqn.L), "\n",
-               "  │                              └───size: ", size(eqn.L), "\n",
-               "  ├───────────── nonlinear term: calcN!()", "\n",
-               "  └─── type of state vector sol: ", eqn.T)
+    print(io, "Equation\n",
+              "  ├──────── linear coefficients: L", "\n",
+              "  │                              ├───type: ", eltype(eqn.L), "\n",
+              "  │                              └───size: ", size(eqn.L), "\n",
+              "  ├───────────── nonlinear term: calcN!()", "\n",
+              "  └─── type of state vector sol: ", eqn.T)
 
 show(io::IO, problem::FourierFlows.Problem) =
     print(io, "Problem\n",

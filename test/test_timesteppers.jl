@@ -39,8 +39,8 @@ dt = 1e-9 * 1/κ # make sure diffusive decay dynamics are resolved
 function constantdiffusiontest_stepforward(stepper, dev::Device=CPU(); kwargs...)
   nsteps = 1000
     
-  prob = construct_diffusion_problem(stepper, κ, dt; nx, Lx=2π, dev=CPU())
-  c_initial, c_final, prob, t_compute = constantdiffusion_stepforward(prob, nsteps; c₀=0.01, σ=0.2, κ=κ)
+  prob = construct_diffusion_problem(stepper, κ, dt; nx, Lx=2π, dev)
+  c_initial, c_final, prob, t_compute = constantdiffusion_stepforward(prob, nsteps; c₀=0.01, σ=0.2, κ)
   normmsg = "$stepper: relative error ="
   @printf("% 40s %.2e (%.3f s)\n", normmsg, norm(c_final-Array(prob.vars.c))/norm(c_final), t_compute)
 
@@ -50,8 +50,8 @@ end
 function varyingdiffusiontest_stepforward(stepper, dev::Device=CPU(); kwargs...)
   nsteps = 1000
   
-  prob = construct_diffusion_problem(stepper, κ*ones(nx), dt; nx=nx, Lx=2π, dev=CPU())
-  c_initial, c_final, prob, t_compute = constantdiffusion_stepforward(prob, nsteps; c₀=0.01, σ=0.2, κ=κ)
+  prob = construct_diffusion_problem(stepper, κ * ones(nx), dt; nx, Lx=2π, dev)
+  c_initial, c_final, prob, t_compute = constantdiffusion_stepforward(prob, nsteps; c₀=0.01, σ=0.2, κ)
   normmsg = "$stepper: relative error ="
   @printf("% 40s %.2e (%.3f s)\n", normmsg, norm(c_final-Array(prob.vars.c))/norm(c_final), t_compute)
 
@@ -61,8 +61,8 @@ end
 function constantdiffusiontest_step_until(stepper, dev::Device=CPU(); kwargs...)
   t_final = 1000*dt + 1e-6/π # make sure t_final is not integer multiple of dt
   
-  prob = construct_diffusion_problem(stepper, κ, dt; nx, Lx=2π, dev=CPU())
-  c_initial, c_final, prob, t_compute = constantdiffusion_step_until(prob, t_final; c₀=0.01, σ=0.2, κ=κ)
+  prob = construct_diffusion_problem(stepper, κ, dt; nx, Lx=2π, dev)
+  c_initial, c_final, prob, t_compute = constantdiffusion_step_until(prob, t_final; c₀=0.01, σ=0.2, κ)
   normmsg = "$stepper: relative error ="
   @printf("% 40s %.2e (%.3f s)\n", normmsg, norm(c_final-Array(prob.vars.c))/norm(c_final), t_compute)
 
