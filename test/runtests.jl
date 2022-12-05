@@ -230,6 +230,7 @@ for dev in devices
     @test test_supersize()
     @test test_device_array(dev)
     @test test_device_array_Tdim(dev, Float32, 2)
+    @test test_device_grid(dev)
 
     # Test on a rectangular grid
     nx, ny = 64, 128   # number of points

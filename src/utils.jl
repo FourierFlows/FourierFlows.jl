@@ -301,3 +301,12 @@ device_array(::CPU) = Array
 device_array(::GPU) = CuArray
 device_array(::CPU, T, dim) = Array{T, dim}
 device_array(::GPU, T, dim) = CuArray{T, dim}
+
+"""
+    device_array(grid::AbstractGrid)
+    device_array(device::Device, T, dim)
+
+Return the proper array type according to the `grid`'s `device`, i.e., `Array` for CPU and
+`CuArray` for GPU.
+"""
+device_array(grid::AbstractGrid) = device_array(grid.device)
