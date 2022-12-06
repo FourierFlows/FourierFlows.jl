@@ -143,6 +143,11 @@ test_device_array(dev::Device) =
 test_device_array_Tdim(dev::Device, T=Float64, dim=1) = 
   dev==CPU() ? device_array(dev, T, dim) <: Array{T, dim} : device_array(dev, T, dim) <: CuArray{T, dim}
 
+function test_device_grid(dev::Device)
+  grid = TwoDGrid(dev; nx=8, Lx=2π)
+  return dev==CPU() ? device_array(grid) == Array : device_array(grid) == CuArray
+end
+
 function test_ongrid(dev::Device)
   nx, ny, nz = 6, 8, 10
   Lx, Ly, Lz = 2π, 2.0, 3.0
