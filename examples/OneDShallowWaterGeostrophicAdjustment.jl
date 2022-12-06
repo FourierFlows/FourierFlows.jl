@@ -383,7 +383,7 @@ ax_v =  Axis(fig[4, 1]; ylabel = "v [m s⁻¹]", kwargs_uv...)
 Ld = @sprintf "%.2f" sqrt(g * H) / f /1e3     # divide with 1e3 to convert m -> km
 title = "Deformation radius √(gh) / f = "*string(Ld)*" km"
 
-fig[1, 1] = Label(fig, title, textsize=24, tellwidth=false)
+fig[1, 1] = Label(fig, title, fontsize=24, tellwidth=false)
 
 lines!(ax_η, grid.x/1e3, η; # divide with 1e3 to convert m -> km
        color = (:blue, 0.7))
@@ -431,7 +431,7 @@ ax_u =  Axis(fig[2, 1]; ylabel = "u [m s⁻¹]", kwargs...)
 
 ax_v =  Axis(fig[3, 1]; ylabel = "v [m s⁻¹]", kwargs...)
 
-fig[1, 1] = Label(fig, "Geostrophic balance", textsize=24, tellwidth=false)
+fig[1, 1] = Label(fig, "Geostrophic balance", fontsize=24, tellwidth=false)
 
 lines!(ax_u, grid.x/1e3, vars.u; # divide with 1e3 to convert m -> km
        label = "u",

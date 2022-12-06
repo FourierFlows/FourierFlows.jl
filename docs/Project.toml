@@ -9,3 +9,4 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [compat]
 Literate = "≥2.9.0"
+CairoMakie = "0.10"
