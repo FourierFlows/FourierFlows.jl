@@ -19,7 +19,7 @@ using FourierFlows
 
 nx, Lx = 64, 2π
 
-grid = OneDGrid(; nx, Lx)
+grid = OneDGrid(; nx, Lx, x0 = -Lx/3)
 
 # output
 
@@ -48,7 +48,7 @@ using LinearAlgebra: mul!, ldiv!
 using CairoMakie
 set_theme!(Theme(linewidth = 3, fontsize = 20))
 nx, Lx = 64, 2π
-grid = OneDGrid(; nx, Lx)
+grid = OneDGrid(; nx, Lx, x0 = -Lx/3)
 ```
 
 ```@example 1
@@ -105,7 +105,7 @@ grid.rfftplan
 
 We use the convention that variables names with `h` at the end stand for variable-hat, i.e., 
 ``\hat{u}``  is the Fourier transform of ``u`` and is stored in array `uh`. Since `u` is of 
-size ``n_x``, the real-Fourier transform should be of size ``n_{kr} = n_x/2+1``.
+size ``n_x``, the real-Fourier transform should be of size ``n_{kr} = n_x/2 + 1``.
 
 ```@example 1
 uh = Complex.(zeros(grid.nkr))
@@ -126,10 +126,10 @@ nothing # hide
 The `FFT` algorithm does not output exactly the Fourier coefficients ``\hat{u}(k)`` but
 rather, due to different normalization, `FFT` outputs something proportional to ``\hat{u}(k)``. 
 To obtain ``\hat{u}`` we need to divide the `FFT` output by the length of the original
-array and by ``e^{-i k x_0}``, where ``x_0`` is the first point of our domain array.
+array and by ``e^{i k x_0}``, where ``x_0`` is the first point of our domain array.
 
 ```@example 1
-uhat = @. uh / (nx * exp(- im * grid.kr * grid.x[1])) # due to normalization of FFT
+uhat = @. uh / (nx * exp(im * grid.kr * grid.x[1])) # due to normalization of FFT
 
 fig = Figure()
 ax = Axis(fig[1, 1];
