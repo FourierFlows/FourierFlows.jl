@@ -4,6 +4,7 @@
 using FourierFlows
 using LinearAlgebra: mul!, ldiv!
 using CairoMakie
+CairoMakie.activate!(type = "svg")
 set_theme!(Theme(linewidth = 3, fontsize = 20))
 ```
 
