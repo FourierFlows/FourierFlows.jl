@@ -249,19 +249,16 @@ for dev in devices
     k2, l2 = 3*k0, -3*l0
     sinkl1 = @. sin(k1*x + l1*y)
     sinkl2 = @. sin(k2*x + l2*y)
-    expkl1 = @. cos(k1*x + l1*y) + im*sin(k1*x + l1*y)
-    expkl2 = @. cos(k2*x + l2*y) + im*sin(k2*x + l2*y)
+    expkl1 = @. cos(k1*x + l1*y) + im * sin(k1*x + l1*y)
+    expkl2 = @. cos(k2*x + l2*y) + im * sin(k2*x + l2*y)
 
     # Analytical expression for the Jacobian of sin1 and sin2 and of exp1 and exp2
     Jsinkl1sinkl2 = @. (k1*l2-k2*l1)*cos(k1*x + l1*y)*cos(k2*x + l2*y)
     Jexpkl1expkl2 = @. (k2*l1-k1*l2)*(cos((k1+k2)*x + (l1+l2)*y)+im*sin((k1+k2)*x + (l1+l2)*y))
 
-    @test test_parsevalsum(f1, g; realvalued=true)   # Real valued f with rfft
-    @test test_parsevalsum(f1, g; realvalued=false)  # Real valued f with fft
-    @test test_parsevalsum(f2, g; realvalued=false)  # Complex valued f with fft
-    @test test_parsevalsum2(f1, g; realvalued=true)  # Real valued f with rfft
-    @test test_parsevalsum2(f1, g; realvalued=false) # Real valued f with fft
-    @test test_parsevalsum2(f2, g; realvalued=false) # Complex valued f with fft
+    @test test_parsevalsums(f1, g; realvalued=true)       # Real valued f with rfft
+    @test test_parsevalsums(f1, g; realvalued=false)      # Real valued f with fft
+    @test test_parsevalsums(f2, g; realvalued=false)      # Complex valued f with fft
 
     @test test_jacobian(sinkl1, sinkl1, 0*sinkl1, g)      # Test J(a, a) = 0
     @test test_jacobian(sinkl1, sinkl2, Jsinkl1sinkl2, g) # Test J(sin1, sin2) = Jsin1sin2
@@ -272,8 +269,8 @@ for dev in devices
     g = OneDGrid(dev; nx, Lx)
     σ = 0.5
     f1 = @. exp(-g.x^2 / 2σ^2)
-    @test test_parsevalsum2(f1, g; realvalued=true)  # Real valued f with rfft
-    @test test_parsevalsum2(f1, g; realvalued=false) # Real valued f with fft
+    @test test_parsevalsums(f1, g; realvalued=true)        # Real valued f with rfft
+    @test test_parsevalsums(f1, g; realvalued=false)       # Real valued f with fft
 
     
     # Radial spectrum tests. Note that ahρ = ∫ ah ρ dθ.

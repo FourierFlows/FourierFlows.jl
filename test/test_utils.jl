@@ -76,40 +76,31 @@ function test_radialspectrum(dev::Device, n, ahkl, ahρ; debug=false, atol=0.1, 
   end
 end
 
-integralsquare(func, grid::OneDGrid) = sum(abs2.(func)) * grid.dx
+integralsquare(f, grid::OneDGrid) = sum(abs2.(f)) * grid.dx
+integralsquare(f, grid::TwoDGrid) = sum(abs2.(f)) * grid.dx * grid.dy
 
-integralsquare(func, grid::TwoDGrid) = sum(abs2.(func)) * grid.dx * grid.dy
+function test_parsevalsums(f, grid; realvalued=true)
+  # Compute ∫|f|²dx
+  integral = integralsquare(f, grid)
 
-function test_parsevalsum(func, grid; realvalued=true)
-  # Compute integral in physical space
-  integral = integralsquare(func, grid)
-  # Compute integral in wavenumber space using Parseval's theorem
-  if realvalued==true;      funch = rfft(func)
-  elseif realvalued==false; funch = fft(func)
+  # Compute Σ|f̂|^2
+  if realvalued==true;      fh = rfft(f)
+  elseif realvalued==false; fh = fft(f)
   end
-  parsevalsum = FourierFlows.parsevalsum(abs2.(funch), grid)
+  parsevalsum = FourierFlows.parsevalsum(abs2.(fh), grid)
+  parsevalsum2 = FourierFlows.parsevalsum2(fh, grid)
 
-  return isapprox(integral, parsevalsum; rtol=rtol_utils)
-end
-
-function test_parsevalsum2(func, grid; realvalued=true)
-  # Compute integral in physical space
-  integral = integralsquare(func, grid)
-  # Compute integral in wavenumber space using Parseval's theorem
-  if realvalued==true;      funch = rfft(func)
-  elseif realvalued==false; funch = fft(func)
-  end
-  parsevalsum2 = FourierFlows.parsevalsum2(funch, grid)
-  
-  return isapprox(integral, parsevalsum2; rtol=rtol_utils)
+  # check Parseval's theorem
+  return isapprox(integral, parsevalsum;  rtol=rtol_utils) &&
+         isapprox(integral, parsevalsum2; rtol=rtol_utils)
 end
 
 """
-Compute the jacobian J(a, b) and compare the result with `analytic`. Use `atol` for the comparison
-to ensure validity when `analytic=0`.
+Compute the jacobian `J(a, b)` and compare the result with `analytic`. Use `atol` for the comparison
+to ensure validity when `J_analytic = 0`.
 """
-test_jacobian(a, b, analytic, grid) = isapprox(FourierFlows.jacobian(a, b, grid), analytic; 
-                                               atol=grid.nx*grid.ny*10*eps())
+test_jacobian(a, b, J_analytic, grid) = isapprox(FourierFlows.jacobian(a, b, grid), J_analytic; 
+                                                 atol=grid.nx*grid.ny*10*eps())
 
 """
 Test the zeros macro.
