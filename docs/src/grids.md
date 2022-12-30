@@ -84,7 +84,7 @@ u(x) = \sum_{k} \hat{u}(k) \, e^{i k x} ,
 
 where ``\hat{u}(k)`` is Fourier transform of ``u(x)`` and ``k`` the discrete set of 
 wavenumbers that fit within our finite domain. We can compute ``\hat{u}`` via a 
-Fast Fourier Transform (FFT). Since the `u` array is real-valued then we should 
+Fast Fourier Transform (FFT). Since `u` array is real-valued then we should 
 use the `real-FFT` algorithm. The real-valued FFT transform only saves the Fourier 
 coefficients for ``k \ge 0``; the coefficients for negative wavenumbers can be 
 obtained via ``\hat{u}(-k) = \hat{u}(k)^{*}``.
@@ -190,7 +190,7 @@ using LinearAlgebra: ldiv!
 ldiv!(∂ₓu, grid.rfftplan, ∂ₓuh)
 ```
 
-We can plot `∂ₓu` and compare it with the analytic derivative for comparison. 
+We can plot `∂ₓu` and compare it with the analytic derivative. 
 
 ```@example 1
 fig = Figure()
