@@ -43,6 +43,7 @@ end
 ```@setup 4
 using FourierFlows
 using CairoMakie
+CairoMakie.activate!(type = "svg")
 set_theme!(Theme(linewidth = 3, fontsize = 20))
 using LinearAlgebra: mul!, ldiv!
 
@@ -56,7 +57,7 @@ end
 params = Params(0.1)
 
 struct Vars <: AbstractVars
-    u :: Array{Float64,1}
+    u :: Array{Float64, 1}
    uh :: Array{Complex{Float64}, 1}
 end
 

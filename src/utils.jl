@@ -102,8 +102,8 @@ it returns
 ```math
 \\sum_{𝐤} |û_{𝐤}|² L_x L_y = \\int u(𝐱)² \\, 𝖽x 𝖽y \\,,
 ```
-where ``û_{𝐤} =`` `uh` ``/(`` `grid.nx` ``e^{- i 𝐤 ⋅ 𝐱₀})``, with ``𝐱₀`` the vector with components
-the left-most position in each direction.
+where ``û_{𝐤} =`` `uh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``, with ``𝐱₀`` the vector with components
+the left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
 """
 function parsevalsum2(uh, grid::TwoDGrid)
   if size(uh, 1) == grid.nkr # uh is in conjugate symmetric form
@@ -138,8 +138,8 @@ Return `real(Σ uh)` on the `grid`, i.e.
 ```math
 ℜ [ \\sum_{𝐤} û_{𝐤} L_x L_y ] \\,,
 ```
-where ``û_{𝐤} =`` `uh` ``/(`` `grid.nx` ``e^{- i 𝐤 ⋅ 𝐱₀})``, with ``𝐱₀`` the vector with components
-the left-most position in each direction.
+where ``û_{𝐤} =`` `uh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``, with ``𝐱₀`` the vector with components
+the left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
 """
 function parsevalsum(uh, grid::TwoDGrid)
   if size(uh, 1) == grid.nkr    # uh is conjugate symmetric
@@ -150,6 +150,19 @@ function parsevalsum(uh, grid::TwoDGrid)
   end
 
   norm = grid.Lx * grid.Ly / (grid.nx^2 * grid.ny^2) # normalization for dft
+
+  return norm * real(U)
+end
+
+function parsevalsum(uh, grid::OneDGrid)
+  if size(uh, 1) == grid.nkr    # uh is conjugate symmetric
+    U = uh[1]                   # k=0 mode
+    U += 2*sum(uh[2:end])       # sum k>0 modes twice
+  else # count every mode once
+    U = sum(uh)
+  end
+
+  norm = grid.Lx / grid.nx^2 # normalization for dft
 
   return norm * real(U)
 end
@@ -194,17 +207,17 @@ end
 
 Return the radial spectrum of `fh`. `fh` lives on Cartesian wavenumber grid ``(k, l)``. To 
 compute the radial spectrum, we first interpolate ``f̂(k, l)`` onto a radial wavenumber grid 
-``(ρ, θ)``, where ``ρ² = k²+l²`` and ``θ = \\arctan(l/k)``. Note here that 
-``f̂ =`` `fh` ``/(`` `grid.nx` ``e^{- i 𝐤 ⋅ 𝐱₀})``,  with ``𝐱₀`` the vector with components the 
-left-most position in each direction. After interpolation, we integrate ``f̂``over angles ``θ`` 
-to get `fρ`,
+``(ρ, θ)``, where ``ρ² = k² + l²`` and ``θ = \\arctan(l / k)``. Note here that 
+``f̂ =`` `fh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``, with ``𝐱₀`` the vector with components
+the left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
 
+After interpolation, we integrate ``f̂``over angles ``θ`` to get `fρ`,
 ```math
   f̂_ρ = \\int f̂(ρ, θ) ρ 𝖽ρ 𝖽θ \\, .
 ```
 
-The resolution `(n, m)` for the polar wavenumber grid is `n = refinement * maximum(nk, nl), 
-m = refinement * maximum(nk, nl)`, where `refinement = 2` by default. If `fh` is in conjugate 
+The resolution `(n, m)` for the polar wavenumber grid is `n = refinement * maximum(grid.nk, grid.nl), 
+m = refinement * maximum(grid.nk, grid.nl)`, where `refinement = 2` by default. If `fh` is in conjugate 
 symmetric form then only the upper-half plane in ``θ`` is represented on the polar grid.
 """
 function radialspectrum(fh, grid::TwoDGrid; n=nothing, m=nothing, refinement=2)
@@ -304,7 +317,6 @@ device_array(::GPU, T, dim) = CuArray{T, dim}
 
 """
     device_array(grid::AbstractGrid)
-    device_array(device::Device, T, dim)
 
 Return the proper array type according to the `grid`'s `device`, i.e., `Array` for CPU and
 `CuArray` for GPU.

@@ -8,5 +8,5 @@ Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [compat]
-Literate = "≥2.9.0"
 CairoMakie = "0.10"
+Literate = "≥2.9.0"

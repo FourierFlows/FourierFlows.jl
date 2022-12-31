@@ -21,6 +21,11 @@ will be erroneously projected onto some lower wavenumber modes that fit our doma
 Take, for example, functions ``\cos(4x)`` and ``\cos(6x)`` and let's see how they are represented 
 on a grid ``x \in [-π, π)`` with ``n_x = 10`` grid points.
 
+```@setup 1
+using CairoMakie
+CairoMakie.activate!(type = "svg")
+```
+
 ```@example 1
 using FourierFlows, CairoMakie
 

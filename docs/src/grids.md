@@ -40,12 +40,19 @@ This is because periodicity implies that the values of any field at the end-poin
 domain are equal and, therefore, grid-point values at both these end-points are redundant.
 
 We can define an array `u` that contains the values of a function ``u(x)`` on this 
-grid as
+grid. If, for example, ``u`` is
+
+```math
+u(x) = \sin(2x) + \frac{1}{2} \cos(5x) ,
+```
+
+then
 
 ```@setup 1
 using FourierFlows
 using LinearAlgebra: mul!, ldiv!
 using CairoMakie
+CairoMakie.activate!(type = "svg")
 set_theme!(Theme(linewidth = 3, fontsize = 20))
 nx, Lx = 64, 2π
 grid = OneDGrid(; nx, Lx, x0 = -Lx/3)
@@ -57,7 +64,7 @@ u = @. sin(2 * grid.x) + 1/2 * cos(5 * grid.x)
 nothing # hide
 ```
 
-Note that we chose a function that *is* periodic on our domain. We can visualize
+Note that we chose a function ``u`` that *is* periodic on our domain. We can visualize
 `u` by
 
 ```@example 1
@@ -69,7 +76,7 @@ axislegend()
 current_figure() # hide
 ```
 
-Function ``u(x)`` can be expanded in Fourier series:
+Any periodic function ``u(x)`` can be expanded in Fourier series:
 
 ```math
 u(x) = \sum_{k} \hat{u}(k) \, e^{i k x} ,
@@ -77,7 +84,7 @@ u(x) = \sum_{k} \hat{u}(k) \, e^{i k x} ,
 
 where ``\hat{u}(k)`` is Fourier transform of ``u(x)`` and ``k`` the discrete set of 
 wavenumbers that fit within our finite domain. We can compute ``\hat{u}`` via a 
-Fast Fourier Transform (FFT). Since our `u` array is real-valued then we should 
+Fast Fourier Transform (FFT). Since `u` array is real-valued then we should 
 use the `real-FFT` algorithm. The real-valued FFT transform only saves the Fourier 
 coefficients for ``k \ge 0``; the coefficients for negative wavenumbers can be 
 obtained via ``\hat{u}(-k) = \hat{u}(k)^{*}``.
@@ -91,7 +98,6 @@ while the wavenumbers for real FFT are in `grid.kr`:
 ```math
 \frac{2\pi}{L_x} \{ 0, 1, \dots, n_x/2-1 \} .
 ```
-
 
 The `grid` also includes the `FFT` plans for both real-valued and complex valued transforms:
 
@@ -149,6 +155,12 @@ axislegend()
 current_figure() # hide
 ```
 
+Note that with the normalization we get what we expect since
+
+```math
+u(x) = \sin(2x) + \frac1{2} \cos(5x) = -\frac{i}{2} (e^{2ix} - e^{2ix}) + \frac{1}{4} (e^{5ix} + e^{5ix}) .
+```
+
 We can compute the derivative of ``u(x)`` via Fourier transforms. To do that we use the
 `FFTW` plans that are constructed with the grid. First we allocate some empty arrays
 where the values of the derivative will be stored, both in physical and in Fourier space:
@@ -161,7 +173,7 @@ nothing # hide
 ```
 
 The grid contains the wavenumbers (both for real-value functions `grid.kr` and 
-for complex-valued functions `grid.k`). We populate array `∂ₓuh` is with ``\mathrm{i} k \hat{u}``:
+for complex-valued functions `grid.k`). We populate the array `∂ₓuh` with ``\mathrm{i} k \hat{u}``:
 
 ```@example 1
 @. ∂ₓuh = im * grid.kr * uh
@@ -169,19 +181,27 @@ for complex-valued functions `grid.k`). We populate array `∂ₓuh` is with ``\
 nothing # hide
 ```
 
-Then the derivative in physical space, `∂ₓu`, is obtained with an inverse Fourier 
-transform. The latter is obtained again using the `FFTW` plans but now via `ldiv!`:
+Then the derivative in physical space, `∂ₓu`, is obtained through an inverse Fourier 
+transform. For this again we use the `FFTW` plans but now via `ldiv!`:
 
 ```@example 1
 using LinearAlgebra: ldiv!
 
 ldiv!(∂ₓu, grid.rfftplan, ∂ₓuh)
+```
 
+We can plot `∂ₓu` and compare it with the analytic derivative. 
+
+```@example 1
 fig = Figure()
 ax = Axis(fig[1, 1], xlabel = "x")
 
-lines!(ax, grid.x, u, label = "u")
-lines!(ax, grid.x, ∂ₓu, label = "∂u/∂x")
+lines!(ax, grid.x, u;
+       label = "u")
+lines!(ax, grid.x, ∂ₓu;
+       label = "∂u/∂x")
+lines!(ax, grid.x, @. 2 * cos(2 * grid.x) - 5/2 * sin(5 * grid.x);
+       linewidth=1.5, linestyle=:dash, label = "analytical ∂u/∂x")
 
 axislegend()
 
