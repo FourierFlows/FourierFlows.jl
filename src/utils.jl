@@ -102,8 +102,8 @@ it returns
 ```math
 \\sum_{𝐤} |û_{𝐤}|² L_x L_y = \\int u(𝐱)² \\, 𝖽x 𝖽y \\,,
 ```
-where ``û_{𝐤} =`` `uh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``, with ``𝐱₀`` the vector with components
-the left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
+where ``û_{𝐤} =`` `uh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``. The elements of the vector ``𝐱₀`` are the
+left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
 """
 function parsevalsum2(uh, grid::TwoDGrid)
   if size(uh, 1) == grid.nkr # uh is in conjugate symmetric form
@@ -138,8 +138,8 @@ Return `real(Σ uh)` on the `grid`, i.e.
 ```math
 ℜ [ \\sum_{𝐤} û_{𝐤} L_x L_y ] \\,,
 ```
-where ``û_{𝐤} =`` `uh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``, with ``𝐱₀`` the vector with components
-the left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
+where ``û_{𝐤} =`` `uh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``. The elements of the vector ``𝐱₀`` are the
+left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
 """
 function parsevalsum(uh, grid::TwoDGrid)
   if size(uh, 1) == grid.nkr    # uh is conjugate symmetric
@@ -208,8 +208,8 @@ end
 Return the radial spectrum of `fh`. `fh` lives on Cartesian wavenumber grid ``(k, l)``. To 
 compute the radial spectrum, we first interpolate ``f̂(k, l)`` onto a radial wavenumber grid 
 ``(ρ, θ)``, where ``ρ² = k² + l²`` and ``θ = \\arctan(l / k)``. Note here that 
-``f̂ =`` `fh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``, with ``𝐱₀`` the vector with components
-the left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
+``f̂ =`` `fh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``. The elements of the vector ``𝐱₀`` are the
+left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
 
 After interpolation, we integrate ``f̂``over angles ``θ`` to get `fρ`,
 ```math
