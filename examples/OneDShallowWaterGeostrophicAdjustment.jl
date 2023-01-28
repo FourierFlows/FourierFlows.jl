@@ -82,8 +82,8 @@ Constructs Vars for 1D shallow water based on the dimensions of arrays of the `g
 """
 function Vars(grid)
   Dev = typeof(grid.device)
-
   T = eltype(grid)
+
   @devzeros Dev T grid.nx u v η
   @devzeros Dev Complex{T} grid.nkr uh vh ηh
   
@@ -182,9 +182,11 @@ function set_uvη!(prob, u0, v0, η0)
   
   A = typeof(vars.u) # determine the type of vars.u
   
-  mul!(vars.uh, grid.rfftplan, A(u0)) # A(u0) converts u0 to the same type as vars expects (useful if u0 is a CPU array while working on the GPU)
-  mul!(vars.vh, grid.rfftplan, A(v0)) # A(v0) converts u0 to the same type as vars expects (useful if v0 is a CPU array while working on the GPU)
-  mul!(vars.ηh, grid.rfftplan, A(η0)) # A(η0) converts u0 to the same type as vars expects (useful if η0 is a CPU array while working on the GPU)
+  # below, e.g., A(u0) converts u0 to the same type as vars expects
+  # (useful when u0 is a CPU array but grid.device is GPU)
+  mul!(vars.uh, grid.rfftplan, A(u0))
+  mul!(vars.vh, grid.rfftplan, A(v0))
+  mul!(vars.ηh, grid.rfftplan, A(η0))
 
   @. sol[:, 1] = vars.uh
   @. sol[:, 2] = vars.vh
