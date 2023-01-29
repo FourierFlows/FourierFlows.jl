@@ -63,7 +63,7 @@ function OneDGrid(dev::Device = CPU();
                   x0 = -Lx/2, nthreads = Sys.CPU_THREADS, effort = FFTW.MEASURE, 
                   T = Float64, aliased_fraction = 1/3)
 
-  mod(nx, 2) != 0 && error("nx must be even")
+  mod(nx, 2) != 0 && throw(DomainError("nx must be even"))
 
   dx = Lx/nx
 
@@ -176,7 +176,7 @@ function TwoDGrid(dev::Device=CPU(); nx, Lx, ny=nx, Ly=Lx,
                   x0=-Lx/2, y0=-Ly/2, nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE,
                   T=Float64, aliased_fraction=1/3)
 
-  (mod(nx, 2) != 0 || mod(ny, 2) != 0) && error("nx and ny must be even")
+  (mod(nx, 2) != 0 || mod(ny, 2) != 0) && throw(DomainError("nx and ny must be even"))
 
   dx = Lx/nx
   dy = Ly/ny
@@ -313,7 +313,7 @@ function ThreeDGrid(dev::Device=CPU(); nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx,
                     nthreads=Sys.CPU_THREADS, effort=FFTW.MEASURE, T=Float64,
                     aliased_fraction=1/3)
 
-  (mod(nx, 2) != 0 || mod(ny, 2) != 0 || mod(nz, 2) != 0) && error("nx, ny, and nz must be even")
+  (mod(nx, 2) != 0 || mod(ny, 2) != 0 || mod(nz, 2) != 0) && throw(DomainError("nx, ny, and nz must be even"))
 
   dx = Lx/nx
   dy = Ly/ny

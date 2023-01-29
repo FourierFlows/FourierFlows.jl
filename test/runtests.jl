@@ -129,12 +129,12 @@ for dev in devices
     @test testnodealias(g₂)
     @test testnodealias(g₃)
 
-    @test_throws "must be even" OneDGrid(nx=5, Lx=1)
-    @test_throws "must be even" TwoDGrid(nx=5, Lx=1, ny=4, Ly=2)
-    @test_throws "must be even" TwoDGrid(nx=4, Lx=1, ny=5, Ly=2)
-    @test_throws "must be even" ThreeDGrid(nx=5, Lx=1, ny=4, Ly=2, nz=6, Lz=3)
-    @test_throws "must be even" ThreeDGrid(nx=4, Lx=1, ny=5, Ly=2, nz=6, Lz=3)
-    @test_throws "must be even" ThreeDGrid(nx=4, Lx=1, ny=6, Ly=2, nz=5, Lz=3)
+    @test_throws DomainError OneDGrid(nx=5, Lx=1)
+    @test_throws DomainError TwoDGrid(nx=5, Lx=1, ny=4, Ly=2)
+    @test_throws DomainError TwoDGrid(nx=4, Lx=1, ny=5, Ly=2)
+    @test_throws DomainError ThreeDGrid(nx=5, Lx=1, ny=4, Ly=2, nz=6, Lz=3)
+    @test_throws DomainError ThreeDGrid(nx=4, Lx=1, ny=5, Ly=2, nz=6, Lz=3)
+    @test_throws DomainError ThreeDGrid(nx=4, Lx=1, ny=6, Ly=2, nz=5, Lz=3)
   end
 
   @time @testset "FFT tests" begin
