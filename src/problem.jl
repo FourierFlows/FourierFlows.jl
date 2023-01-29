@@ -132,4 +132,5 @@ show(io::IO, problem::FourierFlows.Problem) =
               "  ├─── state vector: sol", "\n",
               "  ├─────── equation: eqn", "\n",
               "  ├────────── clock: clock", "\n",
+              "  │                  └──── dt: ", problem.clock.dt, "\n",
               "  └──── timestepper: ", string(nameof(typeof(problem.timestepper))))

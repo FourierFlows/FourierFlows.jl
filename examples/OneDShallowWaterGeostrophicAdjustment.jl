@@ -78,12 +78,13 @@ nothing #hide
 # and then creates `Vars` struct.
 """
     Vars(grid)
-Constructs Vars for 1D shallow water based on the dimensions of arrays of the `grid`.
+
+Construct the `Vars` for 1D linear shallow water dynamics based on the dimensions of the `grid` arrays.
 """
 function Vars(grid)
   Dev = typeof(grid.device)
-
   T = eltype(grid)
+
   @devzeros Dev T grid.nx u v η
   @devzeros Dev Complex{T} grid.nkr uh vh ηh
   
@@ -107,6 +108,7 @@ nothing #hide
 #
 """
     calcN!(N, sol, t, clock, vars, params, grid)
+
 Compute the nonlinear terms for 1D linear shallow water dynamics.
 """
 function calcN!(N, sol, t, clock, vars, params, grid)
@@ -128,6 +130,7 @@ nothing #hide
 
 """
     Equation(params, grid)
+
 Construct the equation: the linear part, in this case the hyperviscous dissipation,
 and the nonlinear part, which is computed by `calcN!` function.
 """
@@ -153,6 +156,7 @@ nothing #hide
 
 """
     updatevars!(prob)
+
 Update the variables in `prob.vars` using the solution in `prob.sol`.
 """
 function updatevars!(prob)
@@ -174,7 +178,8 @@ nothing #hide
 
 """
     set_uvη!(prob, u0, v0, η0)
-Sets the state variable `prob.sol` as the Fourier transforms of `u0`, `v0`, and `η0`
+
+Set the state variable `prob.sol` as the Fourier transforms of `u0`, `v0`, and `η0`
 and update all variables in `prob.vars`.
 """
 function set_uvη!(prob, u0, v0, η0)
@@ -182,9 +187,11 @@ function set_uvη!(prob, u0, v0, η0)
   
   A = typeof(vars.u) # determine the type of vars.u
   
-  mul!(vars.uh, grid.rfftplan, A(u0)) # A(u0) converts u0 to the same type as vars expects (useful if u0 is a CPU array while working on the GPU)
-  mul!(vars.vh, grid.rfftplan, A(v0)) # A(v0) converts u0 to the same type as vars expects (useful if v0 is a CPU array while working on the GPU)
-  mul!(vars.ηh, grid.rfftplan, A(η0)) # A(η0) converts u0 to the same type as vars expects (useful if η0 is a CPU array while working on the GPU)
+  ## below, e.g., A(u0) converts u0 to the same type as vars expects
+  ## (useful when u0 is a CPU array but grid.device is GPU)
+  mul!(vars.uh, grid.rfftplan, A(u0))
+  mul!(vars.vh, grid.rfftplan, A(v0))
+  mul!(vars.ηh, grid.rfftplan, A(η0))
 
   @. sol[:, 1] = vars.uh
   @. sol[:, 2] = vars.vh
