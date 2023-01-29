@@ -53,7 +53,7 @@ function Problem(dev::Device=CPU();
       grid = OneDGrid(dev; nx, Lx, aliased_fraction, T)
     params = Params(grid, κ)
       vars = Vars(grid)
-  equation = Equation(grid, κ)
+  equation = Equation(grid, params)
 
   return FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 end
@@ -97,13 +97,13 @@ The variables for diffusion problem:
 $(FIELDS)
 """
 struct Vars{Aphys, Atrans} <: AbstractVars
-    "tracer concentration"
+    "tracer concentration ``c``"
     c :: Aphys
-    "tracer concentration derivative ∂ₓc"
+    "tracer concentration derivative ``∂ₓc``"
    cx :: Aphys
-    "Fourier transform of tracer concentration"
+    "Fourier transform of tracer concentration ``c``"
    ch :: Atrans
-    "Fourier transform of tracer concentration derivative ∂ₓc"
+    "Fourier transform of tracer concentration derivative ``∂ₓc``"
   cxh :: Atrans
 end
 
