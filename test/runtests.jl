@@ -207,14 +207,14 @@ for dev in devices
   @time @testset "Timestepper tests" begin
     include("test_timesteppers.jl")
     for stepper in steppers
-      @test constantdiffusiontest_stepforward(stepper, dev=dev)
+      @test constantdiffusiontest_stepforward(stepper; dev)
       
-      @test varyingdiffusiontest_stepforward(stepper, dev=dev)
+      @test varyingdiffusiontest_stepforward(stepper; dev)
       
       if FourierFlows.isexplicit(stepper)
-        @test constantdiffusiontest_step_until(stepper, dev=dev)
+        @test constantdiffusiontest_step_until(stepper; dev)
       else
-        @test_throws Exception constantdiffusiontest_step_until(stepper, dev=dev)
+        @test_throws Exception constantdiffusiontest_step_until(stepper; dev)
       end
     end
   end
@@ -363,12 +363,12 @@ for dev in devices
     
     if dev == CPU()
       @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element Vector{Float64}\n  ├───── variable: cx -> 128-element Vector{Float64}\n  ├───── variable: ch -> 65-element Vector{ComplexF64}\n  └───── variable: cxh -> 65-element Vector{ComplexF64}\n"
-      @test repr(diag) == "Diagnostic\n  ├─── calc: get_sol\n  ├─── prob: FourierFlows.Problem{DataType, Vector{ComplexF64}, Float64, Vector{Int64}}\n  ├─── data: 101-element Vector{Vector{ComplexF64}}\n  ├────── t: 101-element Vector{Float64}\n  ├── steps: 101-element Vector{Int64}\n  ├─── freq: 1\n  └────── i: 1"
-      @test repr(out) == "Output\n  ├──── prob: FourierFlows.Problem{DataType, Vector{ComplexF64}, Float64, Vector{Int64}}\n  ├──── path: output.jld2\n  └── fields: Dict{Symbol, Function}()"
+      @test repr(diag) == "Diagnostic\n  ├─── calc: get_sol\n  ├─── prob: FourierFlows.Problem{DataType, Vector{ComplexF64}, Float64, Vector{Float64}}\n  ├─── data: 101-element Vector{Vector{ComplexF64}}\n  ├────── t: 101-element Vector{Float64}\n  ├── steps: 101-element Vector{Int64}\n  ├─── freq: 1\n  └────── i: 1"
+      @test repr(out) == "Output\n  ├──── prob: FourierFlows.Problem{DataType, Vector{ComplexF64}, Float64, Vector{Float64}}\n  ├──── path: output.jld2\n  └── fields: Dict{Symbol, Function}()"
     else
       @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element CuArray{Float64, 1, CUDA.Mem.DeviceBuffer}\n  ├───── variable: cx -> 128-element CuArray{Float64, 1, CUDA.Mem.DeviceBuffer}\n  ├───── variable: ch -> 65-element CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}\n  └───── variable: cxh -> 65-element CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}\n"
-      @test repr(diag) == "Diagnostic\n  ├─── calc: get_sol\n  ├─── prob: FourierFlows.Problem{DataType, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}, Float64, CuArray{Int64, 1, CUDA.Mem.DeviceBuffer}}\n  ├─── data: 101-element Vector{CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}\n  ├────── t: 101-element Vector{Float64}\n  ├── steps: 101-element Vector{Int64}\n  ├─── freq: 1\n  └────── i: 1"
-      @test repr(out) == "Output\n  ├──── prob: FourierFlows.Problem{DataType, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}, Float64, CuArray{Int64, 1, CUDA.Mem.DeviceBuffer}}\n  ├──── path: output.jld2\n  └── fields: Dict{Symbol, Function}()"
+      @test repr(diag) == "Diagnostic\n  ├─── calc: get_sol\n  ├─── prob: FourierFlows.Problem{DataType, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}, Float64, CuArray{Float64, 1, CUDA.Mem.DeviceBuffer}}\n  ├─── data: 101-element Vector{CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}\n  ├────── t: 101-element Vector{Float64}\n  ├── steps: 101-element Vector{Int64}\n  ├─── freq: 1\n  └────── i: 1"
+      @test repr(out) == "Output\n  ├──── prob: FourierFlows.Problem{DataType, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}, Float64, CuArray{Float64, 1, CUDA.Mem.DeviceBuffer}}\n  ├──── path: output.jld2\n  └── fields: Dict{Symbol, Function}()"
     end
     
     @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: ComplexF64"
