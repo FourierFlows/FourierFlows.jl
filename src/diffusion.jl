@@ -97,13 +97,13 @@ The variables for diffusion problem:
 $(FIELDS)
 """
 struct Vars{Aphys, Atrans} <: AbstractVars
-    "tracer concentration ``c``"
+    "tracer concentration"
     c :: Aphys
-    "tracer concentration derivative ``∂ₓc``"
+    "tracer concentration derivative"
    cx :: Aphys
-    "Fourier transform of tracer concentration ``c``"
+    "Fourier transform of tracer concentration"
    ch :: Atrans
-    "Fourier transform of tracer concentration derivative ``∂ₓc``"
+    "Fourier transform of tracer concentration derivative"
   cxh :: Atrans
 end
 
