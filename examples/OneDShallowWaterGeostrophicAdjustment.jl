@@ -79,7 +79,7 @@ nothing #hide
 """
     Vars(grid)
 
-Construct Vars for 1D shallow water based on the dimensions of arrays of the `grid`.
+Construct the `Vars` for 1D linear shallow water dynamics based on the dimensions of the `grid` arrays.
 """
 function Vars(grid)
   Dev = typeof(grid.device)
