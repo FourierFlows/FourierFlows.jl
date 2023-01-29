@@ -74,19 +74,20 @@ Params(grid, κ::Number) = Params(κ)
 Params(grid, κ::AbstractArray) = Params(device_array(grid.device)(κ))
 
 """
-    Equation(grid, κ)
+    Equation(grid, params)
 
-Return the equation for a constant diffusivity problem on `grid` with diffusivity `κ`.
+Return the equation for a constant diffusivity problem on `grid` with diffusivity
+found inside `params`.
 """
-function Equation(grid, κ::T) where T<:Number
+function Equation(grid::AbstractGrid{T}, params::Params{D}) where {T, D<:Number}
   L = zeros(grid.device, T, grid.nkr)
-  @. L = - κ * grid.kr^2
+  @. L = - params.κ * grid.kr^2
   
   return FourierFlows.Equation(L, calcN!, grid)
 end
 
-Equation(grid::AbstractGrid{Tg}, κ::T) where {T<:AbstractArray, Tg} = 
-  FourierFlows.Equation(0, calcN!, grid; dims=(grid.nkr,), T=cxtype(Tg))
+Equation(grid::AbstractGrid{T}, ::Params{D}) where {T, D<:AbstractArray} =
+  FourierFlows.Equation(0, calcN!, grid; dims=(grid.nkr,), T=cxtype(T))
 
 """
     struct Vars{Aphys, Atrans} <: AbstractVars
@@ -125,13 +126,13 @@ end
 
 Calculate the nonlinear term for the 1D diffusion equation.
 """
-function calcN!(N, sol, t, clock, vars, params::Params{T}, grid) where T<:Number
+function calcN!(N, sol, t, clock, vars, params::Params{D}, grid) where D<:Number
   @. N = 0
   
   return nothing
 end
 
-function calcN!(N, sol, t, clock, vars, params::Params{T}, grid) where T<:AbstractArray
+function calcN!(N, sol, t, clock, vars, params::Params{D}, grid) where D<:AbstractArray
   @. vars.cxh = im * grid.kr * sol
   ldiv!(vars.cx, grid.rfftplan, vars.cxh)
   @. vars.cx *= params.κ
@@ -150,7 +151,7 @@ function updatevars!(vars, grid, sol)
   @. vars.ch  = sol  
   @. vars.cxh = im * grid.kr * sol
 
-  ldiv!(vars.c, grid.rfftplan, deepcopy(sol))
+  ldiv!(vars.c, grid.rfftplan, deepcopy(vars.ch))
   ldiv!(vars.cx, grid.rfftplan, deepcopy(vars.cxh))
   
   return nothing
@@ -164,9 +165,9 @@ updatevars!(prob) = updatevars!(prob.vars, prob.grid, prob.sol)
 Set the solution `sol` as the transform of `c` and update `vars`.
 """
 function set_c!(prob, c)
-  T = typeof(prob.vars.c)
+  A = typeof(prob.vars.c)
 
-  prob.vars.c .= T(c) # ensure that c is converted to the type prob.vars.c (e.g., convert to CuArray if user gives `c` as Array)
+  prob.vars.c .= A(c) # ensure that c is converted to the type prob.vars.c (e.g., convert to CuArray if user gives `c` as Array)
   mul!(prob.sol, prob.grid.rfftplan, prob.vars.c)
 
   updatevars!(prob)
