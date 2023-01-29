@@ -371,7 +371,7 @@ for dev in devices
       @test repr(out) == "Output\n  ├──── prob: FourierFlows.Problem{DataType, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}, Float64, CuArray{Float64, 1, CUDA.Mem.DeviceBuffer}}\n  ├──── path: output.jld2\n  └── fields: Dict{Symbol, Function}()"
     end
     
-    @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: ComplexF64"
+    @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Float64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: ComplexF64"
     @test repr(prob.clock) == "Clock\n  ├─── timestep dt: 0.01\n  ├────────── step: 0\n  └──────── time t: 0.0"
     @test repr(prob) == "Problem\n  ├─────────── grid: grid (on " * string(typeof(prob.grid.device)) * ")\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  │                  └──── dt: 0.01\n  └──── timestepper: RK4TimeStepper"
   end
