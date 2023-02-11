@@ -97,11 +97,13 @@ end
 """
     parsevalsum2(uh, grid)
 
-Return `Σ |uh|²` on the `grid`, which is equal to the domain integral of `u`. More specifically, 
-it returns
+Return `Σ |uh|²` on the `grid`, which is equal to the domain integral `u` squared.
+For example on a 2D grid, `parsevalsum2` returns
+
 ```math
-\\sum_{𝐤} |û_{𝐤}|² L_x L_y = \\int u(𝐱)² \\, 𝖽x 𝖽y \\,,
+\\sum_{𝐤} |û_{𝐤}|² L_x L_y = \\iint u² \\, 𝖽x 𝖽y \\,,
 ```
+
 where ``û_{𝐤} =`` `uh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``. The elements of the vector ``𝐱₀`` are the
 left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
 """
@@ -134,9 +136,11 @@ end
 """
     parsevalsum(uh, grid)
 
-Return `real(Σ uh)` on the `grid`, i.e.
+Return `real(Σ uh)` on the `grid`, i.e.,
+
 ```math
 ℜ [ \\sum_{𝐤} û_{𝐤} L_x L_y ] \\,,
+
 ```
 where ``û_{𝐤} =`` `uh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``. The elements of the vector ``𝐱₀`` are the
 left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
