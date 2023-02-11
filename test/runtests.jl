@@ -267,6 +267,13 @@ for dev in devices
     @test test_parsevalsums(f1, g; realvalued=false)      # Real valued f with fft
     @test test_parsevalsums(f2, g; realvalued=false)      # Complex valued f with fft
 
+    f3 = randn(eltype(g), (g.nx, g.ny))
+    @test test_parsevalsums(f3, g; realvalued=true)        # Real valued f with rfft
+    @test test_parsevalsums(f3, g; realvalued=false)       # Real valued f with fft
+
+    f4 = randn(Complex{eltype(g)}, (g.nx, g.ny))
+    @test test_parsevalsums(f4, g; realvalued=false)       # Complex valued f with fft
+
     @test test_jacobian(sinkl1, sinkl1, 0*sinkl1, g)      # Test J(a, a) = 0
     @test test_jacobian(sinkl1, sinkl2, Jsinkl1sinkl2, g) # Test J(sin1, sin2) = Jsin1sin2
     @test test_jacobian(expkl1, expkl2, Jexpkl1expkl2, g) # Test J(exp1, exp2) = Jexp1exps2
@@ -279,7 +286,13 @@ for dev in devices
     @test test_parsevalsums(f1, g; realvalued=true)        # Real valued f with rfft
     @test test_parsevalsums(f1, g; realvalued=false)       # Real valued f with fft
 
+    f2 = randn(eltype(g), (g.nx,))
+    @test test_parsevalsums(f2, g; realvalued=true)        # Real valued f with rfft
+    @test test_parsevalsums(f2, g; realvalued=false)       # Real valued f with fft
     
+    f3 = randn(Complex{eltype(g)}, (g.nx,))
+    @test test_parsevalsums(f3, g; realvalued=false)       # Complex valued f with fft
+
     # Radial spectrum tests. Note that ahρ = ∫ ah ρ dθ.
     n = 128; δ = n/10                                       # Parameters
     ahkl_isotropic(k, l) = exp(-(k^2 + l^2) / 2δ^2)                     # a  = exp(-ρ²/2δ²)

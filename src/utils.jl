@@ -97,18 +97,21 @@ end
 """
     parsevalsum2(uh, grid)
 
-Return `Σ |uh|²` on the `grid`, which is equal to the domain integral of `u`. More specifically, 
-it returns
+Return `Σ |uh|²` on the `grid`, which is equal to the domain integral `u` squared.
+For example on a 2D grid, `parsevalsum2` returns
+
 ```math
-\\sum_{𝐤} |û_{𝐤}|² L_x L_y = \\int u(𝐱)² \\, 𝖽x 𝖽y \\,,
+\\sum_{𝐤} |û_{𝐤}|² L_x L_y = \\iint u² \\, 𝖽x 𝖽y \\,,
 ```
+
 where ``û_{𝐤} =`` `uh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``. The elements of the vector ``𝐱₀`` are the
 left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
 """
 function parsevalsum2(uh, grid::TwoDGrid)
-  if size(uh, 1) == grid.nkr # uh is in conjugate symmetric form
-    U = sum(abs2, uh[1, :])           # k=0 modes
-    U += 2*sum(abs2, uh[2:end, :])    # sum k>0 modes twice
+  if size(uh, 1) == grid.nkr  # uh is in conjugate symmetric form
+    U = sum(abs2, uh[1, :])                  # k=0 modes
+    U += sum(abs2, uh[grid.nkr, :])          # k=nx/2 modes
+    U += 2 * sum(abs2, uh[2:grid.nkr-1, :])  # sum twice for 0 < k < nx/2 modes
   else # count every mode once
     U = sum(abs2, uh)
   end
@@ -119,9 +122,10 @@ function parsevalsum2(uh, grid::TwoDGrid)
 end
 
 function parsevalsum2(uh, grid::OneDGrid)
-  if size(uh, 1) == grid.nkr                 # uh is conjugate symmetric
-    U = sum(abs2, CUDA.@allowscalar uh[1])   # k=0 modes
-    U += @views 2 * sum(abs2, uh[2:end])     # sum k>0 modes twice
+  if size(uh, 1) == grid.nkr  # uh is conjugate symmetric
+    U = sum(abs2, CUDA.@allowscalar uh[1])          # k=0 mode
+    U += sum(abs2, CUDA.@allowscalar uh[grid.nkr])  # k=nx/2 mode
+    U += @views 2 * sum(abs2, uh[2:grid.nkr-1])     # sum twice for 0 < k < nx/2 modes
   else # count every mode once
     U = sum(abs2, uh)
   end
@@ -134,17 +138,20 @@ end
 """
     parsevalsum(uh, grid)
 
-Return `real(Σ uh)` on the `grid`, i.e.
+Return `real(Σ uh)` on the `grid`, i.e.,
+
 ```math
 ℜ [ \\sum_{𝐤} û_{𝐤} L_x L_y ] \\,,
+
 ```
 where ``û_{𝐤} =`` `uh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``. The elements of the vector ``𝐱₀`` are the
 left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
 """
 function parsevalsum(uh, grid::TwoDGrid)
-  if size(uh, 1) == grid.nkr    # uh is conjugate symmetric
-    U = sum(uh[1, :])           # k=0 modes
-    U += 2*sum(uh[2:end, :])    # sum k>0 modes twice
+  if size(uh, 1) == grid.nkr  # uh is conjugate symmetric
+    U = sum(uh[1, :])                  # k = 0 modes
+    U += sum(uh[grid.nkr, :])          # k = nx/2 modes
+    U += 2 * sum(uh[2:grid.nkr-1, :])  # sum twice for 0 < k < nx/2 modes
   else # count every mode once
     U = sum(uh)
   end
@@ -155,9 +162,10 @@ function parsevalsum(uh, grid::TwoDGrid)
 end
 
 function parsevalsum(uh, grid::OneDGrid)
-  if size(uh, 1) == grid.nkr    # uh is conjugate symmetric
-    U = uh[1]                   # k=0 mode
-    U += 2*sum(uh[2:end])       # sum k>0 modes twice
+  if size(uh, 1) == grid.nkr        # uh is conjugate symmetric
+    U = uh[1]                       # k=0 mode
+    U += uh[grid.nkr]               # k=nx/2 mode
+    U += 2 * sum(uh[2:grid.nkr-1])  # sum twice for 0 < k < nx/2 modes
   else # count every mode once
     U = sum(uh)
   end
