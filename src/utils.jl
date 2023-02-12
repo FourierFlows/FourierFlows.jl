@@ -112,30 +112,30 @@ count the contribution from certain ``k``-modes twice.
 """
 function parsevalsum2(uh, grid::TwoDGrid)
   if size(uh, 1) == grid.nkr  # uh is in conjugate symmetric form
-    U = sum(abs2, uh[1, :])                  # k=0 modes
-    U += sum(abs2, uh[grid.nkr, :])          # k=nx/2 modes
-    U += 2 * sum(abs2, uh[2:grid.nkr-1, :])  # sum twice for 0 < k < nx/2 modes
+    Σ = sum(abs2, uh[1, :])                  # k = 0 modes
+    Σ += sum(abs2, uh[grid.nkr, :])          # k = nx/2 modes
+    Σ += 2 * sum(abs2, uh[2:grid.nkr-1, :])  # sum twice for 0 < k < nx/2 modes
   else # count every mode once
-    U = sum(abs2, uh)
+    Σ = sum(abs2, uh)
   end
 
-  norm = grid.Lx * grid.Ly / (grid.nx^2 * grid.ny^2) # normalization for dft
+  Σ *= grid.Lx * grid.Ly / (grid.nx^2 * grid.ny^2) # normalization for dft
 
-  return norm * U
+  return Σ
 end
 
 function parsevalsum2(uh, grid::OneDGrid)
   if size(uh, 1) == grid.nkr  # uh is conjugate symmetric
-    U = sum(abs2, CUDA.@allowscalar uh[1])          # k=0 mode
-    U += sum(abs2, CUDA.@allowscalar uh[grid.nkr])  # k=nx/2 mode
-    U += @views 2 * sum(abs2, uh[2:grid.nkr-1])     # sum twice for 0 < k < nx/2 modes
+    Σ = sum(abs2, CUDA.@allowscalar uh[1])          # k = 0 mode
+    Σ += sum(abs2, CUDA.@allowscalar uh[grid.nkr])  # k = nx/2 mode
+    Σ += @views 2 * sum(abs2, uh[2:grid.nkr-1])     # sum twice for 0 < k < nx/2 modes
   else # count every mode once
-    U = sum(abs2, uh)
+    Σ = sum(abs2, uh)
   end
   
-  norm = grid.Lx / grid.nx^2 # normalization for dft
+  Σ *= grid.Lx / grid.nx^2 # normalization for dft
   
-  return norm * U
+  return Σ
 end
 
 """
@@ -156,30 +156,30 @@ count the contribution from certain ``k``-modes twice.
 """
 function parsevalsum(uh, grid::TwoDGrid)
   if size(uh, 1) == grid.nkr  # uh is conjugate symmetric
-    U = sum(uh[1, :])                  # k = 0 modes
-    U += sum(uh[grid.nkr, :])          # k = nx/2 modes
-    U += 2 * sum(uh[2:grid.nkr-1, :])  # sum twice for 0 < k < nx/2 modes
+    Σ = sum(uh[1, :])                  # k = 0 modes
+    Σ += sum(uh[grid.nkr, :])          # k = nx/2 modes
+    Σ += 2 * sum(uh[2:grid.nkr-1, :])  # sum twice for 0 < k < nx/2 modes
   else # count every mode once
-    U = sum(uh)
+    Σ = sum(uh)
   end
 
-  norm = grid.Lx * grid.Ly / (grid.nx^2 * grid.ny^2) # normalization for dft
+  Σ *= grid.Lx * grid.Ly / (grid.nx^2 * grid.ny^2) # normalization for dft
 
-  return norm * real(U)
+  return real(Σ)
 end
 
 function parsevalsum(uh, grid::OneDGrid)
   if size(uh, 1) == grid.nkr        # uh is conjugate symmetric
-    U = uh[1]                       # k=0 mode
-    U += uh[grid.nkr]               # k=nx/2 mode
-    U += 2 * sum(uh[2:grid.nkr-1])  # sum twice for 0 < k < nx/2 modes
+    Σ = uh[1]                       # k = 0 mode
+    Σ += uh[grid.nkr]               # k = nx/2 mode
+    Σ += 2 * sum(uh[2:grid.nkr-1])  # sum twice for 0 < k < nx/2 modes
   else # count every mode once
-    U = sum(uh)
+    Σ = sum(uh)
   end
 
-  norm = grid.Lx / grid.nx^2 # normalization for dft
+  Σ *= grid.Lx / grid.nx^2 # normalization for dft
 
-  return norm * real(U)
+  return real(Σ)
 end
 
 """
