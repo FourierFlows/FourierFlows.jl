@@ -107,7 +107,7 @@ Return the sum of `|uh|²` on the `grid`, which is equal to the domain integral 
 where ``û_{𝐤} =`` `uh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``. The elements of the vector ``𝐱₀`` are the
 left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
 
-When the input `uh` comes from a real-FFT transform, then `parsevalsum2` takes care to
+When the input `uh` comes from a real-FFT transform, `parsevalsum2` takes care to
 count the contribution from certain ``k``-modes twice.
 """
 function parsevalsum2(uh, grid::TwoDGrid)
@@ -151,7 +151,7 @@ Return the real part of the sum of `uh` on the `grid`. For example on a 2D grid,
 where ``û_{𝐤} =`` `uh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``. The elements of the vector ``𝐱₀`` are the
 left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
 
-When the input `uh` comes from a real-FFT transform, then `parsevalsum` takes care to
+When the input `uh` comes from a real-FFT transform, `parsevalsum` takes care to
 count the contribution from certain ``k``-modes twice.
 """
 function parsevalsum(uh, grid::TwoDGrid)
