@@ -108,7 +108,7 @@ where ``û_{𝐤} =`` `uh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``. The elements of
 left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
 
 When the input `uh` comes from a real-FFT transform, then `parsevalsum2` takes care to
-count twice the contribution from certain ``k``-modes.
+count the contribution from certain ``k``-modes twice.
 """
 function parsevalsum2(uh, grid::TwoDGrid)
   if size(uh, 1) == grid.nkr  # uh is in conjugate symmetric form
@@ -152,7 +152,7 @@ where ``û_{𝐤} =`` `uh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``. The elements of
 left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
 
 When the input `uh` comes from a real-FFT transform, then `parsevalsum` takes care to
-count twice the contribution from certain ``k``-modes.
+count the contribution from certain ``k``-modes twice.
 """
 function parsevalsum(uh, grid::TwoDGrid)
   if size(uh, 1) == grid.nkr  # uh is conjugate symmetric
