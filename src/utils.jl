@@ -97,15 +97,18 @@ end
 """
     parsevalsum2(uh, grid)
 
-Return `Σ |uh|²` on the `grid`, which is equal to the domain integral `u` squared.
-For example on a 2D grid, `parsevalsum2` returns
+Return the sum of `|uh|²` on the `grid`, which is equal to the domain integral of
+`u²`. For example on a 2D grid, `parsevalsum2` returns
 
 ```math
-\\sum_{𝐤} |û_{𝐤}|² L_x L_y = \\iint u² \\, 𝖽x 𝖽y \\,,
+\\sum_{𝐤} |û_{𝐤}|² L_x L_y = \\iint u² 𝖽x 𝖽y ,
 ```
 
 where ``û_{𝐤} =`` `uh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``. The elements of the vector ``𝐱₀`` are the
 left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
+
+When the input `uh` comes from a real-FFT transform, then `parsevalsum2` takes care to
+count twice the contribution from certain ``k``-modes.
 """
 function parsevalsum2(uh, grid::TwoDGrid)
   if size(uh, 1) == grid.nkr  # uh is in conjugate symmetric form
@@ -138,14 +141,18 @@ end
 """
     parsevalsum(uh, grid)
 
-Return `real(Σ uh)` on the `grid`, i.e.,
+Return the real part of the sum of `uh` on the `grid`. For example on a 2D grid,
+`parsevalsum` returns
 
 ```math
-ℜ [ \\sum_{𝐤} û_{𝐤} L_x L_y ] \\,,
+ℜ [ \\sum_{𝐤} û_{𝐤} L_x L_y ] ,
 
 ```
 where ``û_{𝐤} =`` `uh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``. The elements of the vector ``𝐱₀`` are the
 left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
+
+When the input `uh` comes from a real-FFT transform, then `parsevalsum` takes care to
+count twice the contribution from certain ``k``-modes.
 """
 function parsevalsum(uh, grid::TwoDGrid)
   if size(uh, 1) == grid.nkr  # uh is conjugate symmetric
@@ -219,14 +226,15 @@ compute the radial spectrum, we first interpolate ``f̂(k, l)`` onto a radial wa
 ``f̂ =`` `fh` `` / (n_x e^{i 𝐤 ⋅ 𝐱₀})``. The elements of the vector ``𝐱₀`` are the
 left-most position in each direction, e.g., for a 2D grid `(grid.x[1], grid.y[1])`.
 
-After interpolation, we integrate ``f̂``over angles ``θ`` to get `fρ`,
+After interpolation, we integrate ``f̂`` over angles ``θ`` to get `fρ`,
+
 ```math
-  f̂_ρ = \\int f̂(ρ, θ) ρ 𝖽ρ 𝖽θ \\, .
+  f̂_ρ = \\int f̂(ρ, θ) ρ 𝖽ρ 𝖽θ .
 ```
 
 The resolution `(n, m)` for the polar wavenumber grid is `n = refinement * maximum(grid.nk, grid.nl), 
-m = refinement * maximum(grid.nk, grid.nl)`, where `refinement = 2` by default. If `fh` is in conjugate 
-symmetric form then only the upper-half plane in ``θ`` is represented on the polar grid.
+m = refinement * maximum(grid.nk, grid.nl)`, where `refinement = 2` by default. If `fh` is in
+conjugate symmetric form then only the upper-half plane in ``θ`` is represented on the polar grid.
 """
 function radialspectrum(fh, grid::TwoDGrid; n=nothing, m=nothing, refinement=2)
 
@@ -280,7 +288,7 @@ end
 Return an array, of the type compatible with the `device` that the `grid` lives on,
 that contains the values of function `func` evaluated on the `grid`.
 """
-function on_grid(func, grid::OneDGrid{T}) where T
+function on_grid(func::Function, grid::OneDGrid{T}) where T
   f = zeros(grid.device, T, (grid.nx, ))
 
   @. f = func(grid.x)
@@ -288,7 +296,7 @@ function on_grid(func, grid::OneDGrid{T}) where T
   return f
 end
 
-function on_grid(func, grid::TwoDGrid{T}) where T
+function on_grid(func::Function, grid::TwoDGrid{T}) where T
   f = zeros(grid.device, T, (grid.nx, grid.ny))
 
   x = reshape(grid.x, (grid.nx, 1))
