@@ -61,6 +61,7 @@ export
 
 using
   CUDA,
+  FastBroadcast,
   FFTW,
   JLD2,
   Statistics,
