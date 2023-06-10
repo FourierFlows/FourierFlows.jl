@@ -5,7 +5,7 @@ You can install the latest version of FourierFlows.jl via the built-in package m
 instantiate/build all the required dependencies
 
 ```julia
-julia>]
+julia> ]
 (v1.6) pkg> add FourierFlows
 (v1.6) pkg> instantiate
 ```

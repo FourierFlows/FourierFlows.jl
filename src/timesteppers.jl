@@ -1,5 +1,5 @@
 """
-    stepforward!(prob)
+    stepforward!(prob::Problem)
 
 Step forward `prob` one time step.
 """
@@ -7,7 +7,7 @@ stepforward!(prob::Problem) =
   stepforward!(prob.sol, prob.clock, prob.timestepper, prob.eqn, prob.vars, prob.params, prob.grid)
 
 """
-    stepforward!(prob, nsteps::Int)
+    stepforward!(prob::Problem, nsteps::Int)
 
 Step forward `prob` for `nsteps`.
 """
@@ -87,7 +87,7 @@ end
     struct ForwardEulerTimeStepper{T} <: AbstractTimeStepper{T}
 
 A Forward Euler timestepper for time-stepping `∂u/∂t = RHS(u, t)` via:
-```
+```julia
 uⁿ⁺¹ = uⁿ + dt * RHS(uⁿ, tⁿ)
 ```
 """
@@ -154,11 +154,11 @@ end
     struct RK4TimeStepper{T} <: AbstractTimeStepper{T}
 
 A 4th-order Runge-Kutta timestepper for time-stepping `∂u/∂t = RHS(u, t)` via:
-```
+```julia
 uⁿ⁺¹ = uⁿ + dt/6 * (k₁ + 2 * k₂ + 2 * k₃ + k₄)
 ```
 where
-```
+```julia
 k₁ = RHS(uⁿ, tⁿ)
 k₂ = RHS(uⁿ + k₁ * dt/2, tⁿ + dt/2)
 k₃ = RHS(uⁿ + k₂ * dt/2, tⁿ + dt/2)
@@ -166,9 +166,9 @@ k₄ = RHS(uⁿ + k₃ * dt, tⁿ + dt)
 ```
 
 !!! info "Usage"
-    If you are limited by memory then consider switching to [`LSRK54TimeStepper`](@ref).
-    The [`LSRK54TimeStepper`](@ref) timestepper has half the memory footprint compared
-    to the `RK4TimeStepper` with a 25~30% performance trade off.
+    If your simulation is limited by memory then consider switching to [`LSRK54TimeStepper`](@ref).
+    The [`LSRK54TimeStepper`](@ref) timestepper has about half the memory footprint compared
+    to the `RK4TimeStepper` with a about 25%-30% performance trade off.
 """
 struct RK4TimeStepper{T} <: AbstractTimeStepper{T}
   sol₁ :: T
@@ -286,7 +286,7 @@ end
 
 A 4th-order 5-stages 2-storage Runge-Kutta timestepper for time-stepping
 `∂u/∂t = RHS(u, t)` via:
-```
+```julia
 S² = 0
 
 for i = 1:5
@@ -298,16 +298,16 @@ uⁿ⁺¹ = uⁿ
 ```
 
 where `Aᵢ`, `Bᵢ`, and `Cᵢ` are the ``A``, ``B``, and ``C`` coefficients from
-the LSRK tableau table at the ``i``-th stage. For details, please refer to
+the LSRK table at the ``i``-th stage. For details, please refer to
 
 > Carpenter, M. H. and Kennedy, C. A. (1994). Fourth-order 2N-storage Runge–Kutta schemes, Technical Report NASA TM-109112, NASA Langley Research Center, VA.
 
 !!! info "Usage"
     The `LSRK54TimeStepper` is *slower* than the [`RK4TimeStepper`](@ref) but
-    with *less* memory footprint; half compared to [`RK4TimeStepper`](@ref).
+    has *less* memory footprint; half compared to [`RK4TimeStepper`](@ref).
     
-    If you are bound by performance then use [`RK4TimeStepper`](@ref); if your
-    simulation is bound by memory then consider using `LSRK54TimeStepper`.
+    If your simulation is bound by performance then use [`RK4TimeStepper`](@ref);
+    if your simulation is bound by memory then consider using `LSRK54TimeStepper`.
 """
 struct LSRK54TimeStepper{T,V} <: AbstractTimeStepper{T}
    S² :: T
@@ -320,7 +320,7 @@ end
 """
     LSRK54TimeStepper(equation::Equation, dev::Device=CPU())
 
-Construct a 4th-order 5-stages low storage Runge-Kutta timestepper for `equation` on device `dev`.
+Construct a 4th-order 5-stages low-storage Runge-Kutta timestepper for `equation` on device `dev`.
 """
 function LSRK54TimeStepper(equation::Equation, dev::Device=CPU())
   @devzeros typeof(dev) equation.T equation.dims S² RHS
@@ -379,7 +379,7 @@ end
 A 4th-order exponential-time-differencing Runge-Kutta timestepper for time-stepping
 `∂u/∂t = L * u + N(u)`. The scheme treats the linear term `L` exact while for the
 nonlinear terms `N(u)` it uses a 4th-order Runge-Kutta scheme. That is,
-```
+```julia
 uⁿ⁺¹ = exp(L * dt) * uⁿ + RK4(N(uⁿ))
 ```
 For more info refer to 
@@ -528,14 +528,14 @@ const ab3h3 = 5/12
     struct AB3TimeStepper{T} <: AbstractTimeStepper{T}
 
 A 3rd-order Adams-Bashforth timestepper for time-stepping `∂u/∂t = RHS(u, t)` via:
-```
+```julia
 uⁿ⁺¹ = uⁿ + dt/12 * (23 * RHS(uⁿ, tⁿ) - 16 * RHS(uⁿ⁻¹, tⁿ⁻¹) + 5 * RHS(uⁿ⁻², tⁿ⁻²))
 ```
 
 Adams-Bashforth is a multistep method, i.e., it not only requires information from the `n`-th time-step
 (`uⁿ`) but also from the previous two timesteps (`uⁿ⁻¹` and `uⁿ⁻²`). For the first two timesteps, it
 falls back to a forward Euler timestepping scheme:
-```
+```julia
 uⁿ⁺¹ = uⁿ + dt * RHS(uⁿ, tⁿ)
 ```
 """

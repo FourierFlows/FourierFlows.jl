@@ -38,6 +38,7 @@ end
 ```@setup 3
 using FourierFlows
 using CairoMakie
+CairoMakie.activate!(type = "svg")
 set_theme!(Theme(linewidth = 3, fontsize = 20))
 
 using LinearAlgebra: mul!

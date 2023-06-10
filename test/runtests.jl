@@ -128,6 +128,13 @@ for dev in devices
     @test testnodealias(g₁)
     @test testnodealias(g₂)
     @test testnodealias(g₃)
+
+    @test_throws DomainError OneDGrid(nx=5, Lx=1)
+    @test_throws DomainError TwoDGrid(nx=5, Lx=1, ny=4, Ly=2)
+    @test_throws DomainError TwoDGrid(nx=4, Lx=1, ny=5, Ly=2)
+    @test_throws DomainError ThreeDGrid(nx=5, Lx=1, ny=4, Ly=2, nz=6, Lz=3)
+    @test_throws DomainError ThreeDGrid(nx=4, Lx=1, ny=5, Ly=2, nz=6, Lz=3)
+    @test_throws DomainError ThreeDGrid(nx=4, Lx=1, ny=6, Ly=2, nz=5, Lz=3)
   end
 
   @time @testset "FFT tests" begin
@@ -207,14 +214,14 @@ for dev in devices
   @time @testset "Timestepper tests" begin
     include("test_timesteppers.jl")
     for stepper in steppers
-      @test constantdiffusiontest_stepforward(stepper, dev=dev)
+      @test constantdiffusiontest_stepforward(stepper; dev)
       
-      @test varyingdiffusiontest_stepforward(stepper, dev=dev)
+      @test varyingdiffusiontest_stepforward(stepper; dev)
       
       if FourierFlows.isexplicit(stepper)
-        @test constantdiffusiontest_step_until(stepper, dev=dev)
+        @test constantdiffusiontest_step_until(stepper; dev)
       else
-        @test_throws Exception constantdiffusiontest_step_until(stepper, dev=dev)
+        @test_throws Exception constantdiffusiontest_step_until(stepper; dev)
       end
     end
   end
@@ -230,6 +237,7 @@ for dev in devices
     @test test_supersize()
     @test test_device_array(dev)
     @test test_device_array_Tdim(dev, Float32, 2)
+    @test test_device_grid(dev)
 
     # Test on a rectangular grid
     nx, ny = 64, 128   # number of points
@@ -248,19 +256,23 @@ for dev in devices
     k2, l2 = 3*k0, -3*l0
     sinkl1 = @. sin(k1*x + l1*y)
     sinkl2 = @. sin(k2*x + l2*y)
-    expkl1 = @. cos(k1*x + l1*y) + im*sin(k1*x + l1*y)
-    expkl2 = @. cos(k2*x + l2*y) + im*sin(k2*x + l2*y)
+    expkl1 = @. cos(k1*x + l1*y) + im * sin(k1*x + l1*y)
+    expkl2 = @. cos(k2*x + l2*y) + im * sin(k2*x + l2*y)
 
     # Analytical expression for the Jacobian of sin1 and sin2 and of exp1 and exp2
     Jsinkl1sinkl2 = @. (k1*l2-k2*l1)*cos(k1*x + l1*y)*cos(k2*x + l2*y)
     Jexpkl1expkl2 = @. (k2*l1-k1*l2)*(cos((k1+k2)*x + (l1+l2)*y)+im*sin((k1+k2)*x + (l1+l2)*y))
 
-    @test test_parsevalsum(f1, g; realvalued=true)   # Real valued f with rfft
-    @test test_parsevalsum(f1, g; realvalued=false)  # Real valued f with fft
-    @test test_parsevalsum(f2, g; realvalued=false)  # Complex valued f with fft
-    @test test_parsevalsum2(f1, g; realvalued=true)  # Real valued f with rfft
-    @test test_parsevalsum2(f1, g; realvalued=false) # Real valued f with fft
-    @test test_parsevalsum2(f2, g; realvalued=false) # Complex valued f with fft
+    @test test_parsevalsums(f1, g; realvalued=true)       # Real valued f with rfft
+    @test test_parsevalsums(f1, g; realvalued=false)      # Real valued f with fft
+    @test test_parsevalsums(f2, g; realvalued=false)      # Complex valued f with fft
+
+    f3 = randn(eltype(g), (g.nx, g.ny))
+    @test test_parsevalsums(f3, g; realvalued=true)        # Real valued f with rfft
+    @test test_parsevalsums(f3, g; realvalued=false)       # Real valued f with fft
+
+    f4 = randn(Complex{eltype(g)}, (g.nx, g.ny))
+    @test test_parsevalsums(f4, g; realvalued=false)       # Complex valued f with fft
 
     @test test_jacobian(sinkl1, sinkl1, 0*sinkl1, g)      # Test J(a, a) = 0
     @test test_jacobian(sinkl1, sinkl2, Jsinkl1sinkl2, g) # Test J(sin1, sin2) = Jsin1sin2
@@ -271,10 +283,16 @@ for dev in devices
     g = OneDGrid(dev; nx, Lx)
     σ = 0.5
     f1 = @. exp(-g.x^2 / 2σ^2)
-    @test test_parsevalsum2(f1, g; realvalued=true)  # Real valued f with rfft
-    @test test_parsevalsum2(f1, g; realvalued=false) # Real valued f with fft
+    @test test_parsevalsums(f1, g; realvalued=true)        # Real valued f with rfft
+    @test test_parsevalsums(f1, g; realvalued=false)       # Real valued f with fft
 
+    f2 = randn(eltype(g), (g.nx,))
+    @test test_parsevalsums(f2, g; realvalued=true)        # Real valued f with rfft
+    @test test_parsevalsums(f2, g; realvalued=false)       # Real valued f with fft
     
+    f3 = randn(Complex{eltype(g)}, (g.nx,))
+    @test test_parsevalsums(f3, g; realvalued=false)       # Complex valued f with fft
+
     # Radial spectrum tests. Note that ahρ = ∫ ah ρ dθ.
     n = 128; δ = n/10                                       # Parameters
     ahkl_isotropic(k, l) = exp(-(k^2 + l^2) / 2δ^2)                     # a  = exp(-ρ²/2δ²)
@@ -365,17 +383,17 @@ for dev in devices
     
     if dev == CPU()
       @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element Vector{Float64}\n  ├───── variable: cx -> 128-element Vector{Float64}\n  ├───── variable: ch -> 65-element Vector{ComplexF64}\n  └───── variable: cxh -> 65-element Vector{ComplexF64}\n"
-      @test repr(diag) == "Diagnostic\n  ├─── calc: get_sol\n  ├─── prob: FourierFlows.Problem{DataType, Vector{ComplexF64}, Float64, Vector{Int64}}\n  ├─── data: 101-element Vector{Vector{ComplexF64}}\n  ├────── t: 101-element Vector{Float64}\n  ├── steps: 101-element Vector{Int64}\n  ├─── freq: 1\n  └────── i: 1"
-      @test repr(out) == "Output\n  ├──── prob: FourierFlows.Problem{DataType, Vector{ComplexF64}, Float64, Vector{Int64}}\n  ├──── path: output.jld2\n  └── fields: Dict{Symbol, Function}()"
+      @test repr(diag) == "Diagnostic\n  ├─── calc: get_sol\n  ├─── prob: FourierFlows.Problem{DataType, Vector{ComplexF64}, Float64, Vector{Float64}}\n  ├─── data: 101-element Vector{Vector{ComplexF64}}\n  ├────── t: 101-element Vector{Float64}\n  ├── steps: 101-element Vector{Int64}\n  ├─── freq: 1\n  └────── i: 1"
+      @test repr(out) == "Output\n  ├──── prob: FourierFlows.Problem{DataType, Vector{ComplexF64}, Float64, Vector{Float64}}\n  ├──── path: output.jld2\n  └── fields: Dict{Symbol, Function}()"
     else
       @test repr(prob.vars) == "Variables\n  ├───── variable: c -> 128-element CuArray{Float64, 1, CUDA.Mem.DeviceBuffer}\n  ├───── variable: cx -> 128-element CuArray{Float64, 1, CUDA.Mem.DeviceBuffer}\n  ├───── variable: ch -> 65-element CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}\n  └───── variable: cxh -> 65-element CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}\n"
-      @test repr(diag) == "Diagnostic\n  ├─── calc: get_sol\n  ├─── prob: FourierFlows.Problem{DataType, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}, Float64, CuArray{Int64, 1, CUDA.Mem.DeviceBuffer}}\n  ├─── data: 101-element Vector{CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}\n  ├────── t: 101-element Vector{Float64}\n  ├── steps: 101-element Vector{Int64}\n  ├─── freq: 1\n  └────── i: 1"
-      @test repr(out) == "Output\n  ├──── prob: FourierFlows.Problem{DataType, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}, Float64, CuArray{Int64, 1, CUDA.Mem.DeviceBuffer}}\n  ├──── path: output.jld2\n  └── fields: Dict{Symbol, Function}()"
+      @test repr(diag) == "Diagnostic\n  ├─── calc: get_sol\n  ├─── prob: FourierFlows.Problem{DataType, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}, Float64, CuArray{Float64, 1, CUDA.Mem.DeviceBuffer}}\n  ├─── data: 101-element Vector{CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}}\n  ├────── t: 101-element Vector{Float64}\n  ├── steps: 101-element Vector{Int64}\n  ├─── freq: 1\n  └────── i: 1"
+      @test repr(out) == "Output\n  ├──── prob: FourierFlows.Problem{DataType, CuArray{ComplexF64, 1, CUDA.Mem.DeviceBuffer}, Float64, CuArray{Float64, 1, CUDA.Mem.DeviceBuffer}}\n  ├──── path: output.jld2\n  └── fields: Dict{Symbol, Function}()"
     end
     
-    @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Int64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: ComplexF64"
+    @test repr(prob.eqn) == "Equation\n  ├──────── linear coefficients: L\n  │                              ├───type: Float64\n  │                              └───size: (65,)\n  ├───────────── nonlinear term: calcN!()\n  └─── type of state vector sol: ComplexF64"
     @test repr(prob.clock) == "Clock\n  ├─── timestep dt: 0.01\n  ├────────── step: 0\n  └──────── time t: 0.0"
-    @test repr(prob) == "Problem\n  ├─────────── grid: grid (on " * string(typeof(prob.grid.device)) * ")\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  └──── timestepper: RK4TimeStepper"
+    @test repr(prob) == "Problem\n  ├─────────── grid: grid (on " * string(typeof(prob.grid.device)) * ")\n  ├───── parameters: params\n  ├────── variables: vars\n  ├─── state vector: sol\n  ├─────── equation: eqn\n  ├────────── clock: clock\n  │                  └──── dt: 0.01\n  └──── timestepper: RK4TimeStepper"
   end
 
   @time @testset "Doctests" begin
