@@ -50,7 +50,8 @@ isexplicit(stepper) = any(Symbol(stepper) .== fullyexplicitsteppers)
     TimeStepper(stepper, equation, dt=nothing, dev=CPU(); kw...)
 
 Instantiate the Time`stepper` for `equation` with timestep `dt` and
-on the `dev`ice. The `kw` are passed to the timestepper constructor.
+on the `dev`ice. The keyword arguments, `kw`, are passed to the
+timestepper constructor.
 """
 function TimeStepper(stepper, equation, dt=nothing, dev::Device=CPU(); kw...)
   fullsteppername = Symbol(stepper, :TimeStepper)
