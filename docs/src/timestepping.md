@@ -23,8 +23,6 @@ The high-wavenumber filter used in the filtered timesteppers is:
      \end{cases}
 ```
 
-See [`FourierFlows.makefilter`](@ref).
-
 For fluid equations with quadratic non-linearities it makes sense to choose a cutoff wavenumber
 at 2/3 of the highest wavenumber resolved in our domain, ``k_{\textrm{cutoff}} = \tfrac{2}{3} k_{\textrm{max}}`` (see discussion in [Aliasing section](@ref aliasing)).
 
@@ -40,3 +38,27 @@ That is:
 
 The above filter originates from Canuto et al. (1988). In geophysical turbulence applications
 it was used by LaCasce (1996) and later by Arbic & Flierl (2003).
+
+Using the default parameters provided by the filtered time steppers (see
+[`FourierFlows.makefilter`](@ref)), the filter has the following form:
+
+```@setup 1
+using CairoMakie
+CairoMakie.activate!(type = "svg")
+set_theme!(Theme(linewidth = 3, fontsize = 20))
+```
+
+```@example 1
+using FourierFlows, CairoMakie
+
+K = range(0, 1, 100) # non-dimensional wavenumber k * dx / π
+
+filter = FourierFlows.makefilter(collect(K))
+
+fig = Figure()
+ax = Axis(fig[1, 1], xlabel = "k dx / π", ylabel = "filter")
+
+lines!(ax, K, filter)
+
+current_figure() # hide
+```
