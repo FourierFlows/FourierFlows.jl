@@ -110,19 +110,17 @@ equation = FourierFlows.Equation(L, calcN!, grid)
 ```
 
 Last, we have to pick a time-stepper and a time-step `dt` and gather everything 
-a FourierFlows's [`Problem`](@ref FourierFlows.Problem):
+a FourierFlows's [`Problem`](@ref FourierFlows.Problem). Time-steppers are prescribed
+via a string that corresponds to the name of the implemented time-steppers _without_
+the `TimeStepper` ending. (See [Time-stepping section](@ref timestepping) for a list
+of implemented time-stepping schemes.) For example, a problem that uses a
+[`ForwardEulerTimeStepper`](@ref) with time step of 0.02 is constructed via:
 
 ```@example 2
 stepper, dt = "ForwardEuler", 0.02
 
 prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 ```
-
-Currently, the implemented time-steppers are [`ForwardEuler`](@ref ForwardEulerTimeStepper),
-[`AB3`](@ref AB3TimeStepper) (Adams-Basmforth 3rd order), [`RK4`](@ref RK4TimeStepper) (Runge-Kutta
-4th order), and [`ETDRK4`](@ref ETDRK4TimeStepper) (Exponential Time Differencing Runge-Kutta
-4th order). Also, there exist the `Filtered` versions of all the above, in which a high-wavenumber
-filter is applied after every time-step.
 
 By default, the `Problem` constructor takes `sol` a complex valued array filled with zeros
 with same size as `L`.
