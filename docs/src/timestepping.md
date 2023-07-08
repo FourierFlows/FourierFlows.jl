@@ -7,11 +7,13 @@ but also implemented is the [`ETDRK4TimeStepper`](@ref).
 
 ## High-wavenumber filtering
 
-Most of the time steppers also come with their `Filtered` equivalents: [`FilteredForwardEulerTimeStepper`](@ref), [`FilteredAB3TimeStepper`](@ref), [`FilteredRK4TimeStepper`](@ref), and [`FilteredLSRK54TimeStepper`](@ref), and [`FilteredETDRK4TimeStepper`](@ref).
+Most of the time steppers also come with their `Filtered` equivalents: [`FilteredForwardEulerTimeStepper`](@ref), [`FilteredAB3TimeStepper`](@ref), [`FilteredRK4TimeStepper`](@ref), [`FilteredLSRK54TimeStepper`](@ref), and [`FilteredETDRK4TimeStepper`](@ref).
 
-The filtered time steppers include a high-wavenumber filter that is applied to the solution state vector after each time step. The motivation behind filtering is to 
+The filtered time steppers apply a high-wavenumber filter to the solution at the end of each step.
+The motivation behind filtering is to remove enstrophy accumulating at high wavenumbers and creating 
+noise at grid-scale level.
 
-This filter is
+The high-wavenumber filter used in the filtered timesteppers is:
 
 ```math
 \mathrm{filter}(\boldsymbol{k}) = 
@@ -20,6 +22,8 @@ This filter is
        \exp{ \left [- \alpha (|\boldsymbol{k}| - k_{\textrm{cutoff}})^p \right]} & \quad |\boldsymbol{k}| > k_{\textrm{cutoff}} \, .
      \end{cases}
 ```
+
+See [`FourierFlows.makefilter`](@ref).
 
 For fluid equations with quadratic non-linearities it makes sense to choose a cutoff wavenumber
 at 2/3 of the highest wavenumber resolved in our domain, ``k_{\textrm{cutoff}} = \tfrac{2}{3} k_{\textrm{max}}`` (see discussion in [Aliasing section](@ref aliasing)).
