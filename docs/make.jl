@@ -2,7 +2,6 @@ using
   Documenter,
   Literate,
   CairoMakie,  # so that Literate.jl does not capture precompilation output
-  Glob,
   FourierFlows
 
 #####
@@ -29,14 +28,10 @@ end
 ##### Build and deploy docs
 #####
 
-# Set up a timer to print a space ' ' every 240 seconds. This is to avoid CI
-# timing out when building demanding Literate.jl examples.
-Timer(t -> println(" "), 0, interval=240)
-
 format = Documenter.HTML(
     collapselevel = 2,
        prettyurls = get(ENV, "CI", nothing) == "true",
-        canonical = "https://fourierflows.github.io/FourierFlowsDocumentation/dev/",
+        canonical = "https://fourierflows.github.io/FourierFlowsDocumentation/stable",
 )
 
 pages = [
@@ -45,6 +40,7 @@ pages = [
     "Code Basics" => "basics.md",
     "Grids" => "grids.md",
     "Aliasing" => "aliasing.md",
+    "Time stepping" => "timestepping.md",
     "Problem" => "problem.md",
     "Diagnostics" => "diagnostics.md",
     "Output" => "output.md",
@@ -73,8 +69,24 @@ makedocs(;
   checkdocs = :exports
 )
 
-@info "Cleaning up temporary .jld2 and .nc files created by doctests..."
-for file in vcat(glob("docs/*.jld2"))
+@info "Cleaning up temporary .jld2 and .nc files created by doctests or literated examples..."
+
+"""
+    recursive_find(directory, pattern)
+
+Return list of filepaths within `directory` that contains the `pattern::Regex`.
+"""
+recursive_find(directory, pattern) =
+    mapreduce(vcat, walkdir(directory)) do (root, dirs, files)
+        joinpath.(root, filter(contains(pattern), files))
+    end
+
+files = []
+for pattern in [r"\.jld2", r"\.nc"]
+  global files = vcat(files, recursive_find(@__DIR__, pattern))
+end
+
+for file in files
   rm(file)
 end
 
