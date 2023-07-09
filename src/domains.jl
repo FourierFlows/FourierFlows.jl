@@ -502,16 +502,15 @@ outer wavenumber `outerK` is `tol`, where `tol` is a small number, close to mach
 decay = - log(tol) / (outerK - innerK)^order
 ```
 """
-function makefilter(K::Array; order=4, innerK=2/3, outerK=1, tol=1e-15)
-  TK = typeof(K)
+function makefilter(K; order=4, innerK=2/3, outerK=1, tol=1e-15)
   K = Array(K)
 
-  decay = -log(tol) / (outerK - innerK)^order # decay rate for filtering function
+  decay = -log(tol) / (outerK - innerK)^order
 
   filter = @. exp(- decay * (K - innerK)^order)
   filter[K .< innerK] .= 1
   
-  return TK(filter)
+  return filter
 end
 
 function makefilter(g::OneDGrid; realvars=true, kwargs...)
