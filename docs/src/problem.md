@@ -77,11 +77,11 @@ vars = Vars(zeros(Float64, (grid.nx,)), zeros(Complex{Float64}, (grid.nkr,)))
 Note that the Fourier transform of a real-valued array `u` is complex-valued. Also
 because we use the real Fourier transform, the array `uh` is smaller.
 
-In this simple example our state variable is simply `uh`, i.e., `sol = uh`.
+In this example our state variable is simply `uh`, i.e., `sol = uh`.
 
-Next we need to construct the equation. Equation contains the linear coefficients 
+Next we need to construct the equation. The equation contains the linear coefficients 
 for the linear part of the PDE, stored in an array `L`, and the function `calcN!()`
-that  calculates the nonlinear terms from the state variable `sol`. In our case,
+that calculates the nonlinear terms from the state variable `sol`. In our case,
 our equation is linear and, therefore,
 
 ```@example 2
@@ -95,7 +95,7 @@ and
 ```@example 2
 function calcN!(N, sol, t, clock, vars, params, grid)
   @. N = 0
-  
+
   return nothing
 end
 
@@ -109,18 +109,20 @@ in hand we can construct our problem's equation:
 equation = FourierFlows.Equation(L, calcN!, grid)
 ```
 
-Last, we have to pick a time-stepper and a time-step `dt` and gather everything 
-a FourierFlows's [`Problem`](@ref FourierFlows.Problem). Time-steppers are prescribed
-via a string that corresponds to the name of the implemented time-steppers _without_
-the `TimeStepper` ending. (See [Time-stepping section](@ref timestepping) for a list
-of implemented time-stepping schemes.) For example, a problem that uses a
-[`ForwardEulerTimeStepper`](@ref) with time step of 0.02 is constructed via:
+Last, we have to pick a time-stepper and a time-step `dt` and gather everything
+a FourierFlows's [`Problem`](@ref FourierFlows.Problem).
+
+Time-steppers are prescribed via a string. Here we choose `"ForwardEuler"` time-stepping
+scheme with a time step of 0.02.
 
 ```@example 2
 stepper, dt = "ForwardEuler", 0.02
 
 prob = FourierFlows.Problem(equation, stepper, dt, grid, vars, params)
 ```
+
+For more information and a list of implemented time-stepping schemes see
+the the following [Time-stepping section](@ref timestepping).
 
 By default, the `Problem` constructor takes `sol` a complex valued array filled with zeros
 with same size as `L`.

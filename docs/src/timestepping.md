@@ -5,6 +5,10 @@ FourierFlows.jl includes several time-stepping algorithms.
 Most of the time-stepping algorithms are fully explicit schemes: [`ForwardEulerTimeStepper`](@ref), [`AB3TimeStepper`](@ref), [`RK4TimeStepper`](@ref), and [`LSRK54TimeStepper`](@ref)
 but also implemented is the [`ETDRK4TimeStepper`](@ref).
 
+The [`Problem`](@ref FourierFlows.Problem) constructor expects the chosen time stepper as
+as string that includes the corresponding name of the time stepper _without_ the ending `TimeStepper`.
+For example, `"RK4"` for the Runge-Kutta 4th-order time stepper.
+
 ## High-wavenumber filtering
 
 Most of the time steppers also come with their `Filtered` equivalents: [`FilteredForwardEulerTimeStepper`](@ref), [`FilteredAB3TimeStepper`](@ref), [`FilteredRK4TimeStepper`](@ref), [`FilteredLSRK54TimeStepper`](@ref), and [`FilteredETDRK4TimeStepper`](@ref).
