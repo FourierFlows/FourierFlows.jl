@@ -51,7 +51,7 @@ set_theme!(Theme(linewidth = 3, fontsize = 20))
 ```@example 1
 using FourierFlows, CairoMakie
 
-K = range(0, 1, 100) # non-dimensional wavenumber k * dx / π
+K = range(0, stop=1, length=100) # non-dimensional wavenumber k * dx / π
 
 filter = FourierFlows.makefilter(collect(K))
 
