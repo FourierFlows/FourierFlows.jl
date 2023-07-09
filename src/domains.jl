@@ -502,34 +502,37 @@ outer wavenumber `outerK` is `tol`, where `tol` is a small number, close to mach
 decay = - log(tol) / (outerK - innerK)^order
 ```
 """
-function makefilter(K; order=4, innerK=2/3, outerK=1, tol=1e-15)
+function makefilter(K::Array; order=4, innerK=2/3, outerK=1, tol=1e-15)
+  TK = typeof(K)
   K = Array(K)
 
   decay = -log(tol) / (outerK - innerK)^order
 
   filter = @. exp(- decay * (K - innerK)^order)
   filter[K .< innerK] .= 1
-  
-  return filter
+
+  return TK(filter)
 end
 
+makefilter(K::AbstractRange; kwargs...) = makefilter(Array(K); kwargs...)
+
 function makefilter(g::OneDGrid; realvars=true, kwargs...)
-  K = realvars ? g.kr*g.dx/π : @.(abs(g.k*g.dx/π))
-  
+  K = realvars ? g.kr * g.dx / π : @.(abs(g.k * g.dx / π))
+
   return makefilter(K; kwargs...)
 end
 
 function makefilter(g::TwoDGrid; realvars=true, kwargs...)
-  K = realvars ?
-      @.(sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2)) : @.(sqrt((g.k*g.dx/π)^2 + (g.l*g.dy/π)^2))
-  
+  K = realvars ? @.(sqrt((g.kr * g.dx / π)^2 + (g.l * g.dy / π)^2)) :
+                 @.(sqrt((g.k  * g.dx / π)^2 + (g.l * g.dy / π)^2))
+
   return makefilter(K; kwargs...)
 end
 
 function makefilter(g::ThreeDGrid; realvars=true, kwargs...)
-  K = realvars ?
-      @.(sqrt((g.kr*g.dx/π)^2 + (g.l*g.dy/π)^2 + (g.m*g.dz/π)^2)) : @.(sqrt((g.k*g.dx/π)^2 + (g.l*g.dy/π)^2 + (g.m*g.dz/π)^2))
-  
+  K = realvars ? @.(sqrt((g.kr * g.dx / π)^2 + (g.l * g.dy / π)^2 + (g.m * g.dz / π)^2)) :
+                 @.(sqrt((g.k  * g.dx / π)^2 + (g.l * g.dy / π)^2 + (g.m * g.dz / π)^2))
+
   return makefilter(K; kwargs...)
 end
 
