@@ -92,10 +92,11 @@ end
 
 withenv("GITHUB_REPOSITORY" => "FourierFlows/FourierFlowsDocumentation") do
   deploydocs(
-            repo = "github.com/FourierFlows/FourierFlowsDocumentation.git",
-        versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
-       forcepush = true,
-    push_preview = false,
-       devbranch = "main"
+             repo = "github.com/FourierFlows/FourierFlowsDocumentation.git",
+         versions = ["stable" => "v^", "v#.#.#", "dev" => "dev"],
+        forcepush = true,
+     push_preview = true,
+    repo_previews = "github.com/FourierFlows/FourierFlows.jl.git",
+        devbranch = "main"
   )
 end
