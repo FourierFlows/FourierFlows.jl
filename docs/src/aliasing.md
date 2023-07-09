@@ -1,4 +1,4 @@
-# Aliasing
+# [Aliasing](@id aliasing)
 
 ```@setup 1
 using FourierFlows
@@ -96,7 +96,7 @@ the highest-`aliased_fraction` wavenumber components of `fh`.
 FourierFlows.dealias!
 ```
 
-If we construct a grid with `aliased_fraction=0`, e.g.,
+If we construct a grid with `aliased_fraction = 0`, e.g.,
 
 ```@example 1
 grid_nodealias = OneDGrid(; nx, Lx, aliased_fraction=0)
