@@ -21,8 +21,8 @@ DocTestSetup = quote
     vars = Vars(zeros(Float64, (grid.nx,)), zeros(Complex{Float64}, (grid.nkr,)))
     L = - params.α * ones(grid.nkr)
     function calcN!(N, sol, t, clock, vars, params, grid)
-    @. N = 0
-    return nothing
+        @. N = 0
+        return nothing
     end
     equation = FourierFlows.Equation(L, calcN!, grid)
     stepper, dt = "ForwardEuler", 0.02
@@ -57,8 +57,8 @@ end
 params = Params(0.1)
 
 struct Vars <: AbstractVars
-    u :: Array{Float64, 1}
-   uh :: Array{Complex{Float64}, 1}
+     u :: Array{Float64, 1}
+    uh :: Array{Complex{Float64}, 1}
 end
 
 vars = Vars(zeros(Float64, (grid.nx,)), zeros(Complex{Float64}, (grid.nkr,)))
@@ -66,9 +66,9 @@ vars = Vars(zeros(Float64, (grid.nx,)), zeros(Complex{Float64}, (grid.nkr,)))
 L = - params.α * ones(grid.nkr)
 
 function calcN!(N, sol, t, clock, vars, params, grid)
-  @. N = 0
-  
-  return nothing
+    @. N = 0
+
+    return nothing
 end
 
 equation = FourierFlows.Equation(L, calcN!, grid)

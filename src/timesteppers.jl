@@ -87,7 +87,8 @@ end
 """
     struct ForwardEulerTimeStepper{T} <: AbstractTimeStepper{T}
 
-A Forward Euler timestepper for time-stepping `∂u/∂t = RHS(u, t)` via:
+A forward Euler timestepper for time-stepping `∂u/∂t = RHS(u, t)` via:
+
 ```julia
 uⁿ⁺¹ = uⁿ + dt * RHS(uⁿ, tⁿ)
 ```
@@ -100,7 +101,7 @@ end
 """
     ForwardEulerTimeStepper(equation::Equation, dev::Device=CPU())
 
-Construct a Forward Euler timestepper for `equation` on device `dev`.
+Construct a forward Euler timestepper for `equation` on device `dev`.
 """
 ForwardEulerTimeStepper(equation::Equation, dev::Device=CPU()) = 
   ForwardEulerTimeStepper(zeros(dev, equation.T, equation.dims))
@@ -118,7 +119,7 @@ end
 """
     struct FilteredForwardEulerTimeStepper{T,Tf} <: AbstractTimeStepper{T}
 
-A Forward Euler timestepper with spectral filtering. See [`ForwardEulerTimeStepper`](@ref).
+A forward Euler timestepper with spectral filtering. See [`ForwardEulerTimeStepper`](@ref).
 """
 struct FilteredForwardEulerTimeStepper{T,Tf} <: AbstractTimeStepper{T}
        N :: T
@@ -142,7 +143,7 @@ function stepforward!(sol, clock, ts::FilteredForwardEulerTimeStepper, equation,
 
   clock.t += clock.dt
   clock.step += 1
-  
+
   return nothing
 end
 
@@ -155,10 +156,13 @@ end
     struct RK4TimeStepper{T} <: AbstractTimeStepper{T}
 
 A 4th-order Runge-Kutta timestepper for time-stepping `∂u/∂t = RHS(u, t)` via:
+
 ```julia
 uⁿ⁺¹ = uⁿ + dt/6 * (k₁ + 2 * k₂ + 2 * k₃ + k₄)
 ```
+
 where
+
 ```julia
 k₁ = RHS(uⁿ, tⁿ)
 k₂ = RHS(uⁿ + k₁ * dt/2, tⁿ + dt/2)
@@ -212,19 +216,19 @@ Construct a 4th-order Runge-Kutta timestepper with spectral filtering for `equat
 function FilteredRK4TimeStepper(equation::Equation, dev::Device=CPU(); filterkwargs...)
   ts = RK4TimeStepper(equation, dev)
   filter = makefilter(equation; filterkwargs...)
-  
+
   return FilteredRK4TimeStepper(getfield.(Ref(ts), fieldnames(typeof(ts)))..., filter)
 end
 
 function addlinearterm!(RHS, L, sol)
   @. RHS += L*sol
-  
+
   return nothing
 end
 
 function substepsol!(newsol, sol, RHS, dt)
   @. newsol = sol + dt*RHS
-  
+
   return nothing
 end
 
@@ -232,28 +236,28 @@ function RK4substeps!(sol, clock, ts, equation, vars, params, grid, t, dt)
   # Substep 1
   equation.calcN!(ts.RHS₁, sol, t, clock, vars, params, grid)
   addlinearterm!(ts.RHS₁, equation.L, sol)
-  
+
   # Substep 2
   substepsol!(ts.sol₁, sol, ts.RHS₁, dt/2)
   equation.calcN!(ts.RHS₂, ts.sol₁, t+dt/2, clock, vars, params, grid)
   addlinearterm!(ts.RHS₂, equation.L, ts.sol₁)
-  
+
   # Substep 3
   substepsol!(ts.sol₁, sol, ts.RHS₂, dt/2)
   equation.calcN!(ts.RHS₃, ts.sol₁, t+dt/2, clock, vars, params, grid)
   addlinearterm!(ts.RHS₃, equation.L, ts.sol₁)
-  
+
   # Substep 4
   substepsol!(ts.sol₁, sol, ts.RHS₃, dt)
   equation.calcN!(ts.RHS₄, ts.sol₁, t+dt, clock, vars, params, grid)
   addlinearterm!(ts.RHS₄, equation.L, ts.sol₁)
-  
+
   return nothing
 end
 
 function RK4update!(sol, RHS₁, RHS₂, RHS₃, RHS₄, dt)
-  @. sol += dt * (RHS₁ / 6 + RHS₂ / 3  + RHS₃ / 3 + RHS₄ / 6)
-  
+  @. sol += dt/6 * (RHS₁ + 2 * RHS₂  + 2 * RHS₃ + RHS₄)
+
   return nothing
 end
 
@@ -263,7 +267,7 @@ function stepforward!(sol, clock, ts::RK4TimeStepper, equation, vars, params, gr
 
   clock.t += clock.dt
   clock.step += 1
-  
+
   return nothing
 end
 
@@ -274,7 +278,7 @@ function stepforward!(sol, clock, ts::FilteredRK4TimeStepper, equation, vars, pa
 
   clock.t += clock.dt
   clock.step += 1
-  
+
   return nothing
 end
 
@@ -287,6 +291,7 @@ end
 
 A 4th-order 5-stages 2-storage Runge-Kutta timestepper for time-stepping
 `∂u/∂t = RHS(u, t)` via:
+
 ```julia
 S² = 0
 
@@ -299,9 +304,7 @@ uⁿ⁺¹ = uⁿ
 ```
 
 where `Aᵢ`, `Bᵢ`, and `Cᵢ` are the ``A``, ``B``, and ``C`` coefficients from
-the LSRK table at the ``i``-th stage. For details, please refer to
-
-> Carpenter, M. H. and Kennedy, C. A. (1994). Fourth-order 2N-storage Runge–Kutta schemes, Technical Report NASA TM-109112, NASA Langley Research Center, VA.
+the LSRK table at the ``i``-th stage. For details, refer to [Carpenter-Kennedy-1994](@cite).
 
 !!! info "Usage"
     The `LSRK54TimeStepper` is *slower* than the [`RK4TimeStepper`](@ref) but
@@ -378,14 +381,15 @@ end
     struct ETDRK4TimeStepper{T,TL} <: AbstractTimeStepper{T}
 
 A 4th-order exponential-time-differencing Runge-Kutta timestepper for time-stepping
-`∂u/∂t = L * u + N(u)`. The scheme treats the linear term `L` exact while for the
-nonlinear terms `N(u)` it uses a 4th-order Runge-Kutta scheme. That is,
+`∂u/∂t = L * u + N(u)`. The scheme treats the linear term `L` exactly while for the
+nonlinear terms `N(u)` it uses a 4th-order Runge-Kutta scheme ([`RK4TimeStepper`](@ref)).
+That is,
+
 ```julia
 uⁿ⁺¹ = exp(L * dt) * uⁿ + RK4(N(uⁿ))
 ```
-For more info refer to 
 
-> Kassam, A. K., & Trefethen, L. N. (2005). Fourth-order time-stepping for stiff PDEs. _SIAM Journal on Scientific Computing_, **26(4)**, 1214-1233.
+For more info refer to [Kassam-Trefethen-2005](@cite).
 """
 struct ETDRK4TimeStepper{T,TL} <: AbstractTimeStepper{T}
   # ETDRK4 coefficents
@@ -444,21 +448,18 @@ end
 """
     FilteredETDRK4TimeStepper(equation, dt; filterkwargs...)
 
-Construct a 4th-order exponential-time-differencing Runge-Kutta timestepper with timestep `dt` and with
+Construct a 4th-order exponential-time-differencing Runge-Kutta timestepper with timestep `dt` and 
 spectral filtering for `equation` on device `dev`.
 """
 function FilteredETDRK4TimeStepper(equation::Equation, dt, dev::Device=CPU(); filterkwargs...)
   timestepper = ETDRK4TimeStepper(equation, dt, dev)
   filter = makefilter(equation; filterkwargs...)
-  
+
   return FilteredETDRK4TimeStepper(getfield.(Ref(timestepper), fieldnames(typeof(timestepper)))..., filter)
 end
 
 function ETDRK4update!(sol, expLdt, α, β, Γ, N₁, N₂, N₃, N₄)
-  @. sol = (expLdt * sol +  α * N₁
-                         + 2β * (N₂ + N₃)
-                         +  Γ * N₄)
-
+  @. sol = expLdt * sol +  α * N₁ + 2β * (N₂ + N₃) +  Γ * N₄
   return nothing
 end
 
@@ -529,13 +530,15 @@ const ab3h3 = 5/12
     struct AB3TimeStepper{T} <: AbstractTimeStepper{T}
 
 A 3rd-order Adams-Bashforth timestepper for time-stepping `∂u/∂t = RHS(u, t)` via:
+
 ```julia
 uⁿ⁺¹ = uⁿ + dt/12 * (23 * RHS(uⁿ, tⁿ) - 16 * RHS(uⁿ⁻¹, tⁿ⁻¹) + 5 * RHS(uⁿ⁻², tⁿ⁻²))
 ```
 
-Adams-Bashforth is a multistep method, i.e., it not only requires information from the `n`-th time-step
-(`uⁿ`) but also from the previous two timesteps (`uⁿ⁻¹` and `uⁿ⁻²`). For the first two timesteps, it
-falls back to a forward Euler timestepping scheme:
+Adams-Bashforth is a multistep method, i.e., it not only requires information from the
+`n`-th time-step (`uⁿ`) but also from the previous two timesteps (`uⁿ⁻¹` and `uⁿ⁻²`).
+For the first two timesteps, it falls back to a forward Euler timestepping scheme:
+
 ```julia
 uⁿ⁺¹ = uⁿ + dt * RHS(uⁿ, tⁿ)
 ```
@@ -600,26 +603,26 @@ function stepforward!(sol, clock, ts::AB3TimeStepper, equation, vars, params, gr
 
   clock.t += clock.dt
   clock.step += 1
-  
+
   @. ts.RHS₋₂ = ts.RHS₋₁          # Store
   @. ts.RHS₋₁ = ts.RHS            # ... previous values of RHS
-  
+
   return nothing
 end
 
 function stepforward!(sol, clock, ts::FilteredAB3TimeStepper, equation, vars, params, grid)
   equation.calcN!(ts.RHS, sol, clock.t, clock, vars, params, grid)
   addlinearterm!(ts.RHS, equation.L, sol)
-  
+
   AB3update!(sol, ts, clock)
   @. sol *= ts.filter
 
   clock.t += clock.dt
   clock.step += 1
-  
+
   @. ts.RHS₋₂ = ts.RHS₋₁          # Store
   @. ts.RHS₋₁ = ts.RHS            # ... previous values of RHS
-  
+
   return nothing
 end
 
@@ -630,15 +633,18 @@ end
 function getexpLs(dt, equation)
   expLdt  = @. exp(dt * equation.L)
   exp½Ldt = @. exp(dt * equation.L/2)
-  
+
   return expLdt, exp½Ldt
 end
 
 """
     getetdcoeffs(dt, L; ncirc=32, rcirc=1)
 
-Calculate ETDRK4 coefficients associated with the (diagonal) linear coefficient
-`L` by integrating over a unit circle in the complex space.
+Calculate the coefficients associated with the (diagonal) linear coefficient
+`L` for an ETDRK4 timestepper with timestep `dt`.
+
+The calculation is done by integrating over a unit circle in the complex space.
+For more info refer to [Kassam-Trefethen-2005](@cite).
 """
 function getetdcoeffs(dt, L; ncirc=32, rcirc=1)
   shape = Tuple(cat(ncirc, ones(Int, ndims(L)), dims=1))
@@ -677,7 +683,11 @@ getetdcoeffs(dt, L::CuArray; kwargs...) =
 """
     step_until!(prob, stop_time)
 
-Step forward `prob` until `stop_time`. Cannot be used with ETDRK4 time steppers.
+Step forward `prob` until `stop_time`.
+
+!!! warn "Fully-explicit timestepping schemes are required"
+    We cannot use `step_until!` with [`ETDRK4TimeStepper`](@ref) nor
+    [`FilteredETDRK4TimeStepper`](@ref).
 
 See also: [`stepforward!`](@ref)
 """

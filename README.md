@@ -30,7 +30,7 @@
 This software provides tools for partial differential equations on periodic domains using 
 Fourier-based pseudospectral methods. A central intent of the software's design is also to 
 provide a framework for writing new, fast solvers for new physical problems. The code is 
-written in [Julia][].
+written in [Julia](https://julialang.org/).
 
 For more details refer to the [documentation](https://fourierflows.github.io/FourierFlowsDocumentation/stable/).
 
@@ -77,10 +77,12 @@ and [`CUDA.CuDevice`](https://juliagpu.github.io/CUDA.jl/stable/lib/driver/#CUDA
 
 ## Example(s)
 
-An example for coding up and solving the linear shallow water equations is [documented](https://fourierflows.github.io/FourierFlowsDocumentation/stable/literated/OneDShallowWaterGeostrophicAdjustment/).
+A demonstration for how to code up and solve the linear shallow water equations is found
+in the [Examples](literated/OneDShallowWaterGeostrophicAdjustment/) section of the documentation.
 
-See also the child packages [GeophysicalFlows.jl][] for example usage of FourierFlows.jl for 
-problems in Geophysical Fluid Dynamics.
+For more examples of `FourierFlows.jl` in action, see the child packages
+[`GeophysicalFlows.jl`](https://github.com/FourierFlows/GeophysicalFlows.jl)
+or [`PassiveTracerFlows.jl`](https://github.com/FourierFlows/PassiveTracerFlows.jl).
 
 
 ## Getting help
@@ -94,15 +96,15 @@ if you have any questions, comments, suggestions, etc.
 
 ## Developers
 
-FourierFlows is currently being developed mainly by [Gregory L. Wagner][] (@glwagner)
-and [Navid C. Constantinou][] (@navidcy).
-
+FourierFlows.jl started during the on Atmospheric and Oceanic Fluid Dynamics Meeting 2017 by
+[Greg Wagner](https://glwagner.github.io) and [Navid Constantinou](https://www.navidconstantinou.com).
+Since then [various people have contributed](https://github.com/FourierFlows/FourierFlows.jl/graphs/contributors).
 
 ## Citing
 
-The code is citable via [zenodo](https://zenodo.org). Please cite as:
+This software is citable via [zenodo](https://zenodo.org). Please cite as:
 
-> Gregory L. Wagner, Navid C. Constantinou, and contributors. (2023). FourierFlows/FourierFlows.jl: FourierFlows v0.10.3 (Version v0.10.3). Zenodo.  [http://doi.org/10.5281/zenodo.1161724](http://doi.org/10.5281/zenodo.1161724)
+> Gregory L. Wagner, Navid C. Constantinou, and contributors. (2023). FourierFlows/FourierFlows.jl: FourierFlows v0.10.3 (Version v0.10.3). Zenodo. [http://doi.org/10.5281/zenodo.1161724](http://doi.org/10.5281/zenodo.1161724)
 
 
 ## Contributing
@@ -118,9 +120,3 @@ and want to find a cool little project or issue to work on that fits your intere
 than happy to help along the way.
 
 For more information, check out our [contributor's guide](https://github.com/FourierFlows/FourierFlows.jl/blob/master/CONTRIBUTING.md).
-
-
-[Julia]: https://julialang.org/
-[Navid C. Constantinou]: http://www.navidconstantinou.com
-[Gregory L. Wagner]: https://glwagner.github.io
-[GeophysicalFlows.jl]: https://github.com/FourierFlows/GeophysicalFlows.jl

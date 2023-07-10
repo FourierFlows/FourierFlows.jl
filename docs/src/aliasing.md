@@ -82,11 +82,11 @@ harmonics with wavenumbers beyond those that our grid is able to resolve and, th
 aliasing errors.
 
 The above-mentioned 1/2-rule for dealiasing for quadratic nonlinearities is, however, not the 
-most efficient. Orszag (1972) pointed out that for quadratic nonlirearities, simply only discarding 
-the highest-1/3 of wavenumber components is enough to save us from aliasing errors. To be fair, 
-with Orszag's so-called 2/3-rule for dealiasing, still some aliasing errors occur, but those 
-errors only occur to the higher-1/3 wavenumber components that will be zero-ed out next time 
-we dealias our solution anyway.
+most efficient. [Orszag-1971](@cite) pointed out that for quadratic nonlirearities, simply only
+discarding the highest-1/3 of wavenumber components is enough to save us from aliasing errors.
+To be fair, with Orszag's so-called 2/3-rule for dealiasing, still some aliasing errors occur, but
+those  errors only occur to the higher-1/3 wavenumber components that will be zero-ed out at the
+next time step, when we next dealias our solution anyway.
 
 When constructing a `grid` we can specify the `aliased_fraction` parameter. By default, this is 
 set to ``1/3``, appropriate for quadratic nonlinearities. Then `dealias!(fh, grid)` will zero-out 
