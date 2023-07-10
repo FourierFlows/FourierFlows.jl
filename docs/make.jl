@@ -16,7 +16,7 @@ const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
 const OUTPUT_DIR   = joinpath(@__DIR__, "src/literated")
 
 examples = [
-  # "OneDShallowWaterGeostrophicAdjustment.jl",
+  "OneDShallowWaterGeostrophicAdjustment.jl",
 ]
 
 for example in examples
@@ -50,7 +50,7 @@ pages = [
     "Output" => "output.md",
     "GPU" => "gpu.md",
     "Examples" => [ 
-      # "literated/OneDShallowWaterGeostrophicAdjustment.md",
+      "literated/OneDShallowWaterGeostrophicAdjustment.md",
       ],
     "Contributor's guide" => "contributing.md",
     "Library" => [ 
