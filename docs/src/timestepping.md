@@ -2,8 +2,10 @@
 
 FourierFlows.jl includes several time-stepping algorithms.
 
-Most of the time-stepping algorithms are fully explicit schemes: [`ForwardEulerTimeStepper`](@ref), [`AB3TimeStepper`](@ref), [`RK4TimeStepper`](@ref), and [`LSRK54TimeStepper`](@ref)
-but also implemented is the [`ETDRK4TimeStepper`](@ref).
+Most of the time-stepping algorithms are fully explicit schemes: [`ForwardEulerTimeStepper`](@ref),
+[`AB3TimeStepper`](@ref), [`RK4TimeStepper`](@ref), and [`LSRK54TimeStepper`](@ref).
+Also we have implemented an [`ETDRK4TimeStepper`](@ref) scheme with the improvements described
+by [Kassam-Trefethen-2005](@cite).
 
 The [`Problem`](@ref FourierFlows.Problem) constructor expects the chosen time stepper as
 as string that includes the corresponding name of the time stepper _without_ the ending `TimeStepper`.
