@@ -32,7 +32,7 @@ The high-wavenumber filter used in the filtered timesteppers is:
 For fluid equations with quadratic non-linearities it makes sense to choose a cutoff wavenumber
 at 2/3 of the highest wavenumber resolved in our domain, ``k_{\textrm{cutoff}} = \tfrac{2}{3} k_{\textrm{max}}`` (see discussion in [Aliasing section](@ref aliasing)).
 
-Given the order ``p``, we calculate the coefficient ``\alpha`` so that the the filter value
+Given the order ``p``, we calculate the coefficient ``\alpha`` so that the filter value
 that corresponds to the highest allowed wavenumber in our domain is a small value, ``\delta``,
 taken to be close to machine precision.
 
