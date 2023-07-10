@@ -62,15 +62,14 @@ pages = [
     "References" => "references.md",
 ]
 
-makedocs(bib, sitename = "FourierFlows.jl", 
-               authors = "Gregory L. Wagner and Navid C. Constantinou and contributors", 
-               modules = [FourierFlows], 
-                format = format, 
-                 pages = pages, 
-                 draft = true,
-               doctest = false, 
-                strict = :doctest, 
-                 clean = true, 
+makedocs(bib, sitename = "FourierFlows.jl",
+               authors = "Gregory L. Wagner and Navid C. Constantinou and contributors",
+               modules = [FourierFlows],
+                format = format,
+                 pages = pages,
+               doctest = false,
+                strict = :doctest,
+                 clean = true,
              checkdocs = :exports)
 
 @info "Cleaning up temporary .jld2 and .nc files created by doctests or literated examples..."
