@@ -64,18 +64,19 @@ set_theme!(Theme(linewidth = 3, fontsize = 20))
 ```
 
 ```@example 1
-using FourierFlows, CairoMakie
+using CairoMakie
+using FourierFlows: makefilter
 
 K = 0:0.001:1 # non-dimensional wavenumber k * dx / π
 
 fig = Figure()
 ax = Axis(fig[1, 1], xlabel = "|𝐤| dx / π", ylabel = "filter", aspect=2.5, xticks=0:0.2:1)
 
-vlines!(ax, 2/3, color = (:gray, 0.4), linewidth=6, label = "cutoff wavenumber")
+vlines!(ax, 2/3, color = (:gray, 0.4), linewidth = 6, label = "cutoff wavenumber |𝐤| dx / π = 2/3 (default)")
 
-lines!(ax, K, FourierFlows.makefilter(K), linewidth=4, label = "order p=4 (default)")
-lines!(ax, K, FourierFlows.makefilter(K, order = 1), linestyle = :dash, label = "order p=1")
-lines!(ax, K, FourierFlows.makefilter(K, order = 10), linestyle = :dot, label = "order p=10")
+lines!(ax, K, makefilter(K), linewidth = 4, label = "order 4 (default)")
+lines!(ax, K, makefilter(K, order = 1), linestyle = :dash, label = "order 1")
+lines!(ax, K, makefilter(K, order = 10), linestyle = :dot, label = "order 10")
 
 axislegend(position = :lb)
 
