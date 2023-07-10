@@ -5,7 +5,7 @@ FourierFlows.jl includes several time-stepping algorithms.
 Most of the time-stepping algorithms are fully explicit schemes: [`ForwardEulerTimeStepper`](@ref),
 [`AB3TimeStepper`](@ref), [`RK4TimeStepper`](@ref), and [`LSRK54TimeStepper`](@ref).
 Also we have implemented an [`ETDRK4TimeStepper`](@ref) scheme with the improvements described
-by [Kassam2005](@cite).
+by [Kassam-Trefethen-2005](@cite).
 
 The [`Problem`](@ref FourierFlows.Problem) constructor expects the chosen time stepper as
 as string that includes the corresponding name of the time stepper _without_ the ending `TimeStepper`.
@@ -42,8 +42,8 @@ That is:
 \alpha = \frac{- \log\delta}{(k_{\textrm{max}} - k_{\textrm{cutoff}})^p} \ .
 ```
 
-The above filter originates from the book by [Canuto1987](@cite). In geophysical turbulence
-applications it was used by [LaCasce1996](@cite) and later by [Arbic2004](@cite).
+The above filter originates from the book by [Canuto-etal-1987](@cite). In geophysical turbulence
+applications it was used by [LaCasce-1996](@cite) and later by [Arbic-Flierl-2004](@cite).
 
 Using the default parameters provided by the filtered time steppers (see
 [`FourierFlows.makefilter`](@ref)), the filter has the following form:
