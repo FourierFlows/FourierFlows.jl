@@ -67,7 +67,7 @@ using FourierFlows, CairoMakie
 
 K = 0:0.001:1 # non-dimensional wavenumber k * dx / π
 
-fig = Figure(resolution=(600, 350))
+fig = Figure()
 ax = Axis(fig[1, 1], xlabel = "|𝐤| dx / π", ylabel = "filter", aspect=2.5, xticks=0:0.2:1)
 
 vlines!(ax, 2/3, color = (:gray, 0.4), linewidth=6, label = "cutoff wavenumber")
