@@ -40,8 +40,8 @@ That is:
 \alpha = \frac{- \log\delta}{(k_{\textrm{max}} - k_{\textrm{cutoff}})^p} \ .
 ```
 
-The above filter originates from Canuto et al. (1988). In geophysical turbulence applications
-it was used by LaCasce (1996) and later by Arbic & Flierl (2003).
+The above filter originates from the book by [Canuto-etal-1987](@cite). In geophysical turbulence
+applications it was used by [LaCasce-1996](@cite) and later by [Arbic-Flierl-2004](@cite).
 
 Using the default parameters provided by the filtered time steppers (see
 [`FourierFlows.makefilter`](@ref)), the filter has the following form:

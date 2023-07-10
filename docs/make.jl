@@ -1,5 +1,6 @@
 using
   Documenter,
+  DocumenterCitations,
   Literate,
   CairoMakie,  # so that Literate.jl does not capture precompilation output
   FourierFlows
@@ -8,11 +9,14 @@ using
 ##### Generate examples
 #####
 
+@show bib_filepath = joinpath(@__DIR__, "src/references.bib")
+bib = CitationBibliography(bib_filepath)
+
 const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
 const OUTPUT_DIR   = joinpath(@__DIR__, "src/literated")
 
 examples = [
-    "OneDShallowWaterGeostrophicAdjustment.jl",
+  # "OneDShallowWaterGeostrophicAdjustment.jl",
 ]
 
 for example in examples
@@ -46,28 +50,28 @@ pages = [
     "Output" => "output.md",
     "GPU" => "gpu.md",
     "Examples" => [ 
-        "literated/OneDShallowWaterGeostrophicAdjustment.md",
-        ],
+      # "literated/OneDShallowWaterGeostrophicAdjustment.md",
+      ],
     "Contributor's guide" => "contributing.md",
     "Library" => [ 
-        "Contents" => "library/outline.md",
-        "Public" => "library/public.md",
-        "Private" => "library/internals.md",
-        "Function index" => "library/function_index.md",
-        ],
+      "Contents" => "library/outline.md",
+      "Public" => "library/public.md",
+      "Private" => "library/internals.md",
+      "Function index" => "library/function_index.md",
+      ],
+    "References" => "references.md",
 ]
 
-makedocs(;
-   sitename = "FourierFlows.jl",
-    authors = "Gregory L. Wagner and Navid C. Constantinou and contributors",
-    modules = [FourierFlows],
-     format,
-      pages,
-    doctest = true,
-     strict = :doctest,
-      clean = true,
-  checkdocs = :exports
-)
+makedocs(bib, sitename = "FourierFlows.jl", 
+               authors = "Gregory L. Wagner and Navid C. Constantinou and contributors", 
+               modules = [FourierFlows], 
+                format = format, 
+                 pages = pages, 
+                 draft = true,
+               doctest = false, 
+                strict = :doctest, 
+                 clean = true, 
+             checkdocs = :exports)
 
 @info "Cleaning up temporary .jld2 and .nc files created by doctests or literated examples..."
 
