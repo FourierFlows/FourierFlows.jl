@@ -42,7 +42,8 @@ close to machine precision. That is:
 ```
 
 The above-mentioned filter form originates from the book by [Canuto-etal-1987](@cite).
-In fluid applications it was used by [LaCasce-1996](@cite) and later by [Arbic-Flierl-2004](@cite).
+In geophysical turbulence applications it was used by [LaCasce-1996](@cite) and later
+by [Arbic-Flierl-2004](@cite).
 
 !!! warning "Not too steep, not too shallow"
     Care should be taken if one decides to fiddle with the filter parameters. Changing
