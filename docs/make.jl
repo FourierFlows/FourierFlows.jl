@@ -9,7 +9,7 @@ using
 ##### Generate examples
 #####
 
-@show bib_filepath = joinpath(@__DIR__, "src/references.bib")
+bib_filepath = joinpath(@__DIR__, "src/references.bib")
 bib = CitationBibliography(bib_filepath)
 
 const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
