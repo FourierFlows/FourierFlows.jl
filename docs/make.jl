@@ -51,6 +51,7 @@ pages = [
     "GPU" => "gpu.md",
     "Examples" => [ 
       "literated/OneDShallowWaterGeostrophicAdjustment.md",
+      "literated/XYAdvectionSetupRun.md"
       ],
     "Contributor's guide" => "contributing.md",
     "Library" => [ 
