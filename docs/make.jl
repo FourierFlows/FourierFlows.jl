@@ -17,6 +17,7 @@ const OUTPUT_DIR   = joinpath(@__DIR__, "src/literated")
 
 examples = [
   "OneDShallowWaterGeostrophicAdjustment.jl",
+  "XYAdvectionSetupRun.jl",
 ]
 
 for example in examples
