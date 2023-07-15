@@ -246,6 +246,7 @@ module XYAdvection
       file = jldopen(filepath)
       px = irfft(file[string("snapshots/sol/", titr)][:,:, 1], nx)
       py = irfft(file[string("snapshots/sol/", titr)][:,:, 2], nx)
+      close(file)
       return px,py
    end
    ############################################################################################################
