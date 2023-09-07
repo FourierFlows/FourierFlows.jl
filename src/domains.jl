@@ -485,7 +485,7 @@ one-dimensional grid, the non-dimensional wavenumber `K` is
 K = k * dx / π
 ```
 
-and thus it takes values `K` ``∈ [-1, 1]``.
+and thus take values in ``[-1, 1]``.
 
 For `K ≤ innerK` the filter is inactive, i.e., equal to 1. For `K > innerK`,
 the filter decays exponentially to remove high-wavenumber content from 
@@ -495,8 +495,9 @@ the solution, i.e.,
 filter(K) = exp(- decay * (K - innerK)^order)
 ```
 
-For a given `order` and , the `decay` rate is determined so that the filter value at the
-outer wavenumber `outerK` is `tol`, where `tol` is a small number, close to machine precision.
+For a given `order`, the `decay` rate is determined so that the filter value at the
+outer wavenumber `outerK` is `tol`, where `tol` is a small number, close to machine
+precision.
 
 ```julia
 decay = - log(tol) / (outerK - innerK)^order
