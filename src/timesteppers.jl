@@ -350,6 +350,33 @@ function LSRK54TimeStepper(equation::Equation, dev::Device=CPU())
   return LSRK54TimeStepper(S², RHS, Tuple(A), Tuple(B), Tuple(C))
 end
 
+"""
+    struct FilteredRK4TimeStepper{T,Tf} <: AbstractTimeStepper{T}
+
+A 4th-order Runge-Kutta timestepper with spectral filtering. See [`RK4TimeStepper`](@ref).
+"""
+struct FilteredLSRK54TimeStepper{T,V} <: AbstractTimeStepper{T}
+   S² :: T
+  RHS :: T
+    A :: V
+    B :: V
+    C :: V
+  filter :: Tf
+end
+
+"""
+    FilteredRK4TimeStepper(equation::Equation, dev::Device=CPU(); filterkwargs...)
+
+Construct a 4th-order 5-stages 2-storage Runge-Kutta timestepper with spectral filtering
+for `equation` on device `dev`.
+"""
+function FilteredLSRK54TimeStepper(equation::Equation, dev::Device=CPU(); filterkwargs...)
+  ts = LSRK54TimeStepper(equation, dev)
+  filter = makefilter(equation; filterkwargs...)
+
+  return FilteredLSRK54TimeStepper(getfield.(Ref(ts), fieldnames(typeof(ts)))..., filter)
+end
+
 function LSRK54update!(sol, clock, ts, equation, vars, params, grid, t, dt)
   @. ts.S² = 0
 
@@ -366,6 +393,16 @@ end
 
 function stepforward!(sol, clock, ts::LSRK54TimeStepper, equation, vars, params, grid)
   LSRK54update!(sol, clock, ts, equation, vars, params, grid, clock.t, clock.dt)
+
+  clock.t += clock.dt
+  clock.step += 1
+
+  return nothing
+end
+
+function stepforward!(sol, clock, ts::FilteredLSRK54TimeStepper, equation, vars, params, grid)
+  LSRK54update!(sol, clock, ts, equation, vars, params, grid, clock.t, clock.dt)
+  @. sol *= ts.filter
 
   clock.t += clock.dt
   clock.step += 1
