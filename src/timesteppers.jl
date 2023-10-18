@@ -38,10 +38,11 @@ const fullyexplicitsteppers= [
   :ForwardEuler,
   :RK4,
   :AB3,
+  :LSRK54,
   :FilteredForwardEuler,
   :FilteredRK4,
   :FilteredAB3,
-  :LSRK54
+  :FilteredLSRK54TimeStepper
 ]
 
 isexplicit(stepper) = any(Symbol(stepper) .== fullyexplicitsteppers)
@@ -75,6 +76,7 @@ end
 #   * RK4
 #   * Filtered RK4
 #   * LSRK54
+#   * Filtered LSRK54
 #   * ETDRK4
 #   * Filtered ETDRK4
 #   * AB3
@@ -351,16 +353,17 @@ function LSRK54TimeStepper(equation::Equation, dev::Device=CPU())
 end
 
 """
-    struct FilteredRK4TimeStepper{T,Tf} <: AbstractTimeStepper{T}
+    struct FilteredLSRK54TimeStepper{T,V,Tf} <: AbstractTimeStepper{T}
 
-A 4th-order Runge-Kutta timestepper with spectral filtering. See [`RK4TimeStepper`](@ref).
+A 4th-order 5-stages low-storage Runge-Kutta timestepper with spectral filtering.
+See [`LSRK54TimeStepper`](@ref).
 """
-struct FilteredLSRK54TimeStepper{T,V} <: AbstractTimeStepper{T}
-   S² :: T
-  RHS :: T
-    A :: V
-    B :: V
-    C :: V
+struct FilteredLSRK54TimeStepper{T,V,Tf} <: AbstractTimeStepper{T}
+      S² :: T
+     RHS :: T
+       A :: V
+       B :: V
+       C :: V
   filter :: Tf
 end
 
