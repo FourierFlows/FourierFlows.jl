@@ -31,6 +31,7 @@ const steppers = [
   "AB3",
   "FilteredForwardEuler",
   "FilteredRK4",
+  "FilteredLSRK54",
   "FilteredETDRK4",
   "FilteredAB3"
 ]
