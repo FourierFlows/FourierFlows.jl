@@ -63,7 +63,7 @@ pages = [
 ]
 
 makedocs(sitename = "FourierFlows.jl",
-          authors = "Gregory L. Wagner and Navid C. Constantinou and contributors",
+          authors = "Gregory L. Wagner, Navid C. Constantinou, and contributors",
           modules = [FourierFlows],
            format = format,
             pages = pages,
