@@ -34,14 +34,15 @@ function stepforward!(prob::Problem, diags, nsteps::Int)
   return nothing
 end
 
-const fullyexplicitsteppers= [
+const fullyexplicitsteppers = [
   :ForwardEuler,
   :RK4,
   :AB3,
+  :LSRK54,
   :FilteredForwardEuler,
   :FilteredRK4,
   :FilteredAB3,
-  :LSRK54
+  :FilteredLSRK54
 ]
 
 isexplicit(stepper) = any(Symbol(stepper) .== fullyexplicitsteppers)
@@ -75,6 +76,7 @@ end
 #   * RK4
 #   * Filtered RK4
 #   * LSRK54
+#   * Filtered LSRK54
 #   * ETDRK4
 #   * Filtered ETDRK4
 #   * AB3
@@ -350,15 +352,43 @@ function LSRK54TimeStepper(equation::Equation, dev::Device=CPU())
   return LSRK54TimeStepper(S², RHS, Tuple(A), Tuple(B), Tuple(C))
 end
 
+"""
+    struct FilteredLSRK54TimeStepper{T,V,Tf} <: AbstractTimeStepper{T}
+
+A 4th-order 5-stages low-storage Runge-Kutta timestepper with spectral filtering.
+See [`LSRK54TimeStepper`](@ref).
+"""
+struct FilteredLSRK54TimeStepper{T,V,Tf} <: AbstractTimeStepper{T}
+      S² :: T
+     RHS :: T
+       A :: V
+       B :: V
+       C :: V
+  filter :: Tf
+end
+
+"""
+    FilteredRK4TimeStepper(equation::Equation, dev::Device=CPU(); filterkwargs...)
+
+Construct a 4th-order 5-stages 2-storage Runge-Kutta timestepper with spectral filtering
+for `equation` on device `dev`.
+"""
+function FilteredLSRK54TimeStepper(equation::Equation, dev::Device=CPU(); filterkwargs...)
+  ts = LSRK54TimeStepper(equation, dev)
+  filter = makefilter(equation; filterkwargs...)
+
+  return FilteredLSRK54TimeStepper(getfield.(Ref(ts), fieldnames(typeof(ts)))..., filter)
+end
+
 function LSRK54update!(sol, clock, ts, equation, vars, params, grid, t, dt)
   @. ts.S² = 0
 
   for i = 1:5
-    equation.calcN!(ts.RHS, sol, t + ts.C[i] * dt , clock, vars, params, grid)
+    @inbounds equation.calcN!(ts.RHS, sol, t + ts.C[i] * dt , clock, vars, params, grid)
     addlinearterm!(ts.RHS, equation.L, sol)
 
-    @. ts.S² = ts.A[i] * ts.S² + dt * ts.RHS
-    @.  sol += ts.B[i] * ts.S²
+    @. ts.S² = @inbounds ts.A[i] * ts.S² + dt * ts.RHS
+    @.  sol += @inbounds ts.B[i] * ts.S²
   end
 
   return nothing
@@ -366,6 +396,16 @@ end
 
 function stepforward!(sol, clock, ts::LSRK54TimeStepper, equation, vars, params, grid)
   LSRK54update!(sol, clock, ts, equation, vars, params, grid, clock.t, clock.dt)
+
+  clock.t += clock.dt
+  clock.step += 1
+
+  return nothing
+end
+
+function stepforward!(sol, clock, ts::FilteredLSRK54TimeStepper, equation, vars, params, grid)
+  LSRK54update!(sol, clock, ts, equation, vars, params, grid, clock.t, clock.dt)
+  @. sol *= ts.filter
 
   clock.t += clock.dt
   clock.step += 1
