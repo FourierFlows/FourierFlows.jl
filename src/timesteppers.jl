@@ -34,7 +34,7 @@ function stepforward!(prob::Problem, diags, nsteps::Int)
   return nothing
 end
 
-const fullyexplicitsteppers= [
+const fullyexplicitsteppers = [
   :ForwardEuler,
   :RK4,
   :AB3,
