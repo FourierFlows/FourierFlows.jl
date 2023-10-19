@@ -42,7 +42,7 @@ const fullyexplicitsteppers= [
   :FilteredForwardEuler,
   :FilteredRK4,
   :FilteredAB3,
-  :FilteredLSRK54TimeStepper
+  :FilteredLSRK54
 ]
 
 isexplicit(stepper) = any(Symbol(stepper) .== fullyexplicitsteppers)
@@ -384,11 +384,11 @@ function LSRK54update!(sol, clock, ts, equation, vars, params, grid, t, dt)
   @. ts.S² = 0
 
   for i = 1:5
-    equation.calcN!(ts.RHS, sol, t + ts.C[i] * dt , clock, vars, params, grid)
+    @inbounds equation.calcN!(ts.RHS, sol, t + ts.C[i] * dt , clock, vars, params, grid)
     addlinearterm!(ts.RHS, equation.L, sol)
 
-    @. ts.S² = ts.A[i] * ts.S² + dt * ts.RHS
-    @.  sol += ts.B[i] * ts.S²
+    @. ts.S² = @inbounds ts.A[i] * ts.S² + dt * ts.RHS
+    @.  sol += @inbounds ts.B[i] * ts.S²
   end
 
   return nothing
