@@ -158,7 +158,7 @@ current_figure() # hide
 Note that with the normalization we get what we expect since
 
 ```math
-u(x) = \sin(2x) + \frac1{2} \cos(5x) = -\frac{i}{2} (e^{2ix} - e^{2ix}) + \frac{1}{4} (e^{5ix} + e^{5ix}) .
+u(x) = \sin(2x) + \frac1{2} \cos(5x) = -\frac{i}{2} (e^{2ix} - e^{-2ix}) + \frac{1}{4} (e^{5ix} + e^{-5ix}) .
 ```
 
 We can compute the derivative of ``u(x)`` via Fourier transforms. To do that we use the
