@@ -188,7 +188,7 @@ end
 function test_plan_flows_fftrfft(::GPU; T=Float64)
   A = device_array(GPU())
 
-  region_ans = VERSION >= v"1.9.0" ? (1, 2) : [1. 2]
+  region_ans = VERSION >= v"1.9.0" ? (1, 2) : [1, 2]
 
   return typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4,))))) == CUDA.CUFFT.cCuFFTPlan{Complex{T},-1,false,1} &&
          typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6))))) == CUDA.CUFFT.cCuFFTPlan{Complex{T},-1,false,2} &&
