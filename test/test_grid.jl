@@ -191,11 +191,11 @@ function test_plan_flows_fftrfft(::GPU; T=Float64)
   return typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4,))))) == CUDA.CUFFT.cCuFFTPlan{Complex{T},-1,false,1} &&
          typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6))))) == CUDA.CUFFT.cCuFFTPlan{Complex{T},-1,false,2} &&
          typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))))) == CUDA.CUFFT.cCuFFTPlan{Complex{T},-1,false,3} &&
-         FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))), [1, 2]).region == [1, 2] &&
+         FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))), [1, 2]).region == (1, 2) &&
          typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4,))))) == CUDA.CUFFT.rCuFFTPlan{T,-1,false,1} &&
          typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6))))) == CUDA.CUFFT.rCuFFTPlan{T,-1,false,2} &&
          typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) == CUDA.CUFFT.rCuFFTPlan{T,-1,false,3} &&
-         FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == [1, 2]
+         FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == (1, 2)
 end
 
 function test_aliased_fraction(dev, aliased_fraction)
