@@ -135,7 +135,7 @@ prob.clock
 ```
 
 Let's initiate our problem with, e.g., ``u(x, 0) = \cos(\pi x)``, integrate up 
-to ``t = 4`` and compare our numerical solution with the analytic solution 
+to ``t = 4`` and compare our numerical solution with the analytical solution 
 ``u(x, t) = e^{-\alpha t} \cos(\pi x)``.
 
 ```@example 2
@@ -165,7 +165,7 @@ ldiv!(prob.vars.u, grid.rfftplan, prob.sol)
 nothing # hide
 ```
 
-and finally, let's plot our solution and compare with the analytic solution:
+and finally, let's plot our solution and compare with the analytical solution:
 
 ```@example 2
 using CairoMakie, Printf
