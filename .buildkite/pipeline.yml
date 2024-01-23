@@ -6,7 +6,7 @@ steps:
   - label: "🦓 Julia 1.6"
     plugins:
       - JuliaCI/julia#v1:
-          version: 1.6
+          version: '1.6'
       - JuliaCI/julia-test#v1: ~
     agents:
       queue: "juliagpu"
@@ -17,7 +17,7 @@ steps:
   - label: "🐫 Julia 1.10"
     plugins:
       - JuliaCI/julia#v1:
-          version: 1.10
+          version: '1.10'
       - JuliaCI/julia-test#v1: ~
       - JuliaCI/julia-coverage#v1:
           codecov: true
