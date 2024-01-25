@@ -36,7 +36,6 @@ DocTestSetup = quote
     E = Diagnostic(energy, prob, freq=2, nsteps=200)
     filepath = "."
     filename = joinpath(filepath, "simplestpde.jld2")
-    get_uh(prob) = prob.sol
 end
 ```
 

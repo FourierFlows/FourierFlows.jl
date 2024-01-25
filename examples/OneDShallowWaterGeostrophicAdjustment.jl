@@ -265,7 +265,7 @@ gaussian_width = 6e3
 gaussian_amplitude = 3.0
 gaussian_bump = @. gaussian_amplitude * exp( - grid.x^2 / (2*gaussian_width^2) )
 
-fig = Figure(resolution = (600, 260))
+fig = Figure(size = (600, 260))
 ax =  Axis(fig[1, 1];
            xlabel = "x [km]",
            ylabel = "η [m]",
@@ -287,7 +287,7 @@ noise_amplitude = 0.1 # the amplitude of the noise for η(x, t=0) (m)
 η_noise = noise_amplitude * Random.randn(size(grid.x))
 @. η_noise *= mask    # mask the noise
 
-fig = Figure(resolution = (600, 520))
+fig = Figure(size = (600, 520))
 
 kwargs = (xlabel = "x [km]", limits = ((-Lx/2e3, Lx/2e3), nothing))
 
@@ -315,7 +315,7 @@ v0 = zeros(grid.nx)
 
 set_uvη!(prob, u0, v0, η0)
 
-fig = Figure(resolution = (600, 260))
+fig = Figure(size = (600, 260))
 
 ax =  Axis(fig[1, 1];
            xlabel = "x [km]",
@@ -376,7 +376,7 @@ v = @lift irfft(file[string("snapshots/sol/", iterations[$n])][:, 2], nx)
 
 toptitle = @lift "t = " * @sprintf("%.1f", file[string("snapshots/t/", iterations[$n])]/60) * " min"
 
-fig = Figure(resolution = (600, 800))
+fig = Figure(size = (600, 800))
 
 kwargs_η = (xlabel = "x [km]", limits = ((-Lx/2e3, Lx/2e3), nothing))
 kwargs_uv = (xlabel = "x [km]", limits = ((-Lx/2e3, Lx/2e3), (-0.3, 0.3)))
@@ -430,7 +430,7 @@ nothing # hide
 # The geostrophic solution should capture well the the behavior of the flow in the center
 # of the domain, after small-scale disturbances propagate away. Let's plot and see!
 
-fig = Figure(resolution = (600, 600))
+fig = Figure(size = (600, 600))
 
 kwargs = (xlabel = "x [km]", limits = ((-Lx/2e3, Lx/2e3), (-0.3, 0.3)))
 
