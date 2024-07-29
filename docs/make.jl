@@ -10,7 +10,7 @@ using
 #####
 
 bib_filepath = joinpath(@__DIR__, "src/references.bib")
-bib = CitationBibliography(bib_filepath)
+bib = CitationBibliography(bib_filepath, style=:authoryear)
 
 const EXAMPLES_DIR = joinpath(@__DIR__, "..", "examples")
 const OUTPUT_DIR   = joinpath(@__DIR__, "src/literated")

@@ -5,7 +5,7 @@ FourierFlows.jl includes several time-stepping algorithms.
 Most of the time-stepping algorithms are fully explicit schemes: [`ForwardEulerTimeStepper`](@ref),
 [`AB3TimeStepper`](@ref), [`RK4TimeStepper`](@ref), and [`LSRK54TimeStepper`](@ref).
 Also we have implemented an [`ETDRK4TimeStepper`](@ref) scheme with the improvements described
-by [Kassam-Trefethen-2005](@cite).
+by [Kassam-Trefethen-2005](@citet).
 
 The [`Problem`](@ref FourierFlows.Problem) constructor expects the chosen time stepper as
 as string that includes the corresponding name of the time stepper _without_ the ending `TimeStepper`.
@@ -41,9 +41,9 @@ close to machine precision. That is:
 \alpha = \frac{- \log\delta}{(k_{\textrm{max}} - k_{\textrm{cutoff}})^p} \ .
 ```
 
-The above-mentioned filter form originates from the book by [Canuto-etal-1987](@cite).
-In geophysical turbulence applications it was used by [LaCasce-1996](@cite) and later
-by [Arbic-Flierl-2004](@cite).
+The above-mentioned filter form originates from the book by [Canuto-etal-1987](@citet).
+In geophysical turbulence applications it was used by [LaCasce-1996](@citet) and later
+by [Arbic-Flierl-2004](@citet).
 
 !!! warning "Not too steep, not too shallow"
     Care should be taken if one decides to fiddle with the filter parameters. Changing
@@ -70,7 +70,7 @@ using FourierFlows: makefilter
 K = 0:0.001:1 # non-dimensional wavenumber k * dx / π
 
 fig = Figure()
-ax = Axis(fig[1, 1], xlabel = "|𝐤| dx / π", ylabel = "filter", aspect=2.5, xticks=0:0.2:1)
+ax = Axis(fig[1, 1], xlabel = "|𝐤| dx / π", ylabel = "filter", xticks=0:0.2:1)
 
 vlines!(ax, 2/3, color = (:gray, 0.4), linewidth = 6, label = "cutoff wavenumber |𝐤| dx / π = 2/3 (default)")
 
@@ -78,7 +78,7 @@ lines!(ax, K, makefilter(K), linewidth = 4, label = "order 4 (default)")
 lines!(ax, K, makefilter(K, order = 1), linestyle = :dash, label = "order 1")
 lines!(ax, K, makefilter(K, order = 10), linestyle = :dot, label = "order 10")
 
-axislegend(position = :lb)
+fig[0, 1] = Legend(fig, ax)
 
 current_figure() # hide
 ```

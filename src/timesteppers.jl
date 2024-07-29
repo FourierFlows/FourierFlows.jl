@@ -306,7 +306,7 @@ uⁿ⁺¹ = uⁿ
 ```
 
 where `Aᵢ`, `Bᵢ`, and `Cᵢ` are the ``A``, ``B``, and ``C`` coefficients from
-the LSRK table at the ``i``-th stage. For details, refer to [Carpenter-Kennedy-1994](@cite).
+the LSRK table at the ``i``-th stage. For details, refer to [Carpenter-Kennedy-1994](@citet).
 
 !!! info "Usage"
     The `LSRK54TimeStepper` is *slower* than the [`RK4TimeStepper`](@ref) but
@@ -429,7 +429,7 @@ That is,
 uⁿ⁺¹ = exp(L * dt) * uⁿ + RK4(N(uⁿ))
 ```
 
-For more info refer to [Kassam-Trefethen-2005](@cite).
+For more info refer to [Kassam-Trefethen-2005](@citet).
 """
 struct ETDRK4TimeStepper{T,TL} <: AbstractTimeStepper{T}
   # ETDRK4 coefficents
@@ -684,7 +684,7 @@ Calculate the coefficients associated with the (diagonal) linear coefficient
 `L` for an ETDRK4 timestepper with timestep `dt`.
 
 The calculation is done by integrating over a unit circle in the complex space.
-For more info refer to [Kassam-Trefethen-2005](@cite).
+For more info refer to [Kassam-Trefethen-2005](@citet).
 """
 function getetdcoeffs(dt, L; ncirc=32, rcirc=1)
   shape = Tuple(cat(ncirc, ones(Int, ndims(L)), dims=1))
