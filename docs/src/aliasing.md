@@ -46,9 +46,9 @@ lines!(ax, range(-Lx/2, Lx/2, length=200), f2;
        color = (:salmon, 0.3), label = "cos(6x)")
 
 scatter!(ax, x, f1.(x);
-         markersize = 12, color = (:steelblue, 0.9), label = "cos(4x)")
+         markersize = 24, marker = :star5, color = (:steelblue, 0.9), label = "cos(4x)")
 scatter!(ax, x, f2.(x);
-         markersize = 24, marker = :star5, color = (:salmon, 0.9), label = "cos(6x)")
+         markersize = 12, color = (:salmon, 0.9), label = "cos(6x)")
 
 axislegend(merge = true)
 
