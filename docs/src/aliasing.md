@@ -46,9 +46,9 @@ lines!(ax, range(-Lx/2, Lx/2, length=200), f2;
        color = (:salmon, 0.3), label = "cos(6x)")
 
 scatter!(ax, x, f1.(x);
-         markersize = 12, color = (:steelblue, 0.9), label = "cos(4x)")
+         markersize = 24, marker = :star5, color = (:steelblue, 0.9), label = "cos(4x)")
 scatter!(ax, x, f2.(x);
-         markersize = 24, marker = :star5, color = (:salmon, 0.9), label = "cos(6x)")
+         markersize = 12, color = (:salmon, 0.9), label = "cos(6x)")
 
 axislegend(merge = true)
 
@@ -82,15 +82,21 @@ harmonics with wavenumbers beyond those that our grid is able to resolve and, th
 aliasing errors.
 
 The above-mentioned 1/2-rule for dealiasing for quadratic nonlinearities is, however, not the 
-most efficient. [Orszag-1971](@cite) pointed out that for quadratic nonlirearities, simply only
+most efficient. [Orszag-1971](@citet) pointed out that for quadratic nonlirearities, simply only
 discarding the highest-1/3 of wavenumber components is enough to save us from aliasing errors.
 To be fair, with Orszag's so-called 2/3-rule for dealiasing, still some aliasing errors occur, but
 those  errors only occur to the higher-1/3 wavenumber components that will be zero-ed out at the
 next time step, when we next dealias our solution anyway.
 
 When constructing a `grid` we can specify the `aliased_fraction` parameter. By default, this is 
-set to ``1/3``, appropriate for quadratic nonlinearities. Then `dealias!(fh, grid)` will zero-out 
-the highest-`aliased_fraction` wavenumber components of `fh`. 
+set to ``1/3``, appropriate for quadratic nonlinearities.
+
+```@example 1
+grid = OneDGrid(; nx, Lx)
+```
+
+Then we can use `dealias!(fh, grid)` to zero-out the highest-`aliased_fraction` wavenumber
+components of `fh`.
 
 ```@docs
 FourierFlows.dealias!
