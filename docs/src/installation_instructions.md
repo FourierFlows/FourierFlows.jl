@@ -5,7 +5,7 @@ To install the latest version of FourierFlows.jl use the Julia's built-in packag
 
 ```julia
 julia> ]
-(v1.10) pkg> add FourierFlows
+(v1.11) pkg> add FourierFlows
 ```
 
 We recommend installing FourierFlows.jl with the built-in Julia package manager, because
@@ -13,7 +13,7 @@ this installs a stable, tagged release. Later, you can update FourierFlows.jl to
 latest tagged release again via the package manager by
 
 ```julia
-(v1.10) pkg> update FourierFlows
+(v1.11) pkg> update FourierFlows
 ```
 
 Note that some releases might induce breaking changes to certain modules. If after anything

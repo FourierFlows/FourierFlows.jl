@@ -8,8 +8,6 @@ steps:
       - JuliaCI/julia#v1:
           version: '1.10'
       - JuliaCI/julia-test#v1: ~
-      - JuliaCI/julia-coverage#v1:
-          codecov: true
     agents:
       queue: "juliagpu"
       cuda: "*"
@@ -21,6 +19,8 @@ steps:
       - JuliaCI/julia#v1:
           version: '1.11'
       - JuliaCI/julia-test#v1: ~
+      - JuliaCI/julia-coverage#v1:
+          codecov: true
     agents:
       queue: "juliagpu"
       cuda: "*"
