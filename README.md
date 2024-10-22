@@ -2,7 +2,7 @@
 
 <p align="left">
     <a href="https://buildkite.com/julialang/fourierflows-dot-jl">
-        <img alt="Buildkite CPU+GPU build status" src="https://img.shields.io/buildkite/4d921fc17b95341ea5477fb62df0e6d9364b61b154e050a123/master?logo=buildkite&label=Buildkite%20CPU%2BGPU">
+        <img alt="Buildkite CPU+GPU build status" src="https://img.shields.io/buildkite/4d921fc17b95341ea5477fb62df0e6d9364b61b154e050a123/main?logo=buildkite&label=Buildkite%20CPU%2BGPU">
     </a>
     <a href="https://github.com/FourierFlows/FourierFlows.jl/actions/workflows/CI.yml">
         <img alt="CI Status" src="https://github.com/FourierFlows/FourierFlows.jl/actions/workflows/CI.yml/badge.svg">
