@@ -5,7 +5,7 @@
         <img alt="Buildkite CPU+GPU build status" src="https://img.shields.io/buildkite/4d921fc17b95341ea5477fb62df0e6d9364b61b154e050a123/master?logo=buildkite&label=Buildkite%20CPU%2BGPU">
     </a>
     <a href="https://github.com/FourierFlows/FourierFlows.jl/actions/workflows/CI.yml">
-        <img alt="Build Status for Windows" src="https://github.com/FourierFlows/FourierFlows.jl/actions/workflows/CI.yml/badge.svg">
+        <img alt="CI Status" src="https://github.com/FourierFlows/FourierFlows.jl/actions/workflows/CI.yml/badge.svg">
     </a>
     <a href="https://FourierFlows.github.io/FourierFlowsDocumentation/stable">
         <img alt="stable docs" src="https://img.shields.io/badge/documentation-stable%20release-blue">
