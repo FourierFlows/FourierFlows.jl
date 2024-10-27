@@ -96,7 +96,7 @@ end
 
 deploydocs(
             repo = "github.com/FourierFlows/FourierFlowsDocumentation.git",
-        versions = ["stable" => "v^", "dev" => "dev" "v#.#.#"],
+        versions = ["stable" => "v^", "dev" => "dev", "v#.#.#"],
        forcepush = true,
     push_preview = true,
        devbranch = "main"
