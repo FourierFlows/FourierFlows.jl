@@ -94,12 +94,10 @@ for file in files
   rm(file)
 end
 
-withenv("GITHUB_REPOSITORY" => "github.com/FourierFlows/FourierFlowsDocumentation.git") do
-  deploydocs(
-              repo = "github.com/FourierFlows/FourierFlowsDocumentation.git",
-          versions = ["stable" => "v^", "dev" => "dev", "v#.#.#"],
-         forcepush = true,
-      push_preview = true,
-         devbranch = "main"
-  )
-end
+deploydocs(
+          repo = "github.com/FourierFlows/FourierFlowsDocumentation.git",
+      versions = ["stable" => "v^", "dev" => "dev", "v#.#.#"],
+     forcepush = true,
+  push_preview = true,
+     devbranch = "main"
+)
