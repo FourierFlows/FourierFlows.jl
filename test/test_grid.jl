@@ -114,7 +114,7 @@ end
 function testdealias(grid::ThreeDGrid)
   fh = ones(Complex{eltype(grid)}, size(grid.Krsq))
   dealias!(fh, grid)
-  
+
   kmax = round(maximum(grid.kr)*2/3)
   lmax = round(maximum(abs.(grid.l))*2/3)
   mmax = round(maximum(abs.(grid.m))*2/3)
@@ -128,7 +128,7 @@ function testdealias(grid::ThreeDGrid)
       fh[i₁, i₂, i₃] = 0
     end
   end
-  
+
   return isapprox(sum(abs.(fh)), 0)
 end
 
@@ -152,13 +152,13 @@ end
 
 function testtypedtwodgrid(dev::Device, nx, Lx, ny=Lx, Ly=Lx; T=Float64)
   grid = TwoDGrid(; nx, Lx, ny, Ly, T)
-  
+
   return typeof(grid.dx)==T && typeof(grid.dy)==T && typeof(grid.x[1])==T && typeof(grid.y[1])==T && typeof(grid.Lx)==T && typeof(grid.Ly)==T && eltype(grid) == T
 end
 
 function testtypedthreedgrid(dev::Device, nx, Lx, ny=nx, Ly=Lx, nz=nx, Lz=Lx; T=Float64)
   grid = ThreeDGrid(; nx, Lx, ny, Ly, nz, Lz, T)
-  
+
   return typeof(grid.dx)==T && typeof(grid.dy)==T && typeof(grid.dz)==T && typeof(grid.x[1])==T && typeof(grid.y[1])==T && typeof(grid.z[1])==T && typeof(grid.Lx)==T && typeof(grid.Ly)==T && typeof(grid.Lz)==T && eltype(grid) == T
 end
 
@@ -190,13 +190,13 @@ function test_plan_flows_fftrfft(::GPU; T=Float64)
 
   region_ans = VERSION >= v"1.9.0" ? (1, 2) : [1, 2]
 
-  return typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4,))))) == CUDA.CUFFT.CuFFTPlan{Complex{T}, Complex{T}, -1, false, 1} &&
-         typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6))))) == CUDA.CUFFT.CuFFTPlan{Complex{T}, Complex{T}, -1, false, 2} &&
-         typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))))) == CUDA.CUFFT.CuFFTPlan{Complex{T}, Complex{T}, -1, false, 3} &&
+  return typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4,))))) == CUDA.CUFFT.CuFFTPlan{Complex{T}, Complex{T}, -1, false, 1, 1, Nothing} &&
+         typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6))))) == CUDA.CUFFT.CuFFTPlan{Complex{T}, Complex{T}, -1, false, 2, 2, Nothing} &&
+         typeof(FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))))) == CUDA.CUFFT.CuFFTPlan{Complex{T}, Complex{T}, -1, false, 3, 3, Nothing} &&
          FourierFlows.plan_flows_fft(A(rand(Complex{T}, (4, 6, 8))), [1, 2]).region == region_ans &&
-         typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4,))))) == CUDA.CUFFT.CuFFTPlan{Complex{T}, T, -1, false, 1} &&
-         typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6))))) == CUDA.CUFFT.CuFFTPlan{Complex{T}, T, -1, false, 2} &&
-         typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) == CUDA.CUFFT.CuFFTPlan{Complex{T}, T, -1, false, 3} &&
+         typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4,))))) == CUDA.CUFFT.CuFFTPlan{Complex{T}, T, -1, false, 1, 1, CuArray{Complex{T}, 1, CUDA.DeviceMemory}} &&
+         typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6))))) == CUDA.CUFFT.CuFFTPlan{Complex{T}, T, -1, false, 2, 2, CuArray{Complex{T}, 2, CUDA.DeviceMemory}} &&
+         typeof(FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))))) == CUDA.CUFFT.CuFFTPlan{Complex{T}, T, -1, false, 3, 3, CuArray{Complex{T}, 3, CUDA.DeviceMemory}} &&
          FourierFlows.plan_flows_rfft(A(rand(T, (4, 6, 8))), [1, 2]).region == region_ans
 end
 
