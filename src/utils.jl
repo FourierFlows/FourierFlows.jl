@@ -338,3 +338,13 @@ Return the proper array type according to the `grid`'s `device`, i.e., `Array` f
 `CuArray` for GPU.
 """
 device_array(grid::AbstractGrid) = device_array(grid.device)
+
+"""
+    with_params(problem, new_params)
+
+Creates a new problem by updating an existing problem with a new `problem.params`.
+"""
+function with_params(problem, new_params)
+  new_equation = Equation(new_params, problem.grid)
+  return Problem(new_equation, problem.stepper, problem.dt, problem.grid, problem.vars, new_params)
+end
