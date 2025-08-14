@@ -110,6 +110,7 @@ include("timesteppers.jl")
 
 # Physics
 include("diffusion.jl")
+include("XYAdvection.jl")
 
 
 function __init__()
