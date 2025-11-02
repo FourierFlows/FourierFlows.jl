@@ -67,3 +67,11 @@ Modules = [FourierFlows.Diffusion]
 Private = false
 Pages   = ["diffusion.jl"]
 ```
+
+## XYAdvection Module
+
+```@autodocs
+Modules = [FourierFlows.XYAdvection]
+Private = false
+Pages   = ["XYAdvection.jl"]
+```
