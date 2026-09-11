@@ -13,8 +13,8 @@ jobs:
       matrix:
         version:
           - "1.10" # LTS
-          - "1.11"
           - "1.12"
+          - "1.13"
         os:
           - macOS-latest
           - windows-latest
