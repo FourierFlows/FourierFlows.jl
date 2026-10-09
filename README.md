@@ -102,7 +102,7 @@ Since then [various people have contributed](https://github.com/FourierFlows/Fou
 
 This software is citable via [zenodo](https://zenodo.org). Please cite as:
 
-> Gregory L. Wagner, Navid C. Constantinou, and contributors. (2023). FourierFlows/FourierFlows.jl: FourierFlows v0.10.5 (Version v0.10.5). Zenodo. [http://doi.org/10.5281/zenodo.1161724](http://doi.org/10.5281/zenodo.1161724)
+> Gregory L. Wagner, Navid C. Constantinou, and contributors. (2026). FourierFlows/FourierFlows.jl: FourierFlows v0.10.8 (Version v0.10.8). Zenodo. [http://doi.org/10.5281/zenodo.1161724](http://doi.org/10.5281/zenodo.1161724)
 
 
 ## Contributing
