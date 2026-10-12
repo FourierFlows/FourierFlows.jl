@@ -9,6 +9,6 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [compat]
 CairoMakie = "0.11, 0.12, 0.13, 0.14, 0.15"
-Documenter = "1"
+Documenter = "1.11"
 DocumenterCitations = "1.1"
 Literate = "≥2.9.0"
